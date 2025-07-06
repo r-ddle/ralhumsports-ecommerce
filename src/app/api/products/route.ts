@@ -1,0 +1,222 @@
+import { NextRequest, NextResponse } from 'next/server'
+import { getPayload } from 'payload'
+
+// Minimal Where type for Payload queries
+type Where = {
+  [key: string]:
+    | { equals?: string | number | boolean }
+    | { contains?: string }
+    | { greater_than?: number }
+    | { greater_than_equal?: number }
+    | { less_than_equal?: number }
+    | unknown
+  or?: Array<Record<string, { contains: string }>>
+}
+import config from '@payload-config'
+
+export async function GET(request: NextRequest) {
+  try {
+    const { searchParams } = new URL(request.url)
+
+    // Parse query parameters
+    const page = parseInt(searchParams.get('page') || '1')
+    const limit = parseInt(searchParams.get('limit') || '12')
+    const search = searchParams.get('search')
+    const category = searchParams.get('category')
+    const brand = searchParams.get('brand') // This will be a slug
+    const sort = searchParams.get('sort') || 'createdAt'
+    const order = searchParams.get('order') || 'desc'
+    const status = searchParams.get('status') || 'active'
+    const minPrice = searchParams.get('minPrice')
+    const maxPrice = searchParams.get('maxPrice')
+    const inStock = searchParams.get('inStock')
+
+    const payload = await getPayload({ config })
+
+    // Build where conditions
+    // Use Payload's Where type for type safety
+    const whereConditions: Where = {
+      status: {
+        equals: status,
+      },
+    }
+
+    // Add search condition
+    if (search) {
+      whereConditions.or = [
+        {
+          name: {
+            contains: search,
+          },
+        },
+        {
+          sku: {
+            contains: search,
+          },
+        },
+        {
+          tags: {
+            contains: search,
+          },
+        },
+      ]
+    }
+
+    // Add category filter
+    if (category) {
+      whereConditions.category = {
+        equals: category,
+      }
+    }
+
+    // Add brand filter - resolve slug to ID first
+    if (brand) {
+      try {
+        // First, find the brand by slug to get its ID
+        const brandResult = await payload.find({
+          collection: 'brands',
+          where: {
+            slug: {
+              equals: brand,
+            },
+          },
+          limit: 1,
+        })
+
+        if (brandResult.docs.length > 0) {
+          // Use the brand ID for filtering products
+          whereConditions.brand = {
+            equals: brandResult.docs[0].id,
+          }
+        } else {
+          // Brand not found, return empty result
+          return NextResponse.json({
+            success: true,
+            data: [],
+            pagination: {
+              page: 1,
+              limit,
+              totalPages: 0,
+              totalDocs: 0,
+              hasNextPage: false,
+              hasPrevPage: false,
+            },
+          })
+        }
+      } catch (brandError) {
+        console.error('Error finding brand:', brandError)
+        // If brand lookup fails, return empty result
+        return NextResponse.json({
+          success: true,
+          data: [],
+          pagination: {
+            page: 1,
+            limit,
+            totalPages: 0,
+            totalDocs: 0,
+            hasNextPage: false,
+            hasPrevPage: false,
+          },
+        })
+      }
+    }
+
+    // Add price range filter
+    if (minPrice || maxPrice) {
+      whereConditions.price = {}
+      if (minPrice)
+        (whereConditions.price as Record<string, number>).greater_than_equal = parseFloat(minPrice)
+      if (maxPrice)
+        (whereConditions.price as Record<string, number>).less_than_equal = parseFloat(maxPrice)
+    }
+
+    // Add stock filter
+    if (inStock === 'true') {
+      whereConditions.stock = {
+        greater_than: 0,
+      }
+    }
+
+    // Execute query
+    const result = await payload.find({
+      collection: 'products',
+      where: whereConditions as unknown as import('payload').Where,
+      page,
+      limit,
+      sort: `${order === 'desc' ? '-' : ''}${sort}`,
+      depth: 2, // Include related data
+    })
+
+    // Transform products to match frontend interface
+    const transformedProducts = result.docs.map((product) => ({
+      id: product.id,
+      name: product.name,
+      slug: product.slug,
+      price: product.price,
+      originalPrice: product.pricing?.originalPrice || null,
+      sku: product.sku,
+      stock: product.stock,
+      status: product.status,
+      sizes: product.sizes ? product.sizes.split(',').map((s) => s.trim()) : [],
+      colors: product.colors ? product.colors.split(',').map((c) => c.trim()) : [],
+      images:
+        product.images?.map((img) => ({
+          id: typeof img.image === 'object' ? img.image.id : img.image,
+          url: typeof img.image === 'object' ? img.image.url : '',
+          alt: img.altText || product.name,
+          filename: typeof img.image === 'object' ? img.image.filename : '',
+        })) || [],
+      category:
+        typeof product.category === 'object'
+          ? {
+              id: product.category.id,
+              name: product.category.name,
+              slug: product.category.slug,
+              description: product.category.description,
+            }
+          : null,
+      brand:
+        typeof product.brand === 'object'
+          ? {
+              id: product.brand.id,
+              name: product.brand.name,
+              slug: product.brand.slug,
+              description: product.brand.description,
+              logo:
+                typeof product.brand.logo === 'object'
+                  ? {
+                      url: product.brand.logo.url,
+                      alt: product.brand.logo.alt || product.brand.name,
+                    }
+                  : undefined,
+            }
+          : null,
+      description: product.description,
+      features: product.features?.map((f) => f.feature) || [],
+      specifications: product.specifications,
+      shipping: product.shipping,
+      seo: product.seo,
+      rating: product.analytics?.rating,
+      reviewCount: product.analytics?.reviewCount,
+      tags: product.tags ? product.tags.split(',').map((t) => t.trim()) : [],
+      createdAt: product.createdAt,
+      updatedAt: product.updatedAt,
+    }))
+
+    return NextResponse.json({
+      success: true,
+      data: transformedProducts,
+      pagination: {
+        page: result.page || 1,
+        limit: result.limit,
+        totalPages: result.totalPages,
+        totalDocs: result.totalDocs,
+        hasNextPage: result.hasNextPage,
+        hasPrevPage: result.hasPrevPage,
+      },
+    })
+  } catch (error) {
+    console.error('Products API error:', error)
+    return NextResponse.json({ success: false, error: 'Failed to fetch products' }, { status: 500 })
+  }
+}
