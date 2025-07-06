@@ -651,6 +651,117 @@ export const Orders: CollectionConfig = {
           req.payload.logger.info(
             `Order created: ${doc.orderNumber} for ${doc.customerName} (${doc.customerPhone})`,
           )
+
+          // ---- START: Update Customer and Product Stats ----
+          try {
+            // Update Customer Statistics
+            if (doc.customerEmail) {
+              const customersResult = await req.payload.find({
+                collection: 'customers',
+                where: {
+                  email: {
+                    equals: doc.customerEmail,
+                  },
+                },
+                limit: 1,
+              })
+
+              if (customersResult.docs.length > 0) {
+                const customer = customersResult.docs[0]
+                const currentTotalOrders = customer.orderStats?.totalOrders || 0
+                const currentTotalSpent = customer.orderStats?.totalSpent || 0
+
+                const customerUpdateData: Partial<typeof customer.orderStats> = {
+                  totalOrders: currentTotalOrders + 1,
+                  totalSpent: currentTotalSpent + (doc.orderTotal || 0),
+                  lastOrderDate: doc.createdAt || new Date().toISOString(),
+                }
+
+                if (!customer.orderStats?.firstOrderDate) {
+                  customerUpdateData.firstOrderDate = doc.createdAt || new Date().toISOString()
+                }
+
+                // Ensure orderStats object exists
+                const updatedOrderStats = {
+                  ...(customer.orderStats || {}),
+                  ...customerUpdateData,
+                }
+
+                await req.payload.update({
+                  collection: 'customers',
+                  id: customer.id,
+                  data: {
+                    orderStats: updatedOrderStats,
+                  },
+                })
+                req.payload.logger.info(
+                  `Updated order stats for customer ${customer.email} (Order: ${doc.orderNumber})`,
+                )
+              } else {
+                req.payload.logger.warn(
+                  `Customer with email ${doc.customerEmail} not found for order ${doc.orderNumber}. Cannot update stats.`,
+                )
+              }
+            } else {
+              req.payload.logger.warn(
+                `Order ${doc.orderNumber} does not have a customer email. Cannot update customer stats.`,
+              )
+            }
+
+            // Update Product Stock and Order Count
+            if (doc.orderItems && Array.isArray(doc.orderItems)) {
+              for (const item of doc.orderItems) {
+                if (item.productId && typeof item.productId === 'string') {
+                  try {
+                    const productResult = await req.payload.findByID({
+                      collection: 'products',
+                      id: item.productId,
+                    })
+
+                    if (productResult) {
+                      const currentStock = productResult.stock || 0
+                      const currentOrderCount = productResult.analytics?.orderCount || 0
+
+                      // Ensure analytics object exists
+                      const updatedAnalytics = {
+                        ...(productResult.analytics || {}),
+                        orderCount: currentOrderCount + 1,
+                      }
+
+                      await req.payload.update({
+                        collection: 'products',
+                        id: item.productId,
+                        data: {
+                          stock: currentStock - (item.quantity || 0),
+                          analytics: updatedAnalytics,
+                        },
+                      })
+                      req.payload.logger.info(
+                        `Updated stock and order count for product ${item.productId} (Order: ${doc.orderNumber})`,
+                      )
+                    } else {
+                      req.payload.logger.warn(
+                        `Product with ID ${item.productId} not found for order ${doc.orderNumber}. Cannot update stock.`,
+                      )
+                    }
+                  } catch (productError) {
+                    req.payload.logger.error(
+                      `Error updating product ${item.productId} for order ${doc.orderNumber}: ${productError instanceof Error ? productError.message : String(productError)}`,
+                    )
+                  }
+                } else {
+                  req.payload.logger.warn(
+                    `OrderItem in order ${doc.orderNumber} has invalid productId. Skipping stock update.`,
+                  )
+                }
+              }
+            }
+          } catch (error) {
+            req.payload.logger.error(
+              `Error updating customer/product stats for order ${doc.orderNumber}: ${error instanceof Error ? error.message : String(error)}`,
+            )
+          }
+          // ---- END: Update Customer and Product Stats ----
         } else if (operation === 'update') {
           req.payload.logger.info(`Order updated: ${doc.orderNumber} by ${req.user?.email}`)
 
@@ -659,6 +770,8 @@ export const Orders: CollectionConfig = {
             req.payload.logger.info(
               `Order status changed: ${doc.orderNumber} ${previousDoc.orderStatus} → ${doc.orderStatus}`,
             )
+            // Potentially add logic here if an order is cancelled to revert stock, etc.
+            // For now, we are only handling updates on creation.
           }
 
           // Log payment status changes
