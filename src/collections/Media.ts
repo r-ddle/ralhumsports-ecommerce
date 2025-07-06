@@ -5,7 +5,7 @@ import { isAdmin, isSuperAdmin, isAdminOrProductManager, isAdminOrContentEditor 
 export const Media: CollectionConfig = {
   slug: 'media',
   admin: {
-    useAsTitle: 'filename',
+    useAsTitle: 'filename', // filename is already implicitly indexed by useAsTitle if not explicitly set
     defaultColumns: ['filename', 'alt', 'mimeType', 'filesize', 'category'],
     group: 'Media',
     description: 'Manage all uploaded media files with organized categorization',
@@ -135,6 +135,7 @@ export const Media: CollectionConfig = {
       admin: {
         description: 'Categorize media for better organization',
       },
+      index: true, // Added index
     },
     {
       name: 'caption',
@@ -159,6 +160,7 @@ export const Media: CollectionConfig = {
       admin: {
         description: 'Make this media accessible on the public website',
       },
+      index: true, // Added index
     },
     {
       name: 'isFeature',

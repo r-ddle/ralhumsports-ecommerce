@@ -148,6 +148,7 @@ export const Users: CollectionConfig = {
       access: {
         update: isSuperAdmin as Access<User, User>, // Typed access
       },
+      index: true, // Added index
     },
     {
       name: 'isActive',
@@ -162,6 +163,7 @@ export const Users: CollectionConfig = {
       access: {
         update: isSuperAdmin as Access<User, User>, // Typed access
       },
+      index: true, // Added index
     },
 
     // Audit Trail

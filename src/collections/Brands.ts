@@ -120,6 +120,7 @@ export const Brands: CollectionConfig = {
       admin: {
         description: 'Brand availability status',
       },
+      index: true, // Added index
     },
     {
       name: 'isFeatured',

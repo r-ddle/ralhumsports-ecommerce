@@ -94,6 +94,7 @@ export const Categories: CollectionConfig = {
       admin: {
         description: 'Category visibility status',
       },
+      index: true, // Added index
     },
     {
       name: 'displayOrder',
@@ -120,6 +121,7 @@ export const Categories: CollectionConfig = {
         }
         return {};
       },
+      index: true, // Added index
     },
     {
       name: 'isFeature',
@@ -306,7 +308,7 @@ export const Categories: CollectionConfig = {
         }
       }) as CollectionAfterChangeHook<Category>,
     ],
-    beforeDelete: [ // Changed from afterDelete to beforeDelete for validation
+    beforeDelete: [
       async ({ req, id }) => {
         const payload = req.payload;
         // Prevent deletion if category has active products assigned
@@ -319,28 +321,57 @@ export const Categories: CollectionConfig = {
                         { status: { equals: 'active' } } // Only consider active products
                     ]
                 },
-                limit: 0,
+                limit: 0, // Only need the count
             });
 
             if (totalDocs > 0) {
                 payload.logger.warn(`Attempt to delete category ID ${id} which has ${totalDocs} active product(s).`);
                 throw new APIError(
                     `Cannot delete category. It is currently assigned to ${totalDocs} active product(s). Please reassign or deactivate these products first.`,
-                    400, // Bad Request
+                    400,
                 );
             }
         }
       }
+      // No explicit return needed, if it doesn't throw, it proceeds.
     ],
     afterDelete: [
-      (async ({ req, doc }) => {
-        const deletedCategory = doc as Category;
+      (async ({ req, doc, id }) => { // id is also available here
+        const deletedCategory = doc as Category; // doc is the full deleted document
         const user = req.user as User | undefined | null;
-        req.payload.logger.warn(
-          `Category deleted: ${deletedCategory.name} (ID: ${deletedCategory.id}) by ${user?.email || 'system'}`,
+        const payload = req.payload;
+
+        payload.logger.warn(
+          `Category deleted: ${deletedCategory.name} (ID: ${id}) by ${user?.email || 'system'}`,
         );
-        // If there's a need to nullify parentCategory fields in child categories, that would go here.
-        // For now, assuming relationships handle this or it's not required.
+
+        // Nullify parentCategory field in child categories
+        try {
+          const children = await payload.find({
+            collection: 'categories',
+            where: {
+              parentCategory: { equals: id },
+            },
+            depth: 0, // Don't need to populate deeply
+            limit: 0, // Default limit might be small, set to a large number or paginate if necessary
+            pagination: false, // Get all matching children
+          });
+
+          if (children.docs.length > 0) {
+            for (const child of children.docs) {
+              await payload.update({
+                collection: 'categories',
+                id: child.id,
+                data: {
+                  parentCategory: null, // Set to null
+                },
+              });
+              payload.logger.info(`Removed parentCategory link from child category ${child.id} after parent ${id} was deleted.`);
+            }
+          }
+        } catch (error) {
+            payload.logger.error(`Error nullifying parentCategory for children of deleted category ${id}: ${(error as Error).message}`);
+        }
       }) as CollectionAfterChangeHook<Category>,
     ],
   },

@@ -28,6 +28,7 @@ export const Products: CollectionConfig = {
         description: 'Product name as displayed to customers',
         placeholder: 'Enter product name (e.g., Nike Air Max Running Shoes)',
       },
+      index: true, // Added index for searching/sorting by name
     },
     {
       name: 'slug',
@@ -67,6 +68,7 @@ export const Products: CollectionConfig = {
           equals: 'active',
         },
       },
+      index: true, // Added index
     },
     {
       name: 'brand',
@@ -81,6 +83,7 @@ export const Products: CollectionConfig = {
           equals: 'active',
         },
       },
+      index: true, // Added index
     },
     {
       name: 'price',
@@ -92,6 +95,7 @@ export const Products: CollectionConfig = {
         step: 0.01,
       },
       min: 0,
+      index: true, // Added index
     },
     {
       name: 'sku',
@@ -188,6 +192,7 @@ export const Products: CollectionConfig = {
       admin: {
         description: 'Product availability status',
       },
+      index: true, // Added index
     },
 
     // Optional Product Information
@@ -398,6 +403,7 @@ export const Products: CollectionConfig = {
         description: 'Product tags for search and filtering (comma separated)',
         placeholder: 'running, outdoor, breathable, comfortable',
       },
+      index: true, // Added index
     },
 
     // Related Products and Variants

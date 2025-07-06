@@ -53,6 +53,45 @@ export const POST = withRateLimit(
     }
     // Add more specific validation for item structure, pricing, etc. if needed.
 
+    // ---- START: Product Availability Check ----
+    const productAvailabilityIssues: { productId?: string | number; name?: string; requested: number; available: number }[] = [];
+    for (const item of orderData.items) {
+      if (!item.product.id) {
+        payload.logger.warn({ msg: 'Order item missing product ID', item });
+        productAvailabilityIssues.push({ name: item.product.name || 'Unknown Product', requested: item.quantity, available: 0 });
+        continue;
+      }
+      try {
+        const product = await payload.findByID({
+          collection: 'products',
+          id: String(item.product.id), // Ensure ID is string or number as expected by findByID
+          depth: 0, // Only need stock info
+        });
+        if (!product) {
+          productAvailabilityIssues.push({ productId: item.product.id, name: item.product.name || String(item.product.id), requested: item.quantity, available: 0 });
+        } else if (product.stock === undefined || product.stock === null || product.stock < item.quantity) {
+          productAvailabilityIssues.push({ productId: item.product.id, name: product.name, requested: item.quantity, available: product.stock ?? 0 });
+        }
+      } catch (e) {
+        payload.logger.error({ msg: `Error fetching product ${item.product.id} for stock check`, err: e });
+        // Assume unavailable if product fetch fails
+        productAvailabilityIssues.push({ productId: item.product.id, name: item.product.name || String(item.product.id), requested: item.quantity, available: 0 });
+      }
+    }
+
+    if (productAvailabilityIssues.length > 0) {
+      payload.logger.warn({ msg: 'Order creation failed due to product availability issues', issues: productAvailabilityIssues });
+      return NextResponse.json(
+        {
+          success: false,
+          error: 'One or more products are unavailable or have insufficient stock.',
+          details: productAvailabilityIssues,
+        },
+        { status: 400, headers: getSecurityHeaders() },
+      );
+    }
+    // ---- END: Product Availability Check ----
+
     try {
       // Create or update customer
       // Define the type for customer data for create and update operations

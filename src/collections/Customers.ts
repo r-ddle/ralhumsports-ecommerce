@@ -50,6 +50,7 @@ export const Customers: CollectionConfig = {
       name: 'primaryPhone',
       type: 'text',
       required: true,
+      index: true, // Added index
       admin: {
         description: 'Primary phone number for WhatsApp communication',
         placeholder: '+94 XX XXX XXXX',
@@ -295,6 +296,7 @@ export const Customers: CollectionConfig = {
       admin: {
         description: 'Customer account status',
       },
+      index: true, // Added index
     },
     {
       name: 'customerType',
@@ -309,6 +311,7 @@ export const Customers: CollectionConfig = {
       admin: {
         description: 'Customer type for special pricing or treatment',
       },
+      index: true, // Added index
     },
     {
       name: 'notes',

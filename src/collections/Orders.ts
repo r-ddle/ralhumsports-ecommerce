@@ -93,6 +93,7 @@ export const Orders: CollectionConfig = {
       name: 'customerEmail',
       type: 'email',
       required: true,
+      index: true, // Added index
       admin: {
         description: 'Customer email address',
         placeholder: 'customer@example.com',
@@ -102,6 +103,7 @@ export const Orders: CollectionConfig = {
       name: 'customerPhone',
       type: 'text',
       required: true,
+      index: true, // Added index
       admin: {
         description: 'Customer primary phone number for WhatsApp communication',
         placeholder: '+94 XX XXX XXXX',
@@ -145,7 +147,7 @@ export const Orders: CollectionConfig = {
       fields: [
         {
           name: 'productId',
-          type: 'text',
+          type: 'text', // TODO: Consider changing to type: 'relationship', relationTo: 'products' in a future iteration for stronger data integrity and easier population. This would be a schema change requiring data migration.
           required: true,
           admin: {
             description: 'Product ID reference',
@@ -298,6 +300,7 @@ export const Orders: CollectionConfig = {
       admin: {
         description: 'Current order status',
       },
+      index: true, // Added index
     },
     {
       name: 'paymentStatus',
@@ -329,6 +332,7 @@ export const Orders: CollectionConfig = {
       admin: {
         description: 'Payment status',
       },
+      index: true, // Added index
     },
     {
       name: 'paymentMethod',
@@ -576,10 +580,57 @@ export const Orders: CollectionConfig = {
   ],
   hooks: {
     beforeChange: [
-      (async ({ req, operation, data }) => {
+      (async ({ req, operation, data, originalDoc }) => {
         // Assert specific types for data and req.user
         const orderData = data as Partial<Order>;
+        const currentOrder = originalDoc as Order; // originalDoc is the full document before changes
         // const user = req.user as User | undefined | null; // User for createdBy/lastModifiedBy is handled by field hooks
+
+        // --- START: Order & Payment Status Transition Validation ---
+        if (operation === 'update') {
+          if (orderData.orderStatus && orderData.orderStatus !== currentOrder.orderStatus) {
+            const validTransitions: Record<Order['orderStatus'], Array<Order['orderStatus']>> = {
+              pending: ['confirmed', 'processing', 'cancelled'],
+              confirmed: ['processing', 'shipped', 'cancelled'],
+              processing: ['shipped', 'cancelled'],
+              shipped: ['delivered', 'cancelled'], // Or perhaps a return process
+              delivered: ['refunded'], // Or other post-delivery states
+              cancelled: [], // Terminal state
+              refunded: [], // Terminal state
+            };
+            if (!validTransitions[currentOrder.orderStatus]?.includes(orderData.orderStatus)) {
+              throw new APIError(
+                `Invalid order status transition from '${currentOrder.orderStatus}' to '${orderData.orderStatus}'.`,
+                400,
+              );
+            }
+            // Add specific logic for when an order is cancelled, e.g., if payment needs to be voided/refunded
+            if (orderData.orderStatus === 'cancelled' && currentOrder.paymentStatus === 'paid') {
+              // Consider setting paymentStatus to 'refunded' or triggering a refund process.
+              // For now, we'll just log a warning if it's not handled automatically.
+              req.payload.logger.info(`Order ${currentOrder.id} cancelled with paymentStatus ${currentOrder.paymentStatus}. Manual refund may be required.`);
+              // orderData.paymentStatus = 'refunded'; // Example: auto-set payment status
+            }
+          }
+
+          if (orderData.paymentStatus && orderData.paymentStatus !== currentOrder.paymentStatus) {
+            const validPaymentTransitions: Record<Order['paymentStatus'], Array<Order['paymentStatus']>> = {
+              pending: ['paid', 'partially-paid', 'failed', 'cancelled'],
+              paid: ['refunded'],
+              'partially-paid': ['paid', 'failed', 'refunded'],
+              failed: ['pending'], // Allow retry by moving back to pending? Or terminal.
+              refunded: [], // Terminal
+              // 'cancelled' might not be a direct payment status but linked to order status
+            };
+            if (!validPaymentTransitions[currentOrder.paymentStatus]?.includes(orderData.paymentStatus)) {
+              throw new APIError(
+                `Invalid payment status transition from '${currentOrder.paymentStatus}' to '${orderData.paymentStatus}'.`,
+                400,
+              );
+            }
+          }
+        }
+        // --- END: Order & Payment Status Transition Validation ---
 
         // Calculate order totals
         if (orderData.orderItems && Array.isArray(orderData.orderItems)) {
@@ -627,7 +678,21 @@ export const Orders: CollectionConfig = {
             `Order created: ${currentDoc.orderNumber} for ${currentDoc.customerName} (${currentDoc.customerPhone}) by ${user?.email || 'system'}`,
           );
 
+          // NOTE: The following operations (customer stats, product stock/analytics)
+          // occur *after* the order itself has been committed to the database.
+          // They are best-effort updates. If any of these fail, the order
+          // will still exist, but the related data might be temporarily inconsistent
+          // until manually rectified or a subsequent process corrects it.
+          // Robust logging is key to identifying such issues.
           try {
+            // Update Customer Statistics
+            if (currentDoc.customerEmail) {
+              const customersResult = await payload.find({
+            // They are best-effort updates. If any of these fail, the order
+            // will still exist, but the related data might be temporarily inconsistent
+            // until manually rectified or a subsequent process corrects it.
+            // Robust logging is key to identifying such issues.
+
             // Update Customer Statistics
             if (currentDoc.customerEmail) {
               const customersResult = await payload.find({
@@ -725,19 +790,73 @@ export const Orders: CollectionConfig = {
               `Error updating customer/product stats for order ${currentDoc.orderNumber}: ${err.message}`,
             );
           }
+            );
+          }
+          // ---- END: Update Customer and Product Stats ----
+
+          // ---- START: WhatsApp Notification Trigger for Order Creation ----
+          if (currentDoc.whatsapp?.messageTemplate === 'order-confirmation') {
+            // Non-blocking call to enqueue WhatsApp message
+            enqueueWhatsAppMessage(payload, currentDoc, 'order-confirmation')
+              .catch(err => payload.logger.error({ msg: 'Failed to enqueue WhatsApp order confirmation', orderId: currentDoc.id, err }));
+            // Note: Updating messageSent and messageTimestamp would typically be done by the worker that sends the message.
+            // For now, the admin UI can be used to manually set 'messageSent' which would trigger the timestamp in beforeChange.
+          }
+          // ---- END: WhatsApp Notification Trigger for Order Creation ----
+
         } else if (operation === 'update') {
           payload.logger.info(`Order updated: ${currentDoc.orderNumber} by ${user?.email || 'system'}`);
 
+          // Handle Order Status changes for WhatsApp notifications
           if (prevDoc && prevDoc.orderStatus !== currentDoc.orderStatus) {
             payload.logger.info(
               `Order status changed: ${currentDoc.orderNumber} from ${prevDoc.orderStatus} → ${currentDoc.orderStatus}`,
             );
+
+            let messageTypeForStatusUpdate: Order['whatsapp']['messageTemplate'] = null;
+
+            switch (currentDoc.orderStatus) {
+              case 'confirmed':
+                // Potentially send an 'order-confirmed' or generic 'order-update'
+                // For now, let's assume specific templates are set via admin or a more detailed flow
+                // messageTypeForStatusUpdate = 'order-update';
+                payload.logger.info(`Order ${currentDoc.orderNumber} confirmed. Manual WhatsApp trigger or specific template needed if notification required now.`);
+                break;
+              case 'shipped':
+                messageTypeForStatusUpdate = 'shipping-notification';
+                break;
+              case 'delivered':
+                messageTypeForStatusUpdate = 'delivery-confirmation';
+                break;
+              case 'cancelled':
+                 // messageTypeForStatusUpdate = 'order-update'; // Or a specific 'order-cancelled' template
+                payload.logger.info(`Order ${currentDoc.orderNumber} cancelled. Manual WhatsApp trigger or specific template needed if notification required now.`);
+                break;
+              // Add other relevant statuses that should trigger a message
+            }
+
+            if (messageTypeForStatusUpdate) {
+              // Check if the order's whatsapp field has this template specified, or if we should override.
+              // For simplicity, we'll use the determined messageTypeForStatusUpdate.
+              // The admin UI should allow setting the messageTemplate on the order if a specific one is desired before this status change.
+              enqueueWhatsAppMessage(payload, currentDoc, messageTypeForStatusUpdate)
+                .catch(err => payload.logger.error({ msg: `Failed to enqueue WhatsApp ${messageTypeForStatusUpdate}`, orderId: currentDoc.id, err }));
+            }
+
             // TODO: Add logic for stock reversal if order is 'cancelled' or 'refunded'
+            if (currentDoc.orderStatus === 'cancelled' || currentDoc.orderStatus === 'refunded') {
+                payload.logger.info(`Order ${currentDoc.orderNumber} is now ${currentDoc.orderStatus}. Consider stock reversal logic.`);
+                // Iterate currentDoc.orderItems and add stock back to products
+                // This needs careful implementation to avoid race conditions if also done elsewhere
+            }
           }
+
+          // Handle Payment Status changes for WhatsApp notifications (Optional)
           if (prevDoc && prevDoc.paymentStatus !== currentDoc.paymentStatus) {
             payload.logger.info(
               `Payment status changed: ${currentDoc.orderNumber} from ${prevDoc.paymentStatus} → ${currentDoc.paymentStatus}`,
             );
+            // Example: if (currentDoc.paymentStatus === 'paid') { enqueueWhatsAppMessage(payload, currentDoc, 'payment-confirmation'); }
           }
         }
 
