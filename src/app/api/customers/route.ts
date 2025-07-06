@@ -3,203 +3,196 @@ import { getPayload } from 'payload'
 import config from '@/payload.config'
 import { withRateLimit, rateLimitConfigs } from '@/lib/rate-limit'
 import { getSecurityHeaders } from '@/lib/response-filter'
+import type { Customer } from '@/payload-types' // Import the main Customer type
 
-// ✅ Define proper types instead of using any
-type CustomerAddress = {
-  type: 'home' | 'office' | 'other'
-  address: string
-  isDefault: boolean
-  id?: string | null
+// Define PayloadError type for error narrowing
+type PayloadError = Error & {
+  status?: number
+  data?: { field?: string; message?: string }[]
 }
 
-type CustomerUpdateData = {
-  name?: string
-  primaryPhone?: string
+// Type for the incoming request data for creating/updating a customer
+interface CustomerInputData {
+  name: string
+  email: string
+  phone: string // Corresponds to primaryPhone
   secondaryPhone?: string
-  addresses?: CustomerAddress[]
+  address?: { // Structure for a single address input
+    street: string
+    city: string
+    postalCode: string
+    province: string
+    type?: 'home' | 'office' | 'other' // Optional, defaults to home
+    isDefault?: boolean // Optional, defaults based on logic
+  }
+  preferredLanguage?: 'english' | 'sinhala' | 'tamil' // From Customer collection
+  marketingOptIn?: boolean
 }
+
 
 export const POST = withRateLimit(rateLimitConfigs.strict, async (request: NextRequest) => {
+  const payload = await getPayload({ config })
+  let requestData: CustomerInputData;
+
   try {
-    const payload = await getPayload({ config })
-    const data = await request.json()
+    requestData = await request.json();
+  } catch (e) {
+    payload.logger.error({ msg: 'Invalid JSON in customer POST request body', err: e });
+    return NextResponse.json(
+      { success: false, error: 'Invalid request format. Expected JSON.' },
+      { status: 400, headers: getSecurityHeaders() },
+    );
+  }
 
-    const {
-      name,
-      email,
-      phone,
-      secondaryPhone,
-      address,
-      preferredLanguage = 'english',
-      marketingOptIn = true,
-    } = data
+  const {
+    name,
+    email,
+    phone, // This is primaryPhone
+    secondaryPhone,
+    address: inputAddress, // Renamed to avoid conflict with Customer's addresses array
+    preferredLanguage = 'english',
+    marketingOptIn = true,
+  } = requestData;
 
-    // Check if customer already exists
+  // Basic validation
+  if (!name || !email || !phone) {
+    return NextResponse.json(
+      { success: false, error: 'Name, email, and primary phone are required.' },
+      { status: 400, headers: getSecurityHeaders() },
+    );
+  }
+  // Add more specific validation for email format, phone format etc. if needed (e.g. with Zod)
+
+  try {
     const existingCustomers = await payload.find({
       collection: 'customers',
-      where: {
-        email: { equals: email },
-      },
-    })
+      where: { email: { equals: email } },
+      limit: 1,
+    });
 
-    let customer
+    let customerDoc: Customer;
+
+    // Prepare the address structure according to Payload's Customer type
+    const newAddressObject = inputAddress ? {
+      type: inputAddress.type || 'home',
+      address: `${inputAddress.street}, ${inputAddress.city}, ${inputAddress.postalCode}, ${inputAddress.province}`,
+      isDefault: inputAddress.isDefault !== undefined ? inputAddress.isDefault : true, // Default new address to true, or handle logic
+    } : null;
+
 
     if (existingCustomers.docs.length > 0) {
-      // Update existing customer
-      customer = existingCustomers.docs[0]
+      customerDoc = existingCustomers.docs[0];
+      const updatePayload: Partial<Customer> = {};
 
-      // ✅ Fix: Properly type updateData instead of any
-      const updateData: CustomerUpdateData = {}
+      if (name && name !== customerDoc.name) updatePayload.name = name;
+      if (phone && phone !== customerDoc.primaryPhone) updatePayload.primaryPhone = phone;
+      if (secondaryPhone && secondaryPhone !== customerDoc.secondaryPhone) updatePayload.secondaryPhone = secondaryPhone;
 
-      if (name && name !== customer.name) updateData.name = name
-      if (phone && phone !== customer.primaryPhone) updateData.primaryPhone = phone
-      if (secondaryPhone && secondaryPhone !== customer.secondaryPhone)
-        updateData.secondaryPhone = secondaryPhone
-
-      // Add new address if provided and not already exists
-      if (address) {
-        // ✅ Fix: Properly type addresses instead of any
-        const addresses: CustomerAddress[] = (customer.addresses || []).map(
-          (addr: Record<string, unknown>) => {
-            let type: 'home' | 'office' | 'other' = 'home'
-            if (addr.type === 'office' || addr.type === 'other') {
-              type = addr.type
-            }
-            return {
-              type,
-              address: String(addr.address || ''),
-              isDefault: Boolean(addr.isDefault),
-              id: typeof addr.id === 'string' ? addr.id : undefined,
-            }
-          },
-        )
-
-        const addressExists = addresses.some(
-          (addr: CustomerAddress) =>
-            addr.address ===
-            `${address.street}, ${address.city}, ${address.postalCode}, ${address.province}`,
-        )
-
+      // Address update logic: append if new, or could be more complex (e.g., update existing by ID)
+      let currentAddresses = customerDoc.addresses ? [...customerDoc.addresses] : [];
+      if (newAddressObject) {
+        const addressExists = currentAddresses.some(
+          (addr) => addr.address === newAddressObject.address && addr.type === newAddressObject.type
+        );
         if (!addressExists) {
-          addresses.push({
-            type: 'home',
-            address: `${address.street}, ${address.city}, ${address.postalCode}, ${address.province}`,
-            isDefault: addresses.length === 0,
-          })
-          updateData.addresses = addresses
+           // If new address is default, make others not default
+          if (newAddressObject.isDefault) {
+            currentAddresses = currentAddresses.map(addr => ({ ...addr, isDefault: false }));
+          }
+          currentAddresses.push(newAddressObject);
+          updatePayload.addresses = currentAddresses;
+        } else if (newAddressObject.isDefault) {
+            // If existing address is now marked as default
+            let updated = false;
+            currentAddresses = currentAddresses.map(addr => {
+                if(addr.address === newAddressObject.address && addr.type === newAddressObject.type) {
+                    if (!addr.isDefault) updated = true;
+                    return { ...addr, isDefault: true };
+                }
+                return { ...addr, isDefault: false };
+            });
+            if(updated) updatePayload.addresses = currentAddresses;
         }
       }
 
-      if (Object.keys(updateData).length > 0) {
-        customer = await payload.update({
+      if (preferredLanguage && (!customerDoc.preferences?.language || preferredLanguage !== customerDoc.preferences.language)) {
+        updatePayload.preferences = { ...customerDoc.preferences, language: preferredLanguage };
+      }
+      if (marketingOptIn !== undefined && (!customerDoc.preferences?.marketingOptIn || marketingOptIn !== customerDoc.preferences.marketingOptIn)) {
+        updatePayload.preferences = { ...(updatePayload.preferences || customerDoc.preferences), marketingOptIn };
+      }
+
+
+      if (Object.keys(updatePayload).length > 0) {
+        customerDoc = await payload.update({
           collection: 'customers',
-          id: customer.id,
-          data: updateData,
-        })
+          id: customerDoc.id,
+          data: updatePayload,
+        });
       }
     } else {
       // Create new customer
-      customer = await payload.create({
-        collection: 'customers',
-        data: {
-          name,
-          email,
-          primaryPhone: phone,
-          secondaryPhone,
-          addresses: address
-            ? [
-                {
-                  type: 'home',
-                  address: `${address.street}, ${address.city}, ${address.postalCode}, ${address.province}`,
-                  isDefault: true,
-                },
-              ]
-            : [],
-          preferences: {
-            communicationMethod: 'whatsapp',
-            language: preferredLanguage,
-            marketingOptIn,
-          },
-          whatsapp: {
-            isVerified: false,
-          },
-          status: 'active',
-          customerType: 'regular',
+      const createData: Omit<Customer, 'id' | 'createdAt' | 'updatedAt'> = {
+        name,
+        email,
+        primaryPhone: phone,
+        secondaryPhone: secondaryPhone || null,
+        addresses: newAddressObject ? [newAddressObject] : [],
+        preferences: {
+          communicationMethod: 'whatsapp', // Default
+          language: preferredLanguage,
+          marketingOptIn,
         },
-      })
+        whatsapp: { // Default
+          isVerified: false,
+        },
+        status: 'active', // Default
+        customerType: 'regular', // Default
+        // orderStats are typically managed by hooks, initialize if needed
+        orderStats: {
+            totalOrders: 0,
+            totalSpent: 0,
+            // other stats can be null or 0
+        }
+      };
+      customerDoc = await payload.create({
+        collection: 'customers',
+        data: createData,
+      });
     }
 
-    // ✅ Fix: Remove unused variable and properly type
-    // const addresses: CustomerAddress[] = (customer.addresses || []).map((addr: any) => ({
+    // Return a subset of customer data, or the full object if appropriate for the use case
+    const responseData = {
+      id: customerDoc.id,
+      name: customerDoc.name,
+      email: customerDoc.email,
+      phone: customerDoc.primaryPhone,
+      addresses: customerDoc.addresses,
+      preferences: customerDoc.preferences,
+      // Include other fields as needed by the client
+    };
 
-    // Remove 'any' usage by using type guards and safe property access
-    function extractCustomerData(customer: unknown) {
-      if (
-        customer &&
-        typeof customer === 'object' &&
-        'id' in customer &&
-        'name' in customer &&
-        'email' in customer &&
-        'primaryPhone' in customer &&
-        'addresses' in customer
-      ) {
-        return {
-          id: (customer as { id: string }).id,
-          name: (customer as { name: string }).name,
-          email: (customer as { email: string }).email,
-          phone: (customer as { primaryPhone: string }).primaryPhone,
-          addresses: (customer as { addresses: CustomerAddress[] }).addresses,
-        }
-      }
-      // If customer.doc exists, fallback to that
-      if (
-        customer &&
-        typeof customer === 'object' &&
-        'doc' in customer &&
-        customer.doc &&
-        typeof (customer as { doc: unknown }).doc === 'object'
-      ) {
-        const doc = (
-          customer as {
-            doc: {
-              id: string
-              name: string
-              email: string
-              primaryPhone: string
-              addresses: CustomerAddress[]
-            }
-          }
-        ).doc
-        return {
-          id: doc.id,
-          name: doc.name,
-          email: doc.email,
-          phone: doc.primaryPhone,
-          addresses: doc.addresses,
-        }
-      }
-      return {
-        id: undefined,
-        name: undefined,
-        email: undefined,
-        phone: undefined,
-        addresses: undefined,
-      }
+    return NextResponse.json(
+      { success: true, data: responseData },
+      { status: existingCustomers.docs.length > 0 ? 200 : 201, headers: getSecurityHeaders() },
+    );
+  } catch (error) {
+    const err = error as PayloadError;
+    payload.logger.error({ msg: 'Error creating/updating customer', requestData, err });
+    let userMessage = 'Failed to create or update customer.';
+    if (err.data && err.data[0]?.message) {
+        userMessage = `Validation Error: ${err.data[0].message} for field ${err.data[0].field}`;
+    } else if (err.message?.includes('duplicate key value violates unique constraint')) {
+        userMessage = 'A customer with this email or phone already exists.';
     }
 
-    const customerData = extractCustomerData(customer)
     return NextResponse.json(
       {
-        success: true,
-        data: customerData,
+        success: false,
+        error: userMessage,
+        details: process.env.NODE_ENV === 'development' ? err.message : undefined,
       },
-      { headers: getSecurityHeaders() },
-    )
-  } catch (error) {
-    console.error('Error creating/updating customer:', error)
-    return NextResponse.json(
-      { success: false, error: 'Failed to create/update customer' },
-      { status: 500, headers: getSecurityHeaders() },
-    )
+      { status: err.status || 500, headers: getSecurityHeaders() },
+    );
   }
-})
+});

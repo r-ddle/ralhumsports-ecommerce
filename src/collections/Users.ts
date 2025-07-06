@@ -1,38 +1,45 @@
-import type { CollectionConfig, PayloadRequest } from 'payload'
+import type { CollectionConfig, PayloadRequest, CollectionBeforeLoginHook, CollectionAfterLoginHook, CollectionBeforeChangeHook, CollectionAfterChangeHook, Access, Condition, FieldHook } from 'payload/types'
+import type { User } from '@/payload-types' // User type from generated types
+import { APIError } from 'payload/errors'
 
-// Define user roles with specific permissions
-export type UserRole = 'super-admin' | 'admin' | 'product-manager' | 'content-editor'
+// UserRole can be derived from the User type if its 'role' field is a select with options
+// Assuming User['role'] is 'super-admin' | 'admin' | 'product-manager' | 'content-editor' | null | undefined
+export type UserRole = NonNullable<User['role']>; // Use this if User['role'] is correctly defined in payload-types.ts
 
-// Role-based access control functions with proper type safety
-export const isAdmin = ({ req }: { req: PayloadRequest }) => {
-  const user = req.user
-  return Boolean(user && user.role && ['super-admin', 'admin'].includes(user.role))
+// Helper to assert user type if needed, though PayloadRequest should provide it.
+const ensureUser = (reqUser: any): User | null => {
+  // Add more checks if req.user structure is uncertain
+  return reqUser && typeof reqUser === 'object' && 'id' in reqUser ? (reqUser as User) : null;
 }
 
-export const isSuperAdmin = ({ req }: { req: PayloadRequest }) => {
-  const user = req.user
-  return Boolean(user && user.role === 'super-admin')
+// Role-based access control functions with proper type safety using imported User type
+export const isAdmin = ({ req }: { req: PayloadRequest }): boolean => {
+  const user = ensureUser(req.user);
+  return Boolean(user && user.role && ['super-admin', 'admin'].includes(user.role));
 }
 
-export const isAdminOrProductManager = ({ req }: { req: PayloadRequest }) => {
-  const user = req.user
+export const isSuperAdmin = ({ req }: { req: PayloadRequest }): boolean => {
+  const user = ensureUser(req.user);
+  return Boolean(user && user.role === 'super-admin');
+}
+
+export const isAdminOrProductManager = ({ req }: { req: PayloadRequest }): boolean => {
+  const user = ensureUser(req.user);
   return Boolean(
     user && user.role && ['super-admin', 'admin', 'product-manager'].includes(user.role),
-  )
+  );
 }
 
-export const isAdminOrContentEditor = ({ req }: { req: PayloadRequest }) => {
-  const user = req.user
+export const isAdminOrContentEditor = ({ req }: { req: PayloadRequest }): boolean => {
+  const user = ensureUser(req.user);
   return Boolean(
     user && user.role && ['super-admin', 'admin', 'content-editor'].includes(user.role),
-  )
+  );
 }
 
-// Only allow admins to access user management, disable public registration
-const adminOrSelfAccess = ({ req }: { req: PayloadRequest }) => {
-  const user = req.user
+const adminOrSelfAccess: Access<User, User> = ({ req }: { req: PayloadRequest }) => {
+  const user = ensureUser(req.user);
 
-  // Super admins can access all users
   if (user && user.role === 'super-admin') {
     return true
   }
@@ -69,16 +76,11 @@ export const Users: CollectionConfig = {
     },
   },
   access: {
-    // Only super admins can create new users
-    create: isSuperAdmin,
-    // Users can read their own profile, super admins can read all
-    read: adminOrSelfAccess,
-    // Users can update their own profile, super admins can update all
-    update: adminOrSelfAccess,
-    // Only super admins can delete users
-    delete: isSuperAdmin,
-    // Only authenticated users can access admin panel
-    admin: ({ req }) => Boolean(req.user),
+    create: isSuperAdmin as Access<User, User>,
+    read: adminOrSelfAccess, // Already correctly typed via const assertion
+    update: adminOrSelfAccess, // Already correctly typed via const assertion
+    delete: isSuperAdmin as Access<User, User>,
+    admin: (({ req: { user } }: { req: { user?: User | null } }) => Boolean(user)) as Access<User, User>,
   },
   fields: [
     // Personal Information
@@ -140,14 +142,11 @@ export const Users: CollectionConfig = {
       ],
       admin: {
         description: 'User role determines access permissions',
-        condition: (_, { user }) => {
-          // Only super admins can change roles
-          return Boolean(user && user.role === 'super-admin')
-        },
+        condition: (_, { user }: { user?: User | null }) => // Typed user from siblingData
+          Boolean(user && user.role === 'super-admin'),
       },
       access: {
-        // Only super admins can update roles
-        update: isSuperAdmin,
+        update: isSuperAdmin as Access<User, User>, // Typed access
       },
     },
     {
@@ -157,13 +156,11 @@ export const Users: CollectionConfig = {
       defaultValue: true,
       admin: {
         description: 'Deactivate user to prevent login without deleting account',
-        condition: (_, { user }) => {
-          // Only super admins can activate/deactivate users
-          return Boolean(user && user.role === 'super-admin')
-        },
+        condition: (_, { user }: { user?: User | null }) => // Typed user
+          Boolean(user && user.role === 'super-admin'),
       },
       access: {
-        update: isSuperAdmin,
+        update: isSuperAdmin as Access<User, User>, // Typed access
       },
     },
 
@@ -178,16 +175,7 @@ export const Users: CollectionConfig = {
           displayFormat: 'dd/MM/yyyy HH:mm',
         },
       },
-      hooks: {
-        beforeChange: [
-          ({ req, operation }) => {
-            // Update last login on authentication
-            if (operation === 'update' && req.user) {
-              return new Date()
-            }
-          },
-        ],
-      },
+      // Removed field hook for lastLogin as it's handled in beforeLogin collection hook
     },
     {
       name: 'loginAttempts',
@@ -195,9 +183,8 @@ export const Users: CollectionConfig = {
       admin: {
         readOnly: true,
         description: 'Number of failed login attempts',
-        condition: (_, { user }) => {
-          return Boolean(user && user.role === 'super-admin')
-        },
+        condition: (_, { user }: { user?: User | null }) => // Typed user
+          Boolean(user && user.role === 'super-admin'),
       },
       defaultValue: 0,
     },
@@ -222,69 +209,79 @@ export const Users: CollectionConfig = {
       type: 'textarea',
       admin: {
         description: 'Internal notes about this user (only visible to super admins)',
-        condition: (_, { user }) => {
-          return Boolean(user && user.role === 'super-admin')
-        },
+        condition: (_, { user }: { user?: User | null }) => // Typed user
+          Boolean(user && user.role === 'super-admin'),
       },
-      access: {
-        read: isSuperAdmin,
-        update: isSuperAdmin,
+      access: { // Typed access
+        read: isSuperAdmin as Access<User, User>,
+        update: isSuperAdmin as Access<User, User>,
       },
     },
   ],
   hooks: {
     beforeLogin: [
-      async ({ req, user }) => {
-        // Check if user account is active
-        if (!user.isActive) {
-          throw new Error('Account is deactivated. Please contact administrator.')
+      (async ({ req, user }) => {
+        const userDoc = user as User; // Assert User type
+        const payload = req.payload;
+
+        if (!userDoc.isActive) {
+          throw new APIError('Account is deactivated. Please contact administrator.', 403); // Forbidden
         }
 
-        // Update last login timestamp
-        await req.payload.update({
-          collection: 'users',
-          id: user.id,
-          data: {
-            loginAttempts: 0, // Reset failed attempts on successful login
-            lastLogin: new Date().toISOString(),
-          },
-        })
-      },
+        try {
+          await payload.update({
+            collection: 'users',
+            id: userDoc.id,
+            data: {
+              loginAttempts: 0,
+              lastLogin: new Date().toISOString(),
+            },
+          });
+        } catch (e) {
+            payload.logger.error(`Error updating lastLogin for user ${userDoc.email}: ${(e as Error).message}`);
+            // Do not block login if this update fails, but log it.
+        }
+        // No explicit return needed for beforeLogin if not modifying the user object further for auth
+      }) as CollectionBeforeLoginHook<User>,
     ],
     afterLogin: [
-      async ({ req, user }) => {
-        // Log successful login for audit trail
+      (async ({ req, user }) => {
+        const loggedInUser = user as User;
         req.payload.logger.info(
-          `User ${user.email} (${user.role || 'no-role'}) logged in successfully`,
-        )
-      },
+          `User ${loggedInUser.email} (Role: ${loggedInUser.role || 'N/A'}) logged in successfully.`,
+        );
+      }) as CollectionAfterLoginHook<User>,
     ],
     beforeChange: [
-      async ({ req, operation, data }) => {
-        // Ensure first user is super admin
-        if (operation === 'create') {
-          const existingUsers = await req.payload.count({
-            collection: 'users',
-          })
+      (async ({ req, operation, data }) => {
+        const userData = data as Partial<User>;
+        const payload = req.payload;
 
-          if (existingUsers.totalDocs === 0) {
-            data.role = 'super-admin'
-            data.isActive = true
+        if (operation === 'create') {
+          const { totalDocs } = await payload.count({ collection: 'users' });
+          if (totalDocs === 0) {
+            userData.role = 'super-admin';
+            userData.isActive = true;
+            payload.logger.info(`First user being created. Assigning super-admin role to ${userData.email}`);
           }
         }
-
-        return data
-      },
+        // Add other beforeChange validations if needed, e.g., password complexity if not handled by auth options.
+        return userData;
+      }) as CollectionBeforeChangeHook<User>,
     ],
     afterChange: [
-      async ({ req, operation, doc }) => {
-        // Log user changes for audit trail
+      (async ({ req, operation, doc }) => {
+        const changedUser = doc as User;
+        const performingUser = req.user as User | undefined | null;
+        const payload = req.payload;
+
         if (operation === 'create') {
-          req.payload.logger.info(`New user created: ${doc.email} (${doc.role || 'no-role'})`)
+          payload.logger.info(`New user created: ${changedUser.email} (Role: ${changedUser.role || 'N/A'}) by ${performingUser?.email || 'system'}`);
         } else if (operation === 'update') {
-          req.payload.logger.info(`User updated: ${doc.email} (${doc.role || 'no-role'})`)
+          payload.logger.info(`User updated: ${changedUser.email} (Role: ${changedUser.role || 'N/A'}) by ${performingUser?.email || 'system'}`);
         }
-      },
+      }) as CollectionAfterChangeHook<User>,
     ],
+    // No afterDelete hook provided in original, can be added if specific actions are needed on user deletion
   },
 }

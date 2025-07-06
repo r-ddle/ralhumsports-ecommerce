@@ -1,188 +1,191 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getPayload } from 'payload'
 import config from '@/payload.config'
+import type { Order } from '@/payload-types'
+import { getSecurityHeaders } from '@/lib/response-filter' // Assuming this is for security headers
+// Import authentication/authorization if these endpoints require it
+// import { requireAdminOrManager, AuthenticatedUser } from '@/lib/auth';
 
-// ✅ Add proper type for order update data
-type OrderUpdateData = {
-  orderStatus?:
-    | 'pending'
-    | 'confirmed'
-    | 'processing'
-    | 'shipped'
-    | 'delivered'
-    | 'cancelled'
-    | 'refunded'
-  paymentStatus?: 'pending' | 'refunded' | 'paid' | 'partially-paid' | 'failed' | undefined
-  paymentMethod?: 'cod' | 'bank-transfer' | 'online-payment' | 'card-payment' | null | undefined
-  shippingCost?: number
-  discount?: number
-  specialInstructions?: string
-  shipping?: {
-    trackingNumber?: string | null
-    courier?: 'local' | 'pronto' | 'kapruka' | 'dhl' | 'fedex' | 'pickup' | null
-    estimatedDelivery?: string | null
-    actualDelivery?: string | null
-  }
-  whatsapp?: {
-    messageSent?: boolean
-    messageTimestamp?: string
-    messageTemplate?:
-      | 'order-confirmation'
-      | 'order-update'
-      | 'shipping-notification'
-      | 'delivery-confirmation'
-      | null
-    customerResponse?: string
-  }
-  internalNotes?: string
-  lastModifiedBy?: number
+// Define PayloadError type for error narrowing, consistent with other routes
+type PayloadError = Error & {
+  status?: number
+  data?: { field?: string; message?: string }[]
 }
 
-export async function GET(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
-  try {
-    const { id } = await params
-    const payload = await getPayload({ config })
+// Define a more specific type for the update payload, derived from Order
+// This makes it easier to manage allowed updatable fields.
+type OrderUpdatePayload = Partial<Omit<Order, 'id' | 'createdAt' | 'updatedAt' | 'orderNumber'>>
 
+export async function GET(
+  request: NextRequest,
+  { params }: { params: { id: string } }, // params is already an object
+) {
+  const payload = await getPayload({ config })
+  const orderId = parseInt(params.id, 10)
+
+  if (isNaN(orderId)) {
+    return NextResponse.json(
+      { success: false, error: 'Invalid order ID format.' },
+      { status: 400, headers: getSecurityHeaders() },
+    )
+  }
+
+  try {
     const order = await payload.findByID({
       collection: 'orders',
-      id: parseInt(id),
-      depth: 2,
+      id: orderId,
+      depth: 2, // Adjust depth as necessary
     })
 
-    return NextResponse.json(order)
+    if (!order) {
+      return NextResponse.json(
+        { success: false, error: 'Order not found.' },
+        { status: 404, headers: getSecurityHeaders() },
+      )
+    }
+
+    // Potentially filter order data before sending if GET is public or based on user role
+    // For now, assuming it's an admin/internal endpoint or already secured.
+    return NextResponse.json({ success: true, data: order }, { headers: getSecurityHeaders() })
   } catch (error) {
-    console.error('Error fetching order:', error)
+    const err = error as PayloadError
+    payload.logger.error({ msg: `Error fetching order ${orderId}`, err })
     return NextResponse.json(
       {
-        errors: [{ message: 'Failed to fetch order' }],
+        success: false,
+        error: 'Failed to fetch order.',
+        details: process.env.NODE_ENV === 'development' ? err.message : undefined,
       },
-      { status: 500 },
+      { status: err.status || 500, headers: getSecurityHeaders() },
     )
   }
 }
 
-export async function PATCH(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+export async function PATCH(
+  request: NextRequest,
+  { params }: { params: { id: string } }, // params is already an object
+) {
+  const payload = await getPayload({ config })
+  const orderId = parseInt(params.id, 10)
+
+  if (isNaN(orderId)) {
+    return NextResponse.json(
+      { success: false, error: 'Invalid order ID format.' },
+      { status: 400, headers: getSecurityHeaders() },
+    )
+  }
+
+  let updateData: OrderUpdatePayload
+
   try {
-    const { id } = await params
-    const payload = await getPayload({ config })
-
-    // ✅ Fix: Properly type the updateData
-    let updateData: OrderUpdateData = {}
-
-    try {
-      const contentType = request.headers.get('content-type')
-
-      if (contentType?.includes('multipart/form-data')) {
-        const formData = await request.formData()
-        const payloadData = formData.get('_payload')
-
-        if (payloadData && typeof payloadData === 'string') {
-          updateData = JSON.parse(payloadData) as OrderUpdateData
-        } else {
-          return NextResponse.json(
-            { success: false, error: 'No payload data found' },
-            { status: 400 },
-          )
-        }
+    const contentType = request.headers.get('content-type')
+    if (contentType?.includes('multipart/form-data')) {
+      const formData = await request.formData()
+      const payloadData = formData.get('_payload') // Payload admin UI often sends data this way
+      if (payloadData && typeof payloadData === 'string') {
+        updateData = JSON.parse(payloadData) as OrderUpdatePayload
       } else {
-        const rawBody = await request.text()
-        if (rawBody.trim()) {
-          updateData = JSON.parse(rawBody) as OrderUpdateData
-        }
+        // Handle other form fields if not using _payload, or reject
+        return NextResponse.json(
+          { success: false, error: "Invalid form data: missing '_payload' field." },
+          { status: 400, headers: getSecurityHeaders() },
+        )
       }
-    } catch (parseError) {
-      console.error('Parse error:', parseError)
+    } else if (contentType?.includes('application/json')) {
+      updateData = (await request.json()) as OrderUpdatePayload
+    } else {
       return NextResponse.json(
-        {
-          success: false,
-          error: 'Invalid request format',
-          details: parseError instanceof Error ? parseError.message : String(parseError),
-        },
-        { status: 400 },
+        { success: false, error: 'Unsupported Content-Type. Please use application/json or multipart/form-data.' },
+        { status: 415, headers: getSecurityHeaders() },
       )
     }
-
-    // Transform paymentStatus to allowed values if present
-    const allowedPaymentStatuses = [
-      'pending',
-      'refunded',
-      'paid',
-      'partially-paid',
-      'failed',
-    ] as const
-    if (
-      typeof updateData.paymentStatus === 'string' &&
-      !allowedPaymentStatuses.includes(
-        updateData.paymentStatus as (typeof allowedPaymentStatuses)[number],
-      )
-    ) {
-      updateData.paymentStatus = undefined
-    }
-
-    // Transform paymentMethod to allowed values if present
-    const allowedPaymentMethods = [
-      'cod',
-      'bank-transfer',
-      'online-payment',
-      'card-payment',
-    ] as const
-    if (
-      typeof updateData.paymentMethod === 'string' &&
-      !allowedPaymentMethods.includes(
-        updateData.paymentMethod as (typeof allowedPaymentMethods)[number],
-      )
-    ) {
-      updateData.paymentMethod = undefined
-    }
-
-    // Transform shipping.courier if present and not valid
-    if (updateData.shipping && updateData.shipping.courier !== undefined) {
-      const allowedCouriers = ['local', 'pronto', 'kapruka', 'dhl', 'fedex', 'pickup']
-      if (
-        updateData.shipping.courier !== null &&
-        !allowedCouriers.includes(updateData.shipping.courier)
-      ) {
-        updateData.shipping.courier = null
-      }
-    }
-
-    const updatedOrder = await payload.update({
-      collection: 'orders',
-      id: parseInt(id),
-      data: updateData,
-    })
-
-    return NextResponse.json(updatedOrder)
-  } catch (error) {
-    console.error('Order update error:', error)
+  } catch (parseError) {
+    payload.logger.error({ msg: `Error parsing PATCH request body for order ${orderId}`, err: parseError })
     return NextResponse.json(
       {
-        errors: [{ message: error instanceof Error ? error.message : 'Failed to update order' }],
+        success: false,
+        error: 'Invalid request body.',
+        details: parseError instanceof Error && process.env.NODE_ENV === 'development' ? parseError.message : undefined,
       },
-      { status: 500 },
+      { status: 400, headers: getSecurityHeaders() },
+    )
+  }
+
+  // Optional: Add specific validation for fields in updateData here using Zod or manual checks
+  // e.g., validate orderStatus, paymentStatus against allowed enum values from payload-types.ts
+
+  try {
+    const updatedOrder = await payload.update({
+      collection: 'orders',
+      id: orderId,
+      data: updateData,
+      // Consider adding user to data if lastModifiedBy is to be automatically set by system
+      // user: req.user, // if using requireAuth middleware that provides user
+    })
+
+    return NextResponse.json(
+      { success: true, data: updatedOrder, message: 'Order updated successfully.' },
+      { headers: getSecurityHeaders() },
+    )
+  } catch (error) {
+    const err = error as PayloadError
+    payload.logger.error({ msg: `Error updating order ${orderId}`, updateData, err })
+    let userMessage = 'Failed to update order.'
+     if (err.status === 404) {
+      userMessage = 'Order not found.'
+    } else if (err.data && err.data[0]?.message) {
+      userMessage = `Validation Error: ${err.data[0].message} for field ${err.data[0].field}`
+    }
+
+    return NextResponse.json(
+      {
+        success: false,
+        error: userMessage,
+        details: process.env.NODE_ENV === 'development' ? err.message : undefined,
+      },
+      { status: err.status || 500, headers: getSecurityHeaders() },
     )
   }
 }
 
 export async function DELETE(
-  request: NextRequest,
-  { params }: { params: Promise<{ id: string }> },
+  request: NextRequest, // request might be unused if no auth or specific headers needed
+  { params }: { params: { id: string } },
 ) {
-  try {
-    const { id } = await params
-    const payload = await getPayload({ config })
+  const payload = await getPayload({ config })
+  const orderId = parseInt(params.id, 10)
 
+  if (isNaN(orderId)) {
+    return NextResponse.json(
+      { success: false, error: 'Invalid order ID format.' },
+      { status: 400, headers: getSecurityHeaders() },
+    )
+  }
+
+  try {
     await payload.delete({
       collection: 'orders',
-      id: parseInt(id),
+      id: orderId,
     })
 
-    return NextResponse.json({
-      success: true,
-      message: 'Order deleted successfully',
-    })
+    return NextResponse.json(
+      { success: true, message: 'Order deleted successfully.' },
+      { status: 200, headers: getSecurityHeaders() }, // Or 204 No Content if preferred
+    )
   } catch (error) {
-    console.error('Order deletion error:', error)
-    return NextResponse.json({ success: false, error: 'Failed to delete order' }, { status: 500 })
+    const err = error as PayloadError
+    payload.logger.error({ msg: `Error deleting order ${orderId}`, err })
+    let userMessage = 'Failed to delete order.'
+    if (err.status === 404) { // Payload typically returns 404 if not found
+        userMessage = 'Order not found.'
+    }
+    return NextResponse.json(
+      {
+        success: false,
+        error: userMessage,
+        details: process.env.NODE_ENV === 'development' ? err.message : undefined,
+      },
+      { status: err.status || 500, headers: getSecurityHeaders() },
+    )
   }
 }

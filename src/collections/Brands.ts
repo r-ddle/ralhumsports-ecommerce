@@ -1,5 +1,7 @@
-import type { CollectionConfig } from 'payload'
-import { isAdmin, isAdminOrProductManager } from './Users'
+import type { CollectionConfig, CollectionBeforeChangeHook, CollectionAfterChangeHook, FieldHook, Access } from 'payload/types'
+import type { User, Brand, Product } from '@/payload-types' // Import specific Payload types
+import { isAdmin, isAdminOrProductManager } from './Users' // Ensure these are correctly typed for User
+import { APIError } from 'payload/errors'
 
 export const Brands: CollectionConfig = {
   slug: 'brands',
@@ -10,14 +12,10 @@ export const Brands: CollectionConfig = {
     description: 'Manage brand information for products',
   },
   access: {
-    // Product managers and above can create brands
-    create: isAdminOrProductManager,
-    // All authenticated users can read brands
-    read: ({ req }) => Boolean(req.user),
-    // Product managers and above can update brands
-    update: isAdminOrProductManager,
-    // Only admins can delete brands
-    delete: isAdmin,
+    create: isAdminOrProductManager as Access<Brand, User>,
+    read: (({ req: { user } }: { req: { user?: User | null } }) => Boolean(user)) as Access<Brand, User>,
+    update: isAdminOrProductManager as Access<Brand, User>,
+    delete: isAdmin as Access<Brand, User>,
   },
   fields: [
     {
@@ -42,17 +40,15 @@ export const Brands: CollectionConfig = {
       },
       hooks: {
         beforeValidate: [
-          ({ data, operation }) => {
-            if (operation === 'create' || operation === 'update') {
-              if (data?.name) {
-                // Generate slug from name
-                return data.name
-                  .toLowerCase()
-                  .replace(/[^a-z0-9]+/g, '-')
-                  .replace(/(^-|-$)/g, '')
-              }
+          (({ data, operation }: { data: Partial<Brand>; operation?: 'create' | 'update' }) => {
+            if ((operation === 'create' || operation === 'update') && data?.name && typeof data.name === 'string') {
+              return data.name
+                .toLowerCase()
+                .replace(/[^a-z0-9]+/g, '-') // Replace non-alphanumeric with -
+                .replace(/(^-|-$)+/g, ''); // Remove leading/trailing hyphens
             }
-          },
+            return data?.slug; // Return existing slug if no change
+          }) as FieldHook<Brand, string | null | undefined, Brand>,
         ],
       },
     },
@@ -300,11 +296,12 @@ export const Brands: CollectionConfig = {
       },
       hooks: {
         beforeChange: [
-          ({ req, operation }) => {
+          (({ req, operation }: { req: { user?: User | null }; operation?: 'create' | 'update' }) => {
             if (operation === 'create' && req.user) {
-              return req.user.id
+              return req.user.id;
             }
-          },
+            return undefined;
+          }) as FieldHook<Brand, User | number | null, User>,
         ],
       },
     },
@@ -318,54 +315,78 @@ export const Brands: CollectionConfig = {
       },
       hooks: {
         beforeChange: [
-          ({ req, operation }) => {
+          (({ req, operation }: { req: { user?: User | null }; operation?: 'create' | 'update' }) => {
             if (operation === 'update' && req.user) {
-              return req.user.id
+              return req.user.id;
             }
-          },
+            return undefined;
+          }) as FieldHook<Brand, User | number | null, User>,
         ],
       },
     },
   ],
   hooks: {
     beforeChange: [
-      async ({ req, operation, data }) => {
-        // Set created/modified by
-        if (operation === 'create') {
-          data.createdBy = req.user?.id
-        }
-        if (operation === 'update') {
-          data.lastModifiedBy = req.user?.id
-        }
+      (async ({ req, operation, data }) => {
+        const brandData = data as Partial<Brand>;
+        // const user = req.user as User | undefined | null; // User for createdBy/lastModifiedBy is handled by field hooks
 
-        return data
-      },
+        return brandData;
+      }) as CollectionBeforeChangeHook<Brand>,
     ],
     afterChange: [
-      async ({ req, operation, doc }) => {
-        // Log brand operations
-        if (operation === 'create') {
-          req.payload.logger.info(`Brand created: ${doc.name} by ${req.user?.email}`)
-        } else if (operation === 'update') {
-          req.payload.logger.info(`Brand updated: ${doc.name} by ${req.user?.email}`)
-        }
+      (async ({ req, operation, doc, previousDoc }) => {
+        const currentBrand = doc as Brand;
+        const prevBrand = previousDoc as Brand | undefined;
+        const user = req.user as User | undefined | null;
+        const payload = req.payload;
 
-        // Update product count if status changes
-        if (operation === 'update' && doc.status === 'inactive') {
-          req.payload.logger.info(
-            `Brand deactivated: ${doc.name} - this may affect product visibility`,
-          )
+        if (operation === 'create') {
+          payload.logger.info(`Brand created: ${currentBrand.name} by ${user?.email || 'system'}`);
+        } else if (operation === 'update') {
+          payload.logger.info(`Brand updated: ${currentBrand.name} by ${user?.email || 'system'}`);
+          if (prevBrand && prevBrand.status !== currentBrand.status && currentBrand.status === 'inactive') {
+            payload.logger.info(
+              `Brand deactivated: ${currentBrand.name}. This may affect product visibility and filtering.`,
+            );
+          }
+          // Note: Product count updates are handled in Products.ts afterChange hook.
         }
-      },
+      }) as CollectionAfterChangeHook<Brand>,
+    ],
+    beforeDelete: [
+      async ({ req, id }) => {
+        const payload = req.payload;
+        if (id) {
+            const { totalDocs } = await payload.find({
+                collection: 'products',
+                where: {
+                    and: [
+                        { brand: { equals: id } },
+                        { status: { equals: 'active' } }
+                    ]
+                },
+                limit: 0,
+            });
+
+            if (totalDocs > 0) {
+                payload.logger.warn(`Attempt to delete brand ID ${id} which has ${totalDocs} active product(s).`);
+                throw new APIError(
+                    `Cannot delete brand. It is currently assigned to ${totalDocs} active product(s). Please reassign or deactivate these products first.`,
+                    400,
+                );
+            }
+        }
+      }
     ],
     afterDelete: [
-      async ({ req, doc }) => {
-        // Log brand deletion
-        req.payload.logger.warn(`Brand deleted: ${doc.name} by ${req.user?.email}`)
-
-        // Note: In production, you'd want to handle reassigning products
-        // from deleted brands or prevent deletion of brands with products
-      },
+      (async ({ req, doc }) => {
+        const deletedBrand = doc as Brand;
+        const user = req.user as User | undefined | null;
+        req.payload.logger.warn(
+          `Brand deleted: ${deletedBrand.name} (ID: ${deletedBrand.id}) by ${user?.email || 'system'}`,
+        );
+      }) as CollectionAfterChangeHook<Brand>,
     ],
   },
 }

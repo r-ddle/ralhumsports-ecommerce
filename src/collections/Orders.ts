@@ -1,40 +1,11 @@
-import type { CollectionConfig } from 'payload'
-import { isAdmin } from './Users'
+import type { CollectionConfig, CollectionBeforeChangeHook, CollectionAfterChangeHook, FieldHook, Access } from 'payload/types'
+import type { User, Order, Customer, Product } from '@/payload-types'; // Import specific Payload types
+import { isAdmin } from './Users' // Assuming isAdmin correctly infers User type or is updated
+import { APIError } from 'payload/errors';
 
-// Define proper types for order calculations
-interface OrderItemData {
-  unitPrice?: number
-  quantity?: number
-  subtotal?: number
-  productId?: string
-  productName?: string
-  productSku?: string
-  selectedSize?: string
-  selectedColor?: string
-  [key: string]: string | number | undefined // ✅ Fix: More specific than any
-}
 
-interface OrderData {
-  orderItems?: OrderItemData[]
-  orderSubtotal?: number
-  shippingCost?: number
-  discount?: number
-  orderTotal?: number
-  whatsapp?: {
-    messageSent?: boolean
-    messageTimestamp?: string | Date
-  }
-  createdBy?: number
-  lastModifiedBy?: number
-  orderNumber?: string
-  customerName?: string
-  customerEmail?: string
-  customerPhone?: string
-  deliveryAddress?: string
-  orderStatus?: string
-  paymentStatus?: string
-  [key: string]: unknown // ✅ Fix: More specific than any
-}
+// The local OrderItemData and OrderData interfaces are no longer needed
+// as we will use types from payload-types.ts (Order and its nested OrderItem)
 
 export const Orders: CollectionConfig = {
   slug: 'orders',
@@ -54,26 +25,28 @@ export const Orders: CollectionConfig = {
   },
   access: {
     // Admins and above can create orders (for manual order entry)
-    create: isAdmin,
+    create: isAdmin, // Assuming isAdmin is (({ req: { user } }: { req: { user: User } }) => boolean)
     // Admins and product managers can read orders, plus customers can read their own
-    read: ({ req }) => {
-      const user = req.user
+    read: ({ req }: { req: { user?: User | null } }) => { // Explicitly type req.user
+      const user = req.user;
 
       if (!user) {
-        return false
+        return false; // No public access to orders list
       }
 
       // Admins and managers can read all orders
-      if (['super-admin', 'admin', 'product-manager'].includes(user.role ? user.role : '')) {
-        return true
+      // Ensure user.role matches the possible roles defined in your Users collection
+      if (user.role && ['super-admin', 'admin', 'product-manager'].includes(user.role)) {
+        return true;
       }
 
-      // Other authenticated users can't read orders
-      // (Customer order access should be handled via API with email/phone verification)
-      return false
+      // Other authenticated users (e.g., 'content-editor', or regular customers if they could log in)
+      // cannot read all orders through this default collection endpoint.
+      // Customer-specific order access should be handled via a custom endpoint that verifies ownership.
+      return false;
     },
     // Admins and above can update orders
-    update: isAdmin,
+    update: isAdmin, // Assuming isAdmin is correctly typed for User
     // Only admins can delete orders
     delete: isAdmin,
   },
@@ -90,10 +63,10 @@ export const Orders: CollectionConfig = {
       },
       hooks: {
         beforeValidate: [
-          ({ data, operation }) => {
+          (({ data, operation }: { data: Partial<Order>; operation: 'create' | 'update' }) => {
             if (operation === 'create' && !data?.orderNumber) {
               // Generate order number: RS-YYYYMMDD-XXXXX
-              const date = new Date()
+              const date = new Date();
               const dateStr =
                 date.getFullYear().toString() +
                 (date.getMonth() + 1).toString().padStart(2, '0') +
@@ -571,11 +544,13 @@ export const Orders: CollectionConfig = {
       },
       hooks: {
         beforeChange: [
-          ({ req, operation }) => {
+          (({ req, operation }: { req: { user?: User | null }, operation: 'create' | 'update' }) => {
             if (operation === 'create' && req.user) {
-              return req.user.id
+              return req.user.id;
             }
-          },
+            // No return needed if condition is not met, or return undefined explicitly
+            return undefined;
+          }) as FieldHook<Order, User | number | null, User>, // Added explicit FieldHook type
         ],
       },
     },
@@ -589,212 +564,199 @@ export const Orders: CollectionConfig = {
       },
       hooks: {
         beforeChange: [
-          ({ req, operation }) => {
+          (({ req, operation }: { req: { user?: User | null }, operation: 'create' | 'update' }) => {
             if (operation === 'update' && req.user) {
-              return req.user.id
+              return req.user.id;
             }
-          },
+            return undefined;
+          }) as FieldHook<Order, User | number | null, User>, // Added explicit FieldHook type
         ],
       },
     },
   ],
   hooks: {
     beforeChange: [
-      async ({ req, operation, data }) => {
-        const typedData = data as OrderData
+      (async ({ req, operation, data }) => {
+        // Assert specific types for data and req.user
+        const orderData = data as Partial<Order>;
+        // const user = req.user as User | undefined | null; // User for createdBy/lastModifiedBy is handled by field hooks
 
-        // Set created/modified by
-        if (operation === 'create') {
-          typedData.createdBy = req.user?.id
-        }
-        if (operation === 'update') {
-          typedData.lastModifiedBy = req.user?.id
-        }
-
-        // Calculate order totals with proper type checking
-        if (typedData.orderItems && Array.isArray(typedData.orderItems)) {
-          let subtotal = 0
-
-          // Calculate subtotal for each item and overall subtotal
-          typedData.orderItems.forEach((item) => {
-            const unitPrice = item.unitPrice ?? 0
-            const quantity = item.quantity ?? 0
-
+        // Calculate order totals
+        if (orderData.orderItems && Array.isArray(orderData.orderItems)) {
+          let subtotal = 0;
+          orderData.orderItems.forEach(item => {
+            const unitPrice = item.unitPrice ?? 0;
+            const quantity = item.quantity ?? 0;
             if (unitPrice >= 0 && quantity > 0) {
-              item.subtotal = unitPrice * quantity
-              subtotal += item.subtotal
+              item.subtotal = unitPrice * quantity;
+              subtotal += item.subtotal;
             } else {
-              item.subtotal = 0
+              item.subtotal = 0;
             }
-          })
+          });
+          orderData.orderSubtotal = subtotal;
 
-          typedData.orderSubtotal = subtotal
-
-          // Calculate final total with proper null checking
-          const shipping = typedData.shippingCost ?? 0
-          const discount = typedData.discount ?? 0
-          typedData.orderTotal = Math.max(0, subtotal + shipping - discount)
+          const shipping = orderData.shippingCost ?? 0;
+          const discount = orderData.discount ?? 0;
+          orderData.orderTotal = Math.max(0, subtotal + shipping - discount);
+        } else if (operation === 'create') {
+            // Ensure totals are initialized if orderItems might be empty initially (though field is required)
+            orderData.orderSubtotal = 0;
+            orderData.orderTotal = (orderData.shippingCost ?? 0) - (orderData.discount ?? 0);
         }
 
-        // Set WhatsApp message timestamp when message is marked as sent
-        if (typedData.whatsapp?.messageSent && !typedData.whatsapp?.messageTimestamp) {
-          typedData.whatsapp.messageTimestamp = new Date()
+
+        // Set WhatsApp message timestamp
+        if (orderData.whatsapp?.messageSent && !orderData.whatsapp?.messageTimestamp) {
+          orderData.whatsapp.messageTimestamp = new Date().toISOString();
         }
 
-        return typedData
-      },
+        return orderData;
+      }) as CollectionBeforeChangeHook<Order>, // Explicitly type the hook
     ],
     afterChange: [
-      async ({ req, operation, doc, previousDoc }) => {
-        // Log order operations
-        if (operation === 'create') {
-          req.payload.logger.info(
-            `Order created: ${doc.orderNumber} for ${doc.customerName} (${doc.customerPhone})`,
-          )
+      (async ({ req, operation, doc, previousDoc }) => {
+        // Assert specific types
+        const currentDoc = doc as Order;
+        const prevDoc = previousDoc as Order | undefined;
+        const user = req.user as User | undefined | null;
+        const payload = req.payload;
 
-          // ---- START: Update Customer and Product Stats ----
+        if (operation === 'create') {
+          payload.logger.info(
+            `Order created: ${currentDoc.orderNumber} for ${currentDoc.customerName} (${currentDoc.customerPhone}) by ${user?.email || 'system'}`,
+          );
+
           try {
             // Update Customer Statistics
-            if (doc.customerEmail) {
-              const customersResult = await req.payload.find({
+            if (currentDoc.customerEmail) {
+              const customersResult = await payload.find({
                 collection: 'customers',
-                where: {
-                  email: {
-                    equals: doc.customerEmail,
-                  },
-                },
+                where: { email: { equals: currentDoc.customerEmail } },
                 limit: 1,
-              })
+              });
 
               if (customersResult.docs.length > 0) {
-                const customer = customersResult.docs[0]
-                const currentTotalOrders = customer.orderStats?.totalOrders || 0
-                const currentTotalSpent = customer.orderStats?.totalSpent || 0
+                const customer = customersResult.docs[0] as Customer; // Assert type
+                const currentTotalOrders = customer.orderStats?.totalOrders || 0;
+                const currentTotalSpent = customer.orderStats?.totalSpent || 0;
 
-                const customerUpdateData: Partial<typeof customer.orderStats> = {
+                const customerUpdateData: Partial<Customer['orderStats']> = {
                   totalOrders: currentTotalOrders + 1,
-                  totalSpent: currentTotalSpent + (doc.orderTotal || 0),
-                  lastOrderDate: doc.createdAt || new Date().toISOString(),
-                }
-
+                  totalSpent: currentTotalSpent + (currentDoc.orderTotal || 0),
+                  lastOrderDate: currentDoc.createdAt || new Date().toISOString(),
+                };
                 if (!customer.orderStats?.firstOrderDate) {
-                  customerUpdateData.firstOrderDate = doc.createdAt || new Date().toISOString()
+                  customerUpdateData.firstOrderDate = currentDoc.createdAt || new Date().toISOString();
                 }
+                const updatedOrderStats = { ...customer.orderStats, ...customerUpdateData };
 
-                // Ensure orderStats object exists
-                const updatedOrderStats = {
-                  ...(customer.orderStats || {}),
-                  ...customerUpdateData,
-                }
-
-                await req.payload.update({
+                await payload.update({
                   collection: 'customers',
                   id: customer.id,
-                  data: {
-                    orderStats: updatedOrderStats,
-                  },
-                })
-                req.payload.logger.info(
-                  `Updated order stats for customer ${customer.email} (Order: ${doc.orderNumber})`,
-                )
+                  data: { orderStats: updatedOrderStats },
+                });
+                payload.logger.info(
+                  `Updated order stats for customer ${customer.email} (Order: ${currentDoc.orderNumber})`,
+                );
               } else {
-                req.payload.logger.warn(
-                  `Customer with email ${doc.customerEmail} not found for order ${doc.orderNumber}. Cannot update stats.`,
-                )
+                payload.logger.warn(
+                  `Customer with email ${currentDoc.customerEmail} not found for order ${currentDoc.orderNumber}. Cannot update stats.`,
+                );
               }
             } else {
-              req.payload.logger.warn(
-                `Order ${doc.orderNumber} does not have a customer email. Cannot update customer stats.`,
-              )
+              payload.logger.warn(
+                `Order ${currentDoc.orderNumber} does not have a customer email. Cannot update customer stats.`,
+              );
             }
 
             // Update Product Stock and Order Count
-            if (doc.orderItems && Array.isArray(doc.orderItems)) {
-              for (const item of doc.orderItems) {
-                if (item.productId && typeof item.productId === 'string') {
+            if (currentDoc.orderItems && Array.isArray(currentDoc.orderItems)) {
+              for (const item of currentDoc.orderItems) {
+                if (item.productId && typeof item.productId === 'string') { // Product ID is string in OrderItem
                   try {
-                    const productResult = await req.payload.findByID({
+                    // Ensure productID is treated as string, as it comes from an array field, not relationTo
+                    const productResult = await payload.findByID({
                       collection: 'products',
-                      id: item.productId,
-                    })
+                      id: item.productId, // Assuming product ID in orderItem is the actual product ID
+                    }) as Product | null;
 
                     if (productResult) {
-                      const currentStock = productResult.stock || 0
-                      const currentOrderCount = productResult.analytics?.orderCount || 0
+                      const currentStock = productResult.stock ?? 0;
+                      const currentOrderCount = productResult.analytics?.orderCount ?? 0;
 
-                      // Ensure analytics object exists
                       const updatedAnalytics = {
-                        ...(productResult.analytics || {}),
+                        ...(productResult.analytics || {}), // Ensure analytics object exists
                         orderCount: currentOrderCount + 1,
-                      }
+                      };
 
-                      await req.payload.update({
+                      await payload.update({
                         collection: 'products',
-                        id: item.productId,
+                        id: productResult.id, // Use ID from fetched product
                         data: {
                           stock: currentStock - (item.quantity || 0),
                           analytics: updatedAnalytics,
                         },
-                      })
-                      req.payload.logger.info(
-                        `Updated stock and order count for product ${item.productId} (Order: ${doc.orderNumber})`,
-                      )
+                      });
+                      payload.logger.info(
+                        `Updated stock and order count for product ${productResult.name} (ID: ${item.productId}, Order: ${currentDoc.orderNumber})`,
+                      );
                     } else {
-                      req.payload.logger.warn(
-                        `Product with ID ${item.productId} not found for order ${doc.orderNumber}. Cannot update stock.`,
-                      )
+                      payload.logger.warn(
+                        `Product with ID ${item.productId} not found for order ${currentDoc.orderNumber}. Cannot update stock.`,
+                      );
                     }
                   } catch (productError) {
-                    req.payload.logger.error(
-                      `Error updating product ${item.productId} for order ${doc.orderNumber}: ${productError instanceof Error ? productError.message : String(productError)}`,
-                    )
+                    const pErr = productError as Error;
+                    payload.logger.error(
+                      `Error updating product ${item.productId} for order ${currentDoc.orderNumber}: ${pErr.message}`,
+                    );
                   }
                 } else {
-                  req.payload.logger.warn(
-                    `OrderItem in order ${doc.orderNumber} has invalid productId. Skipping stock update.`,
-                  )
+                  payload.logger.warn(
+                    `OrderItem in order ${currentDoc.orderNumber} has invalid or missing productId. Skipping stock update.`,
+                  );
                 }
               }
             }
           } catch (error) {
-            req.payload.logger.error(
-              `Error updating customer/product stats for order ${doc.orderNumber}: ${error instanceof Error ? error.message : String(error)}`,
-            )
+            const err = error as Error;
+            payload.logger.error(
+              `Error updating customer/product stats for order ${currentDoc.orderNumber}: ${err.message}`,
+            );
           }
-          // ---- END: Update Customer and Product Stats ----
         } else if (operation === 'update') {
-          req.payload.logger.info(`Order updated: ${doc.orderNumber} by ${req.user?.email}`)
+          payload.logger.info(`Order updated: ${currentDoc.orderNumber} by ${user?.email || 'system'}`);
 
-          // Log status changes
-          if (previousDoc && previousDoc.orderStatus !== doc.orderStatus) {
-            req.payload.logger.info(
-              `Order status changed: ${doc.orderNumber} ${previousDoc.orderStatus} → ${doc.orderStatus}`,
-            )
-            // Potentially add logic here if an order is cancelled to revert stock, etc.
-            // For now, we are only handling updates on creation.
+          if (prevDoc && prevDoc.orderStatus !== currentDoc.orderStatus) {
+            payload.logger.info(
+              `Order status changed: ${currentDoc.orderNumber} from ${prevDoc.orderStatus} → ${currentDoc.orderStatus}`,
+            );
+            // TODO: Add logic for stock reversal if order is 'cancelled' or 'refunded'
           }
-
-          // Log payment status changes
-          if (previousDoc && previousDoc.paymentStatus !== doc.paymentStatus) {
-            req.payload.logger.info(
-              `Payment status changed: ${doc.orderNumber} ${previousDoc.paymentStatus} → ${doc.paymentStatus}`,
-            )
+          if (prevDoc && prevDoc.paymentStatus !== currentDoc.paymentStatus) {
+            payload.logger.info(
+              `Payment status changed: ${currentDoc.orderNumber} from ${prevDoc.paymentStatus} → ${currentDoc.paymentStatus}`,
+            );
           }
         }
 
-        // Alert on high-value orders
-        if (doc.orderTotal > 50000) {
-          req.payload.logger.info(
-            `High-value order alert: ${doc.orderNumber} - LKR ${doc.orderTotal}`,
-          )
+        if (currentDoc.orderTotal > 50000) { // High-value order alert
+          payload.logger.info(
+            `High-value order alert: ${currentDoc.orderNumber} - LKR ${currentDoc.orderTotal}`,
+          );
         }
-      },
+      }) as CollectionAfterChangeHook<Order>, // Explicitly type the hook
     ],
     afterDelete: [
-      async ({ req, doc }) => {
-        // Log order deletion
-        req.payload.logger.warn(`Order deleted: ${doc.orderNumber} by ${req.user?.email}`)
-      },
+      (async ({ req, doc }) => { // doc is the deleted document
+        const deletedDoc = doc as Order;
+        const user = req.user as User | undefined | null;
+        req.payload.logger.warn(
+          `Order deleted: ${deletedDoc.orderNumber} by ${user?.email || 'system'}`,
+        );
+        // TODO: Consider if stock should be reverted or other cleanup is needed on order deletion.
+      }) as CollectionAfterChangeHook<Order>,
     ],
   },
 }

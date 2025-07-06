@@ -1,5 +1,6 @@
-import type { CollectionConfig } from 'payload'
-import { isAdmin, isSuperAdmin, isAdminOrProductManager, isAdminOrContentEditor } from './Users'
+import type { CollectionConfig, CollectionBeforeChangeHook, CollectionAfterChangeHook, FieldHook, Access, Condition } from 'payload/types'
+import type { User, Media as MediaType } from '@/payload-types' // Renamed Media to MediaType to avoid conflict
+import { isAdmin, isSuperAdmin, isAdminOrProductManager, isAdminOrContentEditor } from './Users' // Ensure these are correctly typed
 
 export const Media: CollectionConfig = {
   slug: 'media',
@@ -10,25 +11,17 @@ export const Media: CollectionConfig = {
     description: 'Manage all uploaded media files with organized categorization',
   },
   access: {
-    // Content editors and above can upload media
-    create: isAdminOrContentEditor,
-    // All authenticated users can read media, but limit sensitive fields
-    read: ({ req }) => {
-      if (!req.user) {
+    create: isAdminOrContentEditor as Access<MediaType, User>,
+    read: (({ req: { user } }: { req: { user?: User | null } }) => {
+      if (!user) {
         // Public can only read public media
-        return {
-          isPublic: {
-            equals: true,
-          },
-        }
+        return { isPublic: { equals: true } };
       }
-      // Authenticated users can read all media
-      return true
-    },
-    // Only admins and product managers can update media metadata
-    update: isAdminOrProductManager,
-    // Only super admins can delete media (to prevent accidental deletions)
-    delete: isSuperAdmin,
+      // Authenticated users can read all media (further field-level restrictions might apply based on Payload config)
+      return true;
+    }) as Access<MediaType, User>,
+    update: isAdminOrProductManager as Access<MediaType, User>,
+    delete: isSuperAdmin as Access<MediaType, User>,
   },
   upload: {
     staticDir: 'media',
@@ -199,14 +192,13 @@ export const Media: CollectionConfig = {
       admin: {
         description: 'Internal notes about usage rights, source, or restrictions',
         placeholder: 'Notes for team reference',
-        condition: (_, { user }) => {
-          // Only admins can see usage notes
-          return user && ['super-admin', 'admin'].includes(user.role)
+        condition: (_, { user }: { user?: User | null }) => { // Typed user
+          return Boolean(user && user.role && ['super-admin', 'admin'].includes(user.role));
         },
       },
-      access: {
-        read: isAdmin,
-        update: isAdmin,
+      access: { // Assuming isAdmin is correctly typed for User
+        read: isAdmin as Access<MediaType, User>,
+        update: isAdmin as Access<MediaType, User>,
       },
     },
     {
@@ -236,11 +228,12 @@ export const Media: CollectionConfig = {
       },
       hooks: {
         beforeChange: [
-          ({ req, operation }) => {
+          (({ req, operation }: { req: { user?: User | null }; operation?: 'create' | 'update' }) => {
             if (operation === 'create' && req.user) {
-              return req.user.id
+              return req.user.id;
             }
-          },
+            return undefined;
+          }) as FieldHook<MediaType, User | number | null, User>,
         ],
       },
     },
@@ -254,56 +247,63 @@ export const Media: CollectionConfig = {
       },
       hooks: {
         beforeChange: [
-          ({ req, operation }) => {
+          (({ req, operation }: { req: { user?: User | null }; operation?: 'create' | 'update' }) => {
             if (operation === 'update' && req.user) {
-              return req.user.id
+              return req.user.id;
             }
-          },
+            return undefined;
+          }) as FieldHook<MediaType, User | number | null, User>,
         ],
       },
     },
   ],
   hooks: {
     beforeChange: [
-      async ({ req, operation, data }) => {
-        // Auto-generate alt text if empty (basic implementation)
-        if (operation === 'create' && !data.alt && data.filename) {
-          // Generate basic alt text from filename
-          const cleanName = data.filename
-            .replace(/\.[^/.]+$/, '') // Remove file extension
+      (async ({ req, operation, data }) => {
+        const mediaData = data as Partial<MediaType>;
+        const user = req.user as User | undefined | null;
+
+        // Auto-generate alt text if empty during creation and filename is available
+        if (operation === 'create' && !mediaData.alt && mediaData.filename && typeof mediaData.filename === 'string') {
+          const cleanName = mediaData.filename
+            .substring(0, mediaData.filename.lastIndexOf('.') || mediaData.filename.length) // Remove file extension more reliably
             .replace(/[-_]/g, ' ') // Replace dashes and underscores with spaces
-            .replace(/\b\w/g, (l: string) => l.toUpperCase()) // Capitalize first letter of each word
-
-          data.alt = cleanName
+            .replace(/\b\w/g, (l: string) => l.toUpperCase()); // Capitalize first letter of each word
+          mediaData.alt = cleanName;
         }
 
-        // Set upload metadata
-        if (operation === 'create') {
-          data.uploadedBy = req.user?.id
-        }
+        // Set uploadedBy/lastModifiedBy (field-level hooks are preferred for this)
+        // if (operation === 'create' && user) {
+        //   mediaData.uploadedBy = user.id;
+        // }
+        // if (operation === 'update' && user) {
+        //   mediaData.lastModifiedBy = user.id;
+        // }
 
-        if (operation === 'update') {
-          data.lastModifiedBy = req.user?.id
-        }
-
-        return data
-      },
+        return mediaData;
+      }) as CollectionBeforeChangeHook<MediaType>,
     ],
     afterChange: [
-      async ({ req, operation, doc }) => {
-        // Log media operations for audit trail
+      (async ({ req, operation, doc }) => {
+        const currentMedia = doc as MediaType;
+        const user = req.user as User | undefined | null;
+        const payload = req.payload;
+
         if (operation === 'create') {
-          req.payload.logger.info(`Media uploaded: ${doc.filename} by ${req.user?.email}`)
+          payload.logger.info(`Media uploaded: ${currentMedia.filename || 'N/A'} by ${user?.email || 'system'}`);
         } else if (operation === 'update') {
-          req.payload.logger.info(`Media updated: ${doc.filename} by ${req.user?.email}`)
+          payload.logger.info(`Media updated: ${currentMedia.filename || 'N/A'} by ${user?.email || 'system'}`);
         }
-      },
+      }) as CollectionAfterChangeHook<MediaType>,
     ],
     afterDelete: [
-      async ({ req, doc }) => {
-        // Log media deletion for audit trail
-        req.payload.logger.info(`Media deleted: ${doc.filename} by ${req.user?.email}`)
-      },
+      (async ({ req, doc }) => {
+        const deletedMedia = doc as MediaType;
+        const user = req.user as User | undefined | null;
+        req.payload.logger.info( // Changed from warn to info for consistency, or could be warn if deletion is sensitive
+          `Media deleted: ${deletedMedia.filename || 'N/A'} (ID: ${deletedMedia.id}) by ${user?.email || 'system'}`,
+        );
+      }) as CollectionAfterChangeHook<MediaType>,
     ],
   },
 }

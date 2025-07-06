@@ -1,5 +1,7 @@
-import type { CollectionConfig } from 'payload'
-import { isAdmin, isAdminOrProductManager } from './Users'
+import type { CollectionConfig, CollectionBeforeChangeHook, CollectionAfterChangeHook, FieldHook, Access, Condition } from 'payload/types'
+import type { User, Product, Category, Brand } from '@/payload-types'
+import { isAdmin, isAdminOrProductManager } from './Users' // Ensure these are correctly typed for User
+import { APIError } from 'payload/errors'
 
 export const Products: CollectionConfig = {
   slug: 'products',
@@ -11,14 +13,10 @@ export const Products: CollectionConfig = {
     listSearchableFields: ['name', 'sku', 'description'],
   },
   access: {
-    // Product managers and above can create products
-    create: isAdminOrProductManager,
-    // All authenticated users can read products
-    read: ({ req }) => Boolean(req.user),
-    // Product managers and above can update products
-    update: isAdminOrProductManager,
-    // Only admins can delete products
-    delete: isAdmin,
+    create: isAdminOrProductManager as Access<Product, User>,
+    read: (({ req: { user } }: { req: { user?: User | null } }) => Boolean(user)) as Access<Product, User>,
+    update: isAdminOrProductManager as Access<Product, User>,
+    delete: isAdmin as Access<Product, User>,
   },
   fields: [
     // Required Core Fields
@@ -43,17 +41,16 @@ export const Products: CollectionConfig = {
       },
       hooks: {
         beforeValidate: [
-          ({ data, operation }) => {
-            if (operation === 'create' || operation === 'update') {
-              if (data?.name) {
-                // Generate slug from name
-                return data.name
-                  .toLowerCase()
-                  .replace(/[^a-z0-9]+/g, '-')
-                  .replace(/(^-|-$)/g, '')
-              }
+          (({ data, operation }: { data: Partial<Product>; operation?: 'create' | 'update' }) => {
+            if ((operation === 'create' || operation === 'update') && data?.name && typeof data.name === 'string') {
+              // Generate slug from name
+              return data.name
+                .toLowerCase()
+                .replace(/[^a-z0-9]+/g, '-') // Replace non-alphanumeric with -
+                .replace(/(^-|-$)+/g, ''); // Remove leading/trailing hyphens
             }
-          },
+            return data?.slug; // Return existing slug if no change
+          }) as FieldHook<Product, string | null | undefined, Product>,
         ],
       },
     },
@@ -107,14 +104,15 @@ export const Products: CollectionConfig = {
       },
       hooks: {
         beforeValidate: [
-          ({ data, operation }) => {
-            if (operation === 'create' && !data?.sku) {
-              // Generate SKU if not provided
-              const timestamp = Date.now().toString().slice(-6)
-              const random = Math.random().toString(36).substring(2, 5).toUpperCase()
-              return `RS-${timestamp}-${random}`
+          (({ data, operation }: { data: Partial<Product>; operation?: 'create' | 'update' }) => {
+            if (operation === 'create' && (!data?.sku || data.sku.trim() === '')) {
+              // Generate SKU if not provided or is empty
+              const timestamp = Date.now().toString().slice(-6);
+              const random = Math.random().toString(36).substring(2, 5).toUpperCase();
+              return `RS-${timestamp}-${random}`;
             }
-          },
+            return data?.sku; // Return existing SKU if no change or not creating
+          }) as FieldHook<Product, string | null | undefined, Product>,
         ],
       },
     },
@@ -346,13 +344,13 @@ export const Products: CollectionConfig = {
           admin: {
             description: 'Cost price for profit calculations (admin only)',
             step: 0.01,
-            condition: (_, { user }) => {
-              return user && ['super-admin', 'admin'].includes(user.role)
+            condition: (_, { user }: { user?: User | null }) => { // Typed the user from siblingData
+              return Boolean(user && user.role && ['super-admin', 'admin'].includes(user.role));
             },
           },
-          access: {
-            read: isAdmin,
-            update: isAdmin,
+          access: { // Assuming isAdmin is correctly typed for User
+            read: isAdmin as Access<Product, User>,
+            update: isAdmin as Access<Product, User>,
           },
         },
         {
@@ -470,11 +468,12 @@ export const Products: CollectionConfig = {
       },
       hooks: {
         beforeChange: [
-          ({ req, operation }) => {
+          (({ req, operation }: { req: { user?: User | null }; operation?: 'create' | 'update' }) => {
             if (operation === 'create' && req.user) {
-              return req.user.id
+              return req.user.id;
             }
-          },
+            return undefined; // Ensure a value is always returned or type allows undefined
+          }) as FieldHook<Product, User | number | null, User>,
         ],
       },
     },
@@ -488,89 +487,179 @@ export const Products: CollectionConfig = {
       },
       hooks: {
         beforeChange: [
-          ({ req, operation }) => {
+          (({ req, operation }: { req: { user?: User | null }; operation?: 'create' | 'update' }) => {
             if (operation === 'update' && req.user) {
-              return req.user.id
+              return req.user.id;
             }
-          },
+            return undefined; // Ensure a value is always returned
+          }) as FieldHook<Product, User | number | null, User>,
         ],
       },
     },
   ],
   hooks: {
     beforeChange: [
-      async ({ req, operation, data }) => {
-        // Set created/modified by
-        if (operation === 'create') {
-          data.createdBy = req.user?.id
-        }
-        if (operation === 'update') {
-          data.lastModifiedBy = req.user?.id
+      (async ({ req, operation, data }) => {
+        const productData = data as Partial<Product>;
+        // const user = req.user as User | undefined | null; // User for createdBy/lastModifiedBy is handled by field hooks
+
+        // Auto-set out of stock status if stock is 0 and product is active
+        if (productData.stock === 0 && productData.status === 'active') {
+          productData.status = 'out-of-stock';
         }
 
-        // Auto-set out of stock status if stock is 0
-        if (data.stock === 0 && data.status === 'active') {
-          data.status = 'out-of-stock'
+        // Validate pricing: originalPrice should not be less than current price
+        if (
+          productData.pricing?.originalPrice !== undefined &&
+          productData.pricing.originalPrice !== null &&
+          productData.price !== undefined &&
+          productData.price !== null &&
+          productData.pricing.originalPrice < productData.price
+        ) {
+          throw new APIError('Original price cannot be less than the current sale price.', 400);
         }
 
-        // Validate pricing
-        if (data.originalPrice && data.price && data.originalPrice < data.price) {
-          throw new Error('Original price cannot be less than current price')
-        }
-
-        return data
-      },
+        return productData;
+      }) as CollectionBeforeChangeHook<Product>,
     ],
     afterChange: [
-      async ({ req, operation, doc, previousDoc }) => {
+      (async ({ req, operation, doc, previousDoc }) => {
+        const currentProduct = doc as Product;
+        const previousProduct = previousDoc as Product | undefined;
+        const user = req.user as User | undefined | null;
+        const payload = req.payload;
+
         // Log product operations
         if (operation === 'create') {
-          req.payload.logger.info(`Product created: ${doc.name} (${doc.sku}) by ${req.user?.email}`)
+          payload.logger.info(`Product created: ${currentProduct.name} (SKU: ${currentProduct.sku}) by ${user?.email || 'system'}`);
         } else if (operation === 'update') {
-          req.payload.logger.info(`Product updated: ${doc.name} (${doc.sku}) by ${req.user?.email}`)
-
-          // Log stock changes
-          if (previousDoc && previousDoc.stock !== doc.stock) {
-            req.payload.logger.info(
-              `Stock updated for ${doc.name}: ${previousDoc.stock} → ${doc.stock}`,
-            )
+          payload.logger.info(`Product updated: ${currentProduct.name} (SKU: ${currentProduct.sku}) by ${user?.email || 'system'}`);
+          if (previousProduct && previousProduct.stock !== currentProduct.stock) {
+            payload.logger.info(
+              `Stock updated for ${currentProduct.name}: ${previousProduct.stock} → ${currentProduct.stock}`,
+            );
           }
-
-          // Alert on low stock
-          if (doc.stock <= doc.pricing?.lowStockThreshold && doc.status === 'active') {
-            req.payload.logger.warn(
-              `Low stock alert: ${doc.name} (${doc.sku}) - ${doc.stock} remaining`,
-            )
+          if (currentProduct.stock !== undefined && currentProduct.pricing?.lowStockThreshold !== undefined && currentProduct.stock <= currentProduct.pricing.lowStockThreshold && currentProduct.status === 'active') {
+            payload.logger.warn(
+              `Low stock alert: ${currentProduct.name} (SKU: ${currentProduct.sku}) - ${currentProduct.stock} remaining`,
+            );
           }
         }
 
-        // Update category and brand product counts
-        if (operation === 'create' || (operation === 'update' && doc.status === 'active')) {
-          // Update category product count
-          if (doc.category) {
-            try {
-              const _category = await req.payload.findByID({
-                collection: 'categories',
-                id: typeof doc.category === 'object' ? doc.category.id : doc.category,
-              })
+        // Helper function to update related collection counts
+        const updateRelatedCount = async (
+          collectionSlug: 'categories' | 'brands',
+          relatedId: string | number | null | undefined,
+        ) => {
+          if (!relatedId) return;
+          try {
+            const relatedDocId = typeof relatedId === 'object' ? (relatedId as Category | Brand).id : relatedId;
+            if (!relatedDocId) return;
 
-              // Update category product count logic would go here
-              // Simplified for now due to TypeScript constraints
-            } catch (error) {
-              req.payload.logger.error(`Failed to update category product count: ${error}`)
+            const { totalDocs } = await payload.find({
+              collection: 'products',
+              where: {
+                and: [
+                  { status: { equals: 'active' } },
+                  { [collectionSlug === 'categories' ? 'category' : 'brand']: { equals: relatedDocId } },
+                ],
+              },
+              limit: 0, // We only need the count
+            });
+            await payload.update({
+              collection: collectionSlug,
+              id: relatedDocId,
+              data: { productCount: totalDocs },
+            });
+            payload.logger.info(`Updated product count for ${collectionSlug} ID ${relatedDocId} to ${totalDocs}.`);
+          } catch (error) {
+            const err = error as Error;
+            payload.logger.error(`Failed to update product count for ${collectionSlug} ID ${relatedId}: ${err.message}`);
+          }
+        };
+
+        let oldCategoryId: string | number | null = null;
+        let oldBrandId: string | number | null = null;
+
+        if(operation === 'update' && previousProduct) {
+            const prevCategory = previousProduct.category;
+            if (prevCategory) oldCategoryId = typeof prevCategory === 'object' ? (prevCategory as Category).id : prevCategory;
+
+            const prevBrand = previousProduct.brand;
+            if (prevBrand) oldBrandId = typeof prevBrand === 'object' ? (prevBrand as Brand).id : prevBrand;
+        }
+
+        const newCategoryId = typeof currentProduct.category === 'object' ? (currentProduct.category as Category).id : currentProduct.category;
+        const newBrandId = typeof currentProduct.brand === 'object' ? (currentProduct.brand as Brand).id : currentProduct.brand;
+
+        // Update counts if status, category, or brand changed
+        if (operation === 'create' && currentProduct.status === 'active') {
+          await updateRelatedCount('categories', newCategoryId);
+          await updateRelatedCount('brands', newBrandId);
+        } else if (operation === 'update') {
+          const statusChanged = previousProduct?.status !== currentProduct.status;
+          const categoryChanged = String(oldCategoryId) !== String(newCategoryId); // Compare as strings to handle ID vs object
+          const brandChanged = String(oldBrandId) !== String(newBrandId);
+
+          if (statusChanged || categoryChanged || brandChanged) {
+            // If product became active or category/brand changed while active
+            if (currentProduct.status === 'active') {
+              if (newCategoryId) await updateRelatedCount('categories', newCategoryId);
+              if (newBrandId) await updateRelatedCount('brands', newBrandId);
+            }
+            // If product became inactive or category/brand changed from an active state
+            if (previousProduct?.status === 'active') {
+              if (oldCategoryId && (categoryChanged || (statusChanged && currentProduct.status !== 'active'))) {
+                await updateRelatedCount('categories', oldCategoryId);
+              }
+              if (oldBrandId && (brandChanged || (statusChanged && currentProduct.status !== 'active'))) {
+                await updateRelatedCount('brands', oldBrandId);
+              }
             }
           }
-
-          // Update brand product count logic would go here
-          // Simplified for now due to TypeScript constraints
         }
-      },
+      }) as CollectionAfterChangeHook<Product>,
     ],
     afterDelete: [
-      async ({ req, doc }) => {
-        // Log product deletion
-        req.payload.logger.warn(`Product deleted: ${doc.name} (${doc.sku}) by ${req.user?.email}`)
-      },
+      (async ({ req, doc }) => {
+        const deletedProduct = doc as Product;
+        const user = req.user as User | undefined | null;
+        const payload = req.payload;
+        payload.logger.warn(`Product deleted: ${deletedProduct.name} (SKU: ${deletedProduct.sku}) by ${user?.email || 'system'}`);
+
+        // Update counts for the category and brand of the deleted product if it was active
+        if (deletedProduct.status === 'active') {
+            const categoryId = typeof deletedProduct.category === 'object' ? (deletedProduct.category as Category).id : deletedProduct.category;
+            const brandId = typeof deletedProduct.brand === 'object' ? (deletedProduct.brand as Brand).id : deletedProduct.brand;
+
+            if (categoryId) {
+                 try {
+                    const { totalDocs } = await payload.find({
+                      collection: 'products',
+                      where: { and: [ { status: { equals: 'active' } }, { category: { equals: categoryId } } ] },
+                      limit: 0,
+                    });
+                    await payload.update({ collection: 'categories', id: categoryId, data: { productCount: totalDocs } });
+                    payload.logger.info(`Updated product count for category ID ${categoryId} to ${totalDocs} after product deletion.`);
+                  } catch (error) {
+                    payload.logger.error(`Failed to update category count for ID ${categoryId} after product deletion: ${(error as Error).message}`);
+                  }
+            }
+            if (brandId) {
+                try {
+                    const { totalDocs } = await payload.find({
+                      collection: 'products',
+                      where: { and: [ { status: { equals: 'active' } }, { brand: { equals: brandId } } ] },
+                      limit: 0,
+                    });
+                    await payload.update({ collection: 'brands', id: brandId, data: { productCount: totalDocs } });
+                    payload.logger.info(`Updated product count for brand ID ${brandId} to ${totalDocs} after product deletion.`);
+                  } catch (error) {
+                    payload.logger.error(`Failed to update brand count for ID ${brandId} after product deletion: ${(error as Error).message}`);
+                  }
+            }
+        }
+      }) as CollectionAfterChangeHook<Product>,
     ],
   },
 }

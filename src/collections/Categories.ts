@@ -1,5 +1,7 @@
-import type { CollectionConfig } from 'payload'
-import { isAdmin, isAdminOrProductManager } from './Users'
+import type { CollectionConfig, CollectionBeforeChangeHook, CollectionAfterChangeHook, FieldHook, Access } from 'payload/types'
+import type { User, Category, Product } from '@/payload-types' // Import specific Payload types
+import { isAdmin, isAdminOrProductManager } from './Users' // Ensure these are correctly typed for User
+import { APIError } from 'payload/errors'
 
 export const Categories: CollectionConfig = {
   slug: 'categories',
@@ -10,14 +12,10 @@ export const Categories: CollectionConfig = {
     description: 'Manage product categories for organization and navigation',
   },
   access: {
-    // Product managers and above can create categories
-    create: isAdminOrProductManager,
-    // All authenticated users can read categories
-    read: ({ req }) => Boolean(req.user),
-    // Product managers and above can update categories
-    update: isAdminOrProductManager,
-    // Only admins can delete categories
-    delete: isAdmin,
+    create: isAdminOrProductManager as Access<Category, User>,
+    read: (({ req: { user } }: { req: { user?: User | null } }) => Boolean(user)) as Access<Category, User>,
+    update: isAdminOrProductManager as Access<Category, User>,
+    delete: isAdmin as Access<Category, User>,
   },
   fields: [
     {
@@ -42,17 +40,15 @@ export const Categories: CollectionConfig = {
       },
       hooks: {
         beforeValidate: [
-          ({ data, operation }) => {
-            if (operation === 'create' || operation === 'update') {
-              if (data?.name) {
-                // Generate slug from name
-                return data.name
-                  .toLowerCase()
-                  .replace(/[^a-z0-9]+/g, '-')
-                  .replace(/(^-|-$)/g, '')
-              }
+          (({ data, operation }: { data: Partial<Category>; operation?: 'create' | 'update' }) => {
+            if ((operation === 'create' || operation === 'update') && data?.name && typeof data.name === 'string') {
+              return data.name
+                .toLowerCase()
+                .replace(/[^a-z0-9]+/g, '-')
+                .replace(/(^-|-$)+/g, '');
             }
-          },
+            return data?.slug; // Return existing if no change
+          }) as FieldHook<Category, string | null | undefined, Category>,
         ],
       },
     },
@@ -71,9 +67,9 @@ export const Categories: CollectionConfig = {
       admin: {
         description: 'Category banner or representative image',
       },
-      filterOptions: {
-        category: {
-          equals: 'products',
+      filterOptions: { // Ensure this filter is valid for the 'media' collection
+        category: { // This 'category' is a field within the 'media' collection
+          equals: 'categories', // Should likely be 'categories' if media is categorized for categories
         },
       },
     },
@@ -91,18 +87,9 @@ export const Categories: CollectionConfig = {
       required: true,
       defaultValue: 'active',
       options: [
-        {
-          label: 'Active',
-          value: 'active',
-        },
-        {
-          label: 'Inactive',
-          value: 'inactive',
-        },
-        {
-          label: 'Draft',
-          value: 'draft',
-        },
+        { label: 'Active', value: 'active' },
+        { label: 'Inactive', value: 'inactive' },
+        { label: 'Draft', value: 'draft' },
       ],
       admin: {
         description: 'Category visibility status',
@@ -120,10 +107,18 @@ export const Categories: CollectionConfig = {
     },
     {
       name: 'parentCategory',
-      type: 'text',
+      type: 'relationship', // Changed from 'text' to 'relationship'
+      relationTo: 'categories', // Self-referencing relationship
       admin: {
-        description: 'Parent category ID for hierarchical organization (optional)',
-        placeholder: 'Enter parent category ID if this is a subcategory',
+        description: 'Parent category for hierarchical organization (optional)',
+      },
+      filterOptions: ({ id }) => { // Prevent selecting self as parent
+        if (id) {
+          return {
+            id: { not_equals: id },
+          };
+        }
+        return {};
       },
     },
     {
@@ -237,11 +232,12 @@ export const Categories: CollectionConfig = {
       },
       hooks: {
         beforeChange: [
-          ({ req, operation }) => {
+          (({ req, operation }: { req: { user?: User | null }; operation?: 'create' | 'update' }) => {
             if (operation === 'create' && req.user) {
-              return req.user.id
+              return req.user.id;
             }
-          },
+            return undefined;
+          }) as FieldHook<Category, User | number | null, User>,
         ],
       },
     },
@@ -255,63 +251,97 @@ export const Categories: CollectionConfig = {
       },
       hooks: {
         beforeChange: [
-          ({ req, operation }) => {
+          (({ req, operation }: { req: { user?: User | null }; operation?: 'create' | 'update' }) => {
             if (operation === 'update' && req.user) {
-              return req.user.id
+              return req.user.id;
             }
-          },
+            return undefined;
+          }) as FieldHook<Category, User | number | null, User>,
         ],
       },
     },
   ],
   hooks: {
     beforeChange: [
-      async ({ req, operation, data }) => {
-        // Validate parent category (prevent circular references)
-        if (data.parentCategory && operation === 'update') {
-          // This would need more complex logic to prevent deep circular references
-          // For now, just prevent direct self-reference
-          // Prevent self-reference validation would go here
-          // More complex validation needed for deep circular references
+      (async ({ req, operation, data, originalDoc }) => {
+        const categoryData = data as Partial<Category>;
+        // const user = req.user as User | undefined | null; // User for createdBy/lastModifiedBy is handled by field hooks
+
+        // Validate parentCategory: prevent setting itself as parent
+        if (operation === 'update' && categoryData.parentCategory) {
+          const parentId = typeof categoryData.parentCategory === 'object'
+            ? (categoryData.parentCategory as Category).id
+            : categoryData.parentCategory;
+          if (originalDoc && originalDoc.id === parentId) {
+            throw new APIError('A category cannot be its own parent.', 400);
+          }
+          // Deeper circular dependency checks would require traversing up the tree,
+          // which can be complex and resource-intensive in a hook.
+          // The filterOption on the field helps prevent this in the UI.
         }
 
-        // Set created/modified by
-        if (operation === 'create') {
-          data.createdBy = req.user?.id
-        }
-        if (operation === 'update') {
-          data.lastModifiedBy = req.user?.id
-        }
+        // If name is changed, regenerate slug (field hook for slug handles this, but good to be aware)
+        // The field-level hook for 'slug' should already handle regeneration if 'name' changes.
 
-        return data
-      },
+        return categoryData;
+      }) as CollectionBeforeChangeHook<Category>,
     ],
     afterChange: [
-      async ({ req, operation, doc }) => {
-        // Update product count after category changes
-        if (operation === 'update' && doc.status === 'inactive') {
-          // Log when categories are deactivated as it affects products
-          req.payload.logger.info(
-            `Category deactivated: ${doc.name} - this may affect product visibility`,
-          )
-        }
+      (async ({ req, operation, doc, previousDoc }) => {
+        const currentCategory = doc as Category;
+        const prevCategory = previousDoc as Category | undefined;
+        const user = req.user as User | undefined | null;
+        const payload = req.payload;
 
-        // Log category operations
         if (operation === 'create') {
-          req.payload.logger.info(`Category created: ${doc.name} by ${req.user?.email}`)
+          payload.logger.info(`Category created: ${currentCategory.name} by ${user?.email || 'system'}`);
         } else if (operation === 'update') {
-          req.payload.logger.info(`Category updated: ${doc.name} by ${req.user?.email}`)
+          payload.logger.info(`Category updated: ${currentCategory.name} by ${user?.email || 'system'}`);
+          if (prevCategory && prevCategory.status !== currentCategory.status && currentCategory.status === 'inactive') {
+            payload.logger.info(
+              `Category deactivated: ${currentCategory.name}. This may affect product visibility and filtering.`,
+            );
+          }
+          // Note: Product count updates are handled in Products.ts afterChange hook when a product's category changes or status becomes active/inactive.
         }
-      },
+      }) as CollectionAfterChangeHook<Category>,
+    ],
+    beforeDelete: [ // Changed from afterDelete to beforeDelete for validation
+      async ({ req, id }) => {
+        const payload = req.payload;
+        // Prevent deletion if category has active products assigned
+        if (id) {
+            const { totalDocs } = await payload.find({
+                collection: 'products',
+                where: {
+                    and: [
+                        { category: { equals: id } },
+                        { status: { equals: 'active' } } // Only consider active products
+                    ]
+                },
+                limit: 0,
+            });
+
+            if (totalDocs > 0) {
+                payload.logger.warn(`Attempt to delete category ID ${id} which has ${totalDocs} active product(s).`);
+                throw new APIError(
+                    `Cannot delete category. It is currently assigned to ${totalDocs} active product(s). Please reassign or deactivate these products first.`,
+                    400, // Bad Request
+                );
+            }
+        }
+      }
     ],
     afterDelete: [
-      async ({ req, doc }) => {
-        // Log category deletion
-        req.payload.logger.warn(`Category deleted: ${doc.name} by ${req.user?.email}`)
-
-        // Note: In a production system, you'd want to handle reassigning products
-        // from deleted categories or prevent deletion of categories with products
-      },
+      (async ({ req, doc }) => {
+        const deletedCategory = doc as Category;
+        const user = req.user as User | undefined | null;
+        req.payload.logger.warn(
+          `Category deleted: ${deletedCategory.name} (ID: ${deletedCategory.id}) by ${user?.email || 'system'}`,
+        );
+        // If there's a need to nullify parentCategory fields in child categories, that would go here.
+        // For now, assuming relationships handle this or it's not required.
+      }) as CollectionAfterChangeHook<Category>,
     ],
   },
 }

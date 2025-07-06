@@ -1,5 +1,7 @@
-import type { CollectionConfig } from 'payload'
-import { isAdmin, isAdminOrProductManager } from './Users'
+import type { CollectionConfig, CollectionBeforeChangeHook, CollectionAfterChangeHook, FieldHook, Access } from 'payload/types'
+import type { User, Customer } from '@/payload-types' // Import specific Payload types
+import { isAdmin, isAdminOrProductManager } from './Users' // Ensure these are correctly typed for User
+// import { APIError } from 'payload/errors'; // Not used yet, but good for future validation errors
 
 export const Customers: CollectionConfig = {
   slug: 'customers',
@@ -18,14 +20,10 @@ export const Customers: CollectionConfig = {
     listSearchableFields: ['name', 'email', 'primaryPhone', 'secondaryPhone'],
   },
   access: {
-    // Admins and product managers can create customers
-    create: isAdminOrProductManager,
-    // Only admins and product managers can read customer data
-    read: isAdminOrProductManager,
-    // Only admins and product managers can update customers
-    update: isAdminOrProductManager,
-    // Only admins can delete customers
-    delete: isAdmin,
+    create: isAdminOrProductManager as Access<Customer, User>,
+    read: isAdminOrProductManager as Access<Customer, User>,
+    update: isAdminOrProductManager as Access<Customer, User>,
+    delete: isAdmin as Access<Customer, User>,
   },
   fields: [
     // Basic Customer Information
@@ -365,11 +363,12 @@ export const Customers: CollectionConfig = {
       },
       hooks: {
         beforeChange: [
-          ({ req, operation }) => {
+          (({ req, operation }: { req: { user?: User | null }; operation?: 'create' | 'update' }) => {
             if (operation === 'create' && req.user) {
-              return req.user.id
+              return req.user.id;
             }
-          },
+            return undefined;
+          }) as FieldHook<Customer, User | number | null, User>,
         ],
       },
     },
@@ -383,64 +382,73 @@ export const Customers: CollectionConfig = {
       },
       hooks: {
         beforeChange: [
-          ({ req, operation }) => {
+          (({ req, operation }: { req: { user?: User | null }; operation?: 'create' | 'update' }) => {
             if (operation === 'update' && req.user) {
-              return req.user.id
+              return req.user.id;
             }
-          },
+            return undefined;
+          }) as FieldHook<Customer, User | number | null, User>,
         ],
       },
     },
   ],
   hooks: {
     beforeChange: [
-      async ({ req, operation, data }) => {
-        // Set created/modified by
-        if (operation === 'create') {
-          data.createdBy = req.user?.id
-        }
-        if (operation === 'update') {
-          data.lastModifiedBy = req.user?.id
-        }
+      (async ({ req, operation, data }) => {
+        const customerData = data as Partial<Customer>; // data is Partial<Customer> before validation
+        // const user = req.user as User | undefined | null; // User for createdBy/lastModifiedBy is handled by field hooks
 
         // Ensure only one default address
-        type Address = { isDefault?: boolean }
-        if (data.addresses && Array.isArray(data.addresses)) {
-          const defaultAddresses = data.addresses.filter((addr: Address) => addr.isDefault)
-          if (defaultAddresses.length > 1) {
-            // Keep only the first default address
-            data.addresses.forEach((addr: Address, index: number) => {
-              if (index > 0 && addr.isDefault) {
-                addr.isDefault = false
+        if (customerData.addresses && Array.isArray(customerData.addresses)) {
+          // Use the Address type from Customer if available, assuming it has `isDefault`
+          // Customer['addresses'] is (CustomerAddress[] | null | undefined)
+          // CustomerAddress is { type: 'home' | 'office' | 'other'; address: string; isDefault?: boolean | null; id?: string | null; }
+          type CustomerAddressItem = NonNullable<Customer['addresses']>[0];
+
+          let defaultFound = false;
+          customerData.addresses = customerData.addresses.map((addr: CustomerAddressItem) => {
+            if (addr.isDefault) {
+              if (defaultFound) {
+                return { ...addr, isDefault: false }; // Ensure only one default
               }
-            })
+              defaultFound = true;
+            }
+            return addr;
+          });
+
+          // If no default address is marked and there are addresses, mark the first one as default.
+          if (!defaultFound && customerData.addresses.length > 0) {
+            customerData.addresses[0].isDefault = true;
           }
         }
-
-        return data
-      },
+        return customerData;
+      }) as CollectionBeforeChangeHook<Customer>,
     ],
     afterChange: [
-      async ({ req, operation, doc }) => {
-        // Log customer operations
+      (async ({ req, operation, doc }) => {
+        const currentCustomer = doc as Customer;
+        const user = req.user as User | undefined | null;
+        const payload = req.payload;
+
         if (operation === 'create') {
-          req.payload.logger.info(
-            `Customer created: ${doc.name} (${doc.email}) by ${req.user?.email}`,
-          )
+          payload.logger.info(
+            `Customer created: ${currentCustomer.name} (${currentCustomer.email}) by ${user?.email || 'system'}`,
+          );
         } else if (operation === 'update') {
-          req.payload.logger.info(
-            `Customer updated: ${doc.name} (${doc.email}) by ${req.user?.email}`,
-          )
+          payload.logger.info(
+            `Customer updated: ${currentCustomer.name} (${currentCustomer.email}) by ${user?.email || 'system'}`,
+          );
         }
-      },
+      }) as CollectionAfterChangeHook<Customer>,
     ],
     afterDelete: [
-      async ({ req, doc }) => {
-        // Log customer deletion
+      (async ({ req, doc }) => {
+        const deletedCustomer = doc as Customer;
+        const user = req.user as User | undefined | null;
         req.payload.logger.warn(
-          `Customer deleted: ${doc.name} (${doc.email}) by ${req.user?.email}`,
-        )
-      },
+          `Customer deleted: ${deletedCustomer.name} (${deletedCustomer.email}) by ${user?.email || 'system'}`,
+        );
+      }) as CollectionAfterChangeHook<Customer>,
     ],
   },
 }
