@@ -85,7 +85,7 @@ export default function StorePage() {
           }
         })
 
-        const response = await fetch(`/api/products?${params}`)
+        const response = await fetch(`/api/public/products?${params}`)
         const data = await response.json()
 
         if (data.success) {
@@ -110,9 +110,9 @@ export default function StorePage() {
       setFiltersLoading(true)
 
       const [categoriesRes, brandsRes, productsRes] = await Promise.all([
-        fetch('/api/categories'),
-        fetch('/api/brands'),
-        fetch('/api/products?limit=1000'),
+        fetch('/api/public/categories'),
+        fetch('/api/public/brands'),
+        fetch('/api/public/products?limit=1000'),
       ])
 
       const [categoriesData, brandsData, productsData] = await Promise.all([

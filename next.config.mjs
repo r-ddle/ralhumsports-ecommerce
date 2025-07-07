@@ -8,6 +8,14 @@ const nextConfig = {
         protocol: 'https',
         hostname: 'placehold.co',
       },
+      {
+        protocol: 'https',
+        hostname: '**.public.blob.vercel-storage.com',
+      },
+      {
+        protocol: 'https',
+        hostname: 'ralhumsports-ecommerce.vercel.app',
+      },
     ],
     dangerouslyAllowSVG: true,
   },

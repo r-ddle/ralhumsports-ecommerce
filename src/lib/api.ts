@@ -61,12 +61,12 @@ class ApiClient {
       }
     })
 
-    const endpoint = `/api/products${searchParams.toString() ? `?${searchParams.toString()}` : ''}`
+    const endpoint = `/api/public/products${searchParams.toString() ? `?${searchParams.toString()}` : ''}`
     return this.request<PaginatedResponse<ProductListItem>>(endpoint)
   }
 
   async getProduct(slug: string): Promise<ApiResponse<Product>> {
-    return this.request<ApiResponse<Product>>(`/api/products/${slug}`)
+    return this.request<ApiResponse<Product>>(`/api/public/products/${slug}`)
   }
 
   async getProductsByCategory(
@@ -115,7 +115,7 @@ class ApiClient {
 
   // Brand API methods
   async getBrands(): Promise<ApiResponse<Brand[]>> {
-    return this.request<ApiResponse<Brand[]>>('/api/brands')
+    return this.request<ApiResponse<Brand[]>>('/api/public/brands')
   }
 
   async getFeaturedBrands(): Promise<ApiResponse<Brand[]>> {
@@ -146,7 +146,7 @@ class ApiClient {
 
   // Order API methods
   async createOrder(orderData: OrderInput): Promise<ApiResponse<OrderResponse>> {
-    return this.request<ApiResponse<OrderResponse>>('/api/orders', {
+    return this.request<ApiResponse<OrderResponse>>('/api/public/orders', {
       method: 'POST',
       body: JSON.stringify(orderData),
     })
@@ -166,7 +166,7 @@ class ApiClient {
       }
     })
 
-    return this.request<ApiResponse<SearchResult>>(`/api/search?${searchParams.toString()}`)
+    return this.request<ApiResponse<SearchResult>>(`/api/public/search?${searchParams.toString()}`)
   }
 
   // Combined methods for complex operations
@@ -268,7 +268,7 @@ class ApiClient {
 
   async verifySKU(sku: string): Promise<ApiResponse<Record<string, unknown>>> {
     // ✅ Fix: Line 318
-    return this.request<ApiResponse<Record<string, unknown>>>('/api/products/verify-sku', {
+    return this.request<ApiResponse<Record<string, unknown>>>('/api/public/products/verify-sku', {
       method: 'POST',
       body: JSON.stringify({ sku }),
     })
@@ -284,7 +284,7 @@ class ApiClient {
     if (email) params.append('email', email)
     if (phone) params.append('phone', phone)
 
-    return this.request<ApiResponse<Record<string, unknown>>>(`/api/orders/track?${params}`) // ✅ Fix: Line 329
+    return this.request<ApiResponse<Record<string, unknown>>>(`/api/public/orders/track?${params}`) // ✅ Fix: Line 329
   }
 }
 

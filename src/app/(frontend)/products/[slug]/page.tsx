@@ -117,7 +117,7 @@ export default function ProductDetailPage({ params }: ProductDetailPageProps) {
         setLoading(true)
         setError(null)
 
-        const response = await fetch(`/api/products/${resolvedParams.slug}`)
+        const response = await fetch(`/api/public/products/${resolvedParams.slug}`)
         const data = await response.json()
 
         if (data.success && data.data) {
@@ -201,7 +201,7 @@ export default function ProductDetailPage({ params }: ProductDetailPageProps) {
     const fetchRelatedProducts = async () => {
       try {
         const response = await fetch(
-          `/api/products?brand=${product.brand!.slug}&limit=4&status=active`,
+          `/api/public/products?brand=${product.brand!.slug}&limit=4&status=active`,
         )
         const data = await response.json()
 

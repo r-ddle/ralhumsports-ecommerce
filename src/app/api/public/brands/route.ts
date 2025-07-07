@@ -1,4 +1,4 @@
-import { NextResponse } from 'next/server'
+import { NextRequest, NextResponse } from 'next/server'
 import { getPayload } from 'payload'
 import config from '@payload-config'
 
@@ -47,4 +47,3 @@ export async function GET() {
     return NextResponse.json({ success: false, error: 'Failed to fetch brands' }, { status: 500 })
   }
 }
-

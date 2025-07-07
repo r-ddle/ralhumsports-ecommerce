@@ -102,7 +102,7 @@ export default function OrderTrackingPage() {
 
       // Call the tracking API
       const response = await fetch(
-        `/api/orders/track?orderNumber=${encodeURIComponent(orderId.trim())}`,
+        `/api/public/orders/track?orderNumber=${encodeURIComponent(orderId.trim())}`,
       )
       const data = await response.json()
 
