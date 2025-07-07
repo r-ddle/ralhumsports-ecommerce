@@ -662,7 +662,7 @@ function CheckoutConfirmation({ orderId }: { orderId: string }) {
   let order = null
   if (typeof window !== 'undefined') {
     const orders = JSON.parse(localStorage.getItem('ralhum-orders') || '[]')
-    order = orders.find((o: any) => o.orderId === orderId)
+    order = orders.find((o: { orderId: string }) => o.orderId === orderId)
   }
 
   return (
@@ -692,8 +692,8 @@ function CheckoutConfirmation({ orderId }: { orderId: string }) {
               href={generateWhatsAppURL(order)}
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex items-center bg-[#25D366] hover:bg-[#25D366]/90 text-white font-semibold px-6 py-2 rounded-lg shadow mb-4"
-              style={{ textDecoration: 'none' }}
+              className="inline-flex items-center bg-[#25D366] hover:bg-[#25D366]/90 text-white font-semibold px-6 py-2 rounded-lg shadow mb-4 no-underline"
+              // Removed inline style; use 'no-underline' Tailwind class instead
             >
               <MessageCircle className="w-5 h-5 mr-2" />
               Send Message

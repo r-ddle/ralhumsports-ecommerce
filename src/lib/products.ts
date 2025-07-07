@@ -68,13 +68,10 @@ export function transformPayloadProduct(payloadProduct: PayloadProduct): Product
         sku: payloadProduct.sku,
         inventory: payloadProduct.stock,
         weight: payloadProduct.shipping?.shippingWeight || undefined,
-        size: payloadProduct.sizes?.split(',')[0]?.trim(),
-        color: payloadProduct.colors?.split(',')[0]?.trim(),
         options: {},
       },
     ],
     tags: payloadProduct.tags?.split(',').map((t) => t.trim()) || [],
-    featured: payloadProduct.analytics?.rating ? payloadProduct.analytics.rating > 4 : false,
     status:
       payloadProduct.status === 'active'
         ? 'active'
@@ -95,10 +92,10 @@ export function transformPayloadProduct(payloadProduct: PayloadProduct): Product
           careInstructions: payloadProduct.specifications.careInstructions ?? '',
         }
       : undefined,
-    relatedProducts: payloadProduct.relatedProducts?.split(',').map((id) => id.trim()) || undefined,
     createdAt: payloadProduct.createdAt,
     updatedAt: payloadProduct.updatedAt,
     sku: payloadProduct.sku,
+    featured: !!payloadProduct.features, // Add this line to fix the error
   }
 }
 

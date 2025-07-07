@@ -12,7 +12,6 @@ import { Alert, AlertDescription } from '@/components/ui/alert'
 import {
   ShoppingCart,
   Share2,
-  Star,
   Check,
   Truck,
   Shield,
@@ -20,7 +19,6 @@ import {
   Plus,
   Minus,
   Zap,
-  Award,
   Globe,
   AlertCircle,
   Package,
@@ -71,7 +69,7 @@ export default function ProductDetailPage({ params }: ProductDetailPageProps) {
   const [selectedImage, setSelectedImage] = useState(0)
   const [quantity, setQuantity] = useState(1)
   const [relatedProducts, setRelatedProducts] = useState<ProductListItem[]>([])
-  const [exchangeRate, setExchangeRate] = useState(315)
+  // const [exchangeRate, setExchangeRate] = useState(315) // Removed unused state
   const [variants, setVariants] = useState<ProductVariant[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -97,7 +95,7 @@ export default function ProductDetailPage({ params }: ProductDetailPageProps) {
         setLoading(true)
         setError(null)
 
-        const response = await fetch(`/api/public/products/${resolvedParams.slug}`)
+        const response = await fetch(`/api/products/${resolvedParams.slug}`)
         const data = await response.json()
 
         if (data.success && data.data) {
@@ -131,7 +129,7 @@ export default function ProductDetailPage({ params }: ProductDetailPageProps) {
     const fetchRelatedProducts = async () => {
       try {
         const response = await fetch(
-          `/api/public/products?brand=${product.brand!.slug}&limit=4&status=active`,
+          `/api/products?brand=${product.brand!.slug}&limit=4&status=active`,
         )
         const data = await response.json()
 
@@ -366,7 +364,7 @@ export default function ProductDetailPage({ params }: ProductDetailPageProps) {
             <div className="space-y-4">
               {/* Brand */}
               {product.brand && (
-                <div className='flex'>
+                <div className="flex">
                   <Link
                     href={`/products?brand=${product.brand.slug}`}
                     className="text-[#003DA5] dark:text-[#4A90E2] font-bold text-base sm:text-xl hover:underline"
@@ -419,7 +417,7 @@ export default function ProductDetailPage({ params }: ProductDetailPageProps) {
                         const isSelected = selectedVariant?.id === variant.id
                         const isAvailable = variant.inventory > 0
                         // Avoid duplicate info: if name === color or name === size, only show once
-                        let mainLabel = variant.name || 'Standard'
+                        const mainLabel = variant.name || 'Standard'
                         let subLabel = ''
                         if (variant.size && variant.color) {
                           // If name is not size or color, show both

@@ -112,8 +112,24 @@ export const GET = withRateLimit(
           sku: product.sku,
           stock: product.stock > 0 ? 'In Stock' : 'Out of Stock', // Don't expose exact stock numbers
           status: product.status,
-          sizes: product.sizes ? product.sizes.split(',').map((s) => s.trim()) : [],
-          colors: product.colors ? product.colors.split(',').map((c) => c.trim()) : [],
+          sizes: Array.isArray(product.variants)
+            ? Array.from(
+                new Set(
+                  product.variants
+                    .map((variant) => variant.size)
+                    .filter((size) => typeof size === 'string')
+                )
+              )
+            : [],
+          colors: Array.isArray(product.variants)
+            ? Array.from(
+                new Set(
+                  product.variants
+                    .map((variant) => variant.color)
+                    .filter((color) => typeof color === 'string')
+                )
+              )
+            : [],
           images:
             product.images?.slice(0, 2).map((img) => ({
               // Limit to 2 images
@@ -150,13 +166,17 @@ export const GET = withRateLimit(
                   slug: product.brand.slug,
                 }
               : null,
-          features: product.features?.slice(0, 3).map((f) => f.feature) || [], // Limit features
-          tags: product.tags
+          features: Array.isArray(product.features)
+            ? product.features.slice(0, 3).map((f) =>
+                typeof f === 'object' && typeof f.feature === 'string' ? f.feature : ''
+              ).filter(Boolean)
+            : [],
+          tags: typeof product.tags === 'string'
             ? product.tags
                 .split(',')
                 .map((t) => t.trim())
                 .slice(0, 5)
-            : [], // Limit tags
+            : [],
         }))
 
         results.totalResults += productsResponse.totalDocs

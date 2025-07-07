@@ -73,11 +73,11 @@ export default function StorePage() {
 
   // Helper: get lowest variant price (if variants exist)
   // Patch: allow variant price display if present in any (unknown) product object
-  function getDisplayPrice(product: any): number {
+  function getDisplayPrice(product: ProductListItem & { variants?: { price: number }[] }): number {
     if (Array.isArray(product.variants) && product.variants.length > 0) {
       const prices = product.variants
-        .map((v: any) => v.price)
-        .filter((p: any) => typeof p === 'number' && !isNaN(p))
+        .map((v) => v.price)
+        .filter((p) => typeof p === 'number' && !isNaN(p))
       if (prices.length > 0) {
         return Math.min(...prices)
       }
@@ -99,15 +99,17 @@ export default function StorePage() {
           }
         })
 
-        const response = await fetch(`/api/public/products?${params}`)
+        const response = await fetch(`/api/products?${params}`)
         const data = await response.json()
 
         if (data.success) {
           // Patch: attach _displayPrice (not typed) to each product
-          const patched = data.data.map((p: any) => ({
-            ...p,
-            _displayPrice: getDisplayPrice(p),
-          }))
+          const patched = data.data.map(
+            (p: ProductListItem & { variants?: { price: number }[] }) => ({
+              ...p,
+              _displayPrice: getDisplayPrice(p),
+            }),
+          )
           setProducts(patched)
           setPagination(data.pagination)
         } else {
@@ -129,9 +131,9 @@ export default function StorePage() {
       setFiltersLoading(true)
 
       const [categoriesRes, brandsRes, productsRes] = await Promise.all([
-        fetch('/api/public/categories'),
+        fetch('/api/public/category'),
         fetch('/api/public/brands'),
-        fetch('/api/public/products?limit=1000'),
+        fetch('/api/products?limit=1000'),
       ])
 
       const [categoriesData, brandsData, productsData] = await Promise.all([
@@ -409,7 +411,7 @@ export default function StorePage() {
                         : 'grid-cols-1'
                     }`}
                   >
-                    {products.map((product: any) => (
+                    {products.map((product: ProductListItem & { _displayPrice?: number }) => (
                       <ProductCard
                         key={product.id}
                         product={{ ...product, price: product._displayPrice ?? product.price }}
