@@ -22,7 +22,7 @@ export async function GET(request: NextRequest) {
     const page = parseInt(searchParams.get('page') || '1')
     const limit = parseInt(searchParams.get('limit') || '12')
     const search = searchParams.get('search')
-    const category = searchParams.get('category')
+    const categorySlug = searchParams.get('category')
     const brand = searchParams.get('brand') // This will be a slug
     const sort = searchParams.get('sort') || 'createdAt'
     const order = searchParams.get('order') || 'desc'
@@ -63,9 +63,9 @@ export async function GET(request: NextRequest) {
     }
 
     // Add category filter
-    if (category) {
+    if (categorySlug) {
       whereConditions.category = {
-        equals: category,
+        equals: categorySlug,
       }
     }
 
@@ -157,14 +157,20 @@ export async function GET(request: NextRequest) {
       sku: product.sku,
       stock: product.stock,
       status: product.status,
-      sizes: product.sizes ? product.sizes.split(',').map((s) => s.trim()) : [],
-      colors: product.colors ? product.colors.split(',').map((c) => c.trim()) : [],
       images:
         product.images?.map((img) => ({
-          id: typeof img.image === 'object' ? img.image.id : img.image,
-          url: typeof img.image === 'object' ? img.image.url : '',
-          alt: img.altText || product.name,
-          filename: typeof img.image === 'object' ? img.image.filename : '',
+          url: typeof img.image === 'object' ? img.image.url : img.image,
+          alt: img.altText || '',
+        })) || [],
+      variants:
+        product.variants?.map((variant) => ({
+          id: variant.id,
+          name: variant.name,
+          sku: variant.sku,
+          size: variant.size,
+          color: variant.color,
+          price: variant.price,
+          stock: variant.inventory,
         })) || [],
       category:
         typeof product.category === 'object'
@@ -196,9 +202,11 @@ export async function GET(request: NextRequest) {
       specifications: product.specifications,
       shipping: product.shipping,
       seo: product.seo,
-      rating: product.analytics?.rating,
-      reviewCount: product.analytics?.reviewCount,
+      analytics: product.analytics,
+      relatedProducts: product.relatedProducts || [],
       tags: product.tags ? product.tags.split(',').map((t) => t.trim()) : [],
+      createdBy: product.createdBy,
+      lastModifiedBy: product.lastModifiedBy,
       createdAt: product.createdAt,
       updatedAt: product.updatedAt,
     }))
