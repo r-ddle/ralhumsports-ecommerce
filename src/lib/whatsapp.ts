@@ -74,10 +74,7 @@ export function generateWhatsAppURL(order: OrderSummary): string {
  * Open WhatsApp with the order message
  */
 export function openWhatsAppOrder(order: OrderSummary): void {
-  const url = generateWhatsAppURL(order)
-
-  // Open in new window/tab
-  window.open(url, '_blank')
+  generateWhatsAppURL(order)
 }
 
 /**

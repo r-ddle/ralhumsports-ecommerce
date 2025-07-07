@@ -34,10 +34,11 @@ import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { OrderSummary, CheckoutState, FormErrors, SRI_LANKAN_PROVINCES } from '@/types/checkout'
 import {
-  openWhatsAppOrder,
+  generateWhatsAppURL,
   validateSriLankanPhone,
   formatSriLankanPhone,
   getWhatsAppButtonText,
+  openWhatsAppOrder,
 } from '@/lib/whatsapp'
 import { api } from '@/lib/api'
 import { OrderInput } from '@/types/api'
@@ -311,6 +312,7 @@ export default function CheckoutPage() {
   }
 
   // ✅ Primary check for confirmation screen
+
   if (showConfirmation && confirmationOrderId) {
     console.log('✅ Rendering confirmation screen with orderId:', confirmationOrderId)
     return <CheckoutConfirmation orderId={confirmationOrderId} />
@@ -656,6 +658,13 @@ export default function CheckoutPage() {
 function CheckoutConfirmation({ orderId }: { orderId: string }) {
   console.log('🎉 CheckoutConfirmation rendered with orderId:', orderId)
 
+  // Retrieve the order from localStorage
+  let order = null
+  if (typeof window !== 'undefined') {
+    const orders = JSON.parse(localStorage.getItem('ralhum-orders') || '[]')
+    order = orders.find((o: any) => o.orderId === orderId)
+  }
+
   return (
     <main className="min-h-screen pt-16 bg-gray-50">
       <div className="max-w-2xl mx-auto px-4 py-16 text-center">
@@ -666,11 +675,32 @@ function CheckoutConfirmation({ orderId }: { orderId: string }) {
 
           <h1 className="text-3xl font-black text-gray-900 mb-4">Order Sent Successfully!</h1>
           <p className="text-gray-600 mb-6">
-            Your order has been sent to our WhatsApp and saved to our system. We&apos;ll contact you
-            shortly to confirm your order and provide payment instructions.
+            Your order has been redirected to whatsapp. We&apos;ll contact you shortly to confirm
+            your order and provide payment instructions.
           </p>
+          <Alert className="mb-3 flex flex-col items-center text-center">
+            <AlertCircle className="h-5 w-5 mb-4 text-[#003DA5]" />
+            <AlertDescription className="text-sm text-gray-700 text-left">
+              <span>
+                If you were not redirected to WhatsApp, you can manually open WhatsApp and confirm
+                your order using the button below.
+              </span>
+            </AlertDescription>
+          </Alert>
+          {order && (
+            <a
+              href={generateWhatsAppURL(order)}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center bg-[#25D366] hover:bg-[#25D366]/90 text-white font-semibold px-6 py-2 rounded-lg shadow mb-4"
+              style={{ textDecoration: 'none' }}
+            >
+              <MessageCircle className="w-5 h-5 mr-2" />
+              Send Message
+            </a>
+          )}
 
-          <div className="bg-gray-50 rounded-lg p-4 mb-6">
+          <div className="bg-gray-50 rounded-lg p-4 mb-6 mt-6">
             <p className="text-sm text-gray-600">Order ID</p>
             <p className="text-lg font-bold text-[#003DA5]">#{orderId || 'Processing...'}</p>
           </div>

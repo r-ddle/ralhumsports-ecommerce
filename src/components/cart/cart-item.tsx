@@ -45,6 +45,8 @@ export function CartItem({ item }: CartItemProps) {
       {/* Product Image */}
       <div className="relative flex-shrink-0">
         <Image
+          height={80}
+            width={80}
           src={item.product.images?.[0]?.url || 'https://placehold.co/600x400'}
           alt={item.product.images?.[0]?.alt || item.product.title}
           className="w-20 h-20 object-cover rounded-lg"
