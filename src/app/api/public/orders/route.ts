@@ -3,6 +3,7 @@ import { getSecurityHeaders } from '@/lib/response-filter'
 import { OrderInput } from '@/types/api'
 import { NextRequest, NextResponse } from 'next/server'
 import { getPayload } from 'payload'
+import config from '@/payload.config'
 
 type PayloadError = Error & { status?: number }
 
