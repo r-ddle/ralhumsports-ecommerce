@@ -31,6 +31,21 @@ import { RichTextRenderer } from '@/components/RichTextRenderer'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { ProductListItem } from '@/types/api'
+
+// Patch ProductListItem to include variants for this page
+type ProductVariantBackend = {
+  id: string
+  name: string
+  sku: string
+  size?: string
+  color?: string
+  price: number
+  inventory: number
+}
+
+interface ProductListItemWithVariants extends ProductListItem {
+  variants: ProductVariantBackend[]
+}
 import Image from 'next/image'
 
 interface ProductDetailPageProps {
@@ -49,31 +64,9 @@ interface ProductVariant {
   inventory: number
 }
 
-// Helper functions
-const formatLKR = (amount: number): string => {
-  return new Intl.NumberFormat('en-LK', {
-    style: 'currency',
-    currency: 'LKR',
-    minimumFractionDigits: 0,
-  }).format(amount)
-}
-
-const convertUsdToLkr = (usdAmount: number, exchangeRate: number = 315): number => {
-  return Math.round(usdAmount * exchangeRate)
-}
-
-const getCurrentExchangeRate = async (): Promise<number> => {
-  try {
-    return 315 // Fixed rate for now
-  } catch (error) {
-    console.warn('Failed to get exchange rate, using fallback' + error)
-    return 315
-  }
-}
-
 export default function ProductDetailPage({ params }: ProductDetailPageProps) {
   const router = useRouter()
-  const [product, setProduct] = useState<ProductListItem | null>(null)
+  const [product, setProduct] = useState<ProductListItemWithVariants | null>(null)
   const [selectedVariant, setSelectedVariant] = useState<ProductVariant | null>(null)
   const [selectedImage, setSelectedImage] = useState(0)
   const [quantity, setQuantity] = useState(1)
@@ -94,19 +87,6 @@ export default function ProductDetailPage({ params }: ProductDetailPageProps) {
     }
     resolveParams()
   }, [params])
-
-  // Load exchange rate
-  useEffect(() => {
-    const loadExchangeRate = async () => {
-      try {
-        const rate = await getCurrentExchangeRate()
-        setExchangeRate(rate)
-      } catch (error) {
-        console.warn('Using fallback exchange rate' + error)
-      }
-    }
-    loadExchangeRate()
-  }, [])
 
   // Fetch product data
   useEffect(() => {
@@ -136,62 +116,12 @@ export default function ProductDetailPage({ params }: ProductDetailPageProps) {
     fetchProduct()
   }, [resolvedParams?.slug])
 
-  // Generate variants from product sizes and colors
+  // Use backend variants array for accurate inventory and details
   useEffect(() => {
-    if (!product) return
+    if (!product || !Array.isArray(product.variants)) return
 
-    const productVariants: ProductVariant[] = []
-    const sizes = product.sizes || []
-    const colors = product.colors || []
-
-    // If no sizes or colors, create a single default variant
-    if (sizes.length === 0 && colors.length === 0) {
-      productVariants.push({
-        id: `${product.id}-default`,
-        name: product.name,
-        price: product.price,
-        inventory: product.stock,
-      })
-    } else if (sizes.length > 0 && colors.length === 0) {
-      // Only sizes
-      sizes.forEach((size) => {
-        productVariants.push({
-          id: `${product.id}-${size}`,
-          name: `${product.name} - ${size}`,
-          price: product.price,
-          size,
-          inventory: Math.floor(product.stock / sizes.length), // Distribute stock evenly
-        })
-      })
-    } else if (colors.length > 0 && sizes.length === 0) {
-      // Only colors
-      colors.forEach((color) => {
-        productVariants.push({
-          id: `${product.id}-${color}`,
-          name: `${product.name} - ${color}`,
-          price: product.price,
-          color,
-          inventory: Math.floor(product.stock / colors.length),
-        })
-      })
-    } else {
-      // Both sizes and colors
-      sizes.forEach((size) => {
-        colors.forEach((color) => {
-          productVariants.push({
-            id: `${product.id}-${size}-${color}`,
-            name: `${product.name} - ${size}, ${color}`,
-            price: product.price,
-            size,
-            color,
-            inventory: Math.floor(product.stock / (sizes.length * colors.length)),
-          })
-        })
-      })
-    }
-
-    setVariants(productVariants)
-    setSelectedVariant(productVariants[0] || null)
+    setVariants(product.variants)
+    setSelectedVariant(product.variants[0] || null)
   }, [product])
 
   // Fetch related products
@@ -433,22 +363,16 @@ export default function ProductDetailPage({ params }: ProductDetailPageProps) {
             </div>
 
             {/* Product Details - Mobile Optimized */}
-            <div className="space-y-4 sm:space-y-6">
+            <div className="space-y-4">
               {/* Brand */}
               {product.brand && (
-                <div className="flex items-center gap-2">
+                <div className='flex'>
                   <Link
                     href={`/products?brand=${product.brand.slug}`}
-                    className="text-[#003DA5] dark:text-[#4A90E2] font-bold text-base sm:text-lg hover:underline"
+                    className="text-[#003DA5] dark:text-[#4A90E2] font-bold text-base sm:text-xl hover:underline"
                   >
                     {product.brand.name}
                   </Link>
-                  {product.brand.website && (
-                    <Badge variant="outline" className="text-xs">
-                      <Award className="w-3 h-3 mr-1" />
-                      Official Partner
-                    </Badge>
-                  )}
                 </div>
               )}
 
@@ -457,53 +381,8 @@ export default function ProductDetailPage({ params }: ProductDetailPageProps) {
                 {product.name}
               </h1>
 
-              {/* Rating */}
-              {product.rating && product.reviewCount && (
-                <div className="flex items-center gap-4">
-                  <div className="flex items-center gap-1">
-                    {Array.from({ length: 5 }).map((_, i) => (
-                      <Star
-                        key={i}
-                        className={`w-4 h-4 sm:w-5 sm:h-5 ${
-                          i < Math.floor(product.rating!)
-                            ? 'fill-yellow-400 text-yellow-400'
-                            : 'text-gray-300'
-                        }`}
-                      />
-                    ))}
-                    <span className="text-gray-600 dark:text-gray-400 ml-2 text-sm sm:text-base">
-                      ({product.rating})
-                    </span>
-                  </div>
-                  <Badge variant="outline" className="text-xs">
-                    {product.reviewCount} Reviews
-                  </Badge>
-                </div>
-              )}
-
               {/* Price - Mobile Optimized */}
-              <div className="space-y-2">
-                <div className="flex items-baseline gap-3 flex-wrap">
-                  <span className="text-2xl sm:text-3xl font-black text-gray-900 dark:text-white">
-                    {formatLKR(convertUsdToLkr(selectedVariant.price, exchangeRate))}
-                  </span>
-                  {product.originalPrice && product.originalPrice > selectedVariant.price && (
-                    <>
-                      <span className="text-lg sm:text-xl text-gray-500 line-through">
-                        {formatLKR(convertUsdToLkr(product.originalPrice, exchangeRate))}
-                      </span>
-                      <Badge className="bg-[#FF3D00] text-white font-bold text-xs sm:text-sm">
-                        SAVE{' '}
-                        {formatLKR(
-                          convertUsdToLkr(
-                            product.originalPrice - selectedVariant.price,
-                            exchangeRate,
-                          ),
-                        )}
-                      </Badge>
-                    </>
-                  )}
-                </div>
+              <div className="">
                 <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-400">
                   Price includes tax. Free shipping on orders over LKR 23,625.
                 </p>
@@ -528,93 +407,66 @@ export default function ProductDetailPage({ params }: ProductDetailPageProps) {
                 )}
               </div>
 
-              {/* Variant Selection - Mobile Optimized */}
+              {/* Variant Selection - Design Consistent */}
               <div className="space-y-4 sm:space-y-6">
-                {/* Size Selection */}
-                {product.sizes && product.sizes.length > 0 && (
+                {variants.length > 1 && (
                   <div className="space-y-3">
                     <h3 className="font-bold text-gray-900 dark:text-white text-sm sm:text-base">
-                      Size:
+                      Select Variant:
                     </h3>
-                    <div className="flex flex-wrap gap-2">
-                      {product.sizes.map((size) => {
-                        const sizeVariants = variants.filter((v) => v.size === size)
-                        const isAvailable = sizeVariants.some((v) => v.inventory > 0)
-                        const isSelected = selectedVariant?.size === size
-
+                    <div className="flex flex-wrap gap-2 sm:gap-3">
+                      {variants.map((variant) => {
+                        const isSelected = selectedVariant?.id === variant.id
+                        const isAvailable = variant.inventory > 0
+                        // Avoid duplicate info: if name === color or name === size, only show once
+                        let mainLabel = variant.name || 'Standard'
+                        let subLabel = ''
+                        if (variant.size && variant.color) {
+                          // If name is not size or color, show both
+                          if (variant.name !== variant.size && variant.name !== variant.color) {
+                            subLabel = `${variant.size} - ${variant.color}`
+                          } else if (
+                            variant.name === variant.size &&
+                            variant.name !== variant.color
+                          ) {
+                            subLabel = variant.color
+                          } else if (
+                            variant.name === variant.color &&
+                            variant.name !== variant.size
+                          ) {
+                            subLabel = variant.size
+                          } // else, both same as name, show nothing
+                        } else if (variant.size && variant.name !== variant.size) {
+                          subLabel = variant.size
+                        } else if (variant.color && variant.name !== variant.color) {
+                          subLabel = variant.color
+                        }
                         return (
                           <button
-                            key={size}
+                            key={variant.id}
                             onClick={() => {
-                              const availableVariant =
-                                sizeVariants.find((v) => v.inventory > 0) || sizeVariants[0]
-                              if (availableVariant) {
-                                setSelectedVariant(availableVariant)
-                                setQuantity(1)
-                              }
+                              setSelectedVariant(variant)
+                              setQuantity(1)
                             }}
                             disabled={!isAvailable}
-                            className={`min-w-[2.5rem] sm:min-w-[3rem] h-10 sm:h-12 px-3 sm:px-4 rounded-lg border-2 font-medium transition-all text-sm sm:text-base ${
+                            className={`min-w-[2.5rem] sm:min-w-[3rem] h-10 sm:h-12 px-3 sm:px-4 rounded-lg border-2 font-medium transition-all text-sm sm:text-base flex flex-col items-center justify-center text-center ${
                               isSelected
-                                ? 'border-[#003DA5] bg-[#003DA5] text-white'
+                                ? 'border-[#003DA5] bg-[#003DA5] text-white shadow-md'
                                 : isAvailable
                                   ? 'border-gray-300 bg-white text-gray-900 hover:border-[#003DA5]'
                                   : 'border-gray-200 bg-gray-100 text-gray-400 cursor-not-allowed line-through'
                             }`}
+                            aria-label={`Select variant ${mainLabel}${subLabel ? ' ' + subLabel : ''}`}
                           >
-                            {size}
-                          </button>
-                        )
-                      })}
-                    </div>
-                  </div>
-                )}
-
-                {/* Color Selection */}
-                {product.colors && product.colors.length > 0 && (
-                  <div className="space-y-3">
-                    <h3 className="font-bold text-gray-900 dark:text-white text-sm sm:text-base">
-                      Color:
-                    </h3>
-                    <div className="flex flex-wrap gap-2 sm:gap-3">
-                      {product.colors.map((color) => {
-                        const colorVariants = variants.filter((v) => v.color === color)
-                        const isAvailable = colorVariants.some((v) => v.inventory > 0)
-                        const isSelected = selectedVariant?.color === color
-
-                        return (
-                          <button
-                            key={color}
-                            onClick={() => {
-                              let targetVariant = colorVariants.find(
-                                (v) =>
-                                  v.color === color &&
-                                  (!selectedVariant?.size || v.size === selectedVariant.size) &&
-                                  v.inventory > 0,
-                              )
-
-                              if (!targetVariant) {
-                                targetVariant =
-                                  colorVariants.find((v) => v.inventory > 0) || colorVariants[0]
-                              }
-
-                              if (targetVariant) {
-                                setSelectedVariant(targetVariant)
-                                setQuantity(1)
-                              }
-                            }}
-                            disabled={!isAvailable}
-                            className={`relative h-10 sm:h-12 px-3 sm:px-4 rounded-lg border-2 font-medium transition-all text-sm sm:text-base ${
-                              isSelected
-                                ? 'border-[#003DA5] bg-[#003DA5] text-white'
-                                : isAvailable
-                                  ? 'border-gray-300 bg-white text-gray-900 hover:border-[#003DA5]'
-                                  : 'border-gray-200 bg-gray-100 text-gray-400 cursor-not-allowed'
-                            }`}
-                          >
-                            <span className="relative z-10">{color}</span>
+                            <span className="font-bold">{mainLabel}</span>
+                            {subLabel && (
+                              <span className="text-xs text-white dark:text-gray-300 font-normal">
+                                {subLabel}
+                              </span>
+                            )}
+                            {/* No price info here */}
                             {!isAvailable && (
-                              <div className="absolute inset-0 bg-gray-200 opacity-50 rounded-lg" />
+                              <span className="text-xs text-red-500 mt-1">Out of stock</span>
                             )}
                           </button>
                         )
@@ -622,7 +474,6 @@ export default function ProductDetailPage({ params }: ProductDetailPageProps) {
                     </div>
                   </div>
                 )}
-
                 {/* Selected Variant Info */}
                 {selectedVariant && variants.length > 1 && (
                   <div className="p-3 sm:p-4 bg-gray-50 dark:bg-gray-800 rounded-lg">
@@ -632,14 +483,15 @@ export default function ProductDetailPage({ params }: ProductDetailPageProps) {
                           Selected:
                         </p>
                         <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-400">
-                          {selectedVariant.size && selectedVariant.color
-                            ? `${selectedVariant.size} - ${selectedVariant.color}`
-                            : selectedVariant.size || selectedVariant.color || 'Standard'}
+                          {selectedVariant.name ||
+                            (selectedVariant.size && selectedVariant.color
+                              ? `${selectedVariant.size} - ${selectedVariant.color}`
+                              : selectedVariant.size || selectedVariant.color || 'Standard')}
                         </p>
                       </div>
                       <div className="text-right">
                         <p className="font-bold text-[#003DA5] dark:text-[#4A90E2] text-sm sm:text-base">
-                          {formatLKR(convertUsdToLkr(selectedVariant.price, exchangeRate))}
+                          Rs. {selectedVariant.price}
                         </p>
                         {selectedVariant.inventory <= 5 && selectedVariant.inventory > 0 && (
                           <p className="text-xs text-orange-600">
@@ -685,7 +537,7 @@ export default function ProductDetailPage({ params }: ProductDetailPageProps) {
                     </Button>
                   </div>
                   <span className="text-xs sm:text-sm text-gray-600 dark:text-gray-400">
-                    {maxQuantity} available
+                    {selectedVariant?.inventory} available
                   </span>
                 </div>
               </div>
@@ -721,7 +573,7 @@ export default function ProductDetailPage({ params }: ProductDetailPageProps) {
                 <div className="text-center">
                   <Truck className="w-4 h-4 sm:w-6 sm:h-6 mx-auto text-[#003DA5] mb-1 sm:mb-2" />
                   <div className="text-xs font-medium">Free Shipping</div>
-                  <div className="text-xs text-gray-600 hidden sm:block">On orders $75+</div>
+                  <div className="text-xs text-gray-600 hidden sm:block">On orders above 50k</div>
                 </div>
                 <div className="text-center">
                   <Shield className="w-4 h-4 sm:w-6 sm:h-6 mx-auto text-[#003DA5] mb-1 sm:mb-2" />

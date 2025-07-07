@@ -46,7 +46,7 @@ export function CartItem({ item }: CartItemProps) {
       <div className="relative flex-shrink-0">
         <Image
           height={80}
-            width={80}
+          width={80}
           src={item.product.images?.[0]?.url || 'https://placehold.co/600x400'}
           alt={item.product.images?.[0]?.alt || item.product.title}
           className="w-20 h-20 object-cover rounded-lg"
@@ -60,15 +60,33 @@ export function CartItem({ item }: CartItemProps) {
 
       {/* Product Details */}
       <div className="flex-1 min-w-0">
-        {/* Product Title & Brand */}
-        <div className="mb-2">
+        {/* Product Title, Brand & Variant Badge (ultra-tight spacing) */}
+        <div className="mb-0 flex flex-col gap-0">
           <Link
             href={`/products/${item.product.slug}`}
-            className="font-semibold text-gray-900 hover:text-[#003DA5] transition-colors line-clamp-2 text-sm"
+            className="font-semibold text-gray-900 hover:text-[#003DA5] transition-colors line-clamp-2 text-sm mb-0 pb-0 leading-snug"
+            style={{ marginBottom: 0, paddingBottom: 0, lineHeight: '1.1' }}
           >
             {item.product.title}
           </Link>
-          <p className="text-xs text-[#003DA5] font-medium mt-1">{item.product.brand?.name}</p>
+          <div
+            className="flex items-center gap-1 mt-0 pt-0"
+            style={{ marginTop: 0, paddingTop: 0 }}
+          >
+            <p
+              className="text-xs text-[#003DA5] font-medium m-0 p-0 leading-tight"
+              style={{ margin: 0, padding: 0, lineHeight: '1.1' }}
+            >
+              {item.product.brand?.name}
+            </p>
+            <Badge
+              variant="secondary"
+              className="text-xs m-0 p-0 leading-tight"
+              style={{ margin: 0, padding: 0, lineHeight: '1.1' }}
+            >
+              {item.product.variants ? item.variant.name : 'No Variant'}
+            </Badge>
+          </div>
         </div>
 
         {/* Variant Info */}
@@ -98,7 +116,7 @@ export function CartItem({ item }: CartItemProps) {
               {(item.variant.price || 0) * item.quantity}
             </span>
             {item.quantity > 1 && (
-              <span className="text-xs text-gray-600">{item.variant.price || 0} each</span>
+              <span className="text-xs text-gray-600">{item.variant.inventory || 0} each</span>
             )}
           </div>
 

@@ -46,8 +46,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
       sku: product.sku,
       stock: product.stock,
       status: product.status,
-      sizes: product.sizes ? product.sizes.split(',').map((s) => s.trim()) : [],
-      colors: product.colors ? product.colors.split(',').map((c) => c.trim()) : [],
+      variants: product.variants || [],
       images:
         product.images?.map((img) => ({
           id: typeof img.image === 'object' ? img.image.id : img.image,
@@ -86,12 +85,22 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
       specifications: product.specifications,
       shipping: product.shipping,
       seo: product.seo,
-      rating: product.analytics?.rating,
-      reviewCount: product.analytics?.reviewCount,
-      viewCount: product.analytics?.viewCount,
+      // rating: product.analytics?.rating,
+      // reviewCount: product.analytics?.reviewCount,
+      // viewCount: product.analytics?.viewCount,
       tags: product.tags ? product.tags.split(',').map((t) => t.trim()) : [],
-      relatedProducts: product.relatedProducts
-        ? product.relatedProducts.split(',').map((p) => p.trim())
+      relatedProducts: Array.isArray(product.relatedProducts)
+        ? product.relatedProducts.map((p) =>
+            typeof p === 'object' && p !== null
+              ? {
+                  id: p.id,
+                  name: p.name,
+                  slug: p.slug,
+                  price: p.price,
+                  images: p.images,
+                }
+              : p,
+          )
         : [],
       createdAt: product.createdAt,
       updatedAt: product.updatedAt,

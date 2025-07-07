@@ -193,22 +193,7 @@ export const Products: CollectionConfig = {
     },
 
     // Optional Product Information
-    {
-      name: 'sizes',
-      type: 'text',
-      admin: {
-        description: 'Available sizes (comma separated)',
-        placeholder: 'S, M, L, XL or 40, 41, 42, 43',
-      },
-    },
-    {
-      name: 'colors',
-      type: 'text',
-      admin: {
-        description: 'Available colors (comma separated)',
-        placeholder: 'Black, White, Red, Blue',
-      },
-    },
+    // Removed 'sizes' and 'colors' fields; use variants array instead.,
     {
       name: 'description',
       type: 'richText',
@@ -405,10 +390,17 @@ export const Products: CollectionConfig = {
     // Related Products and Variants
     {
       name: 'relatedProducts',
-      type: 'text',
+      type: 'relationship',
+      relationTo: 'products',
+      hasMany: true,
       admin: {
-        description: 'Related product IDs (comma separated)',
-        placeholder: 'Enter related product IDs',
+        description: 'Select related products (shown as recommendations)',
+        placeholder: 'Choose related products',
+      },
+      filterOptions: {
+        status: {
+          equals: 'active',
+        },
       },
     },
 
@@ -416,17 +408,8 @@ export const Products: CollectionConfig = {
     {
       name: 'analytics',
       type: 'group',
-      label: 'Analytics & Metrics',
+      label: 'Analytics',
       fields: [
-        {
-          name: 'viewCount',
-          type: 'number',
-          defaultValue: 0,
-          admin: {
-            readOnly: true,
-            description: 'Number of product page views',
-          },
-        },
         {
           name: 'orderCount',
           type: 'number',
@@ -436,27 +419,45 @@ export const Products: CollectionConfig = {
             description: 'Number of times ordered',
           },
         },
+      ],
+    },
+
+    {
+      name: 'variants',
+      type: 'array',
+      required: true,
+      minRows: 1,
+      admin: {
+        description: 'Product variants (e.g., different sizes/colors, inventory tracking)',
+      },
+      fields: [
+        { name: 'name', type: 'text', required: true, admin: { placeholder: 'e.g. Large / Red' } },
+        { name: 'sku', type: 'text', required: true, unique: true },
+        { name: 'size', type: 'text', admin: { placeholder: 'e.g. L, XL, 42' } },
+        { name: 'color', type: 'text', admin: { placeholder: 'e.g. Red, Blue' } },
+        { name: 'price', type: 'number', required: true, min: 0 },
         {
-          name: 'rating',
+          name: 'inventory',
           type: 'number',
-          admin: {
-            readOnly: true,
-            description: 'Average customer rating (1-5)',
-            step: 0.1,
-          },
-          min: 1,
-          max: 5,
-        },
-        {
-          name: 'reviewCount',
-          type: 'number',
-          defaultValue: 0,
-          admin: {
-            readOnly: true,
-            description: 'Number of customer reviews',
-          },
+          required: true,
+          min: 0,
+          admin: { description: 'Stock for this variant' },
         },
       ],
+      hooks: {
+        beforeValidate: [
+          ({ value, siblingData, operation }) => {
+            if ((operation === 'create' || operation === 'update') && !value) {
+              const timestamp = Date.now().toString().slice(-6)
+              const random = Math.random().toString(36).substring(2, 5).toUpperCase()
+              const size = siblingData?.size ? `-${siblingData.size}` : ''
+              const color = siblingData?.color ? `-${siblingData.color}` : ''
+              return `RS-${timestamp}-${random}${size}${color}`
+            }
+            return value
+          },
+        ],
+      },
     },
 
     // Automatic Fields
@@ -540,6 +541,14 @@ export const Products: CollectionConfig = {
           if (doc.stock <= doc.pricing?.lowStockThreshold && doc.status === 'active') {
             req.payload.logger.warn(
               `Low stock alert: ${doc.name} (${doc.sku}) - ${doc.stock} remaining`,
+            )
+          }
+
+          // Status change if stock is 0
+          if (previousDoc && previousDoc.stock > 0 && doc.stock === 0) {
+            doc.status = 'out-of-stock'
+            req.payload.logger.info(
+              `Product status changed to out-of-stock: ${doc.name} (${doc.sku})`,
             )
           }
         }

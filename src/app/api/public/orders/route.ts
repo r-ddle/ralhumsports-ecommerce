@@ -167,6 +167,7 @@ export const POST = withRateLimit(
             id: productId as string,
           })
 
+          // Decrement stock
           if (product && typeof product.stock === 'number') {
             const newStock = product.stock - quantityPurchased
 
@@ -176,6 +177,14 @@ export const POST = withRateLimit(
               data: { stock: newStock },
             })
           }
+
+          // Increment analytics.orderCount
+          const currentOrderCount = product?.analytics?.orderCount || 0
+          await payload.update({
+            collection: 'products',
+            id: productId as string,
+            data: { analytics: { orderCount: currentOrderCount + 1 } },
+          })
         }
 
         return NextResponse.json(

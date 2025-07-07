@@ -553,14 +553,6 @@ export interface Product {
    */
   status: 'active' | 'inactive' | 'draft' | 'out-of-stock' | 'discontinued';
   /**
-   * Available sizes (comma separated)
-   */
-  sizes?: string | null;
-  /**
-   * Available colors (comma separated)
-   */
-  colors?: string | null;
-  /**
    * Detailed product description with rich formatting
    */
   description?: {
@@ -656,27 +648,30 @@ export interface Product {
    */
   tags?: string | null;
   /**
-   * Related product IDs (comma separated)
+   * Select related products (shown as recommendations)
    */
-  relatedProducts?: string | null;
+  relatedProducts?: (number | Product)[] | null;
   analytics?: {
-    /**
-     * Number of product page views
-     */
-    viewCount?: number | null;
     /**
      * Number of times ordered
      */
     orderCount?: number | null;
-    /**
-     * Average customer rating (1-5)
-     */
-    rating?: number | null;
-    /**
-     * Number of customer reviews
-     */
-    reviewCount?: number | null;
   };
+  /**
+   * Product variants (e.g., different sizes/colors, inventory tracking)
+   */
+  variants: {
+    name: string;
+    sku: string;
+    size?: string | null;
+    color?: string | null;
+    price: number;
+    /**
+     * Stock for this variant
+     */
+    inventory: number;
+    id?: string | null;
+  }[];
   /**
    * User who created this product
    */
@@ -1275,8 +1270,6 @@ export interface ProductsSelect<T extends boolean = true> {
         id?: T;
       };
   status?: T;
-  sizes?: T;
-  colors?: T;
   description?: T;
   seo?:
     | T
@@ -1319,10 +1312,18 @@ export interface ProductsSelect<T extends boolean = true> {
   analytics?:
     | T
     | {
-        viewCount?: T;
         orderCount?: T;
-        rating?: T;
-        reviewCount?: T;
+      };
+  variants?:
+    | T
+    | {
+        name?: T;
+        sku?: T;
+        size?: T;
+        color?: T;
+        price?: T;
+        inventory?: T;
+        id?: T;
       };
   createdBy?: T;
   lastModifiedBy?: T;

@@ -71,6 +71,20 @@ export default function StorePage() {
     status: 'active',
   })
 
+  // Helper: get lowest variant price (if variants exist)
+  // Patch: allow variant price display if present in any (unknown) product object
+  function getDisplayPrice(product: any): number {
+    if (Array.isArray(product.variants) && product.variants.length > 0) {
+      const prices = product.variants
+        .map((v: any) => v.price)
+        .filter((p: any) => typeof p === 'number' && !isNaN(p))
+      if (prices.length > 0) {
+        return Math.min(...prices)
+      }
+    }
+    return product.price
+  }
+
   // Fetch products
   const fetchProducts = useCallback(
     async (filters: ProductQueryParams = currentFilters) => {
@@ -89,7 +103,12 @@ export default function StorePage() {
         const data = await response.json()
 
         if (data.success) {
-          setProducts(data.data)
+          // Patch: attach _displayPrice (not typed) to each product
+          const patched = data.data.map((p: any) => ({
+            ...p,
+            _displayPrice: getDisplayPrice(p),
+          }))
+          setProducts(patched)
           setPagination(data.pagination)
         } else {
           setError(data.error || 'Failed to fetch products')
@@ -390,10 +409,10 @@ export default function StorePage() {
                         : 'grid-cols-1'
                     }`}
                   >
-                    {products.map((product) => (
+                    {products.map((product: any) => (
                       <ProductCard
                         key={product.id}
-                        product={product}
+                        product={{ ...product, price: product._displayPrice ?? product.price }}
                         variant={viewMode}
                         showBrand={true}
                         showCategory={true}
