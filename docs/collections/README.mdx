@@ -1,0 +1,88 @@
+---
+title: Collections Overview
+---
+
+# Collections Overview
+
+This section introduces the main data collections that power the Ralhum Sports backend. Each collection represents a core business entity, such as products, brands, categories, media, users, and more. Collections are defined using [Payload CMS](https://payloadcms.com/) and are tightly integrated with the API and backend logic.
+
+## What is a Collection?
+
+A collection is a structured set of documents (records) in the database, each following a defined schema. Collections enable robust data validation, access control, and business logic through hooks and relationships.
+
+## Main Collections
+
+- **Products**: The central catalog of items for sale.
+- **Brands**: Information about product brands.
+- **Categories**: Product categorization for navigation and filtering.
+- **Media**: Uploaded images and files.
+- **Users**: System users (admins, managers, customers).
+- **Orders**: Customer purchase records.
+- **Customers**: Customer profiles.
+
+## Database Relationships Diagram
+
+Below is a DBML diagram showing the relationships between the main collections:
+
+```dbml
+Table products {
+  id integer [primary key]
+  name text
+  slug text [unique]
+  category integer [ref: > categories.id]
+  brand integer [ref: > brands.id]
+  price number
+  sku text [unique]
+  stock number
+  status text
+  images json
+  createdBy integer [ref: > users.id]
+  lastModifiedBy integer [ref: > users.id]
+  // ...other fields
+}
+
+Table categories {
+  id integer [primary key]
+  name text [unique]
+  slug text [unique]
+  // ...other fields
+}
+
+Table brands {
+  id integer [primary key]
+  name text [unique]
+  slug text [unique]
+  // ...other fields
+}
+
+Table media {
+  id integer [primary key]
+  filename text
+  // ...other fields
+}
+
+Table users {
+  id integer [primary key]
+  email text [unique]
+  // ...other fields
+}
+
+Ref: products.category > categories.id
+Ref: products.brand > brands.id
+Ref: products.images.image > media.id
+Ref: products.createdBy > users.id
+Ref: products.lastModifiedBy > users.id
+```
+
+This diagram illustrates:
+- Each product belongs to a single category and brand.
+- Each product can have multiple images, each referencing a media file.
+- Products track which user created or last modified them.
+
+## How Collections Integrate
+
+Collections are referenced throughout the backend and API:
+- [API Reference](../api/README.mdx) — See how collections are exposed via REST endpoints.
+- [Backend Overview](../backend-overview.mdx) — Learn how collections, hooks, and access control power business logic.
+
+For detailed schema and business rules for each collection, see the individual documentation modules.

@@ -1,0 +1,188 @@
+---
+title: Products Collection
+---
+
+# Products Collection
+
+The **Products** collection is the core of the Ralhum Sports backend, representing every item available for sale. This module explains the schema, business rules, access control, and integration points for products, using real code examples.
+
+> **See also:**
+> - [API: Products](../api/products.mdx)
+> - [Collections Overview](./README.mdx)
+> - [Backend Overview](../backend-overview.mdx)
+
+---
+
+## Schema Overview
+
+Each product document contains detailed information, relationships, and metadata. Key fields include:
+
+| Field              | Type           | Description                                                      | Required | Example / Notes                |
+|--------------------|----------------|------------------------------------------------------------------|----------|--------------------------------|
+| `name`             | text           | Product name as shown to customers                               | Yes      | `"Nike Air Max Running Shoes"` |
+| `slug`             | text           | URL-friendly identifier, auto-generated from name                | Yes      | `"nike-air-max-running-shoes"` |
+| `category`         | relationship   | Reference to a Category                                          | Yes      | Category ID                    |
+| `brand`            | relationship   | Reference to a Brand                                             | Yes      | Brand ID                       |
+| `price`            | number         | Product price in LKR                                             | Yes      | `5000.00`                      |
+| `sku`              | text           | Unique Stock Keeping Unit, auto-generated if empty               | Yes      | `"RS-123456-ABC"`              |
+| `stock`            | number         | Available stock quantity                                         | Yes      | `10`                           |
+| `images`           | array          | List of product images (uploads to Media)                        | Yes      | See below                      |
+| `status`           | select         | Product status (`active`, `inactive`, `draft`, etc.)             | Yes      | `"active"`                     |
+| `sizes`            | text           | Available sizes (comma separated)                                | No       | `"S, M, L, XL"`                |
+| `colors`           | text           | Available colors (comma separated)                               | No       | `"Black, White"`               |
+| `description`      | richText       | Detailed product description                                     | No       |                                |
+| `seo`              | group          | SEO settings (title, description)                                | No       |                                |
+| `specifications`   | group          | Material, weight, dimensions, care instructions                  | No       |                                |
+| `shipping`         | group          | Shipping config (freeShipping, islandWideDelivery, etc.)         | No       |                                |
+| `pricing`          | group          | Original price, cost price, low stock threshold, inventory track | No       |                                |
+| `features`         | array          | Key product features                                             | No       |                                |
+| `tags`             | text           | Tags for search/filtering (comma separated)                      | No       | `"running, outdoor"`           |
+| `relatedProducts`  | text           | Related product IDs (comma separated)                            | No       |                                |
+| `analytics`        | group          | View count, order count, rating, review count                    | No       |                                |
+| `createdBy`        | relationship   | User who created the product                                     | Auto     | User ID                        |
+| `lastModifiedBy`   | relationship   | User who last modified the product                               | Auto     | User ID                        |
+
+### Example: Images Field
+
+Each product can have multiple images, each referencing a Media document:
+
+```typescript
+{
+  name: 'images',
+  type: 'array',
+  required: true,
+  minRows: 1,
+  maxRows: 10,
+  fields: [
+    {
+      name: 'image',
+      type: 'upload',
+      relationTo: 'media',
+      required: true,
+      filterOptions: { category: { equals: 'products' } },
+    },
+    {
+      name: 'altText',
+      type: 'text',
+      admin: { description: 'Alternative text for this image' },
+    },
+  ],
+}
+```
+
+---
+
+## Relationships
+
+- **Category**: Each product belongs to one category (`categories` collection).
+- **Brand**: Each product is linked to one brand (`brands` collection).
+- **Media**: Product images reference uploaded media files.
+- **Users**: Tracks who created and last modified the product.
+
+See the [Collections Overview](./README.mdx) for a full DBML diagram.
+
+---
+
+## Access Control
+
+Access is enforced at the collection level:
+
+```typescript
+access: {
+  create: isAdminOrProductManager,
+  read: ({ req }) => Boolean(req.user),
+  update: isAdminOrProductManager,
+  delete: isAdmin,
+}
+```
+
+- Only product managers and above can create or update products.
+- All authenticated users can read products.
+- Only admins can delete products.
+
+---
+
+## Business Logic & Hooks
+
+The Products collection uses hooks to enforce business rules and automate data:
+
+### Slug Generation
+
+Auto-generates a URL slug from the product name:
+
+```typescript
+hooks: {
+  beforeValidate: [
+    ({ data, operation }) => {
+      if ((operation === 'create' || operation === 'update') && data?.name) {
+        return data.name
+          .toLowerCase()
+          .replace(/[^a-z0-9]+/g, '-')
+          .replace(/(^-|-$)/g, '')
+      }
+    },
+  ],
+}
+```
+
+### SKU Generation
+
+Auto-generates a unique SKU if not provided:
+
+```typescript
+hooks: {
+  beforeValidate: [
+    ({ data, operation }) => {
+      if (operation === 'create' && !data?.sku) {
+        const timestamp = Date.now().toString().slice(-6)
+        const random = Math.random().toString(36).substring(2, 5).toUpperCase()
+        return `RS-${timestamp}-${random}`
+      }
+    },
+  ],
+}
+```
+
+### Created/Modified By
+
+Automatically sets `createdBy` and `lastModifiedBy` fields:
+
+```typescript
+hooks: {
+  beforeChange: [
+    async ({ req, operation, data }) => {
+      if (operation === 'create') data.createdBy = req.user?.id
+      if (operation === 'update') data.lastModifiedBy = req.user?.id
+      // ...other logic
+      return data
+    },
+  ],
+}
+```
+
+### Stock and Pricing Validation
+
+- If stock is 0 and status is `active`, status is set to `out-of-stock`.
+- Throws an error if `originalPrice` is less than `price`.
+
+### Logging and Analytics
+
+- Logs product creation, updates, deletions, and stock changes.
+- Warns on low stock (when stock falls below threshold).
+
+### Integration with Other Collections
+
+- On product create/update, attempts to update category and brand product counts.
+- Product images are filtered to only allow media with category `products`.
+
+---
+
+## Example: Creating a Product (API)
+
+See [API: Products](../api/products.mdx) for request/response examples.
+
+---
+
+## Summary
+
+The Products collection is highly structured, enforces business rules through hooks, and integrates with other collections for a robust e-commerce backend. For more details on API usage and backend logic, see the linked modules above.

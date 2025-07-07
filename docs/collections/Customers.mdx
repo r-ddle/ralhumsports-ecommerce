@@ -1,0 +1,83 @@
+# Customers Collection
+
+This document explains the Customers collection schema, hooks, access control, business logic, and integration points.
+
+---
+
+## Overview
+
+- **Collection:** `customers`
+- **Purpose:** Stores customer information, contact details, addresses, and order statistics.
+
+---
+
+## Schema
+
+**Key fields:**
+- `name` (text, required): Customer full name.
+- `email` (email, required, unique): Customer email address.
+- `primaryPhone` (text, required): Primary phone number for WhatsApp communication.
+- `secondaryPhone` (text): Secondary phone number.
+- `addresses` (array): List of customer addresses (type, address, isDefault).
+- `orderStats` (object): Includes total orders, pending orders, last order date.
+- `preferredLanguage` (text): Customer's preferred language.
+- `marketingOptIn` (checkbox): Whether the customer has opted in for marketing.
+
+**Example:**
+```typescript
+{
+  name: 'Jane Doe',
+  email: 'jane@example.com',
+  primaryPhone: '+94 77 123 4567',
+  secondaryPhone: '+94 77 987 6543',
+  addresses: [
+    { type: 'home', address: '123 Main St, Colombo', isDefault: true }
+  ],
+  orderStats: {
+    totalOrders: 5,
+    pendingOrders: 1,
+    lastOrderDate: '2025-07-01'
+  },
+  preferredLanguage: 'english',
+  marketingOptIn: true
+}
+```
+
+---
+
+## Access Control
+
+- **Create:** Admins and product managers.
+- **Read:** Admins and product managers.
+- **Update:** Admins and product managers.
+- **Delete:** Admins only.
+
+---
+
+## Hooks & Business Logic
+
+- **Uniqueness:** Email must be unique.
+- **Admin UI:** Uses `name` as the title and displays columns for name, email, phone, and order stats.
+- **WhatsApp Integration:** Primary phone is used for WhatsApp communication.
+
+---
+
+## DBML Diagram Reference
+
+See the main DBML diagram for relationships between customers and orders.
+
+---
+
+## Integration Points
+
+- **APIs:** Used by [`/api/customers`](../api/customers.mdx) for customer creation and updates.
+- **Frontend:** Consumed by checkout, registration, and profile management.
+- **Related Components:** [`src/components/account/`](../../src/components/account/)
+
+---
+
+## Beginner Tips
+
+- Always provide a valid, unique email for each customer.
+- Use the addresses array for multi-address support.
+- Only admins can delete customers.

@@ -1,0 +1,136 @@
+# Orders API
+
+This document explains the `/api/orders` endpoint, its purpose, request/response structure, integration with the frontend, and how it relates to the Orders collection.
+
+---
+
+## Endpoint Overview
+
+- **Route:** `/api/orders`
+- **Method:** `POST`
+- **Purpose:** Create new customer orders, validate input, and update customer records. Rate limited for security.
+
+---
+
+## Request
+
+Send a JSON body with order and customer details.
+
+**Example:**
+```json
+{
+  "customer": {
+    "fullName": "Jane Doe",
+    "email": "jane@example.com",
+    "phone": "+94 77 123 4567"
+  },
+  "items": [
+    {
+      "productId": "clx123...",
+      "productName": "Running Shoes",
+      "productSku": "RS-001",
+      "selectedSize": "42",
+      "selectedColor": "Black",
+      "unitPrice": 12000,
+      "quantity": 1
+    }
+  ],
+  "orderSubtotal": 12000,
+  "shippingCost": 500,
+  "discount": 0,
+  "orderTotal": 12500,
+  "deliveryAddress": "123 Main St, Colombo"
+}
+```
+
+---
+
+## Response
+
+Returns a JSON object indicating success and the created order record.
+
+**Example:**
+```json
+{
+  "success": true,
+  "order": {
+    "id": "clx999...",
+    "orderNumber": "ORD-20250707-001",
+    "customerName": "Jane Doe",
+    "customerEmail": "jane@example.com",
+    "customerPhone": "+94 77 123 4567",
+    "orderItems": [
+      {
+        "productId": "clx123...",
+        "productName": "Running Shoes",
+        "quantity": 1,
+        "unitPrice": 12000
+      }
+    ],
+    "orderTotal": 12500,
+    "orderStatus": "pending",
+    "createdAt": "2025-07-07T11:23:00.000Z"
+  }
+}
+```
+
+---
+
+## Code Walkthrough
+
+[`src/app/api/orders/route.ts`](src/app/api/orders/route.ts:1):
+
+- Validates required customer and item fields.
+- Creates or updates the customer record before creating the order.
+- Uses strict rate limiting and security headers.
+- Handles errors with clear messages and status codes.
+
+**Key logic:**
+```typescript
+if (!orderData.customer?.fullName || !orderData.customer?.email || !orderData.customer?.phone) {
+  return NextResponse.json({ success: false, error: 'Customer information is required' }, { status: 400 });
+}
+if (!orderData.items || orderData.items.length === 0) {
+  return NextResponse.json({ success: false, error: 'Order items are required' }, { status: 400 });
+}
+const payload = await getPayload({ config });
+// Customer upsert logic...
+// Order creation logic...
+```
+
+---
+
+## Integration with Frontend
+
+- Used during checkout and order placement flows.
+- Consumed via `fetch('/api/orders', { method: 'POST', body: ... })`.
+- Order data is displayed in order confirmation and tracking pages.
+
+---
+
+## Related Collection
+
+See [`docs/collections/Orders.mdx`](../collections/Orders.mdx) for schema, access control, and business logic.
+
+---
+
+## Error Handling
+
+- Returns `{ success: false, error: "..." }` with appropriate status codes on errors.
+- Logs errors to the server console for debugging.
+
+---
+
+## Cross-links
+
+- [Orders Collection](../collections/Orders.mdx)
+- [Frontend Checkout Components](../../src/components/cart/checkout-button.tsx)
+- [Order Tracking Page](../../src/app/(frontend)/orders/track/page.tsx)
+
+---
+
+## Beginner Tips
+
+- Always validate customer and item fields before sending.
+- Use the returned `orderNumber` for tracking and support.
+- Orders are rate limited to prevent abuse.

@@ -1,0 +1,128 @@
+# Products API – Verify SKU
+
+This document explains the `/api/products/verify-sku` endpoint, its purpose, request/response structure, integration with the frontend, and how it relates to the Products collection.
+
+---
+
+## Endpoint Overview
+
+- **Route:** `/api/products/verify-sku`
+- **Method:** `POST`
+- **Purpose:** Verify if a product SKU exists and is active, returning product details if found.
+
+---
+
+## Request
+
+Send a JSON body with the SKU to verify.
+
+**Example:**
+```json
+{
+  "sku": "NAZ-001"
+}
+```
+
+---
+
+## Response
+
+Returns a JSON object indicating if the SKU is valid and, if so, the product details.
+
+**Example (SKU found):**
+```json
+{
+  "success": true,
+  "verified": true,
+  "product": {
+    "id": "clx123...",
+    "name": "Nike Air Zoom",
+    "sku": "NAZ-001",
+    "price": 12000,
+    "stock": 10,
+    "brand": "Nike",
+    "category": "Running Shoes",
+    "images": [
+      {
+        "id": "img1",
+        "url": "/media/nike-air-zoom-1.png",
+        "alt": "Nike Air Zoom"
+      }
+    ]
+  }
+}
+```
+
+**Example (SKU not found):**
+```json
+{
+  "success": true,
+  "verified": false,
+  "message": "Product not found or inactive"
+}
+```
+
+---
+
+## Code Walkthrough
+
+[`src/app/api/products/verify-sku/route.ts`](src/app/api/products/verify-sku/route.ts:1):
+
+- Requires `sku` in the request body.
+- Finds the product by SKU and status.
+- Returns product details if found, or a not-found message.
+- Uses moderate rate limiting and security headers.
+
+**Key logic:**
+```typescript
+const { sku } = await request.json();
+if (!sku) {
+  return NextResponse.json({ success: false, error: 'SKU is required' }, { status: 400 });
+}
+const result = await payload.find({
+  collection: 'products',
+  where: { sku: { equals: sku.trim().toUpperCase() }, status: { equals: 'active' } },
+  limit: 1,
+});
+if (result.docs.length > 0) {
+  // Return product details
+} else {
+  // Return not found
+}
+```
+
+---
+
+## Integration with Frontend
+
+- Used by admin/product management tools and checkout validation.
+- Consumed via `fetch('/api/products/verify-sku', { method: 'POST', body: ... })`.
+- Product data is displayed in product management and validation components.
+
+---
+
+## Related Collection
+
+See [`docs/collections/Products.mdx`](../collections/Products.mdx) for schema, access control, and business logic.
+
+---
+
+## Error Handling
+
+- Returns `{ success: false, error: "SKU is required" }` with status 400 if missing.
+- Returns `{ success: true, verified: false, message: "Product not found or inactive" }` if not found.
+- Logs errors to the server console for debugging.
+
+---
+
+## Cross-links
+
+- [Products Collection](../collections/Products.mdx)
+- [Product Management Components](../../src/components/product-card.tsx)
+
+---
+
+## Beginner Tips
+
+- Always validate the SKU before sending.
+- Use the `verified` flag to check if the product exists.

@@ -1,0 +1,124 @@
+# Customers API
+
+This document explains the `/api/customers` endpoint, its purpose, request/response structure, integration with the frontend, and how it relates to the Customers collection.
+
+---
+
+## Endpoint Overview
+
+- **Route:** `/api/customers`
+- **Method:** `POST`
+- **Purpose:** Create or update customer records, including contact info and addresses, with rate limiting and security headers.
+
+---
+
+## Request
+
+Send a JSON body with customer details.
+
+**Example:**
+```json
+{
+  "name": "Jane Doe",
+  "email": "jane@example.com",
+  "phone": "+94 77 123 4567",
+  "secondaryPhone": "+94 77 987 6543",
+  "address": {
+    "type": "home",
+    "address": "123 Main St, Colombo",
+    "isDefault": true
+  },
+  "preferredLanguage": "english",
+  "marketingOptIn": true
+}
+```
+
+---
+
+## Response
+
+Returns a JSON object indicating success and the created/updated customer record.
+
+**Example:**
+```json
+{
+  "success": true,
+  "customer": {
+    "id": "clx789...",
+    "name": "Jane Doe",
+    "email": "jane@example.com",
+    "primaryPhone": "+94 77 123 4567",
+    "secondaryPhone": "+94 77 987 6543",
+    "addresses": [
+      {
+        "type": "home",
+        "address": "123 Main St, Colombo",
+        "isDefault": true
+      }
+    ],
+    "preferredLanguage": "english",
+    "marketingOptIn": true
+  }
+}
+```
+
+---
+
+## Code Walkthrough
+
+[`src/app/api/customers/route.ts`](src/app/api/customers/route.ts:1):
+
+- Uses rate limiting and security headers for protection.
+- Checks if a customer with the given email exists.
+- Updates existing customer or creates a new one.
+- Handles address merging and field updates with type safety.
+
+**Key logic:**
+```typescript
+const existingCustomers = await payload.find({
+  collection: 'customers',
+  where: { email: { equals: email } },
+});
+if (existingCustomers.docs.length > 0) {
+  // Update logic
+} else {
+  // Create logic
+}
+```
+
+---
+
+## Integration with Frontend
+
+- Used during checkout, registration, and profile management.
+- Consumed via `fetch('/api/customers', { method: 'POST', body: ... })`.
+- Customer data is displayed in account/profile pages and order flows.
+
+---
+
+## Related Collection
+
+See [`docs/collections/Customers.mdx`](../collections/Customers.mdx) for schema, access control, and business logic.
+
+---
+
+## Error Handling
+
+- Returns `{ success: false, error: "..." }` with appropriate status codes on errors.
+- Logs errors to the server console for debugging.
+
+---
+
+## Cross-links
+
+- [Customers Collection](../collections/Customers.mdx)
+- [Frontend Account Components](../../src/components/account/)
+- [Checkout Page](../../src/app/(frontend)/checkout/page.tsx)
+
+---
+
+## Beginner Tips
+
+- Only admins and product managers can read or update customer data.
+- Always validate email and phone fields before sending.
+- Use the `addresses` array for multi-address support.

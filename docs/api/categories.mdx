@@ -1,0 +1,117 @@
+# Categories API
+
+This document explains the `/api/categories` endpoint, its purpose, request/response structure, integration with the frontend, and how it relates to the Categories collection.
+
+---
+
+## Endpoint Overview
+
+- **Route:** `/api/categories`
+- **Method:** `GET`
+- **Purpose:** Retrieve a list of active product categories for use in navigation, filters, and product organization.
+
+---
+
+## Request
+
+No parameters are required.
+
+**Example:**
+```http
+GET /api/categories
+```
+
+---
+
+## Response
+
+Returns a JSON object with a `success` flag and a `data` array of category objects.
+
+**Example:**
+```json
+{
+  "success": true,
+  "data": [
+    {
+      "id": "clx456...",
+      "name": "Running Shoes",
+      "slug": "running-shoes",
+      "description": "All running shoes and related gear.",
+      "image": {
+        "url": "/media/running-shoes.png",
+        "alt": "Running Shoes"
+      },
+      "icon": "shoe",
+      "displayOrder": 1,
+      "productCount": 12,
+      "isFeature": true,
+      "showInNavigation": true
+    }
+    // ...
+  ]
+}
+```
+
+---
+
+## Code Walkthrough
+
+[`src/app/api/categories/route.ts`](src/app/api/categories/route.ts:1):
+
+- Fetches all categories with `status: 'active'` from the database.
+- Sorts by `displayOrder`, limits to 100, and transforms each category for frontend use.
+- Handles errors gracefully and returns a consistent response shape.
+
+**Key logic:**
+```typescript
+const result = await payload.find({
+  collection: 'categories',
+  where: { status: { equals: 'active' } },
+  sort: 'displayOrder',
+  limit: 100,
+  depth: 1,
+});
+const transformedCategories = result.docs.map((category) => ({
+  id: category.id,
+  name: category.name,
+  slug: category.slug,
+  // ...other fields
+}));
+```
+
+---
+
+## Integration with Frontend
+
+- Used by navigation menus, product filters, and category pages.
+- Consumed via `fetch('/api/categories')` or with a custom hook.
+- Category data is displayed in components like [`src/components/sports-categories.tsx`](src/components/sports-categories.tsx:1).
+
+---
+
+## Related Collection
+
+See [`docs/collections/Categories.mdx`](../collections/Categories.mdx) for schema, access control, and business logic.
+
+---
+
+## Error Handling
+
+- Returns `{ success: false, error: "Failed to fetch categories" }` with status 500 on server errors.
+- Logs errors to the server console for debugging.
+
+---
+
+## Cross-links
+
+- [Categories Collection](../collections/Categories.mdx)
+- [Frontend Category Components](../../src/components/sports-categories.tsx)
+- [Product Listing Page](../../src/app/(frontend)/products/page.tsx)
+
+---
+
+## Beginner Tips
+
+- No authentication is required to read categories, but only authenticated users can access the full API.
+- Always check the `success` flag before using the data.
+- Use the `slug` field for URLs and navigation.

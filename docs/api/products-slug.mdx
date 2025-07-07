@@ -1,0 +1,123 @@
+# Products API – Get Product by Slug
+
+This document explains the `/api/products/[slug]` endpoint, its purpose, request/response structure, integration with the frontend, and how it relates to the Products collection.
+
+---
+
+## Endpoint Overview
+
+- **Route:** `/api/products/[slug]`
+- **Method:** `GET`
+- **Purpose:** Retrieve a specific product by its unique slug for product detail pages and SEO-friendly URLs.
+
+---
+
+## Request
+
+No body required. The product slug is provided as a URL parameter.
+
+**Example:**
+```http
+GET /api/products/nike-air-zoom
+```
+
+---
+
+## Response
+
+Returns a JSON object indicating success and the product details.
+
+**Example:**
+```json
+{
+  "success": true,
+  "data": {
+    "id": "clx123...",
+    "name": "Nike Air Zoom",
+    "slug": "nike-air-zoom",
+    "price": 12000,
+    "originalPrice": 15000,
+    "sku": "NAZ-001",
+    "stock": 10,
+    "status": "active",
+    "sizes": ["42", "43", "44"],
+    "colors": ["Black", "White"],
+    "images": [
+      {
+        "id": "img1",
+        "url": "/media/nike-air-zoom-1.png",
+        "alt": "Nike Air Zoom",
+        "filename": "nike-air-zoom-1.png"
+      }
+    ],
+    "category": {
+      "id": "cat1",
+      "name": "Running Shoes"
+    }
+    // ...other fields
+  }
+}
+```
+
+---
+
+## Code Walkthrough
+
+[`src/app/api/products/[slug]/route.ts`](src/app/api/products/[slug]/route.ts:1):
+
+- Extracts the product slug from the URL.
+- Finds the product by slug and status.
+- Transforms the product for frontend use, including images, sizes, colors, and category.
+- Returns a 404 if not found.
+
+**Key logic:**
+```typescript
+const { slug } = await params;
+const result = await payload.find({
+  collection: 'products',
+  where: { slug: { equals: slug }, status: { equals: 'active' } },
+  limit: 1,
+  depth: 3,
+});
+if (result.docs.length === 0) {
+  return NextResponse.json({ success: false, error: 'Product not found' }, { status: 404 });
+}
+const product = result.docs[0];
+// Transform and return product
+```
+
+---
+
+## Integration with Frontend
+
+- Used by product detail pages and SEO-friendly URLs.
+- Consumed via `fetch('/api/products/nike-air-zoom')`.
+- Product data is displayed in product detail components.
+
+---
+
+## Related Collection
+
+See [`docs/collections/Products.mdx`](../collections/Products.mdx) for schema, access control, and business logic.
+
+---
+
+## Error Handling
+
+- Returns `{ success: false, error: "Product slug is required" }` with status 400 if missing.
+- Returns `{ success: false, error: "Product not found" }` with status 404 if not found.
+- Logs errors to the server console for debugging.
+
+---
+
+## Cross-links
+
+- [Products Collection](../collections/Products.mdx)
+- [Product Detail Page](../../src/app/(frontend)/products/[slug]/page.tsx)
+
+---
+
+## Beginner Tips
+
+- Always check for errors in the response before using the data.
+- Use the product slug from product lists or URLs to fetch details.

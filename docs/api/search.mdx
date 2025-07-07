@@ -1,0 +1,124 @@
+# Search API
+
+This document explains the `/api/search` endpoint, its purpose, request/response structure, integration with the frontend, and how it relates to products and categories.
+
+---
+
+## Endpoint Overview
+
+- **Route:** `/api/search`
+- **Method:** `GET`
+- **Purpose:** Search for products and categories by query string, with optional type and result limit.
+
+---
+
+## Request
+
+Requires a `query` parameter. Optional `type` (e.g., `products`, `categories`, `all`) and `limit` (max 50).
+
+**Example:**
+```http
+GET /api/search?query=shoes&type=products&limit=10
+```
+
+---
+
+## Response
+
+Returns a JSON object indicating success and an array of results.
+
+**Example:**
+```json
+{
+  "success": true,
+  "results": [
+    {
+      "id": "clx123...",
+      "name": "Nike Air Zoom",
+      "slug": "nike-air-zoom",
+      "price": 12000,
+      "sku": "NAZ-001",
+      "images": [
+        {
+          "id": "img1",
+          "url": "/media/nike-air-zoom-1.png",
+          "alt": "Nike Air Zoom"
+        }
+      ],
+      "category": {
+        "id": "cat1",
+        "name": "Running Shoes",
+        "slug": "running-shoes"
+      },
+      "brand": {
+        "id": "brand1",
+        "name": "Nike",
+        "slug": "nike"
+      }
+      // ...other fields
+    }
+    // ...more results
+  ]
+}
+```
+
+---
+
+## Code Walkthrough
+
+[`src/app/api/search/route.ts`](src/app/api/search/route.ts:1):
+
+- Requires a `query` parameter (min 2 characters).
+- Supports optional `type` and `limit` parameters.
+- Sanitizes the query and applies rate limiting.
+- Returns products and/or categories matching the query.
+
+**Key logic:**
+```typescript
+const query = searchParams.get('query') || '';
+if (!query.trim()) {
+  return NextResponse.json({ success: false, error: 'Search query is required' }, { status: 400 });
+}
+if (query.trim().length < 2) {
+  return NextResponse.json({ success: false, error: 'Search query must be at least 2 characters' }, { status: 400 });
+}
+// Sanitize and search logic...
+```
+
+---
+
+## Integration with Frontend
+
+- Used by search bars, autocomplete, and filter components.
+- Consumed via `fetch('/api/search?query=...')`.
+- Results are displayed in search result and suggestion components.
+
+---
+
+## Related Collections
+
+- [Products Collection](../collections/Products.mdx)
+- [Categories Collection](../collections/Categories.mdx)
+
+---
+
+## Error Handling
+
+- Returns `{ success: false, error: "Search query is required" }` with status 400 if missing.
+- Returns `{ success: false, error: "Search query must be at least 2 characters" }` if too short.
+- Logs errors to the server console for debugging.
+
+---
+
+## Cross-links
+
+- [Products Collection](../collections/Products.mdx)
+- [Categories Collection](../collections/Categories.mdx)
+- [Search Components](../../src/components/product-filters.tsx)
+
+---
+
+## Beginner Tips
+
+- Always sanitize and validate user input before searching.
+- Use the `type` parameter to narrow results if needed.

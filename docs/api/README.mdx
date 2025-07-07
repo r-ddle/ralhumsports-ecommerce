@@ -1,0 +1,66 @@
+# API Module Overview
+
+Welcome to the API documentation for this project. This module provides a comprehensive guide to all backend API endpoints, their structure, usage patterns, and integration with the frontend.
+
+## What You'll Learn
+
+- How the API endpoints are structured and accessed
+- Common patterns for filtering, sorting, and pagination
+- How the backend and frontend communicate using real code examples
+- Where to find detailed guides for each resource (e.g., Products, Orders, Brands)
+
+## API Endpoint Map
+
+| Resource   | Endpoint Pattern                       | Methods | Description                        |
+|------------|----------------------------------------|---------|------------------------------------|
+| Products   | `/api/products`                        | GET     | List products with filters         |
+| Products   | `/api/products/[slug]`                 | GET     | Get a single product by slug       |
+| Products   | `/api/products/verify-sku`             | POST    | Verify SKU existence/uniqueness    |
+| Brands     | `/api/brands`                          | GET     | List all brands                    |
+| Categories | `/api/categories`                      | GET     | List all categories                |
+| Orders     | `/api/orders`                          | GET/POST| List or create orders              |
+| Orders     | `/api/orders/[id]`                     | GET     | Get order by ID                    |
+| Orders     | `/api/orders/track`                    | GET     | Track order by code                |
+| Customers  | `/api/customers`                       | GET     | List all customers                 |
+| Search     | `/api/search`                          | GET     | Search across resources            |
+
+See [Products API](./products.mdx) for a deep dive into product endpoints.
+
+## API Structure and Patterns
+
+All API endpoints are implemented as RESTful routes under `/api/`. Endpoints support:
+
+- **Filtering**: Query params like `search`, `category`, `brand`, `minPrice`, `maxPrice`, `inStock`
+- **Sorting**: `sort` and `order` query params
+- **Pagination**: `page` and `limit` query params
+
+Example request to list products:
+
+```http
+GET /api/products?search=shoes&category=running&sort=price&order=asc&page=1&limit=20
+```
+
+## Backend and Frontend Integration
+
+The backend is built with [Payload CMS](https://payloadcms.com/) and Next.js API routes. The frontend interacts with these endpoints using utility functions and hooks, such as [`src/lib/products.ts`](../src/lib/products.ts:108) and [`src/hooks/use-products.ts`](../src/hooks/use-products.ts).
+
+**Example: Fetching products in the frontend**
+
+```typescript
+import { getProducts } from '@/lib/products';
+
+const { products, pagination } = await getProducts(
+  { search: 'shoes', inStock: true },
+  { field: 'price', direction: 'asc' },
+  1,
+  20
+);
+```
+
+## Cross-References
+
+- [Backend Overview](../backend-overview.mdx)
+- [Products API](./products.mdx)
+- [Orders API](./orders.mdx) _(if available)_
+
+For architectural diagrams and backend details, see the [Backend Overview](../backend-overview.mdx).

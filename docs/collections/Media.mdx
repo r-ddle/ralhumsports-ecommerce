@@ -1,0 +1,78 @@
+# Media Collection
+
+This document explains the Media collection schema, hooks, access control, business logic, and integration points.
+
+---
+
+## Overview
+
+- **Collection:** `media`
+- **Purpose:** Stores and manages all uploaded media files (images, videos, documents) with categorization and access control.
+
+---
+
+## Schema
+
+**Key fields:**
+- `filename` (text): Name of the uploaded file.
+- `alt` (text): Alternative text for accessibility.
+- `mimeType` (text): File MIME type.
+- `filesize` (number): File size in bytes.
+- `category` (text): Category or tag for organization.
+- `isPublic` (checkbox): Whether the media is public.
+- `createdAt`, `updatedAt` (date): Timestamps for audit.
+
+**Upload settings:**
+- **Directory:** `media`
+- **Allowed types:** JPEG, PNG, WebP, GIF, SVG, PDF, MP4, WebM
+- **Image sizes:** Thumbnail (300x300, webp), Card (600x600, webp), etc.
+
+**Example:**
+```typescript
+{
+  filename: 'nike-logo.png',
+  alt: 'Nike Logo',
+  mimeType: 'image/png',
+  filesize: 20480,
+  category: 'brand-logos',
+  isPublic: true
+}
+```
+
+---
+
+## Access Control
+
+- **Create:** Content editors and above.
+- **Read:** All authenticated users; public can read only public media.
+- **Update:** Admins and product managers.
+- **Delete:** Super admins only.
+
+---
+
+## Hooks & Business Logic
+
+- **Image Processing:** Generates thumbnails and card images in webp format.
+- **Admin UI:** Uses `filename` as the title and displays columns for filename, alt, MIME type, filesize, and category.
+
+---
+
+## DBML Diagram Reference
+
+See the main DBML diagram for relationships between media and other collections.
+
+---
+
+## Integration Points
+
+- **APIs:** Used by product, brand, and category images.
+- **Frontend:** Consumed by image, video, and document display components.
+- **Related Components:** [`src/components/RichTextRenderer.tsx`](../../src/components/RichTextRenderer.tsx:1)
+
+---
+
+## Beginner Tips
+
+- Only super admins can delete media files.
+- Use descriptive alt text for accessibility.
+- Organize media with categories for easier management.

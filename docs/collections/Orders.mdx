@@ -1,0 +1,89 @@
+# Orders Collection
+
+This document explains the Orders collection schema, hooks, access control, business logic, and integration points.
+
+---
+
+## Overview
+
+- **Collection:** `orders`
+- **Purpose:** Stores customer orders, including order items, customer info, status, and payment details.
+
+---
+
+## Schema
+
+**Key fields:**
+- `orderNumber` (text, required, unique): Unique order identifier, auto-generated.
+- `customerName` (text, required): Customer full name.
+- `customerEmail` (text, required): Customer email address.
+- `customerPhone` (text): Customer phone number.
+- `orderItems` (array): List of items in the order (productId, productName, quantity, unitPrice, etc.).
+- `orderSubtotal` (number): Subtotal before shipping and discounts.
+- `shippingCost` (number): Shipping cost.
+- `discount` (number): Discount applied.
+- `orderTotal` (number): Total order amount.
+- `orderStatus` (text): Status (pending, confirmed, shipped, delivered, etc.).
+- `paymentStatus` (text): Payment status (pending, paid, refunded, etc.).
+- `deliveryAddress` (text): Delivery address.
+- `whatsapp` (object): WhatsApp integration info.
+- `createdAt`, `updatedAt` (date): Timestamps for audit.
+
+**Example:**
+```typescript
+{
+  orderNumber: 'RS-20250707-ABCDE',
+  customerName: 'Jane Doe',
+  customerEmail: 'jane@example.com',
+  customerPhone: '+94 77 123 4567',
+  orderItems: [
+    { productId: 'clx123...', productName: 'Running Shoes', quantity: 1, unitPrice: 12000 }
+  ],
+  orderSubtotal: 12000,
+  shippingCost: 500,
+  discount: 0,
+  orderTotal: 12500,
+  orderStatus: 'pending',
+  paymentStatus: 'pending',
+  deliveryAddress: '123 Main St, Colombo',
+  whatsapp: { messageSent: true, messageTimestamp: '2025-07-07T11:23:00.000Z' }
+}
+```
+
+---
+
+## Access Control
+
+- **Create:** Admins.
+- **Read:** Admins, product managers, and super-admins. Customers can access their own orders via API.
+- **Update:** Admins.
+- **Delete:** Admins only.
+
+---
+
+## Hooks & Business Logic
+
+- **Order Number Generation:** Auto-generates a unique order number using a `beforeValidate` hook.
+- **Admin UI:** Uses `orderNumber` as the title and displays columns for order number, customer name, phone, total, status, and created date.
+
+---
+
+## DBML Diagram Reference
+
+See the main DBML diagram for relationships between orders, customers, and products.
+
+---
+
+## Integration Points
+
+- **APIs:** Used by [`/api/orders`](../api/orders.mdx) for order creation and management.
+- **Frontend:** Consumed by checkout, order tracking, and admin dashboards.
+- **Related Components:** [`src/components/cart/checkout-button.tsx`](../../src/components/cart/checkout-button.tsx:1)
+
+---
+
+## Beginner Tips
+
+- Always validate customer and item fields before creating an order.
+- Use the order number for tracking and support.
+- Only admins can delete orders.

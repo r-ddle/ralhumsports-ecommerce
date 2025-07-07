@@ -1,0 +1,135 @@
+# Backend Architecture Overview
+
+This section provides a practical introduction to the backend architecture, focusing on real code examples and clear explanations for frontend developers.
+
+---
+
+## 1. High-Level Structure
+
+The backend is organized into modular components:
+
+- **API Routes**: Handle HTTP requests (e.g., `/api/brands`)
+- **Collections**: Define data models and database logic
+- **Utilities**: Provide shared logic (e.g., authentication, rate limiting)
+
+Refer to the [Backend Architecture Diagram](./diagrams/backend-architecture.png) for a visual overview.
+
+---
+
+## 2. API Routes
+
+API routes are defined in `src/app/api/`. Each route handles a specific resource or action.
+
+**Example: Brands API Route**
+
+[`src/app/api/brands/route.ts`](../src/app/api/brands/route.ts:1)
+
+```typescript
+import { NextRequest, NextResponse } from 'next/server';
+import { getBrands } from '@/lib/api';
+
+export async function GET(req: NextRequest) {
+  const brands = await getBrands();
+  return NextResponse.json(brands);
+}
+```
+
+**What this does:**
+- Handles GET requests to `/api/brands`
+- Calls the `getBrands` utility to fetch brand data
+- Returns the data as JSON
+
+**Why it exists:**
+This route provides a clean, RESTful endpoint for the frontend to retrieve brand information.
+
+---
+
+## 3. Collections (Data Models)
+
+Collections define the structure and validation for data stored in the backend.
+
+**Example: Brands Collection**
+
+[`src/collections/Brands.ts`](../src/collections/Brands.ts:1)
+
+```typescript
+import { CollectionConfig } from 'payload/types';
+
+const Brands: CollectionConfig = {
+  slug: 'brands',
+  fields: [
+    {
+      name: 'name',
+      type: 'text',
+      required: true,
+    },
+    {
+      name: 'logo',
+      type: 'upload',
+      relationTo: 'media',
+    },
+  ],
+};
+
+export default Brands;
+```
+
+**What this does:**
+- Defines a `brands` collection with `name` and `logo` fields
+- Enforces required fields and data types
+
+**How it integrates:**
+API routes use these collections to validate and store data, ensuring consistency across the backend.
+
+---
+
+## 4. Frontend-Backend Communication
+
+The frontend fetches data from backend API routes using standard HTTP requests.
+
+**Example: Fetching Brands in the Frontend**
+
+[`src/lib/api.ts`](../src/lib/api.ts:1)
+
+```typescript
+export async function getBrands() {
+  const res = await fetch('/api/brands');
+  if (!res.ok) throw new Error('Failed to fetch brands');
+  return res.json();
+}
+```
+
+**How it works:**
+- The frontend calls `getBrands()`, which fetches data from the `/api/brands` endpoint
+- The backend route processes the request and returns JSON data
+
+---
+
+## 5. Running the Backend Locally
+
+**Step-by-Step Setup:**
+
+1. **Install dependencies:**
+   ```sh
+   pnpm install
+   ```
+
+2. **Start the development server:**
+   ```sh
+   pnpm dev
+   ```
+
+3. **Access API routes:**
+   Visit [http://localhost:3000/api/brands](http://localhost:3000/api/brands) in your browser or use a tool like Postman.
+
+---
+
+## 6. Next Steps
+
+- Explore other API routes in [`src/app/api/`](../src/app/api/)
+- Review additional collections in [`src/collections/`](../src/collections/)
+- See the [Frontend-Backend Communication Guide](./frontend-backend-communication.mdx) for more patterns
+
+---
+
+For questions or deeper dives, refer to the next modules or the architecture diagram.
