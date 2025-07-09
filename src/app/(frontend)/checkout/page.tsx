@@ -75,7 +75,7 @@ export default function CheckoutPage() {
     const subtotal = cart.items.reduce((sum, item) => sum + item.variant.price * item.quantity, 0)
 
     const shipping = calculateShipping(subtotal)
-    const tax = calculateTax(subtotal + shipping)
+    const tax = calculateTax(subtotal) // Tax only on subtotal, not shipping
     const total = subtotal + shipping + tax
 
     setCheckoutState((prev) => ({
@@ -541,8 +541,10 @@ export default function CheckoutPage() {
                           <p className="text-sm text-gray-600">Qty: {item.quantity}</p>
                         </div>
                         <div className="text-right">
-                          <p className="font-semibold">{itemTotal} LKR</p>
-                          <p className="text-xs text-gray-500">{item.variant.price} LKR each</p>
+                          <p className="font-semibold">{formatCurrency(itemTotal)}</p>
+                          <p className="text-xs text-gray-500">
+                            {formatCurrency(item.variant.price)} each
+                          </p>
                         </div>
                       </div>
                     )
@@ -559,7 +561,7 @@ export default function CheckoutPage() {
                 <div className="space-y-3">
                   <div className="flex justify-between">
                     <span className="text-gray-600">Subtotal</span>
-                    <span>{checkoutState.pricing.subtotal} LKR</span>
+                    <span>{formatCurrency(checkoutState.pricing.subtotal)}</span>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-gray-600">Shipping</span>
@@ -569,18 +571,20 @@ export default function CheckoutPage() {
                           FREE
                         </Badge>
                       ) : (
-                        `${checkoutState.pricing.shipping} LKR`
+                        formatCurrency(checkoutState.pricing.shipping)
                       )}
                     </span>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-gray-600">Tax (15%)</span>
-                    <span>{checkoutState.pricing.tax} LKR</span>
+                    <span>{formatCurrency(checkoutState.pricing.tax)}</span>
                   </div>
                   <Separator />
                   <div className="flex justify-between text-lg font-bold">
                     <span>Total</span>
-                    <span className="text-[#003DA5]">{checkoutState.pricing.total} LKR</span>
+                    <span className="text-[#003DA5]">
+                      {formatCurrency(checkoutState.pricing.total)}
+                    </span>
                   </div>
                 </div>
               </CardContent>
@@ -640,7 +644,9 @@ export default function CheckoutPage() {
               <div className="flex flex-col items-center gap-2 p-4 bg-white rounded-lg">
                 <Truck className="w-6 h-6 text-[#003DA5]" />
                 <span className="font-medium">Free Shipping</span>
-                <span className="text-gray-600">On orders over LKR 23,625</span>
+                <span className="text-gray-600">
+                  On orders over LKR {SITE_CONFIG.shipping.freeShippingThreshold}
+                </span>
               </div>
               <div className="flex flex-col items-center gap-2 p-4 bg-white rounded-lg">
                 <Shield className="w-6 h-6 text-[#003DA5]" />
@@ -717,7 +723,7 @@ function CheckoutConfirmation({ orderId }: { orderId: string }) {
           <div className="mt-8 pt-6 border-t text-sm text-gray-600">
             <p className="flex items-center justify-center gap-2">
               <Phone className="w-4 h-4" />
-              Questions? Call us at +94 77 235 0712
+              Questions? Call us at {SITE_CONFIG.contact.phone}
             </p>
           </div>
         </div>
@@ -726,11 +732,22 @@ function CheckoutConfirmation({ orderId }: { orderId: string }) {
   )
 }
 
-// Helper functions for shipping/tax (keep your own logic)
+// Helper functions for shipping/tax (use global config)
+import { SITE_CONFIG } from '@/config/site-config'
+
+// Helper function to format currency
+function formatCurrency(amount: number): string {
+  return `${amount.toLocaleString('en-US', {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  })} LKR`
+}
+
 function calculateShipping(subtotal: number) {
-  // Example: free shipping over 23625 LKR
-  return subtotal >= 23625 ? 0 : 1000
+  return subtotal >= SITE_CONFIG.shipping.freeShippingThreshold
+    ? 0
+    : SITE_CONFIG.shipping.standardShipping
 }
 function calculateTax(amount: number) {
-  return Math.round(amount * 0.15)
+  return Math.round(amount * SITE_CONFIG.taxRate)
 }

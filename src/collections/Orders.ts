@@ -1,6 +1,7 @@
 import type { CollectionConfig } from 'payload'
 import { isAdmin } from './Users'
 import { hasAvailableStock } from '@/lib/product-utils'
+import { SITE_CONFIG } from '@/config/site-config'
 
 // Define proper types for order calculations
 interface OrderItemData {
@@ -54,8 +55,8 @@ export const Orders: CollectionConfig = {
     listSearchableFields: ['orderNumber', 'customerName', 'customerEmail', 'customerPhone'],
   },
   access: {
-    // Admins and above can create orders (for manual order entry)
-    create: isAdmin,
+    // Allow public (unauthenticated) users to create orders (for checkout)
+    create: () => true,
     // Admins and product managers can read orders, plus customers can read their own
     read: ({ req }) => {
       const user = req.user
@@ -181,6 +182,15 @@ export const Orders: CollectionConfig = {
           },
         },
         {
+          name: 'variantId',
+          type: 'text',
+          required: false,
+          admin: {
+            description: 'Variant ID (if applicable)',
+            placeholder: 'Variant ID',
+          },
+        },
+        {
           name: 'productName',
           type: 'text',
           required: true,
@@ -259,6 +269,16 @@ export const Orders: CollectionConfig = {
       },
     },
     {
+      name: 'tax',
+      type: 'number',
+      required: false,
+      admin: {
+        description: `Tax amount ${SITE_CONFIG.taxRate * 100}%`,
+        step: 0.01,
+        readOnly: true,
+      },
+    },
+    {
       name: 'shippingCost',
       type: 'number',
       defaultValue: 0,
@@ -281,7 +301,7 @@ export const Orders: CollectionConfig = {
       type: 'number',
       required: true,
       admin: {
-        description: 'Final order total',
+        description: 'Final order total (subtotal + tax + shipping - discount)',
         step: 0.01,
         readOnly: true,
       },
@@ -631,10 +651,15 @@ export const Orders: CollectionConfig = {
 
           typedData.orderSubtotal = subtotal
 
+          // Use SITE_CONFIG tax rate
+          const taxRate = SITE_CONFIG.taxRate ?? 0
+          const tax = subtotal * taxRate
+          typedData.tax = tax
+
           // Calculate final total with proper null checking
           const shipping = typedData.shippingCost ?? 0
           const discount = typedData.discount ?? 0
-          typedData.orderTotal = Math.max(0, subtotal + shipping - discount)
+          typedData.orderTotal = Math.max(0, subtotal + tax + shipping - discount)
         }
 
         // Set WhatsApp message timestamp when message is marked as sent
@@ -678,13 +703,20 @@ export const Orders: CollectionConfig = {
                 Array.isArray(product.variants) &&
                 product.variants.length > 0
               ) {
-                // Product has variants - update variant inventory only
-                const variantIndex = product.variants.findIndex(
-                  (v: any, index: number) =>
-                    (item.selectedSize && v.size === item.selectedSize) ||
-                    (item.selectedColor && v.color === item.selectedColor) ||
-                    (!item.selectedSize && !item.selectedColor && index === 0), // Default to first variant if no selection
-                )
+                // Product has variants - update ONLY the correct variant by variantId
+                let variantIndex = -1
+                if (item.variantId) {
+                  variantIndex = product.variants.findIndex((v: any) => v.id === item.variantId)
+                }
+                // Fallback to size/color matching ONLY if variantId is missing
+                if (variantIndex === -1 && !item.variantId) {
+                  variantIndex = product.variants.findIndex(
+                    (v: any, index: number) =>
+                      (item.selectedSize && v.size === item.selectedSize) ||
+                      (item.selectedColor && v.color === item.selectedColor) ||
+                      (!item.selectedSize && !item.selectedColor && index === 0),
+                  )
+                }
 
                 if (variantIndex !== -1) {
                   const variant = product.variants[variantIndex]
@@ -709,7 +741,6 @@ export const Orders: CollectionConfig = {
                       analytics: {
                         orderCount: currentOrderCount + 1,
                       },
-                      // Update status based on variant availability
                       ...(product.status === 'active' &&
                         !hasVariantStock && { status: 'out-of-stock' }),
                     },
@@ -719,8 +750,8 @@ export const Orders: CollectionConfig = {
                     `Updated variant stock for ${productId} (${variant.name}): ${currentVariantStock} → ${newVariantStock}`,
                   )
                 } else {
-                  req.payload.logger.warn(
-                    `Variant not found for product ${productId} with size: ${item.selectedSize}, color: ${item.selectedColor}`,
+                  req.payload.logger.error(
+                    `No matching variant found for product ${productId} with variantId: ${item.variantId}, size: ${item.selectedSize}, color: ${item.selectedColor}`,
                   )
                 }
               } else {
@@ -736,7 +767,6 @@ export const Orders: CollectionConfig = {
                     analytics: {
                       orderCount: currentOrderCount + 1,
                     },
-                    // Update status if out of stock
                     ...(newStock === 0 && { status: 'out-of-stock' }),
                   },
                 })
@@ -780,12 +810,18 @@ export const Orders: CollectionConfig = {
                   product.variants.length > 0
                 ) {
                   // Product has variants - restore variant inventory
-                  const variantIndex = product.variants.findIndex(
-                    (v: any, index: number) =>
-                      (item.selectedSize && v.size === item.selectedSize) ||
-                      (item.selectedColor && v.color === item.selectedColor) ||
-                      (!item.selectedSize && !item.selectedColor && index === 0), // Default to first variant
-                  )
+                  let variantIndex = -1
+                  if (item.variantId) {
+                    variantIndex = product.variants.findIndex((v: any) => v.id === item.variantId)
+                  }
+                  if (variantIndex === -1) {
+                    variantIndex = product.variants.findIndex(
+                      (v: any, index: number) =>
+                        (item.selectedSize && v.size === item.selectedSize) ||
+                        (item.selectedColor && v.color === item.selectedColor) ||
+                        (!item.selectedSize && !item.selectedColor && index === 0),
+                    )
+                  }
 
                   if (variantIndex !== -1) {
                     const variant = product.variants[variantIndex]

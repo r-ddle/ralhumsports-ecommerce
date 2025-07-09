@@ -733,6 +733,10 @@ export interface Order {
      */
     productId: string;
     /**
+     * Variant ID (if applicable)
+     */
+    variantId?: string | null;
+    /**
      * Product name (for record keeping)
      */
     productName: string;
@@ -767,6 +771,10 @@ export interface Order {
    */
   orderSubtotal: number;
   /**
+   * Tax amount 15%
+   */
+  tax?: number | null;
+  /**
    * Shipping cost in LKR
    */
   shippingCost?: number | null;
@@ -775,7 +783,7 @@ export interface Order {
    */
   discount?: number | null;
   /**
-   * Final order total
+   * Final order total (subtotal + tax + shipping - discount)
    */
   orderTotal: number;
   /**
@@ -1351,6 +1359,7 @@ export interface OrdersSelect<T extends boolean = true> {
     | T
     | {
         productId?: T;
+        variantId?: T;
         productName?: T;
         productSku?: T;
         unitPrice?: T;
@@ -1361,6 +1370,7 @@ export interface OrdersSelect<T extends boolean = true> {
         id?: T;
       };
   orderSubtotal?: T;
+  tax?: T;
   shippingCost?: T;
   discount?: T;
   orderTotal?: T;

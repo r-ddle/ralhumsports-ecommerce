@@ -11,6 +11,15 @@ import { CheckoutButton } from './checkout-button'
 import { ShoppingBag, Truck, ArrowRight, Gift, Lock, ShieldCheck } from 'lucide-react'
 import Link from 'next/link'
 
+// Helper function to format currency
+function formatCurrency(amount: number): string {
+  console.log('formatCurrency called with:', { amount, type: typeof amount })
+  return `LKR ${amount.toLocaleString('en-US', {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  })}`
+}
+
 export function CartSidebar() {
   const { cart, isOpen, closeCart } = useCart()
   const summary = useCartSummary()
@@ -47,7 +56,7 @@ export function CartSidebar() {
                 <div className="flex items-center gap-2 mb-2">
                   <Truck className="w-4 h-4 text-[#003DA5]" />
                   <span className="text-sm font-medium text-gray-900">
-                    Add {summary.freeShippingRemaining} for FREE shipping!
+                    Add {formatCurrency(summary.freeShippingRemaining)} for FREE shipping!
                   </span>
                 </div>
                 <div className="w-full bg-gray-200 rounded-full h-2">
@@ -86,7 +95,7 @@ export function CartSidebar() {
               <div className="space-y-2">
                 <div className="flex justify-between text-sm">
                   <span className="text-gray-600">Subtotal</span>
-                  <span className="font-medium">{summary.subtotal}</span>
+                  <span className="font-medium">{formatCurrency(summary.subtotal)}</span>
                 </div>
                 <div className="flex justify-between text-sm">
                   <span className="text-gray-600">Shipping</span>
@@ -96,18 +105,18 @@ export function CartSidebar() {
                         FREE
                       </Badge>
                     ) : (
-                      summary.shipping
+                      formatCurrency(summary.shipping)
                     )}
                   </span>
                 </div>
                 <div className="flex justify-between text-sm">
-                  <span className="text-gray-600">Tax (24%)</span>
-                  <span className="font-medium">{summary.tax}</span>
+                  <span className="text-gray-600">Tax (15%)</span>
+                  <span className="font-medium">{formatCurrency(summary.tax)}</span>
                 </div>
                 <Separator />
                 <div className="flex justify-between text-lg font-bold">
                   <span>Total</span>
-                  <span>{summary.total}</span>
+                  <span>{formatCurrency(summary.total)}</span>
                 </div>
               </div>
 

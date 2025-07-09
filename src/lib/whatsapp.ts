@@ -1,7 +1,5 @@
+import { SITE_CONFIG } from '@/config/site-config'
 import { OrderSummary } from '@/types/checkout'
-
-// Ralhum Sports WhatsApp Business Number
-export const WHATSAPP_BUSINESS_NUMBER = '+94772350712'
 
 /**
  * Format currency with comma separators
@@ -44,7 +42,7 @@ export function formatWhatsAppMessage(order: OrderSummary): string {
   })
 
   // Build the message with improved formatting
-  const message = `🏏 *RALHUM SPORTS - Order Confirmation* 🏏
+const message = `🏏 *RALHUM SPORTS - Order Confirmation* 🏏
 
 ━━━━━━━━━━━━━━━━━━━
 📋 *ORDER DETAILS*
@@ -70,20 +68,16 @@ ${productList}
 ━━━━━━━━━━━━━━━━━━━
 Subtotal: LKR ${formatCurrency(pricing.subtotal)}
 Shipping: LKR ${formatCurrency(pricing.shipping)}
-Tax (15%): LKR ${formatCurrency(pricing.tax)}
+Tax (${SITE_CONFIG.taxRate * 100}%): LKR ${formatCurrency(pricing.tax)}
 ━━━━━━━━━━━━━━━━━━━
 *TOTAL: LKR ${formatCurrency(pricing.total)}*
 ━━━━━━━━━━━━━━━━━━━
-
-📝 *Special Instructions:*
-${specialInstructions}
-
-━━━━━━━━━━━━━━━━━━━
+${customer.specialInstructions ? `\n📝 *Special Instructions:*\n${customer.specialInstructions}\n` : ''}━━━━━━━━━━━━━━━━━━━
 Please confirm this order and we'll provide payment instructions.
 
 Thank you for choosing Ralhum Sports! 🏆
 
-_For assistance, call: +94 77 235 0712_`
+_For assistance, call: ${SITE_CONFIG.contact.phone}_`
 
   return message
 }
@@ -164,7 +158,7 @@ export function generateWhatsAppURL(order: OrderSummary | string, customMessage?
     customMessage || (typeof order === 'string' ? order : formatWhatsAppMessage(order))
   const encodedMessage = encodeURIComponent(message)
 
-  return `https://wa.me/${WHATSAPP_BUSINESS_NUMBER}?text=${encodedMessage}`
+  return `https://wa.me/${SITE_CONFIG.contact.whatsapp_contact_number}?text=${encodedMessage}`
 }
 
 /**

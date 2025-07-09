@@ -1,5 +1,6 @@
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
+import { SITE_CONFIG } from '@/config/site-config'
 import { Home, Search, Phone } from 'lucide-react'
 import Link from 'next/link'
 
@@ -94,7 +95,7 @@ export default function NotFound() {
                   href="tel:+94772350712"
                   className="flex items-center gap-2 text-[#003DA5] hover:underline font-medium"
                 >
-                  📞 +94 77 235 0712
+                  📞 {SITE_CONFIG.contact.phone}
                 </a>
               </div>
             </div>

@@ -45,6 +45,7 @@ interface ProductListItemWithVariants extends ProductListItem {
   variants: ProductVariantBackend[]
 }
 import Image from 'next/image'
+import { SITE_CONFIG } from '@/config/site-config'
 
 interface ProductDetailPageProps {
   params: Promise<{
@@ -384,7 +385,7 @@ export default function ProductDetailPage({ params }: ProductDetailPageProps) {
               {/* Price - Mobile Optimized */}
               <div className="">
                 <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-400">
-                  Price includes tax. Free shipping on orders over LKR 23,625.
+                  Price includes tax. Free shipping on orders over LKR {SITE_CONFIG.shipping.freeShippingThreshold}.
                 </p>
               </div>
 
@@ -795,7 +796,7 @@ export default function ProductDetailPage({ params }: ProductDetailPageProps) {
                               <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-400 mt-1">
                                 {product.shipping?.freeShipping
                                   ? 'Free shipping on this item. Delivered in 3-5 business days.'
-                                  : 'Free shipping on orders over LKR 23,625. Standard rate applies for smaller orders.'}
+                                  : `Free shipping on orders over LKR ${SITE_CONFIG.shipping.freeShippingThreshold}. Standard rate applies for smaller orders.`}
                               </p>
                               <p className="text-xs text-gray-500 mt-2">
                                 Delivery: 3-5 business days

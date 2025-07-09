@@ -4,6 +4,7 @@ import { createContext, useContext, useEffect, useReducer, ReactNode } from 'rea
 import { Cart, CartItem, CartState, CartActions } from '@/types/cart'
 import { Product, ProductVariant } from '@/types/product'
 import { toast } from 'sonner'
+import { SITE_CONFIG } from '@/config/site-config'
 
 type CartAction =
   | {
@@ -19,16 +20,14 @@ type CartAction =
   | { type: 'LOAD_CART'; payload: Cart }
   | { type: 'SET_LOADING'; payload: boolean }
 
-// All values in LKR
-const FREE_SHIPPING_THRESHOLD_LKR = 50000
-const STANDARD_SHIPPING_LKR = 3150
-
-function calculateShipping(subtotal: number, threshold: number) {
-  return subtotal >= threshold ? 0 : STANDARD_SHIPPING_LKR
+function calculateShipping(subtotal: number) {
+  return subtotal >= SITE_CONFIG.shipping.freeShippingThreshold
+    ? 0
+    : SITE_CONFIG.shipping.standardShipping
 }
 
 function calculateTax(amount: number) {
-  return Math.round(amount * 0.08)
+  return Math.round(amount * SITE_CONFIG.taxRate)
 }
 
 function calculateCartTotals(items: CartItem[]): {
@@ -39,10 +38,20 @@ function calculateCartTotals(items: CartItem[]): {
   itemCount: number
 } {
   const subtotalLKR = items.reduce((sum, item) => sum + item.variant.price * item.quantity, 0)
-  const shipping = calculateShipping(subtotalLKR, FREE_SHIPPING_THRESHOLD_LKR)
-  const tax = calculateTax(subtotalLKR + shipping)
+  const shipping = calculateShipping(subtotalLKR)
+  const tax = calculateTax(subtotalLKR) // Tax only on subtotal, not shipping
   const total = subtotalLKR + shipping + tax
   const itemCount = items.reduce((sum, item) => sum + item.quantity, 0)
+
+  // Debug logging
+  console.log('Cart Totals Debug:', {
+    subtotalLKR,
+    shipping,
+    tax,
+    total,
+    taxRate: SITE_CONFIG.taxRate,
+    taxCalculation: `${subtotalLKR} * ${SITE_CONFIG.taxRate} = ${subtotalLKR * SITE_CONFIG.taxRate}`,
+  })
 
   return {
     subtotal: subtotalLKR,
@@ -299,8 +308,8 @@ export function useCartSummary() {
     shipping: cart.shipping,
     total: cart.total,
     itemCount: cart.itemCount,
-    freeShippingEligible: cart.subtotal >= FREE_SHIPPING_THRESHOLD_LKR,
-    freeShippingRemaining: Math.max(0, FREE_SHIPPING_THRESHOLD_LKR - cart.subtotal),
-    freeShippingThreshold: FREE_SHIPPING_THRESHOLD_LKR,
+    freeShippingEligible: cart.subtotal >= SITE_CONFIG.shipping.freeShippingThreshold,
+    freeShippingRemaining: Math.max(0, SITE_CONFIG.shipping.freeShippingThreshold - cart.subtotal),
+    freeShippingThreshold: SITE_CONFIG.shipping.freeShippingThreshold,
   }
 }
