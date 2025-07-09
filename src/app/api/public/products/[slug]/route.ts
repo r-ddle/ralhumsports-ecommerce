@@ -2,10 +2,10 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getPayload } from 'payload'
 import config from '@payload-config'
 
-export async function GET(_request: NextRequest, { params }: { params: { slug: string } }) {
+export async function GET(_request: NextRequest, context: { params: { slug: string } }) {
   try {
     const payload = await getPayload({ config })
-    const { slug } = params
+    const { slug } = context.params
 
     // Find product by slug
     const result = await payload.find({
