@@ -106,10 +106,13 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
       updatedAt: product.updatedAt,
     }
 
-    return NextResponse.json({
+    const response = NextResponse.json({
       success: true,
       data: transformedProduct,
     })
+    // Add caching headers for product details
+    response.headers.set('Cache-Control', 'public, s-maxage=300, stale-while-revalidate=600')
+    return response
   } catch (error) {
     console.error('Single product API error:', error)
     return NextResponse.json({ success: false, error: 'Failed to fetch product' }, { status: 500 })

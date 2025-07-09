@@ -407,3 +407,49 @@ export const PAYMENT_STATUSES = {
   refunded: 'Refunded',
   failed: 'Failed',
 } as const
+
+// SKU Verification Response
+export interface SKUVerificationResponse {
+  verified: boolean
+  product?: {
+    id: number
+    name: string
+    sku: string
+    brand: string
+    category: string
+    price: number
+    inStock: boolean
+  }
+  message?: string
+}
+
+// Order Tracking Response
+export interface OrderTrackingResponse {
+  found: boolean
+  order?: {
+    id: number
+    orderNumber: string
+    orderStatus:
+      | 'pending'
+      | 'confirmed'
+      | 'processing'
+      | 'shipped'
+      | 'delivered'
+      | 'cancelled'
+      | 'refunded'
+    paymentStatus: 'pending' | 'paid' | 'partially-paid' | 'refunded' | 'failed'
+    orderItems: Array<{
+      productName: string
+      quantity: number
+      unitPrice: number
+    }>
+    orderTotal: number
+    orderDate: string
+    estimatedDelivery?: string
+    shipping?: {
+      courier?: string
+      trackingNumber?: string
+    }
+  }
+  message?: string
+}

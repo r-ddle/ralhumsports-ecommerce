@@ -553,25 +553,175 @@ export const Products: CollectionConfig = {
           }
         }
 
-        // Update category and brand product counts
-        if (operation === 'create' || (operation === 'update' && doc.status === 'active')) {
-          // Update category product count
-          if (doc.category) {
-            try {
-              const _category = await req.payload.findByID({
-                collection: 'categories',
-                id: typeof doc.category === 'object' ? doc.category.id : doc.category,
-              })
+        // Update category product count
+        const updateCategoryCount = async (categoryId: number | string) => {
+          try {
+            // Count active products in this category
+            const productCount = await req.payload.count({
+              collection: 'products',
+              where: {
+                and: [{ category: { equals: categoryId } }, { status: { equals: 'active' } }],
+              },
+            })
 
-              // Update category product count logic would go here
-              // Simplified for now due to TypeScript constraints
-            } catch (error) {
-              req.payload.logger.error(`Failed to update category product count: ${error}`)
+            // Update the category with the new count
+            await req.payload.update({
+              collection: 'categories',
+              id: categoryId,
+              data: {
+                productCount: productCount.totalDocs,
+              },
+            })
+
+            req.payload.logger.info(
+              `Updated category ${categoryId} product count: ${productCount.totalDocs}`,
+            )
+          } catch (error) {
+            req.payload.logger.error(`Failed to update category product count: ${error}`)
+          }
+        }
+
+        // Update brand product count
+        const updateBrandCount = async (brandId: number | string) => {
+          try {
+            // Count active products for this brand
+            const productCount = await req.payload.count({
+              collection: 'products',
+              where: {
+                and: [{ brand: { equals: brandId } }, { status: { equals: 'active' } }],
+              },
+            })
+
+            // Update the brand with the new count
+            await req.payload.update({
+              collection: 'brands',
+              id: brandId,
+              data: {
+                productCount: productCount.totalDocs,
+              },
+            })
+
+            req.payload.logger.info(
+              `Updated brand ${brandId} product count: ${productCount.totalDocs}`,
+            )
+          } catch (error) {
+            req.payload.logger.error(`Failed to update brand product count: ${error}`)
+          }
+        }
+
+        // Handle product count updates based on operation
+        if (operation === 'create' && doc.status === 'active') {
+          // New active product - update counts
+          if (doc.category) {
+            const categoryId = typeof doc.category === 'object' ? doc.category.id : doc.category
+            await updateCategoryCount(categoryId)
+          }
+          if (doc.brand) {
+            const brandId = typeof doc.brand === 'object' ? doc.brand.id : doc.brand
+            await updateBrandCount(brandId)
+          }
+        } else if (operation === 'update') {
+          // Handle category changes
+          const prevCategoryId = previousDoc?.category
+            ? typeof previousDoc.category === 'object'
+              ? previousDoc.category.id
+              : previousDoc.category
+            : null
+          const currCategoryId = doc.category
+            ? typeof doc.category === 'object'
+              ? doc.category.id
+              : doc.category
+            : null
+
+          // If category changed, update both old and new
+          if (prevCategoryId !== currCategoryId) {
+            if (prevCategoryId) {
+              await updateCategoryCount(prevCategoryId)
             }
+            if (currCategoryId) {
+              await updateCategoryCount(currCategoryId)
+            }
+          } else if (currCategoryId && previousDoc?.status !== doc.status) {
+            // Status changed but category didn't - update count
+            await updateCategoryCount(currCategoryId)
           }
 
-          // Update brand product count logic would go here
-          // Simplified for now due to TypeScript constraints
+          // Handle brand changes
+          const prevBrandId = previousDoc?.brand
+            ? typeof previousDoc.brand === 'object'
+              ? previousDoc.brand.id
+              : previousDoc.brand
+            : null
+          const currBrandId = doc.brand
+            ? typeof doc.brand === 'object'
+              ? doc.brand.id
+              : doc.brand
+            : null
+
+          // If brand changed, update both old and new
+          if (prevBrandId !== currBrandId) {
+            if (prevBrandId) {
+              await updateBrandCount(prevBrandId)
+            }
+            if (currBrandId) {
+              await updateBrandCount(currBrandId)
+            }
+          } else if (currBrandId && previousDoc?.status !== doc.status) {
+            // Status changed but brand didn't - update count
+            await updateBrandCount(currBrandId)
+          }
+        }
+      },
+
+      // Also add to afterDelete hook to update counts when products are deleted
+      async ({ req, doc }) => {
+        // Log product deletion
+        req.payload.logger.warn(`Product deleted: ${doc.name} (${doc.sku}) by ${req.user?.email}`)
+
+        // Update category count after deletion
+        if (doc.category && doc.status === 'active') {
+          const categoryId = typeof doc.category === 'object' ? doc.category.id : doc.category
+          try {
+            const productCount = await req.payload.count({
+              collection: 'products',
+              where: {
+                and: [{ category: { equals: categoryId } }, { status: { equals: 'active' } }],
+              },
+            })
+
+            await req.payload.update({
+              collection: 'categories',
+              id: categoryId,
+              data: {
+                productCount: productCount.totalDocs,
+              },
+            })
+          } catch (error) {
+            req.payload.logger.error(`Failed to update category count after deletion: ${error}`)
+          }
+        }
+
+        // Update brand count after deletion
+        if (doc.brand && doc.status === 'active') {
+          const brandId = typeof doc.brand === 'object' ? doc.brand.id : doc.brand
+          try {
+            const productCount = await req.payload.count({
+              collection: 'products',
+              where: {
+                and: [{ brand: { equals: brandId } }, { status: { equals: 'active' } }],
+              },
+            })
+
+            await req.payload.update({
+              collection: 'brands',
+              id: brandId,
+              data: {
+                productCount: productCount.totalDocs,
+              },
+            })
+          } catch (error) {
+            req.payload.logger.error(`Failed to update brand count after deletion: ${error}`)
+          }
         }
       },
     ],

@@ -3,7 +3,6 @@
 import { useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { Menu, X, Phone } from 'lucide-react'
-import { ThemeToggle } from '@/components/theme-toggle'
 import { CartButton } from '@/components/cart/cart-button'
 import Link from 'next/link'
 
@@ -51,7 +50,6 @@ export default function Navigation() {
           {/* Desktop Actions - Fixed alignment */}
           <div className="hidden md:flex items-center space-x-3">
             <CartButton />
-            <ThemeToggle />
             <Button
               size="sm"
               className="bg-[#FF3D00] hover:bg-[#FF3D00]/90 text-white font-bold px-4 py-2 rounded-full transition-all hover:scale-105"
@@ -67,7 +65,6 @@ export default function Navigation() {
           {/* Mobile Actions - Fixed alignment and spacing */}
           <div className="md:hidden flex items-center space-x-2">
             <CartButton />
-            <ThemeToggle />
             <Button
               variant="ghost"
               size="sm"

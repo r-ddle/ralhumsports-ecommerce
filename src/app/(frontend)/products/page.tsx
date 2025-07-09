@@ -73,14 +73,11 @@ export default function StorePage() {
 
   // Helper: get lowest variant price (if variants exist)
   // Patch: allow variant price display if present in any (unknown) product object
-  function getDisplayPrice(product: ProductListItem & { variants?: { price: number }[] }): number {
-    if (Array.isArray(product.variants) && product.variants.length > 0) {
-      const prices = product.variants
-        .map((v) => v.price)
-        .filter((p) => typeof p === 'number' && !isNaN(p))
-      if (prices.length > 0) {
-        return Math.min(...prices)
-      }
+  function getDisplayPrice(
+    product: ProductListItem & { variants?: Array<{ price: number }> },
+  ): number {
+    if (product.variants && product.variants.length > 0) {
+      return Math.min(...product.variants.map((v) => v.price))
     }
     return product.price
   }
@@ -130,31 +127,17 @@ export default function StorePage() {
     try {
       setFiltersLoading(true)
 
-      const [categoriesRes, brandsRes, productsRes] = await Promise.all([
-        fetch('/api/public/category'),
-        fetch('/api/public/brands'),
-        fetch('/api/products?limit=1000'),
-      ])
+      // Use the optimized endpoint
+      const response = await fetch('/api/products/filters-meta')
+      const data = await response.json()
 
-      const [categoriesData, brandsData, productsData] = await Promise.all([
-        categoriesRes.json(),
-        brandsRes.json(),
-        productsRes.json(),
-      ])
-
-      const categories = categoriesData.success ? categoriesData.data : []
-      const brands = brandsData.success ? brandsData.data : []
-
-      let priceRange = { min: 0, max: 0 }
-      if (productsData.success && productsData.data.length > 0) {
-        const prices = productsData.data.map((p: ProductListItem) => p.price)
-        priceRange = {
-          min: Math.min(...prices),
-          max: Math.max(...prices),
-        }
+      if (data.success && data.data) {
+        setFilterOptions({
+          categories: data.data.categories,
+          brands: data.data.brands,
+          priceRange: data.data.priceRange,
+        })
       }
-
-      setFilterOptions({ categories, brands, priceRange })
     } catch (err) {
       console.error('Filter options fetch error:', err)
     } finally {

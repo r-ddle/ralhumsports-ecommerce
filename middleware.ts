@@ -12,13 +12,34 @@ export function middleware(request: NextRequest) {
 
   // CORS headers for API routes
   if (request.nextUrl.pathname.startsWith('/api/')) {
-    response.headers.set('Access-Control-Allow-Origin', '*')
-    response.headers.set('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS')
-    response.headers.set('Access-Control-Allow-Headers', 'Content-Type, Authorization')
+    // Define allowed origins
+    const allowedOrigins = [
+      process.env.NEXT_PUBLIC_SERVER_URL || 'http://localhost:3000',
+      'https://ralhum-sports.vercel.app', // Replace with your production domain
+      'https://ralhumsports.lk', // Replace with your actual domain
+    ].filter(Boolean)
+
+    const origin = request.headers.get('origin') || ''
+
+    // Check if the origin is allowed
+    if (allowedOrigins.includes(origin)) {
+      response.headers.set('Access-Control-Allow-Origin', origin)
+    } else if (process.env.NODE_ENV === 'development') {
+      // Allow localhost in development
+      response.headers.set('Access-Control-Allow-Origin', 'http://localhost:3000')
+    }
+
+    response.headers.set('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS, PATCH')
+    response.headers.set(
+      'Access-Control-Allow-Headers',
+      'Content-Type, Authorization, X-Requested-With',
+    )
+    response.headers.set('Access-Control-Allow-Credentials', 'true')
+    response.headers.set('Access-Control-Max-Age', '86400') // 24 hours
 
     // Handle preflight requests
     if (request.method === 'OPTIONS') {
-      return new Response(null, { status: 200, headers: response.headers })
+      return new Response(null, { status: 204, headers: response.headers })
     }
   }
 

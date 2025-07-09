@@ -646,34 +646,196 @@ export const Orders: CollectionConfig = {
     ],
     afterChange: [
       async ({ req, operation, doc, previousDoc }) => {
-        // Log order operations
-        if (operation === 'create') {
+        // Handle stock and analytics updates for new orders
+        if (operation === 'create' && doc.orderItems && Array.isArray(doc.orderItems)) {
           req.payload.logger.info(
-            `Order created: ${doc.orderNumber} for ${doc.customerName} (${doc.customerPhone})`,
+            `Processing stock and analytics updates for order: ${doc.orderNumber}`,
           )
-        } else if (operation === 'update') {
-          req.payload.logger.info(`Order updated: ${doc.orderNumber} by ${req.user?.email}`)
 
-          // Log status changes
-          if (previousDoc && previousDoc.orderStatus !== doc.orderStatus) {
-            req.payload.logger.info(
-              `Order status changed: ${doc.orderNumber} ${previousDoc.orderStatus} → ${doc.orderStatus}`,
-            )
-          }
+          for (const item of doc.orderItems) {
+            try {
+              const productId = item.productId
+              const quantityPurchased = item.quantity || 0
 
-          // Log payment status changes
-          if (previousDoc && previousDoc.paymentStatus !== doc.paymentStatus) {
-            req.payload.logger.info(
-              `Payment status changed: ${doc.orderNumber} ${previousDoc.paymentStatus} → ${doc.paymentStatus}`,
-            )
+              // Fetch the current product
+              const product = await req.payload.findByID({
+                collection: 'products',
+                id: productId,
+              })
+
+              if (!product) {
+                req.payload.logger.error(`Product not found: ${productId}`)
+                continue
+              }
+
+              // Calculate new stock
+              const currentStock = typeof product.stock === 'number' ? product.stock : 0
+              const newStock = Math.max(0, currentStock - quantityPurchased)
+
+              // Get current order count
+              const currentOrderCount = product.analytics?.orderCount || 0
+
+              // Update product with atomic operation
+              await req.payload.update({
+                collection: 'products',
+                id: productId,
+                data: {
+                  stock: newStock,
+                  analytics: {
+                    orderCount: currentOrderCount + 1,
+                  },
+                  // Update status if out of stock
+                  ...(newStock === 0 && { status: 'out-of-stock' }),
+                },
+              })
+
+              req.payload.logger.info(
+                `Updated product ${productId}: stock ${currentStock} → ${newStock}, orders ${currentOrderCount} → ${currentOrderCount + 1}`,
+              )
+
+              // Update variant stock if applicable
+              if (product.variants && Array.isArray(product.variants)) {
+                const variantIndex = product.variants.findIndex(
+                  (v: Record<string, unknown>) =>
+                    (item.selectedSize && v.size === item.selectedSize) ||
+                    (item.selectedColor && v.color === item.selectedColor),
+                )
+
+                if (variantIndex !== -1) {
+                  const variant = product.variants[variantIndex]
+                  const currentVariantStock = variant.inventory || 0
+                  const newVariantStock = Math.max(0, currentVariantStock - quantityPurchased)
+
+                  // Update variant inventory
+                  const updatedVariants = [...product.variants]
+                  updatedVariants[variantIndex] = {
+                    ...variant,
+                    inventory: newVariantStock,
+                  }
+
+                  await req.payload.update({
+                    collection: 'products',
+                    id: productId,
+                    data: {
+                      variants: updatedVariants,
+                    },
+                  })
+
+                  req.payload.logger.info(
+                    `Updated variant stock for ${productId} (${variant.name}): ${currentVariantStock} → ${newVariantStock}`,
+                  )
+                }
+              }
+            } catch (error) {
+              req.payload.logger.error(
+                `Failed to update stock/analytics for product ${item.productId}: ${error}`,
+              )
+              // Continue processing other items even if one fails
+            }
           }
         }
 
-        // Alert on high-value orders
-        if (doc.orderTotal > 50000) {
-          req.payload.logger.info(
-            `High-value order alert: ${doc.orderNumber} - LKR ${doc.orderTotal}`,
-          )
+        // Handle stock restoration for cancelled orders
+        if (
+          operation === 'update' &&
+          previousDoc &&
+          previousDoc.orderStatus !== 'cancelled' &&
+          doc.orderStatus === 'cancelled' &&
+          doc.orderItems &&
+          Array.isArray(doc.orderItems)
+        ) {
+          req.payload.logger.info(`Restoring stock for cancelled order: ${doc.orderNumber}`)
+
+          for (const item of doc.orderItems) {
+            try {
+              const product = await req.payload.findByID({
+                collection: 'products',
+                id: item.productId,
+              })
+
+              if (product) {
+                const currentStock = typeof product.stock === 'number' ? product.stock : 0
+                const restoredStock = currentStock + (item.quantity || 0)
+
+                await req.payload.update({
+                  collection: 'products',
+                  id: item.productId,
+                  data: {
+                    stock: restoredStock,
+                    // Update status if back in stock
+                    ...(currentStock === 0 && restoredStock > 0 && { status: 'active' }),
+                  },
+                })
+
+                req.payload.logger.info(
+                  `Restored stock for product ${item.productId}: ${currentStock} → ${restoredStock}`,
+                )
+              }
+            } catch (error) {
+              req.payload.logger.error(
+                `Failed to restore stock for product ${item.productId}: ${error}`,
+              )
+            }
+          }
+        }
+
+        // Update customer order statistics
+        if (operation === 'create' || operation === 'update') {
+          try {
+            // Find customer by email
+            const customerResult = await req.payload.find({
+              collection: 'customers',
+              where: {
+                email: { equals: doc.customerEmail },
+              },
+              limit: 1,
+            })
+
+            if (customerResult.docs.length > 0) {
+              const customer = customerResult.docs[0]
+
+              // Calculate order statistics
+              const allOrders = await req.payload.find({
+                collection: 'orders',
+                where: {
+                  customerEmail: { equals: doc.customerEmail },
+                },
+                limit: 1000, // Adjust as needed
+              })
+
+              const stats = {
+                totalOrders: allOrders.docs.length,
+                pendingOrders: allOrders.docs.filter((o) =>
+                  ['pending', 'confirmed', 'processing'].includes(o.orderStatus),
+                ).length,
+                completedOrders: allOrders.docs.filter((o) => o.orderStatus === 'delivered').length,
+                cancelledOrders: allOrders.docs.filter((o) => o.orderStatus === 'cancelled').length,
+                totalSpent: allOrders.docs
+                  .filter((o) => o.orderStatus === 'delivered' && o.paymentStatus === 'paid')
+                  .reduce((sum, o) => sum + (o.orderTotal || 0), 0),
+                lastOrderDate: new Date().toISOString(),
+                averageOrderValue: 0,
+              }
+
+              // Calculate average order value
+              if (stats.completedOrders > 0) {
+                stats.averageOrderValue = stats.totalSpent / stats.completedOrders
+              }
+
+              // Update customer
+              await req.payload.update({
+                collection: 'customers',
+                id: customer.id,
+                data: {
+                  orderStats: stats,
+                },
+              })
+
+              req.payload.logger.info(`Updated order statistics for customer ${customer.email}`)
+            }
+          } catch (error) {
+            req.payload.logger.error(`Failed to update customer statistics: ${error}`)
+          }
         }
       },
     ],

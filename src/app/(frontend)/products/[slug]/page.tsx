@@ -258,7 +258,6 @@ export default function ProductDetailPage({ params }: ProductDetailPageProps) {
   }
 
   const isOutOfStock = selectedVariant.inventory === 0
-  const isLowStock = selectedVariant.inventory > 0 && selectedVariant.inventory <= 5
   const maxQuantity = Math.min(10, selectedVariant.inventory)
 
   return (
@@ -388,11 +387,11 @@ export default function ProductDetailPage({ params }: ProductDetailPageProps) {
 
               {/* Stock Status */}
               <div className="flex items-center gap-2">
-                {isOutOfStock ? (
+                {selectedVariant.inventory === 0 ? (
                   <Badge variant="destructive" className="font-bold">
                     Out of Stock
                   </Badge>
-                ) : isLowStock ? (
+                ) : selectedVariant.inventory <= 5 ? (
                   <Badge variant="secondary" className="bg-orange-100 text-orange-800 font-bold">
                     <Zap className="w-3 h-3 mr-1" />
                     Only {selectedVariant.inventory} left!

@@ -702,7 +702,7 @@ function CheckoutConfirmation({ orderId }: { orderId: string }) {
 
           <div className="bg-gray-50 rounded-lg p-4 mb-6 mt-6">
             <p className="text-sm text-gray-600">Order ID</p>
-            <p className="text-lg font-bold text-[#003DA5]">#{orderId || 'Processing...'}</p>
+            <p className="text-lg font-bold text-[#003DA5]">{orderId || 'Processing...'}</p>
           </div>
 
           <div className="space-y-3">

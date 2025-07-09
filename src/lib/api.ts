@@ -13,6 +13,8 @@ import {
   OrderResponse,
   SearchResult,
   SearchParams,
+  SKUVerificationResponse,
+  OrderTrackingResponse,
 } from '@/types/api'
 import { useState } from 'react'
 
@@ -28,12 +30,37 @@ class ApiClient {
   private async request<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
     const url = `${this.baseUrl}${endpoint}`
 
+    // Add Next.js caching options
+    const cacheOptions: RequestInit = {
+      // Cache product listings for 1 minute
+      ...(endpoint.includes('/products') &&
+        !endpoint.includes('/products/') && {
+          next: { revalidate: 60 },
+        }),
+      // Cache individual products for 5 minutes
+      ...(endpoint.includes('/products/') && {
+        next: { revalidate: 300 },
+      }),
+      // Cache categories and brands for 10 minutes
+      ...(endpoint.includes('/categories') && {
+        next: { revalidate: 600 },
+      }),
+      ...(endpoint.includes('/brands') && {
+        next: { revalidate: 600 },
+      }),
+      // Cache filter metadata for 5 minutes
+      ...(endpoint.includes('/filters-meta') && {
+        next: { revalidate: 300 },
+      }),
+    }
+
     const config: RequestInit = {
       headers: {
         'Content-Type': 'application/json',
         ...options.headers,
       },
       ...options,
+      ...cacheOptions,
     }
 
     try {
@@ -266,9 +293,8 @@ class ApiClient {
     }
   }
 
-  async verifySKU(sku: string): Promise<ApiResponse<Record<string, unknown>>> {
-    // ✅ Fix: Line 318
-    return this.request<ApiResponse<Record<string, unknown>>>('/api/products/verify-sku', {
+  async verifySKU(sku: string): Promise<ApiResponse<SKUVerificationResponse>> {
+    return this.request<ApiResponse<SKUVerificationResponse>>('/api/products/verify-sku', {
       method: 'POST',
       body: JSON.stringify({ sku }),
     })
@@ -278,13 +304,12 @@ class ApiClient {
     orderNumber: string,
     email?: string,
     phone?: string,
-  ): Promise<ApiResponse<Record<string, unknown>>> {
-    // ✅ Fix: Line 325
+  ): Promise<ApiResponse<OrderTrackingResponse>> {
     const params = new URLSearchParams({ orderNumber })
     if (email) params.append('email', email)
     if (phone) params.append('phone', phone)
 
-    return this.request<ApiResponse<Record<string, unknown>>>(`/api/public/orders/track?${params}`) // ✅ Fix: Line 329
+    return this.request<ApiResponse<OrderTrackingResponse>>(`/api/public/orders/track?${params}`)
   }
 }
 

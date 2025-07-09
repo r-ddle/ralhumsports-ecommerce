@@ -1,8 +1,50 @@
-import { useState, useEffect, useCallback } from 'react'
-import { getProducts, getProduct, getCategories, getBrands, getProductFilters } from '@/lib/api'
+import { useState, useEffect, useCallback, useRef } from 'react'
+import { getProducts, getProduct, getCategories, getBrands } from '@/lib/api'
 import { ProductListItem, Product, Category, Brand, ProductQueryParams } from '@/types/api'
 
-// Hook for product listing pages
+// Cache configuration
+const CACHE_DURATION = 5 * 60 * 1000 // 5 minutes
+const CACHE_KEY_PREFIX = 'ralhum_products_cache_'
+
+interface CacheEntry<T> {
+  data: T
+  timestamp: number
+}
+
+// Helper to get/set cache
+function getCachedData<T>(key: string): T | null {
+  try {
+    const cached = localStorage.getItem(key)
+    if (!cached) return null
+
+    const entry: CacheEntry<T> = JSON.parse(cached)
+    const now = Date.now()
+
+    if (now - entry.timestamp > CACHE_DURATION) {
+      localStorage.removeItem(key)
+      return null
+    }
+
+    return entry.data
+  } catch {
+    return null
+  }
+}
+
+function setCachedData<T>(key: string, data: T): void {
+  try {
+    const entry: CacheEntry<T> = {
+      data,
+      timestamp: Date.now(),
+    }
+    localStorage.setItem(key, JSON.stringify(entry))
+  } catch (error) {
+    // Silently fail if localStorage is full
+    console.warn('Failed to cache data:', error)
+  }
+}
+
+// Hook for product listing pages with caching
 export function useProducts(initialParams: ProductQueryParams = {}) {
   const [products, setProducts] = useState<ProductListItem[]>([])
   const [loading, setLoading] = useState(true)
@@ -16,25 +58,59 @@ export function useProducts(initialParams: ProductQueryParams = {}) {
     hasPrevPage: false,
   })
   const [params, setParams] = useState<ProductQueryParams>(initialParams)
+  const abortControllerRef = useRef<AbortController | null>(null)
 
   const fetchProducts = useCallback(
-    async (newParams: ProductQueryParams = {}) => {
+    async (newParams: ProductQueryParams = {}, forceRefresh = false) => {
       try {
+        // Cancel previous request if any
+        if (abortControllerRef.current) {
+          abortControllerRef.current.abort()
+        }
+
+        abortControllerRef.current = new AbortController()
+
         setLoading(true)
         setError(null)
 
         const mergedParams = { ...params, ...newParams }
+        const cacheKey = `${CACHE_KEY_PREFIX}${JSON.stringify(mergedParams)}`
+
+        // Check cache first
+        if (!forceRefresh) {
+          const cachedResponse = getCachedData<{
+            products: ProductListItem[]
+            pagination: typeof pagination
+          }>(cacheKey)
+
+          if (cachedResponse) {
+            setProducts(cachedResponse.products)
+            setPagination(cachedResponse.pagination)
+            setParams(mergedParams)
+            setLoading(false)
+            return
+          }
+        }
+
         const response = await getProducts(mergedParams)
 
         if (response.success) {
           setProducts(response.data)
           setPagination(response.pagination)
           setParams(mergedParams)
+
+          // Cache the response
+          setCachedData(cacheKey, {
+            products: response.data,
+            pagination: response.pagination,
+          })
         } else {
           setError('Failed to fetch products')
         }
-      } catch (err) {
-        setError(err instanceof Error ? err.message : 'An error occurred')
+      } catch (err: unknown) {
+        if ((err as any)?.name !== 'AbortError') {
+          setError(err instanceof Error ? err.message : 'An error occurred')
+        }
       } finally {
         setLoading(false)
       }
@@ -44,7 +120,7 @@ export function useProducts(initialParams: ProductQueryParams = {}) {
 
   const updateFilters = useCallback(
     (newParams: ProductQueryParams) => {
-      fetchProducts({ ...newParams, page: 1 }) // Reset to first page when filtering
+      fetchProducts({ ...newParams, page: 1 })
     },
     [fetchProducts],
   )
@@ -79,10 +155,27 @@ export function useProducts(initialParams: ProductQueryParams = {}) {
     })
   }, [fetchProducts, params.limit])
 
+  const clearCache = useCallback(() => {
+    // Clear all product cache entries
+    const keys = Object.keys(localStorage)
+    keys.forEach((key) => {
+      if (key.startsWith(CACHE_KEY_PREFIX)) {
+        localStorage.removeItem(key)
+      }
+    })
+  }, [])
+
   // Initial fetch
   useEffect(() => {
     fetchProducts()
-  }, [fetchProducts]) // Empty dependency array for initial fetch only
+
+    // Cleanup on unmount
+    return () => {
+      if (abortControllerRef.current) {
+        abortControllerRef.current.abort()
+      }
+    }
+  }, []) // Empty dependency array for initial fetch only
 
   return {
     products,
@@ -95,11 +188,12 @@ export function useProducts(initialParams: ProductQueryParams = {}) {
     changeSort,
     search,
     clearFilters,
-    refetch: fetchProducts,
+    refetch: (forceRefresh = true) => fetchProducts(params, forceRefresh),
+    clearCache,
   }
 }
 
-// Hook for single product pages
+// The rest of the hooks remain the same...
 export function useProduct(slug: string) {
   const [product, setProduct] = useState<Product | null>(null)
   const [loading, setLoading] = useState(true)
@@ -203,6 +297,7 @@ export function useProductFilters() {
     categories: [] as Category[],
     brands: [] as Brand[],
     priceRange: { min: 0, max: 0 },
+    totalProducts: 0,
   })
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -213,8 +308,20 @@ export function useProductFilters() {
         setLoading(true)
         setError(null)
 
-        const response = await getProductFilters()
-        setFilters(response)
+        // Use the optimized endpoint
+        const response = await fetch('/api/products/filters-meta')
+        const data = await response.json()
+
+        if (data.success && data.data) {
+          setFilters({
+            categories: data.data.categories,
+            brands: data.data.brands,
+            priceRange: data.data.priceRange,
+            totalProducts: data.data.totalProducts,
+          })
+        } else {
+          setError('Failed to fetch filter metadata')
+        }
       } catch (err) {
         setError(err instanceof Error ? err.message : 'An error occurred')
       } finally {
@@ -259,7 +366,6 @@ export function useProductSearch(delay: number = 300) {
     }
   }, [])
 
-  // Debounced search
   useEffect(() => {
     const timer = setTimeout(() => {
       searchProducts(query)
@@ -274,9 +380,5 @@ export function useProductSearch(delay: number = 300) {
     products,
     loading,
     error,
-    clearSearch: () => {
-      setQuery('')
-      setProducts([])
-    },
   }
 }

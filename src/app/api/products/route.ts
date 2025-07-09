@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getPayload } from 'payload'
+import config from '@payload-config'
 
 // Minimal Where type for Payload queries
 type Where = {
@@ -12,7 +13,6 @@ type Where = {
     | unknown
   or?: Array<Record<string, { contains: string }>>
 }
-import config from '@payload-config'
 
 export async function GET(request: NextRequest) {
   try {
@@ -211,7 +211,7 @@ export async function GET(request: NextRequest) {
       updatedAt: product.updatedAt,
     }))
 
-    return NextResponse.json({
+    const response = NextResponse.json({
       success: true,
       data: transformedProducts,
       pagination: {
@@ -223,6 +223,9 @@ export async function GET(request: NextRequest) {
         hasPrevPage: result.hasPrevPage,
       },
     })
+    // Add caching headers for products list
+    response.headers.set('Cache-Control', 'public, s-maxage=60, stale-while-revalidate=300')
+    return response
   } catch (error) {
     console.error('Products API error:', error)
     return NextResponse.json({ success: false, error: 'Failed to fetch products' }, { status: 500 })

@@ -5,7 +5,6 @@ import './globals.css'
 import Navigation from '@/components/navigation'
 import Footer from '@/components/footer'
 import AccessibilityEnhancements from '@/components/accessibility-enhancements'
-import { ThemeProvider } from '@/components/theme-provider'
 import { CartProvider } from '@/hooks/use-cart'
 import { CartSidebar } from '@/components/cart/cart-sidebar'
 import { Toaster } from '@/components/ui/sonner'
@@ -46,7 +45,6 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="en" suppressHydrationWarning>
       <body className={inter.className}>
-        <ThemeProvider defaultTheme="light" storageKey="ralhum-ui-theme">
           <CartProvider>
             <PerformanceOptimizer />
             <AccessibilityEnhancements />
@@ -58,7 +56,6 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             <CartSidebar />
             <Toaster position="top-right" richColors />
           </CartProvider>
-        </ThemeProvider>
       </body>
     </html>
   )

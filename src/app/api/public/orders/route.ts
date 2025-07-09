@@ -150,41 +150,12 @@ export const POST = withRateLimit(
 
         // Return limited order data (no sensitive info)
         const responseData = {
+          orderId: order.id.toString(),
           orderNumber: order.orderNumber,
-          id: order.id,
+          customerId: order.id, // Using order ID as customer reference
           status: order.orderStatus,
           total: order.orderTotal,
-          currency: 'LKR',
           createdAt: order.createdAt,
-        }
-
-        for (const item of orderData.items) {
-          const productId = item.product.id
-          const quantityPurchased = item.quantity
-
-          const product = await payload.findByID({
-            collection: 'products',
-            id: productId as string,
-          })
-
-          // Decrement stock
-          if (product && typeof product.stock === 'number') {
-            const newStock = product.stock - quantityPurchased
-
-            await payload.update({
-              collection: 'products',
-              id: productId as string,
-              data: { stock: newStock },
-            })
-          }
-
-          // Increment analytics.orderCount
-          const currentOrderCount = product?.analytics?.orderCount || 0
-          await payload.update({
-            collection: 'products',
-            id: productId as string,
-            data: { analytics: { orderCount: currentOrderCount + 1 } },
-          })
         }
 
         return NextResponse.json(
