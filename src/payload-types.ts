@@ -534,9 +534,9 @@ export interface Product {
    */
   sku: string;
   /**
-   * Available stock quantity
+   * Available stock quantity (only used when no variants are defined)
    */
-  stock: number;
+  stock?: number | null;
   /**
    * Product images (first image will be the main image)
    */
@@ -658,20 +658,25 @@ export interface Product {
     orderCount?: number | null;
   };
   /**
-   * Product variants (e.g., different sizes/colors, inventory tracking)
+   * Product variants (e.g., different sizes/colors with individual inventory tracking). Leave empty to use base stock instead.
    */
-  variants: {
-    name: string;
-    sku: string;
-    size?: string | null;
-    color?: string | null;
-    price: number;
-    /**
-     * Stock for this variant
-     */
-    inventory: number;
-    id?: string | null;
-  }[];
+  variants?:
+    | {
+        name: string;
+        /**
+         * Auto-generated variant SKU
+         */
+        sku: string;
+        size?: string | null;
+        color?: string | null;
+        price: number;
+        /**
+         * Stock for this variant
+         */
+        inventory: number;
+        id?: string | null;
+      }[]
+    | null;
   /**
    * User who created this product
    */

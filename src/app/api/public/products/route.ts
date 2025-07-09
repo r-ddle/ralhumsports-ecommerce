@@ -11,7 +11,7 @@ type Where = {
     | { greater_than_equal?: number }
     | { less_than_equal?: number }
     | unknown
-  or?: Array<Record<string, { contains: string }>>
+  or?: Array<Record<string, any>>
 }
 
 export async function GET(request: NextRequest) {
@@ -35,10 +35,19 @@ export async function GET(request: NextRequest) {
 
     // Build where conditions
     // Use Payload's Where type for type safety
-    const whereConditions: Where = {
-      status: {
+    const whereConditions: Where = {}
+
+    // Include active and out-of-stock products by default (unless specifically filtering by status)
+    if (status && status !== 'active') {
+      whereConditions.status = {
         equals: status,
-      },
+      }
+    } else {
+      // Default: show active and out-of-stock products
+      whereConditions.or = [
+        { status: { equals: 'active' } },
+        { status: { equals: 'out-of-stock' } },
+      ]
     }
 
     // Add search condition
@@ -160,7 +169,7 @@ export async function GET(request: NextRequest) {
       images:
         product.images?.map((img) => ({
           url: typeof img.image === 'object' ? img.image.url : img.image,
-          alt: img.altText || '',
+          alt: img.altText || product.name,
         })) || [],
       variants:
         product.variants?.map((variant) => ({
@@ -170,7 +179,7 @@ export async function GET(request: NextRequest) {
           size: variant.size,
           color: variant.color,
           price: variant.price,
-          stock: variant.inventory,
+          inventory: variant.inventory, // <-- use inventory, not stock
         })) || [],
       category:
         typeof product.category === 'object'

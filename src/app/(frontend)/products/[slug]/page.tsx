@@ -95,7 +95,7 @@ export default function ProductDetailPage({ params }: ProductDetailPageProps) {
         setLoading(true)
         setError(null)
 
-        const response = await fetch(`/api/products/${resolvedParams.slug}`)
+        const response = await fetch(`/api/public/products/${resolvedParams.slug}`)
         const data = await response.json()
 
         if (data.success && data.data) {
@@ -129,7 +129,7 @@ export default function ProductDetailPage({ params }: ProductDetailPageProps) {
     const fetchRelatedProducts = async () => {
       try {
         const response = await fetch(
-          `/api/products?brand=${product.brand!.slug}&limit=4&status=active`,
+          `/api/public/products?brand=${product.brand!.slug}&limit=4&status=active`,
         )
         const data = await response.json()
 
@@ -257,8 +257,11 @@ export default function ProductDetailPage({ params }: ProductDetailPageProps) {
     }
   }
 
+  // Low stock threshold: from product.pricing.lowStockThreshold or default 5
+  const lowStockThreshold = (product as any)?.pricing?.lowStockThreshold ?? 5
   const isOutOfStock = selectedVariant.inventory === 0
-  const maxQuantity = Math.min(10, selectedVariant.inventory)
+  const isLowStock = !isOutOfStock && selectedVariant.inventory <= lowStockThreshold
+  const maxQuantity = selectedVariant.inventory
 
   return (
     <main className="min-h-screen pt-16 bg-white dark:bg-gray-900">
@@ -387,11 +390,11 @@ export default function ProductDetailPage({ params }: ProductDetailPageProps) {
 
               {/* Stock Status */}
               <div className="flex items-center gap-2">
-                {selectedVariant.inventory === 0 ? (
+                {isOutOfStock ? (
                   <Badge variant="destructive" className="font-bold">
                     Out of Stock
                   </Badge>
-                ) : selectedVariant.inventory <= 5 ? (
+                ) : isLowStock ? (
                   <Badge variant="secondary" className="bg-orange-100 text-orange-800 font-bold">
                     <Zap className="w-3 h-3 mr-1" />
                     Only {selectedVariant.inventory} left!
@@ -399,7 +402,7 @@ export default function ProductDetailPage({ params }: ProductDetailPageProps) {
                 ) : (
                   <Badge variant="secondary" className="bg-green-100 text-green-800 font-bold">
                     <Check className="w-3 h-3 mr-1" />
-                    In Stock ({selectedVariant.inventory} available)
+                    In Stock
                   </Badge>
                 )}
               </div>
@@ -533,9 +536,12 @@ export default function ProductDetailPage({ params }: ProductDetailPageProps) {
                       <Plus className="w-3 h-3 sm:w-4 sm:h-4" />
                     </Button>
                   </div>
-                  <span className="text-xs sm:text-sm text-gray-600 dark:text-gray-400">
-                    {selectedVariant?.inventory} available
-                  </span>
+                  {/* Only show stock count if low stock */}
+                  {isLowStock && (
+                    <span className="text-xs sm:text-sm text-orange-600 dark:text-orange-400 font-semibold">
+                      Only {selectedVariant.inventory} left
+                    </span>
+                  )}
                 </div>
               </div>
 

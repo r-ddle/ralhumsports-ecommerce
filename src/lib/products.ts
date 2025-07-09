@@ -66,7 +66,7 @@ export function transformPayloadProduct(payloadProduct: PayloadProduct): Product
         price: payloadProduct.price,
         compareAtPrice: payloadProduct.pricing?.originalPrice || undefined,
         sku: payloadProduct.sku,
-        inventory: payloadProduct.stock,
+        inventory: payloadProduct.stock || 0,
         weight: payloadProduct.shipping?.shippingWeight || undefined,
         options: {},
       },

@@ -309,7 +309,7 @@ export function useProductFilters() {
         setError(null)
 
         // Use the optimized endpoint
-        const response = await fetch('/api/products/filters-meta')
+        const response = await fetch('/api/public/products/filters-meta')
         const data = await response.json()
 
         if (data.success && data.data) {

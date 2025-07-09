@@ -1,5 +1,6 @@
 import type { CollectionConfig } from 'payload'
 import { isAdmin } from './Users'
+import { hasAvailableStock } from '@/lib/product-utils'
 
 // Define proper types for order calculations
 interface OrderItemData {
@@ -668,37 +669,21 @@ export const Orders: CollectionConfig = {
                 continue
               }
 
-              // Calculate new stock
-              const currentStock = typeof product.stock === 'number' ? product.stock : 0
-              const newStock = Math.max(0, currentStock - quantityPurchased)
-
-              // Get current order count
+              // Get current order count for analytics
               const currentOrderCount = product.analytics?.orderCount || 0
 
-              // Update product with atomic operation
-              await req.payload.update({
-                collection: 'products',
-                id: productId,
-                data: {
-                  stock: newStock,
-                  analytics: {
-                    orderCount: currentOrderCount + 1,
-                  },
-                  // Update status if out of stock
-                  ...(newStock === 0 && { status: 'out-of-stock' }),
-                },
-              })
-
-              req.payload.logger.info(
-                `Updated product ${productId}: stock ${currentStock} → ${newStock}, orders ${currentOrderCount} → ${currentOrderCount + 1}`,
-              )
-
-              // Update variant stock if applicable
-              if (product.variants && Array.isArray(product.variants)) {
+              // Check if product has variants
+              if (
+                product.variants &&
+                Array.isArray(product.variants) &&
+                product.variants.length > 0
+              ) {
+                // Product has variants - update variant inventory only
                 const variantIndex = product.variants.findIndex(
-                  (v: Record<string, unknown>) =>
+                  (v: any, index: number) =>
                     (item.selectedSize && v.size === item.selectedSize) ||
-                    (item.selectedColor && v.color === item.selectedColor),
+                    (item.selectedColor && v.color === item.selectedColor) ||
+                    (!item.selectedSize && !item.selectedColor && index === 0), // Default to first variant if no selection
                 )
 
                 if (variantIndex !== -1) {
@@ -713,18 +698,52 @@ export const Orders: CollectionConfig = {
                     inventory: newVariantStock,
                   }
 
+                  // Check if any variant still has stock
+                  const hasVariantStock = hasAvailableStock({ variants: updatedVariants })
+
                   await req.payload.update({
                     collection: 'products',
                     id: productId,
                     data: {
                       variants: updatedVariants,
+                      analytics: {
+                        orderCount: currentOrderCount + 1,
+                      },
+                      // Update status based on variant availability
+                      ...(product.status === 'active' &&
+                        !hasVariantStock && { status: 'out-of-stock' }),
                     },
                   })
 
                   req.payload.logger.info(
                     `Updated variant stock for ${productId} (${variant.name}): ${currentVariantStock} → ${newVariantStock}`,
                   )
+                } else {
+                  req.payload.logger.warn(
+                    `Variant not found for product ${productId} with size: ${item.selectedSize}, color: ${item.selectedColor}`,
+                  )
                 }
+              } else {
+                // Product has no variants - update base stock
+                const currentStock = typeof product.stock === 'number' ? product.stock : 0
+                const newStock = Math.max(0, currentStock - quantityPurchased)
+
+                await req.payload.update({
+                  collection: 'products',
+                  id: productId,
+                  data: {
+                    stock: newStock,
+                    analytics: {
+                      orderCount: currentOrderCount + 1,
+                    },
+                    // Update status if out of stock
+                    ...(newStock === 0 && { status: 'out-of-stock' }),
+                  },
+                })
+
+                req.payload.logger.info(
+                  `Updated product ${productId}: stock ${currentStock} → ${newStock}, orders ${currentOrderCount} → ${currentOrderCount + 1}`,
+                )
               }
             } catch (error) {
               req.payload.logger.error(
@@ -754,22 +773,69 @@ export const Orders: CollectionConfig = {
               })
 
               if (product) {
-                const currentStock = typeof product.stock === 'number' ? product.stock : 0
-                const restoredStock = currentStock + (item.quantity || 0)
+                // Check if product has variants
+                if (
+                  product.variants &&
+                  Array.isArray(product.variants) &&
+                  product.variants.length > 0
+                ) {
+                  // Product has variants - restore variant inventory
+                  const variantIndex = product.variants.findIndex(
+                    (v: any, index: number) =>
+                      (item.selectedSize && v.size === item.selectedSize) ||
+                      (item.selectedColor && v.color === item.selectedColor) ||
+                      (!item.selectedSize && !item.selectedColor && index === 0), // Default to first variant
+                  )
 
-                await req.payload.update({
-                  collection: 'products',
-                  id: item.productId,
-                  data: {
-                    stock: restoredStock,
-                    // Update status if back in stock
-                    ...(currentStock === 0 && restoredStock > 0 && { status: 'active' }),
-                  },
-                })
+                  if (variantIndex !== -1) {
+                    const variant = product.variants[variantIndex]
+                    const currentVariantStock = variant.inventory || 0
+                    const restoredVariantStock = currentVariantStock + (item.quantity || 0)
 
-                req.payload.logger.info(
-                  `Restored stock for product ${item.productId}: ${currentStock} → ${restoredStock}`,
-                )
+                    // Update variant inventory
+                    const updatedVariants = [...product.variants]
+                    updatedVariants[variantIndex] = {
+                      ...variant,
+                      inventory: restoredVariantStock,
+                    }
+
+                    // Check if product should be marked as active again
+                    const hasVariantStock = hasAvailableStock({ variants: updatedVariants })
+
+                    await req.payload.update({
+                      collection: 'products',
+                      id: item.productId,
+                      data: {
+                        variants: updatedVariants,
+                        // Update status if back in stock
+                        ...(product.status === 'out-of-stock' &&
+                          hasVariantStock && { status: 'active' }),
+                      },
+                    })
+
+                    req.payload.logger.info(
+                      `Restored variant stock for product ${item.productId} (${variant.name}): ${currentVariantStock} → ${restoredVariantStock}`,
+                    )
+                  }
+                } else {
+                  // Product has no variants - restore base stock
+                  const currentStock = typeof product.stock === 'number' ? product.stock : 0
+                  const restoredStock = currentStock + (item.quantity || 0)
+
+                  await req.payload.update({
+                    collection: 'products',
+                    id: item.productId,
+                    data: {
+                      stock: restoredStock,
+                      // Update status if back in stock
+                      ...(currentStock === 0 && restoredStock > 0 && { status: 'active' }),
+                    },
+                  })
+
+                  req.payload.logger.info(
+                    `Restored stock for product ${item.productId}: ${currentStock} → ${restoredStock}`,
+                  )
+                }
               }
             } catch (error) {
               req.payload.logger.error(

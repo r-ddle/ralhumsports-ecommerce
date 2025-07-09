@@ -1,5 +1,6 @@
 import type { CollectionConfig } from 'payload'
 import { isAdmin, isAdminOrProductManager } from './Users'
+import { hasAvailableStock, getProductStatus } from '@/lib/product-utils'
 
 export const Products: CollectionConfig = {
   slug: 'products',
@@ -13,8 +14,8 @@ export const Products: CollectionConfig = {
   access: {
     // Product managers and above can create products
     create: isAdminOrProductManager,
-    // All authenticated users can read products
-    read: ({ req }) => Boolean(req.user),
+    // Public read access for e-commerce - anyone can view products
+    read: () => true,
     // Product managers and above can update products
     update: isAdminOrProductManager,
     // Only admins can delete products
@@ -121,13 +122,28 @@ export const Products: CollectionConfig = {
     {
       name: 'stock',
       type: 'number',
-      required: true,
+      required: false,
       defaultValue: 0,
       admin: {
-        description: 'Available stock quantity',
+        description: 'Available stock quantity (only used when no variants are defined)',
         step: 1,
+        condition: (data: any) => {
+          // Only show base stock field when there are no variants
+          return !data.variants || data.variants.length === 0
+        },
       },
       min: 0,
+      validate: (value: any, { data }: any) => {
+        // If variants exist, base stock is not required
+        if (data.variants && data.variants.length > 0) {
+          return true
+        }
+        // If no variants, base stock is required
+        if (value === undefined || value === null || value < 0) {
+          return 'Stock is required when no variants are defined'
+        }
+        return true
+      },
     },
     {
       name: 'images',
@@ -425,14 +441,38 @@ export const Products: CollectionConfig = {
     {
       name: 'variants',
       type: 'array',
-      required: true,
-      minRows: 1,
+      required: false,
       admin: {
-        description: 'Product variants (e.g., different sizes/colors, inventory tracking)',
+        description:
+          'Product variants (e.g., different sizes/colors with individual inventory tracking). Leave empty to use base stock instead.',
       },
       fields: [
         { name: 'name', type: 'text', required: true, admin: { placeholder: 'e.g. Large / Red' } },
-        { name: 'sku', type: 'text', required: true, unique: true },
+        {
+          name: 'sku',
+          type: 'text',
+          required: true,
+          unique: true,
+          admin: {
+            description: 'Auto-generated variant SKU',
+            placeholder: 'auto-generated if empty',
+          },
+          hooks: {
+            beforeValidate: [
+              ({ value, siblingData, operation }) => {
+                if ((operation === 'create' || operation === 'update') && !value) {
+                  // Generate variant SKU if not provided
+                  const timestamp = Date.now().toString().slice(-6)
+                  const random = Math.random().toString(36).substring(2, 5).toUpperCase()
+                  const size = siblingData?.size ? `-${siblingData.size}` : ''
+                  const color = siblingData?.color ? `-${siblingData.color}` : ''
+                  return `RSV-${timestamp}-${random}${size}${color}`
+                }
+                return value
+              },
+            ],
+          },
+        },
         { name: 'size', type: 'text', admin: { placeholder: 'e.g. L, XL, 42' } },
         { name: 'color', type: 'text', admin: { placeholder: 'e.g. Red, Blue' } },
         { name: 'price', type: 'number', required: true, min: 0 },
@@ -444,19 +484,20 @@ export const Products: CollectionConfig = {
           admin: { description: 'Stock for this variant' },
         },
       ],
-      hooks: {
-        beforeValidate: [
-          ({ value, siblingData, operation }) => {
-            if ((operation === 'create' || operation === 'update') && !value) {
-              const timestamp = Date.now().toString().slice(-6)
-              const random = Math.random().toString(36).substring(2, 5).toUpperCase()
-              const size = siblingData?.size ? `-${siblingData.size}` : ''
-              const color = siblingData?.color ? `-${siblingData.color}` : ''
-              return `RS-${timestamp}-${random}${size}${color}`
-            }
-            return value
-          },
-        ],
+      validate: (value: any, { data }: any) => {
+        const hasVariants = value && Array.isArray(value) && value.length > 0
+        const hasBaseStock = data.stock !== undefined && data.stock !== null && data.stock >= 0
+
+        // Must have either variants OR base stock, but not both
+        if (!hasVariants && !hasBaseStock) {
+          return 'Product must have either variants with inventory OR base stock'
+        }
+
+        if (hasVariants && hasBaseStock && data.stock > 0) {
+          return 'Product cannot have both variants and base stock. Use variants for inventory tracking or base stock for simple products.'
+        }
+
+        return true
       },
     },
 
@@ -509,9 +550,16 @@ export const Products: CollectionConfig = {
           data.lastModifiedBy = req.user?.id
         }
 
-        // Auto-set out of stock status if stock is 0
-        if (data.stock === 0 && data.status === 'active') {
+        // Helper function to check if product has available stock
+        const hasStock = hasAvailableStock(data)
+
+        // Auto-set out of stock status based on actual availability
+        if (data.status === 'active' && !hasStock) {
           data.status = 'out-of-stock'
+        }
+        // Auto-set active status if stock becomes available and status was out-of-stock
+        else if (data.status === 'out-of-stock' && hasStock) {
+          data.status = 'active'
         }
 
         // Validate pricing
@@ -530,25 +578,73 @@ export const Products: CollectionConfig = {
         } else if (operation === 'update') {
           req.payload.logger.info(`Product updated: ${doc.name} (${doc.sku}) by ${req.user?.email}`)
 
-          // Log stock changes
+          // Log stock changes (base stock or variants)
           if (previousDoc && previousDoc.stock !== doc.stock) {
             req.payload.logger.info(
-              `Stock updated for ${doc.name}: ${previousDoc.stock} → ${doc.stock}`,
+              `Base stock updated for ${doc.name}: ${previousDoc.stock} → ${doc.stock}`,
             )
           }
 
-          // Alert on low stock
-          if (doc.stock <= doc.pricing?.lowStockThreshold && doc.status === 'active') {
+          // Check for variant stock changes
+          if (previousDoc && previousDoc.variants && doc.variants) {
+            const prevVariants = previousDoc.variants || []
+            const currVariants = doc.variants || []
+
+            currVariants.forEach((variant: any, index: number) => {
+              const prevVariant = prevVariants[index]
+              if (prevVariant && prevVariant.inventory !== variant.inventory) {
+                req.payload.logger.info(
+                  `Variant stock updated for ${doc.name} (${variant.name}): ${prevVariant.inventory || 0} → ${variant.inventory || 0}`,
+                )
+              }
+            })
+          }
+
+          // Alert on low stock (check both base stock and variants)
+          const currentAvailability = hasAvailableStock(doc)
+          const lowStockThreshold = doc.pricing?.lowStockThreshold || 5
+
+          if (doc.variants && Array.isArray(doc.variants) && doc.variants.length > 0) {
+            // Check each variant for low stock
+            doc.variants.forEach((variant: any) => {
+              if (variant.inventory <= lowStockThreshold && variant.inventory > 0) {
+                req.payload.logger.warn(
+                  `Low variant stock alert: ${doc.name} (${variant.name}) - ${variant.inventory} remaining`,
+                )
+              }
+            })
+          } else if (doc.stock <= lowStockThreshold && doc.stock > 0) {
+            // Check base stock for low stock
             req.payload.logger.warn(
               `Low stock alert: ${doc.name} (${doc.sku}) - ${doc.stock} remaining`,
             )
           }
 
-          // Status change if stock is 0
-          if (previousDoc && previousDoc.stock > 0 && doc.stock === 0) {
-            doc.status = 'out-of-stock'
+          // Status change based on actual availability
+          const previousAvailability = previousDoc ? hasAvailableStock(previousDoc) : true
+          if (previousAvailability && !currentAvailability && doc.status === 'active') {
+            // Product went out of stock
+            await req.payload.update({
+              collection: 'products',
+              id: doc.id,
+              data: { status: 'out-of-stock' },
+            })
             req.payload.logger.info(
-              `Product status changed to out-of-stock: ${doc.name} (${doc.sku})`,
+              `Product status changed to out-of-stock: ${doc.name} (${doc.sku}) - no available inventory`,
+            )
+          } else if (
+            !previousAvailability &&
+            currentAvailability &&
+            doc.status === 'out-of-stock'
+          ) {
+            // Product came back in stock
+            await req.payload.update({
+              collection: 'products',
+              id: doc.id,
+              data: { status: 'active' },
+            })
+            req.payload.logger.info(
+              `Product status changed to active: ${doc.name} (${doc.sku}) - inventory available`,
             )
           }
         }

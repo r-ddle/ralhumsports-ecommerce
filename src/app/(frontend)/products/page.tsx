@@ -96,7 +96,7 @@ export default function StorePage() {
           }
         })
 
-        const response = await fetch(`/api/products?${params}`)
+        const response = await fetch(`/api/public/products?${params}`)
         const data = await response.json()
 
         if (data.success) {
@@ -128,7 +128,7 @@ export default function StorePage() {
       setFiltersLoading(true)
 
       // Use the optimized endpoint
-      const response = await fetch('/api/products/filters-meta')
+      const response = await fetch('/api/public/products/filters-meta')
       const data = await response.json()
 
       if (data.success && data.data) {

@@ -5,6 +5,7 @@ import {
   Media as PayloadMedia,
 } from '@/payload-types'
 import { Product, ProductListItem, Category, Brand, ProductImage } from '@/types/api'
+import { hasAvailableStock, getTotalAvailableInventory } from './product-utils'
 
 /**
  * Transform Payload Media to ProductImage
@@ -79,6 +80,11 @@ export function transformBrand(payloadBrand: PayloadBrand | number | null): Bran
  * Transform Payload Product to ProductListItem (for lists)
  */
 export function transformProductToListItem(payloadProduct: PayloadProduct): ProductListItem {
+  // Calculate effective stock based on variants or base stock
+  const effectiveStock = hasAvailableStock(payloadProduct)
+    ? getTotalAvailableInventory(payloadProduct)
+    : 0
+
   return {
     id: payloadProduct.id,
     name: payloadProduct.name,
@@ -86,7 +92,7 @@ export function transformProductToListItem(payloadProduct: PayloadProduct): Prod
     price: payloadProduct.price,
     originalPrice: payloadProduct.pricing?.originalPrice || undefined,
     sku: payloadProduct.sku,
-    stock: payloadProduct.stock,
+    stock: effectiveStock, // Use calculated effective stock
     status: payloadProduct.status,
     sizes: (payloadProduct.variants?.map((v) => v.size).filter(Boolean) as string[]) || [],
     colors: (payloadProduct.variants?.map((v) => v.color).filter(Boolean) as string[]) || [],

@@ -88,12 +88,12 @@ class ApiClient {
       }
     })
 
-    const endpoint = `/api/products${searchParams.toString() ? `?${searchParams.toString()}` : ''}`
+    const endpoint = `/api/public/products${searchParams.toString() ? `?${searchParams.toString()}` : ''}`
     return this.request<PaginatedResponse<ProductListItem>>(endpoint)
   }
 
   async getProduct(slug: string): Promise<ApiResponse<Product>> {
-    return this.request<ApiResponse<Product>>(`/api/products/${slug}`)
+    return this.request<ApiResponse<Product>>(`/api/public/products/${slug}`)
   }
 
   async getProductsByCategory(
@@ -294,7 +294,7 @@ class ApiClient {
   }
 
   async verifySKU(sku: string): Promise<ApiResponse<SKUVerificationResponse>> {
-    return this.request<ApiResponse<SKUVerificationResponse>>('/api/products/verify-sku', {
+    return this.request<ApiResponse<SKUVerificationResponse>>('/api/public/products/verify-sku', {
       method: 'POST',
       body: JSON.stringify({ sku }),
     })

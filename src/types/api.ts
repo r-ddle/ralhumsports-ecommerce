@@ -90,6 +90,16 @@ export interface Product {
   updatedAt: string
 }
 
+export interface ProductVariant {
+  id: string
+  name: string
+  sku: string
+  size?: string
+  color?: string
+  price: number
+  inventory: number
+}
+
 export interface ProductListItem {
   id: number
   name: string
@@ -102,6 +112,7 @@ export interface ProductListItem {
   sizes: string[]
   colors: string[]
   images: ProductImage[]
+  variants?: ProductVariant[]
   category: ProductCategory | null
   brand: ProductBrand | null
   description?: Record<string, unknown> | string // ✅ Fix: More specific than any

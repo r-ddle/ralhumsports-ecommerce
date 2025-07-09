@@ -45,65 +45,24 @@ export function ProductCard({
     },
   })
 
-  const handleAddToCart = (e: React.MouseEvent) => {
-    e.preventDefault()
-    e.stopPropagation()
+  // Removed handleAddToCart for product list page (no cart button)
 
-    if (product.stock === 0) {
-      toast.error('This product is out of stock')
-      return
+  // Helper: get low stock threshold (from product.pricing or default 5)
+  const lowStockThreshold = (product as any)?.pricing?.lowStockThreshold ?? 5
+
+  // Helper: get available stock (base or sum of variants)
+  const getAvailableStock = () => {
+    // If product has variants, sum their inventory
+    if (Array.isArray(product.variants) && product.variants.length > 0) {
+      return product.variants.reduce((sum: number, v: any) => sum + (v.inventory || 0), 0)
     }
-
-    // Map product to Product type for cart
-    const cartProduct: import('@/types/product').Product = {
-      id: product.id.toString(),
-      title: product.name,
-      slug: product.slug,
-      description: typeof product.description === 'string' ? product.description : '',
-      brand: product.brand
-        ? {
-            id: String(product.brand.id),
-            name: product.brand.name,
-            slug: product.brand.slug,
-            description: product.brand.description ?? '',
-            logo: product.brand.logo ?? '',
-            website: product.brand.website ?? '',
-            featured: false,
-            createdAt: '',
-            updatedAt: '',
-          }
-        : {
-            id: '',
-            name: '',
-            slug: '',
-            description: '',
-            logo: '',
-            website: '',
-            featured: false,
-            createdAt: '',
-            updatedAt: '',
-          },
-      categories: [],
-      images: product.images,
-      variants: [],
-      tags: [],
-      featured: false,
-      status: 'active',
-      createdAt: '',
-      updatedAt: '',
-      sku: product.sku,
-      specifications: product.specifications as Record<string, string> | undefined,
-      relatedProducts: [],
-      seo: undefined,
-      shortDescription: '',
-    }
-
-    const cartVariant: import('@/types/product').ProductVariant = createDefaultVariant()
-    addItem(cartProduct, cartVariant, 1)
+    // Otherwise, use base stock
+    return typeof product.stock === 'number' ? product.stock : 0
   }
 
-  const isOutOfStock = product.stock === 0
-  const isLowStock = product.stock > 0 && product.stock <= 5
+  const availableStock = getAvailableStock()
+  const isOutOfStock = availableStock <= 0 || product.status === 'out-of-stock'
+  const isLowStock = !isOutOfStock && availableStock > 0 && availableStock <= lowStockThreshold
   const hasDiscount = product.originalPrice && product.originalPrice > product.price
   const discountPercentage = hasDiscount
     ? Math.round(((product.originalPrice! - product.price) / product.originalPrice!) * 100)
@@ -242,10 +201,15 @@ export function ProductCard({
                           <X className="w-3 h-3" />
                           <span className="text-xs font-medium">Out of Stock</span>
                         </div>
+                      ) : isLowStock ? (
+                        <div className="flex items-center gap-1 text-orange-600">
+                          <Zap className="w-3 h-3" />
+                          <span className="text-xs font-medium">Only {availableStock} left</span>
+                        </div>
                       ) : (
                         <div className="flex items-center gap-1 text-green-600">
                           <Check className="w-3 h-3" />
-                          <span className="text-xs font-medium">{product.stock} available</span>
+                          <span className="text-xs font-medium">Available</span>
                         </div>
                       )}
                     </div>
@@ -255,18 +219,12 @@ export function ProductCard({
                     <Button
                       size="sm"
                       className="bg-[#003DA5] hover:bg-[#003DA5]/90 text-white px-3 py-2 text-xs sm:text-sm min-w-[80px]"
+                      asChild
                     >
-                      <Eye className="w-4 h-4 mr-1" />
-                      View
-                    </Button>
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      onClick={handleAddToCart}
-                      disabled={isOutOfStock}
-                      className="p-2 border-[#FF3D00] text-[#FF3D00] hover:bg-[#FF3D00] hover:text-white min-w-[36px] min-h-[36px]"
-                    >
-                      <ShoppingCart className="w-3 h-3" />
+                      <Link href={`/products/${product.slug}`}>
+                        <Eye className="w-4 h-4 mr-1" />
+                        View
+                      </Link>
                     </Button>
                   </div>
                 </div>
@@ -482,10 +440,15 @@ export function ProductCard({
                     <X className="w-3 h-3" />
                     <span className="text-xs font-medium">Out of Stock</span>
                   </div>
+                ) : isLowStock ? (
+                  <div className="flex items-center gap-1 text-orange-600">
+                    <Zap className="w-3 h-3" />
+                    <span className="text-xs font-medium">Only {availableStock} left</span>
+                  </div>
                 ) : (
                   <div className="flex items-center gap-1 text-green-600">
                     <Check className="w-3 h-3" />
-                    <span className="text-xs font-medium">{product.stock} available</span>
+                    <span className="text-xs font-medium">Available</span>
                   </div>
                 )}
               </div>
@@ -498,20 +461,12 @@ export function ProductCard({
                 className={`flex-1 bg-[#003DA5] hover:bg-[#003DA5]/90 text-white font-bold transition-all btn-scale ${
                   isMobileOptimized ? 'text-xs px-2 py-2 min-h-[32px]' : 'text-sm'
                 }`}
+                asChild
               >
-                <Eye className={`${isMobileOptimized ? 'w-3 h-3 mr-1' : 'w-4 h-4 mr-2'}`} />
-                {isMobileOptimized ? 'View' : 'View Item'}
-              </Button>
-              <Button
-                size="sm"
-                variant="outline"
-                onClick={handleAddToCart}
-                disabled={isOutOfStock}
-                className={`border-[#FF3D00] text-[#FF3D00] hover:bg-[#FF3D00] hover:text-white ${
-                  isMobileOptimized ? 'p-2 min-w-[32px] min-h-[32px]' : 'px-3'
-                }`}
-              >
-                <ShoppingCart className={`${isMobileOptimized ? 'w-3 h-3' : 'w-4 h-4'}`} />
+                <Link href={`/products/${product.slug}`}>
+                  <Eye className={`${isMobileOptimized ? 'w-3 h-3 mr-1' : 'w-4 h-4 mr-2'}`} />
+                  {isMobileOptimized ? 'View' : 'View Item'}
+                </Link>
               </Button>
             </div>
           </div>

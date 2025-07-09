@@ -46,7 +46,7 @@ export default function ProductVerificationPage() {
 
     try {
       // Call your new API endpoint
-      const response = await fetch('/api/products/verify-sku', {
+      const response = await fetch('/api/public/products/verify-sku', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

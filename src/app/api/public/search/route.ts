@@ -110,15 +110,15 @@ export const GET = withRateLimit(
           price: product.price,
           originalPrice: product.pricing?.originalPrice,
           sku: product.sku,
-          stock: product.stock > 0 ? 'In Stock' : 'Out of Stock', // Don't expose exact stock numbers
+          stock: (product.stock || 0) > 0 ? 'In Stock' : 'Out of Stock', // Don't expose exact stock numbers
           status: product.status,
           sizes: Array.isArray(product.variants)
             ? Array.from(
                 new Set(
                   product.variants
                     .map((variant) => variant.size)
-                    .filter((size) => typeof size === 'string')
-                )
+                    .filter((size) => typeof size === 'string'),
+                ),
               )
             : [],
           colors: Array.isArray(product.variants)
@@ -126,8 +126,8 @@ export const GET = withRateLimit(
                 new Set(
                   product.variants
                     .map((variant) => variant.color)
-                    .filter((color) => typeof color === 'string')
-                )
+                    .filter((color) => typeof color === 'string'),
+                ),
               )
             : [],
           images:
@@ -167,16 +167,20 @@ export const GET = withRateLimit(
                 }
               : null,
           features: Array.isArray(product.features)
-            ? product.features.slice(0, 3).map((f) =>
-                typeof f === 'object' && typeof f.feature === 'string' ? f.feature : ''
-              ).filter(Boolean)
+            ? product.features
+                .slice(0, 3)
+                .map((f) =>
+                  typeof f === 'object' && typeof f.feature === 'string' ? f.feature : '',
+                )
+                .filter(Boolean)
             : [],
-          tags: typeof product.tags === 'string'
-            ? product.tags
-                .split(',')
-                .map((t) => t.trim())
-                .slice(0, 5)
-            : [],
+          tags:
+            typeof product.tags === 'string'
+              ? product.tags
+                  .split(',')
+                  .map((t) => t.trim())
+                  .slice(0, 5)
+              : [],
         }))
 
         results.totalResults += productsResponse.totalDocs

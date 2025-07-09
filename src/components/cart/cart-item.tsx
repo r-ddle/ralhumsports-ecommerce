@@ -116,7 +116,7 @@ export function CartItem({ item }: CartItemProps) {
               {(item.variant.price || 0) * item.quantity}
             </span>
             {item.quantity > 1 && (
-              <span className="text-xs text-gray-600">{item.variant.inventory || 0} each</span>
+              <span className="text-xs text-gray-600">Rs. {item.variant.price} each</span>
             )}
           </div>
 
