@@ -1,9 +1,10 @@
 import { rateLimitConfigs, withRateLimit } from '@/lib/rate-limit'
-import { getSecurityHeaders } from '@/lib/response-filter'
+import { filterOrderData, getSecurityHeaders } from '@/lib/response-filter'
 import { OrderInput } from '@/types/api'
 import { NextRequest, NextResponse } from 'next/server'
 import { getPayload } from 'payload'
 import config from '@/payload.config'
+import { requireAdminOrManager } from '@/lib/auth'
 
 type PayloadError = Error & { status?: number }
 
@@ -38,7 +39,7 @@ export const POST = withRateLimit(
       const payload = await getPayload({ config })
 
       // Create or update customer first
-      let _customer
+      let customer
       try {
         const existingCustomer = await payload.find({
           collection: 'customers',
@@ -49,7 +50,7 @@ export const POST = withRateLimit(
         })
 
         if (existingCustomer.docs.length > 0) {
-          _customer = await payload.update({
+          customer = await payload.update({
             collection: 'customers',
             id: existingCustomer.docs[0].id,
             data: {
@@ -76,7 +77,7 @@ export const POST = withRateLimit(
             },
           })
         } else {
-          _customer = await payload.create({
+          customer = await payload.create({
             collection: 'customers',
             data: {
               name: orderData.customer.fullName,
@@ -124,14 +125,13 @@ export const POST = withRateLimit(
             deliveryAddress: `${orderData.customer.address.street}, ${orderData.customer.address.city}, ${orderData.customer.address.postalCode}, ${orderData.customer.address.province}`,
             specialInstructions: orderData.specialInstructions,
             orderItems: orderData.items.map((item) => ({
-              productId: item.product.id || 'unknown',
-              productName: item.product.title || item.product.name || 'Unknown Product',
-              productSku: item.product.sku || 'unknown',
-              unitPrice: item.variant?.price || item.price || 0,
+              productId: item.productId || 'unknown',
+              productName: item.productName || 'Unknown Product',
+              productSku: item.productSku || 'unknown',
+              unitPrice: item.unitPrice || 0,
               quantity: item.quantity,
-              selectedSize: item.variant?.size || item.size,
-              selectedColor: item.variant?.color || item.color,
-              subtotal: (item.variant?.price || item.price || 0) * item.quantity,
+              variantId: item.variantId || 'unknown',
+              subtotal: (item.unitPrice || 0) * item.quantity,
             })),
             orderSubtotal: orderData.pricing.subtotal,
             shippingCost: orderData.pricing.shipping || 0,
@@ -147,6 +147,7 @@ export const POST = withRateLimit(
             },
           },
         })
+        console.log('Order created:', order)
 
         // Return limited order data (no sensitive info)
         const responseData = {
@@ -196,4 +197,71 @@ export const POST = withRateLimit(
       )
     }
   },
+)
+
+// GET /api/orders - List orders (admin/manager only, with rate limiting)
+export const GET = withRateLimit(
+  rateLimitConfigs.moderate,
+  requireAdminOrManager(async (request: NextRequest, auth) => {
+    try {
+      const { searchParams } = new URL(request.url)
+      const page = parseInt(searchParams.get('page') || '1')
+      const limit = parseInt(searchParams.get('limit') || '20')
+      const status = searchParams.get('status')
+      const customerEmail = searchParams.get('customerEmail')
+
+      const payload = await getPayload({ config })
+
+      // Build where conditions
+      type OrderWhereConditions = {
+        orderStatus?: { equals: string }
+        customerEmail?: { equals: string }
+      }
+
+      const whereConditions: OrderWhereConditions = {}
+
+      if (status) {
+        whereConditions.orderStatus = { equals: status }
+      }
+
+      if (customerEmail && auth?.isAdmin) {
+        whereConditions.customerEmail = { equals: customerEmail }
+      }
+
+      const result = await payload.find({
+        collection: 'orders',
+        where: whereConditions,
+        page,
+        limit: Math.min(limit, 100), // Limit max results
+        sort: '-createdAt', // Newest first
+      })
+
+      // Filter sensitive data based on user permissions
+      const filteredOrders = result.docs
+        .map((order) => filterOrderData(order as unknown as Record<string, unknown>, auth!))
+        .filter((order) => order !== null)
+
+      return NextResponse.json(
+        {
+          success: true,
+          data: filteredOrders,
+          pagination: {
+            page: result.page || 1,
+            limit: result.limit,
+            totalPages: result.totalPages,
+            totalDocs: result.totalDocs,
+            hasNextPage: result.hasNextPage,
+            hasPrevPage: result.hasPrevPage,
+          },
+        },
+        { headers: getSecurityHeaders() },
+      )
+    } catch (error) {
+      console.error('Get orders error:', error)
+      return NextResponse.json(
+        { success: false, error: 'Failed to fetch orders' },
+        { status: 500, headers: getSecurityHeaders() },
+      )
+    }
+  }),
 )

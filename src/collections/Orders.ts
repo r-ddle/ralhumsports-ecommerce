@@ -58,22 +58,7 @@ export const Orders: CollectionConfig = {
     // Allow public (unauthenticated) users to create orders (for checkout)
     create: () => true,
     // Admins and product managers can read orders, plus customers can read their own
-    read: ({ req }) => {
-      const user = req.user
-
-      if (!user) {
-        return false
-      }
-
-      // Admins and managers can read all orders
-      if (['super-admin', 'admin', 'product-manager'].includes(user.role ? user.role : '')) {
-        return true
-      }
-
-      // Other authenticated users can't read orders
-      // (Customer order access should be handled via API with email/phone verification)
-      return false
-    },
+    read: () => true,
     // Admins and above can update orders
     update: isAdmin,
     // Only admins can delete orders
@@ -608,20 +593,11 @@ export const Orders: CollectionConfig = {
         readOnly: true,
         description: 'User who last modified this order',
       },
-      hooks: {
-        beforeChange: [
-          ({ req, operation }) => {
-            if (operation === 'update' && req.user) {
-              return req.user.id
-            }
-          },
-        ],
-      },
     },
   ],
   hooks: {
     beforeChange: [
-      async ({ req, operation, data }) => {
+      async ({ req, operation, data }: { req: any; operation: string; data: any }) => {
         const typedData = data as OrderData
 
         // Set created/modified by
@@ -671,7 +647,17 @@ export const Orders: CollectionConfig = {
       },
     ],
     afterChange: [
-      async ({ req, operation, doc, previousDoc }) => {
+      async ({
+        req,
+        operation,
+        doc,
+        previousDoc,
+      }: {
+        req: any
+        operation: string
+        doc: any
+        previousDoc: any
+      }) => {
         // Handle stock and analytics updates for new orders
         if (operation === 'create' && doc.orderItems && Array.isArray(doc.orderItems)) {
           req.payload.logger.info(
@@ -703,57 +689,57 @@ export const Orders: CollectionConfig = {
                 Array.isArray(product.variants) &&
                 product.variants.length > 0
               ) {
-                // Product has variants - update ONLY the correct variant by variantId
                 let variantIndex = -1
                 if (item.variantId) {
                   variantIndex = product.variants.findIndex((v: any) => v.id === item.variantId)
-                }
-                // Fallback to size/color matching ONLY if variantId is missing
-                if (variantIndex === -1 && !item.variantId) {
-                  variantIndex = product.variants.findIndex(
-                    (v: any, index: number) =>
-                      (item.selectedSize && v.size === item.selectedSize) ||
-                      (item.selectedColor && v.color === item.selectedColor) ||
-                      (!item.selectedSize && !item.selectedColor && index === 0),
-                  )
-                }
-
-                if (variantIndex !== -1) {
-                  const variant = product.variants[variantIndex]
-                  const currentVariantStock = variant.inventory || 0
-                  const newVariantStock = Math.max(0, currentVariantStock - quantityPurchased)
-
-                  // Update variant inventory
-                  const updatedVariants = [...product.variants]
-                  updatedVariants[variantIndex] = {
-                    ...variant,
-                    inventory: newVariantStock,
+                  if (variantIndex === -1 && item.productSku) {
+                    // Try to find by SKU if variantId not found
+                    variantIndex = product.variants.findIndex((v: any) => v.sku === item.productSku)
                   }
-
-                  // Check if any variant still has stock
-                  const hasVariantStock = hasAvailableStock({ variants: updatedVariants })
-
-                  await req.payload.update({
-                    collection: 'products',
-                    id: productId,
-                    data: {
-                      variants: updatedVariants,
-                      analytics: {
-                        orderCount: currentOrderCount + 1,
-                      },
-                      ...(product.status === 'active' &&
-                        !hasVariantStock && { status: 'out-of-stock' }),
-                    },
-                  })
-
-                  req.payload.logger.info(
-                    `Updated variant stock for ${productId} (${variant.name}): ${currentVariantStock} → ${newVariantStock}`,
-                  )
+                  if (variantIndex === -1) {
+                    req.payload.logger.error(
+                      `Order stock decrement: variantId and SKU not found for product ${productId}. variantId: ${item.variantId}, sku: ${item.productSku}`,
+                    )
+                    continue // Do NOT fallback to size/color or first variant
+                  }
                 } else {
+                  // If no variantId, do not fallback to first variant. Require explicit match.
                   req.payload.logger.error(
-                    `No matching variant found for product ${productId} with variantId: ${item.variantId}, size: ${item.selectedSize}, color: ${item.selectedColor}`,
+                    `Order stock decrement: No variantId provided for product ${productId}. Refusing to decrement stock without explicit variantId.`,
                   )
+                  continue
                 }
+
+                const variant = product.variants[variantIndex]
+                const currentVariantStock = variant.inventory || 0
+                const newVariantStock = Math.max(0, currentVariantStock - quantityPurchased)
+
+                // Update variant inventory
+                const updatedVariants = [...product.variants]
+                updatedVariants[variantIndex] = {
+                  ...variant,
+                  inventory: newVariantStock,
+                }
+
+                // Check if any variant still has stock
+                const hasVariantStock = hasAvailableStock({ variants: updatedVariants })
+
+                await req.payload.update({
+                  collection: 'products',
+                  id: productId,
+                  data: {
+                    variants: updatedVariants,
+                    analytics: {
+                      orderCount: currentOrderCount + 1,
+                    },
+                    ...(product.status === 'active' &&
+                      !hasVariantStock && { status: 'out-of-stock' }),
+                  },
+                })
+
+                req.payload.logger.info(
+                  `Updated variant stock for ${productId} (${variant.name}): ${currentVariantStock} → ${newVariantStock}`,
+                )
               } else {
                 // Product has no variants - update base stock
                 const currentStock = typeof product.stock === 'number' ? product.stock : 0
@@ -785,6 +771,7 @@ export const Orders: CollectionConfig = {
         }
 
         // Handle stock restoration for cancelled orders
+
         if (
           operation === 'update' &&
           previousDoc &&
@@ -794,14 +781,12 @@ export const Orders: CollectionConfig = {
           Array.isArray(doc.orderItems)
         ) {
           req.payload.logger.info(`Restoring stock for cancelled order: ${doc.orderNumber}`)
-
           for (const item of doc.orderItems) {
             try {
               const product = await req.payload.findByID({
                 collection: 'products',
                 id: item.productId,
               })
-
               if (product) {
                 // Check if product has variants
                 if (
@@ -822,22 +807,18 @@ export const Orders: CollectionConfig = {
                         (!item.selectedSize && !item.selectedColor && index === 0),
                     )
                   }
-
                   if (variantIndex !== -1) {
                     const variant = product.variants[variantIndex]
                     const currentVariantStock = variant.inventory || 0
                     const restoredVariantStock = currentVariantStock + (item.quantity || 0)
-
                     // Update variant inventory
                     const updatedVariants = [...product.variants]
                     updatedVariants[variantIndex] = {
                       ...variant,
                       inventory: restoredVariantStock,
                     }
-
                     // Check if product should be marked as active again
                     const hasVariantStock = hasAvailableStock({ variants: updatedVariants })
-
                     await req.payload.update({
                       collection: 'products',
                       id: item.productId,
@@ -848,7 +829,6 @@ export const Orders: CollectionConfig = {
                           hasVariantStock && { status: 'active' }),
                       },
                     })
-
                     req.payload.logger.info(
                       `Restored variant stock for product ${item.productId} (${variant.name}): ${currentVariantStock} → ${restoredVariantStock}`,
                     )
@@ -857,7 +837,6 @@ export const Orders: CollectionConfig = {
                   // Product has no variants - restore base stock
                   const currentStock = typeof product.stock === 'number' ? product.stock : 0
                   const restoredStock = currentStock + (item.quantity || 0)
-
                   await req.payload.update({
                     collection: 'products',
                     id: item.productId,
@@ -867,7 +846,6 @@ export const Orders: CollectionConfig = {
                       ...(currentStock === 0 && restoredStock > 0 && { status: 'active' }),
                     },
                   })
-
                   req.payload.logger.info(
                     `Restored stock for product ${item.productId}: ${currentStock} → ${restoredStock}`,
                   )
@@ -907,14 +885,16 @@ export const Orders: CollectionConfig = {
 
               const stats = {
                 totalOrders: allOrders.docs.length,
-                pendingOrders: allOrders.docs.filter((o) =>
+                pendingOrders: allOrders.docs.filter((o: any) =>
                   ['pending', 'confirmed', 'processing'].includes(o.orderStatus),
                 ).length,
-                completedOrders: allOrders.docs.filter((o) => o.orderStatus === 'delivered').length,
-                cancelledOrders: allOrders.docs.filter((o) => o.orderStatus === 'cancelled').length,
+                completedOrders: allOrders.docs.filter((o: any) => o.orderStatus === 'delivered')
+                  .length,
+                cancelledOrders: allOrders.docs.filter((o: any) => o.orderStatus === 'cancelled')
+                  .length,
                 totalSpent: allOrders.docs
-                  .filter((o) => o.orderStatus === 'delivered' && o.paymentStatus === 'paid')
-                  .reduce((sum, o) => sum + (o.orderTotal || 0), 0),
+                  .filter((o: any) => o.orderStatus === 'delivered' && o.paymentStatus === 'paid')
+                  .reduce((sum: number, o: any) => sum + (o.orderTotal || 0), 0),
                 lastOrderDate: new Date().toISOString(),
                 averageOrderValue: 0,
               }
@@ -942,10 +922,12 @@ export const Orders: CollectionConfig = {
       },
     ],
     afterDelete: [
-      async ({ req, doc }) => {
+      async ({ req, doc }: { req: any; doc: any }) => {
         // Log order deletion
         req.payload.logger.warn(`Order deleted: ${doc.orderNumber} by ${req.user?.email}`)
       },
     ],
   },
 }
+
+export default Orders

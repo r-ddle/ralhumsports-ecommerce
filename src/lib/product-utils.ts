@@ -83,26 +83,43 @@ export function findVariant(variants: any[], size?: string, color?: string): any
 }
 
 /**
+
+/**
  * Update product stock after order
  * @param product - Product data
  * @param quantity - Quantity purchased
- * @param size - Selected size (optional)
- * @param color - Selected color (optional)
+ * @param options - Object containing variantId, sku, size, color
  * @returns updated product data
  */
 export function updateProductStockAfterOrder(
   product: any,
   quantity: number,
-  size?: string,
-  color?: string,
+  options?: { variantId?: string; sku?: string; size?: string; color?: string },
 ): any {
   const updatedProduct = { ...product }
 
   // If product has variants, update variant inventory
   if (product.variants && Array.isArray(product.variants) && product.variants.length > 0) {
-    const variantIndex = product.variants.findIndex(
-      (v: any) => (size && v.size === size) || (color && v.color === color) || (!size && !color), // Default to first variant if no selection
-    )
+    let variantIndex = -1
+    if (options) {
+      if (options.variantId) {
+        variantIndex = product.variants.findIndex((v: any) => v.id === options.variantId)
+      }
+      if (variantIndex === -1 && options.sku) {
+        variantIndex = product.variants.findIndex((v: any) => v.sku === options.sku)
+      }
+      if (variantIndex === -1 && (options.size || options.color)) {
+        variantIndex = product.variants.findIndex(
+          (v: any) =>
+            (options.size && v.size === options.size) ||
+            (options.color && v.color === options.color),
+        )
+      }
+    }
+    // Default to first variant if no selection
+    if (variantIndex === -1) {
+      variantIndex = 0
+    }
 
     if (variantIndex !== -1) {
       const updatedVariants = [...product.variants]

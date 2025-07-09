@@ -234,21 +234,15 @@ export interface OrderInput {
   customer: OrderCustomer
   items: Array<{
     id?: string
-    product: {
-      id?: string
-      title?: string
-      name?: string
-      sku?: string
-    }
-    variant?: {
-      price: number
-      size?: string
-      color?: string
-    }
-    price?: number
+    productId: string
+    productName: string
+    productSku: string
+    variantId: string
+    unitPrice: number
     quantity: number
-    size?: string
-    color?: string
+    selectedSize?: string
+    selectedColor?: string
+    subtotal: number
   }>
   pricing: OrderPricing
   specialInstructions?: string

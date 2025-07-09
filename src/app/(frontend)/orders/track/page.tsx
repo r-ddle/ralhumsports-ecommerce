@@ -1,6 +1,7 @@
 'use client'
 
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
+import { useSearchParams } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
@@ -85,6 +86,26 @@ export default function OrderTrackingPage() {
   const [order, setOrder] = useState<Order | null>(null)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const searchParams =
+    typeof window !== 'undefined' ? new URLSearchParams(window.location.search) : null
+
+  useEffect(() => {
+    // Autofill and auto-search if orderId/orderNumber/code is in query
+    if (searchParams) {
+      const queryOrderId =
+        searchParams.get('orderId') || searchParams.get('orderNumber') || searchParams.get('code')
+      if (queryOrderId) {
+        setOrderId(queryOrderId)
+        // Auto-submit after short delay to ensure input is set
+        setTimeout(() => {
+          const form = document.querySelector('form')
+          if (form) {
+            form.dispatchEvent(new Event('submit', { cancelable: true, bubbles: true }))
+          }
+        }, 200)
+      }
+    }
+  }, [])
 
   const handleTrackOrder = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -108,12 +129,22 @@ export default function OrderTrackingPage() {
 
       console.log('📦 API Response:', data)
 
-      // ✅ Fixed: Check the correct response structure
-      if (data.success && data.data && data.data.found && data.data.order) {
-        const orderData = data.data.order
+      // Flexible: support both { data: { found, order } } and { data: { ...orderFields } }
+      let orderData = null
+      if (data.success && data.data) {
+        if (typeof data.data.found !== 'undefined' && data.data.order) {
+          // Old structure: { found, order }
+          if (data.data.found && data.data.order) {
+            orderData = data.data.order
+          }
+        } else if (data.data.id && data.data.orderNumber) {
+          // New structure: order is in data.data directly
+          orderData = data.data
+        }
+      }
 
+      if (orderData) {
         console.log('✅ Order found:', orderData)
-
         // Convert the PayloadCMS order to match your Order type
         const convertedOrder: Order = {
           id: orderData.id,
@@ -122,11 +153,11 @@ export default function OrderTrackingPage() {
           customerEmail: '', // Not returned by API for security
           customerPhone: '', // Not returned by API for security
           deliveryAddress: '', // Not returned by API for security
-          orderItems: orderData.orderItems.map(
+          orderItems: (orderData.orderItems || []).map(
             (item: {
-              productId: string
+              productId?: string
               productName: string
-              productSku: string
+              productSku?: string
               unitPrice: number
               quantity: number
               selectedSize?: string
@@ -160,16 +191,16 @@ export default function OrderTrackingPage() {
           createdAt: orderData.createdAt,
           updatedAt: orderData.updatedAt,
         }
-
         setOrder(convertedOrder)
         setError(null)
         toast.success('Order found!')
       } else {
-        // ✅ Fixed: Handle the correct "not found" case
-        console.log('❌ Order not found or invalid response structure')
-        setError(data.data?.message || data.error || 'Order not found')
+        // Handle the correct "not found" case, always show backend message if present
+        const backendMessage = data.data?.message || data.error || 'Order not found'
+        console.log('❌ Order not found or invalid response structure:', backendMessage)
+        setError(backendMessage)
         setOrder(null)
-        toast.error('Order not found')
+        toast.error(backendMessage)
       }
     } catch (error) {
       console.error('❌ Order tracking error:', error)

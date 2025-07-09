@@ -210,18 +210,15 @@ export default function CheckoutPage() {
         },
         items: cart.items.map((item) => ({
           id: item.id,
-          product: {
-            id: item.product.id,
-            title: item.product.title,
-            name: item.product.title,
-            sku: item.product.sku,
-          },
-          variant: {
-            price: item.variant.price,
-            size: item.variant.size,
-            color: item.variant.color,
-          },
+          productId: item.product.id,
+          productName: item.product.title,
+          productSku: item.product.sku,
+          variantId: item.variant.id,
+          unitPrice: item.variant.price,
           quantity: item.quantity,
+          selectedSize: item.variant.size,
+          selectedColor: item.variant.color,
+          subtotal: item.variant.price * item.quantity,
         })),
         pricing: checkoutState.pricing,
         specialInstructions: checkoutState.customerInfo.specialInstructions,
@@ -716,7 +713,7 @@ function CheckoutConfirmation({ orderId }: { orderId: string }) {
               <Link href="/products">Continue Shopping</Link>
             </Button>
             <Button asChild variant="outline" className="w-full">
-              <Link href="/orders/track">Track Your Order</Link>
+              <Link href={`/orders/track?orderId=${orderId}`}>Track Your Order</Link>
             </Button>
           </div>
 
