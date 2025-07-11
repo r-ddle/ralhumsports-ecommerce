@@ -117,10 +117,26 @@ export default function ProductDetailPage({ params }: ProductDetailPageProps) {
 
   // Use backend variants array for accurate inventory and details
   useEffect(() => {
-    if (!product || !Array.isArray(product.variants)) return
+    if (!product) return
 
-    setVariants(product.variants)
-    setSelectedVariant(product.variants[0] || null)
+    // If product.variants is a non-empty array, use as is
+    if (Array.isArray(product.variants) && product.variants.length > 0) {
+      setVariants(product.variants)
+      setSelectedVariant(product.variants[0])
+    } else {
+      // Create a virtual variant from the product itself
+      const virtualVariant = {
+        id: product.id?.toString() || 'default',
+        name: product.name || 'Standard',
+        price: product.price,
+        inventory: typeof product.stock === 'number' ? product.stock : 0,
+        sku: product.sku,
+        size: undefined,
+        color: undefined,
+      }
+      setVariants([virtualVariant])
+      setSelectedVariant(virtualVariant)
+    }
   }, [product])
 
   // Fetch related products
@@ -385,7 +401,8 @@ export default function ProductDetailPage({ params }: ProductDetailPageProps) {
               {/* Price - Mobile Optimized */}
               <div className="">
                 <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-400">
-                  Price includes tax. Free shipping on orders over LKR {SITE_CONFIG.shipping.freeShippingThreshold}.
+                  Price includes tax. Free shipping on orders over LKR{' '}
+                  {SITE_CONFIG.shipping.freeShippingThreshold}.
                 </p>
               </div>
 

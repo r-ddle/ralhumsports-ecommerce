@@ -21,12 +21,23 @@ export interface Category {
   updatedAt: string
 }
 
-export interface ProductImage {
   id: string
   url: string
   alt: string
   width?: number
   height?: number
+}
+export interface ProductImage {
+  id: string;
+  url: string;
+  alt: string;
+  width?: number;
+  height?: number;
+  image?: {
+    url?: string;
+    alt?: string;
+    filename?: string;
+  };
 }
 
 export interface ProductVariant {

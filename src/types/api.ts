@@ -25,6 +25,11 @@ export interface ProductImage {
   url: string
   alt: string
   filename: string
+  image?: {
+    url?: string
+    alt?: string
+    filename?: string
+  }
 }
 
 export interface ProductCategory {

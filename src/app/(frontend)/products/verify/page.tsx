@@ -45,7 +45,7 @@ export default function ProductVerificationPage() {
     setSearched(true)
 
     try {
-      // Call your new API endpoint
+      // Use robust API endpoint for Payload initialization and variant support
       const response = await fetch('/api/public/products/verify-sku', {
         method: 'POST',
         headers: {
@@ -56,39 +56,42 @@ export default function ProductVerificationPage() {
 
       const data = await response.json()
 
-      if (data.success && data.verified && data.product) {
-        // Convert the PayloadCMS product to match your ProductListItem type
+      if (data.exists && data.product) {
         const convertedProduct: ProductListItem = {
           id: data.product.id,
           name: data.product.name,
-          slug: data.product.name.toLowerCase().replace(/[^a-z0-9]+/g, '-'), // Generate slug
+          slug: data.product.name.toLowerCase().replace(/[^a-z0-9]+/g, '-'),
           price: data.product.price,
           sku: data.product.sku,
           stock: data.product.stock,
           status: 'active',
-          sizes: [], // You might need to adjust based on your data
-          colors: [], // You might need to adjust based on your data
+          sizes: [],
+          colors: [],
           images: data.product.images || [],
-          category: data.product.category
-            ? {
-                id: 0,
-                name: data.product.category,
-                slug: data.product.category.toLowerCase().replace(/[^a-z0-9]+/g, '-'),
-              }
-            : null,
-          brand: data.product.brand
-            ? {
-                id: 0,
-                name: data.product.brand,
-                slug: data.product.brand.toLowerCase().replace(/[^a-z0-9]+/g, '-'),
-              }
-            : null,
+          category:
+            data.product.category && typeof data.product.category === 'object'
+              ? {
+                  id: data.product.category.id || 0,
+                  name: data.product.category.name || '',
+                  slug: (data.product.category.name || '')
+                    .toLowerCase()
+                    .replace(/[^a-z0-9]+/g, '-'),
+                }
+              : null,
+          brand:
+            data.product.brand && typeof data.product.brand === 'object'
+              ? {
+                  id: data.product.brand.id || 0,
+                  name: data.product.brand.name || '',
+                  slug: (data.product.brand.name || '').toLowerCase().replace(/[^a-z0-9]+/g, '-'),
+                }
+              : null,
           features: [],
           tags: [],
           createdAt: new Date().toISOString(),
           updatedAt: new Date().toISOString(),
+          variants: Array.isArray(data.product.variants) ? data.product.variants : [],
         }
-
         setProduct(convertedProduct)
         setError(null)
         toast.success('Product verified successfully!')
@@ -291,8 +294,14 @@ export default function ProductVerificationPage() {
                       <Image
                         width={600}
                         height={400}
-                        src={product.images[0]?.url || 'https://placehold.co/600x400'}
-                        alt={product.images[0]?.alt || product.name}
+                        src={
+                          product.images[0]?.image?.url ||
+                          product.images[0]?.url ||
+                          'https://placehold.co/600x400'
+                        }
+                        alt={
+                          product.images[0]?.image?.alt || product.images[0]?.alt || product.name
+                        }
                         className="w-full h-full object-cover"
                       />
                     </div>
@@ -303,8 +312,8 @@ export default function ProductVerificationPage() {
                             width={100}
                             height={100}
                             key={image.id}
-                            src={image.url}
-                            alt={image.alt}
+                            src={image.image?.url || image.url || 'https://placehold.co/100x100'}
+                            alt={image.image?.alt || image.alt || product.name}
                             className="w-16 h-16 object-cover rounded"
                           />
                         ))}
@@ -326,10 +335,10 @@ export default function ProductVerificationPage() {
 
                     <div className="space-y-2">
                       <div className="flex items-baseline gap-2">
-                        <span className="text-2xl font-bold text-[#003DA5]">{product.price}</span>
+                        <span className="text-2xl font-bold text-[#003DA5]">Rs. {product.price.toLocaleString('en-LK')}</span>
                         {product.originalPrice && product.originalPrice > product.price && (
                           <span className="text-lg text-gray-500 line-through">
-                            {product.originalPrice}
+                            Rs. {product.originalPrice.toLocaleString('en-LK')}
                           </span>
                         )}
                       </div>
@@ -362,22 +371,60 @@ export default function ProductVerificationPage() {
                         </Badge>
                       </div>
 
-                      <div className="flex justify-between">
-                        <span className="font-medium">Stock:</span>
-                        <span className="flex items-center gap-1">
-                          {product.stock > 0 ? (
-                            <>
-                              <CheckCircle className="w-4 h-4 text-green-600" />
-                              <span className="text-green-600">{product.stock} available</span>
-                            </>
-                          ) : (
-                            <>
-                              <X className="w-4 h-4 text-red-600" />
-                              <span className="text-red-600">Out of stock</span>
-                            </>
-                          )}
-                        </span>
-                      </div>
+                      {/* Variant Table */}
+                      {Array.isArray(product.variants) && product.variants.length > 0 && (
+                        <div className="mt-4">
+                          <h4 className="font-medium mb-2">Variants:</h4>
+                          <div className="overflow-x-auto">
+                            <table className="min-w-full text-sm border">
+                              <thead>
+                                <tr className="bg-gray-100">
+                                  <th className="px-2 py-1 border">Name</th>
+                                  <th className="px-2 py-1 border">Price</th>
+                                  <th className="px-2 py-1 border">Inventory</th>
+                                </tr>
+                              </thead>
+                              <tbody>
+                                {product.variants.map((variant: any) => (
+                                  <tr key={variant.id || variant.sku || variant.name}>
+                                    <td className="px-2 py-1 border">{variant.name}</td>
+                                    <td className="px-2 py-1 border">{`LKR ${variant.price?.toLocaleString('en-LK')}`}</td>
+                                    <td className="px-2 py-1 border">
+                                      {variant.inventory > 0 ? (
+                                        <span className="text-green-600 font-semibold">
+                                          {variant.inventory} in stock
+                                        </span>
+                                      ) : (
+                                        <span className="text-red-600">Out of stock</span>
+                                      )}
+                                    </td>
+                                  </tr>
+                                ))}
+                              </tbody>
+                            </table>
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Hide base stock if variants do not exist */}
+                      {(!Array.isArray(product.variants) || product.variants.length === 0) && (
+                        <div className="flex justify-between">
+                          <span className="font-medium">Stock:</span>
+                          <span className="flex items-center gap-1">
+                            {typeof product.stock === 'number' && product.stock > 0 ? (
+                              <>
+                                <CheckCircle className="w-4 h-4 text-green-600" />
+                                <span className="text-green-600">{product.stock} available</span>
+                              </>
+                            ) : (
+                              <>
+                                <X className="w-4 h-4 text-red-600" />
+                                <span className="text-red-600">Out of stock</span>
+                              </>
+                            )}
+                          </span>
+                        </div>
+                      )}
 
                       {product.category && (
                         <div className="flex justify-between">
@@ -388,16 +435,18 @@ export default function ProductVerificationPage() {
                     </div>
 
                     {/* Product Features */}
-                    {product.features && product.features.length > 0 && (
+                    {(Array.isArray(product.features) ? product.features : []).length > 0 && (
                       <div>
                         <h4 className="font-medium mb-2">Key Features:</h4>
                         <ul className="text-sm space-y-1">
-                          {product.features.slice(0, 3).map((feature, index) => (
-                            <li key={index} className="flex items-start gap-2">
-                              <Zap className="w-3 h-3 text-[#FF3D00] mt-0.5 flex-shrink-0" />
-                              <span>{feature}</span>
-                            </li>
-                          ))}
+                          {(Array.isArray(product.features) ? product.features : [])
+                            .slice(0, 3)
+                            .map((feature, index) => (
+                              <li key={index} className="flex items-start gap-2">
+                                <Zap className="w-3 h-3 text-[#FF3D00] mt-0.5 flex-shrink-0" />
+                                <span>{feature}</span>
+                              </li>
+                            ))}
                         </ul>
                       </div>
                     )}
@@ -414,20 +463,6 @@ export default function ProductVerificationPage() {
                           View Product
                         </Link>
                       </Button>
-
-                      {product.status === 'active' && product.stock > 0 && (
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          className="border-[#FF3D00] text-[#FF3D00] hover:bg-[#FF3D00] hover:text-white flex-1"
-                          asChild
-                        >
-                          <Link href={`/products/${product.slug}`}>
-                            <ShoppingCart className="w-4 h-4 mr-2" />
-                            Buy Again
-                          </Link>
-                        </Button>
-                      )}
                     </div>
                   </div>
                 </div>
