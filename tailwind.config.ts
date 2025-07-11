@@ -19,6 +19,32 @@ const config: Config = {
     // Root src files
     './src/*.{js,ts,jsx,tsx,mdx}',
   ],
+  safelist: [
+    'from-[#003DA5]',
+    'via-[#0052CC]',
+    'to-[#1A1A1A]',
+
+    'from-[#FF3D00]',
+    'via-[#FF6B47]',
+    'to-[#1A1A1A]',
+
+    'from-[#AEEA00]',
+    'to-[#7CB342]',
+
+    'from-[#FFD700]',
+    'to-[#FFA500]',
+
+    'from-[#F9D923]',
+    'via-[#D4B72D]',
+
+    'from-[#00C853]',
+
+    'from-[#FF6F00]',
+
+    'from-[#C62828]',
+
+    'from-[#7B1FA2]',
+  ],
   theme: {
     extend: {
       colors: {

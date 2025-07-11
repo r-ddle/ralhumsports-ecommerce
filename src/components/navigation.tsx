@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useRef } from 'react'
 import { Button } from '@/components/ui/button'
 import { Menu, X, Phone } from 'lucide-react'
 import { CartButton } from '@/components/cart/cart-button'
@@ -13,6 +13,9 @@ export default function Navigation() {
   const [isOpen, setIsOpen] = useState(false)
   const [hoveredIdx, setHoveredIdx] = useState<number | null>(null)
   const [squircle, setSquircle] = useState({ left: 0, top: 0, width: 0, height: 0, visible: false })
+  const [isMobile, setIsMobile] = useState(false)
+  const [squircleAnimated, setSquircleAnimated] = useState(false)
+  const lastSquircle = useRef({ left: 0, top: 0, width: 0, height: 0 })
   const navItems = [
     { name: 'Home', href: '/' },
     { name: 'Brands', href: '/brands' },
@@ -28,24 +31,48 @@ export default function Navigation() {
     ) as React.RefObject<HTMLAnchorElement>[]
   }
 
-  // Update squircle position/size on hover
+  // Detect mobile (disable squircle on mobile)
   useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth < 768)
+    }
+    checkMobile()
+    window.addEventListener('resize', checkMobile)
+    return () => window.removeEventListener('resize', checkMobile)
+  }, [])
+
+  // Update squircle position/size on hover (desktop only)
+  useEffect(() => {
+    if (isMobile) {
+      setSquircle((s) => ({ ...s, visible: false }))
+      return
+    }
     if (hoveredIdx !== null && navRefs.current[hoveredIdx]?.current) {
       const rect = navRefs.current[hoveredIdx]!.current!.getBoundingClientRect()
       const parentRect =
         navRefs.current[hoveredIdx]!.current!.parentElement!.parentElement!.getBoundingClientRect()
-      setSquircle({
+      const newSquircle = {
         left: rect.left - parentRect.left,
         top: rect.top - parentRect.top,
         width: rect.width,
         height: rect.height,
         visible: true,
+      }
+      setSquircle((prev) => {
+        // If not visible, animate from the hovered link's position
+        if (!prev.visible) {
+          lastSquircle.current = newSquircle
+          if (!squircleAnimated) setSquircleAnimated(true)
+          return newSquircle
+        }
+        lastSquircle.current = newSquircle
+        return newSquircle
       })
     } else {
       setSquircle((s) => ({ ...s, visible: false }))
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [hoveredIdx])
+  }, [hoveredIdx, isMobile])
 
   return (
     <>
@@ -83,10 +110,28 @@ export default function Navigation() {
             >
               {/* Shared rectangle background */}
               <AnimatePresence>
-                {squircle.visible && (
+                {!isMobile && squircle.visible && (
                   <motion.div
                     key="squircle-bg"
-                    initial={{ opacity: 0, scale: 0.98 }}
+                    initial={
+                      squircleAnimated
+                        ? {
+                            opacity: 1,
+                            scale: 1,
+                            left: squircle.left,
+                            top: squircle.top,
+                            width: squircle.width,
+                            height: squircle.height,
+                          }
+                        : {
+                            opacity: 0,
+                            scale: 0.98,
+                            left: lastSquircle.current.left,
+                            top: lastSquircle.current.top,
+                            width: lastSquircle.current.width,
+                            height: lastSquircle.current.height,
+                          }
+                    }
                     animate={{
                       opacity: 1,
                       scale: 1,
@@ -101,7 +146,7 @@ export default function Navigation() {
                       position: 'absolute',
                       zIndex: 1,
                       borderRadius: '1rem',
-                      background: '#18181b', // solid dark
+                      background: '#101014', // darker background
                       pointerEvents: 'none',
                     }}
                   />
@@ -126,8 +171,10 @@ export default function Navigation() {
 
             {/* Desktop Actions */}
             <div className="hidden md:flex items-center space-x-3">
-              <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
-                <CartButton />
+              <motion.div whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.98 }}>
+                <div style={{ transform: 'scale(1.25)' }}>
+                  <CartButton />
+                </div>
               </motion.div>
               <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
                 <Button
@@ -148,8 +195,10 @@ export default function Navigation() {
 
             {/* Mobile Actions */}
             <div className="md:hidden flex items-center space-x-2">
-              <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
-                <CartButton />
+              <motion.div whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.98 }}>
+                <div style={{ transform: 'scale(1.25)' }}>
+                  <CartButton />
+                </div>
               </motion.div>
               <motion.button
                 whileHover={{ scale: 1.05 }}

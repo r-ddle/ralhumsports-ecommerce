@@ -28,7 +28,9 @@ import { toast } from 'sonner'
 import { RichTextRenderer } from '@/components/RichTextRenderer'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-import { ProductListItem } from '@/types/api'
+import type { ProductListItem } from '@/types/api'
+import Image from 'next/image'
+import { SITE_CONFIG } from '@/config/site-config'
 
 // Patch ProductListItem to include variants for this page
 type ProductVariantBackend = {
@@ -44,8 +46,6 @@ type ProductVariantBackend = {
 interface ProductListItemWithVariants extends ProductListItem {
   variants: ProductVariantBackend[]
 }
-import Image from 'next/image'
-import { SITE_CONFIG } from '@/config/site-config'
 
 interface ProductDetailPageProps {
   params: Promise<{
@@ -70,13 +70,18 @@ export default function ProductDetailPage({ params }: ProductDetailPageProps) {
   const [selectedImage, setSelectedImage] = useState(0)
   const [quantity, setQuantity] = useState(1)
   const [relatedProducts, setRelatedProducts] = useState<ProductListItem[]>([])
-  // const [exchangeRate, setExchangeRate] = useState(315) // Removed unused state
   const [variants, setVariants] = useState<ProductVariant[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [resolvedParams, setResolvedParams] = useState<{ slug: string } | null>(null)
 
   const { addItem } = useCart()
+
+  // Detect reduced motion preference
+  const prefersReducedMotion =
+    typeof window !== 'undefined'
+      ? window.matchMedia('(prefers-reduced-motion: reduce)').matches
+      : false
 
   // Resolve params first
   useEffect(() => {
@@ -168,14 +173,14 @@ export default function ProductDetailPage({ params }: ProductDetailPageProps) {
 
   if (error) {
     return (
-      <main className="min-h-screen pt-16">
+      <main className="min-h-screen pt-16 bg-gradient-to-br from-gray-50 via-white to-blue-50">
         <div className="max-w-7xl mx-auto px-4 py-16">
-          <Alert>
-            <AlertCircle className="h-4 w-4" />
-            <AlertDescription>{error}</AlertDescription>
+          <Alert className="border-red-200 bg-red-50/80 backdrop-blur-sm">
+            <AlertCircle className="h-4 w-4 text-red-600" />
+            <AlertDescription className="text-red-800">{error}</AlertDescription>
           </Alert>
           <div className="mt-4">
-            <Button asChild>
+            <Button asChild className="bg-gradient-to-r from-[#003DA5] to-[#0052CC] text-white">
               <Link href="/products">← Back to Products</Link>
             </Button>
           </div>
@@ -186,14 +191,14 @@ export default function ProductDetailPage({ params }: ProductDetailPageProps) {
 
   if (!product) {
     return (
-      <main className="min-h-screen pt-16">
+      <main className="min-h-screen pt-16 bg-gradient-to-br from-gray-50 via-white to-blue-50">
         <div className="max-w-7xl mx-auto px-4 py-16">
-          <Alert>
-            <AlertCircle className="h-4 w-4" />
-            <AlertDescription>Product not found</AlertDescription>
+          <Alert className="border-red-200 bg-red-50/80 backdrop-blur-sm">
+            <AlertCircle className="h-4 w-4 text-red-600" />
+            <AlertDescription className="text-red-800">Product not found</AlertDescription>
           </Alert>
           <div className="mt-4">
-            <Button asChild>
+            <Button asChild className="bg-gradient-to-r from-[#003DA5] to-[#0052CC] text-white">
               <Link href="/products">← Back to Products</Link>
             </Button>
           </div>
@@ -213,7 +218,6 @@ export default function ProductDetailPage({ params }: ProductDetailPageProps) {
     }
 
     // Convert ProductListItem to Product for cart
-    // Map product.brand (ProductBrand | null) to Brand type
     const brand: import('@/types/product').Brand | undefined = product.brand
       ? {
           id: String(product.brand.id),
@@ -236,7 +240,7 @@ export default function ProductDetailPage({ params }: ProductDetailPageProps) {
       brand: brand!,
       categories: [],
       images: product.images,
-      variants: [], // Not used in cart
+      variants: [],
       tags: [],
       featured: false,
       status: 'active',
@@ -264,39 +268,43 @@ export default function ProductDetailPage({ params }: ProductDetailPageProps) {
           url: window.location.href,
         })
       } catch (error) {
-        // User cancelled sharing
         console.warn('Share cancelled', error)
       }
     } else {
-      // Fallback to copying URL
       navigator.clipboard.writeText(window.location.href)
       toast.success('Product link copied to clipboard!')
     }
   }
 
-  // Low stock threshold: from product.pricing.lowStockThreshold or default 5
   const lowStockThreshold = (product as any)?.pricing?.lowStockThreshold ?? 5
   const isOutOfStock = selectedVariant.inventory === 0
   const isLowStock = !isOutOfStock && selectedVariant.inventory <= lowStockThreshold
   const maxQuantity = selectedVariant.inventory
 
   return (
-    <main className="min-h-screen pt-16 bg-white dark:bg-gray-900">
+    <main className="min-h-screen pt-16 bg-gradient-to-br from-gray-50 via-white to-blue-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900">
       <section className="py-4 sm:py-6 lg:py-8">
         <div className="max-w-7xl mx-auto px-4">
-          {/* Back Button - Mobile */}
+          {/* Enhanced Back Button */}
           <div className="mb-4 sm:hidden">
-            <Button variant="ghost" size="sm" onClick={() => router.back()} className="p-2">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => router.back()}
+              className={`p-2 bg-white/80 backdrop-blur-sm shadow-lg rounded-xl ${!prefersReducedMotion ? 'hover:scale-105 transition-all duration-300' : ''}`}
+            >
               <ArrowLeft className="w-4 h-4 mr-2" />
               Back
             </Button>
           </div>
 
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 sm:gap-8 lg:gap-12">
-            {/* Product Images - Mobile Optimized */}
-            <div className="space-y-3 sm:space-y-4">
-              {/* Main Image - Smaller on Mobile */}
-              <div className="relative aspect-square bg-gray-100 dark:bg-gray-800 rounded-lg sm:rounded-xl overflow-hidden group">
+            {/* Enhanced Product Images */}
+            <div
+              className={`space-y-3 sm:space-y-4 ${!prefersReducedMotion ? 'animate-fade-in-up' : ''}`}
+            >
+              {/* Main Image with Enhanced Styling */}
+              <div className="relative aspect-square bg-gradient-to-br from-gray-100 to-gray-200 dark:from-gray-800 dark:to-gray-700 rounded-2xl overflow-hidden group shadow-2xl">
                 <Image
                   width={600}
                   height={400}
@@ -305,7 +313,7 @@ export default function ProductDetailPage({ params }: ProductDetailPageProps) {
                     product.images.length > 0 &&
                     product.images[selectedImage]?.url
                       ? product.images[selectedImage].url
-                      : 'https://placehold.co/600x400'
+                      : '/placeholder.svg'
                   }
                   alt={
                     product.images &&
@@ -314,41 +322,41 @@ export default function ProductDetailPage({ params }: ProductDetailPageProps) {
                       ? product.images[selectedImage].alt
                       : product.name
                   }
-                  className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                  className={`w-full h-full object-cover ${!prefersReducedMotion ? 'group-hover:scale-105 transition-transform duration-500' : ''}`}
                   onError={(e) => {
                     const target = e.target as HTMLImageElement
-                    target.src = 'https://placehold.co/600x400'
+                    target.src = '/placeholder.svg'
                   }}
                 />
 
-                {/* Product Badges */}
+                {/* Enhanced Product Badges */}
                 <div className="absolute top-3 sm:top-4 left-3 sm:left-4 flex flex-col gap-2">
                   {product.originalPrice && product.originalPrice > product.price && (
-                    <Badge className="bg-[#FF3D00] text-white font-bold text-xs sm:text-sm">
+                    <Badge className="bg-gradient-to-r from-[#FF3D00] to-[#FF6B47] text-white font-bold text-xs sm:text-sm shadow-lg backdrop-blur-sm">
                       SALE
                     </Badge>
                   )}
                   {isOutOfStock && (
-                    <Badge variant="destructive" className="font-bold text-xs sm:text-sm">
+                    <Badge className="bg-gradient-to-r from-red-500 to-red-600 text-white font-bold text-xs sm:text-sm shadow-lg backdrop-blur-sm">
                       OUT OF STOCK
                     </Badge>
                   )}
                 </div>
 
-                {/* Share Button */}
+                {/* Enhanced Share Button */}
                 <div className="absolute top-3 sm:top-4 right-3 sm:right-4">
                   <Button
                     size="sm"
                     variant="secondary"
                     onClick={handleShare}
-                    className="w-8 h-8 sm:w-10 sm:h-10 p-0 rounded-full bg-white/90 hover:bg-white"
+                    className={`w-10 h-10 p-0 rounded-full bg-white/90 hover:bg-white shadow-lg backdrop-blur-sm ${!prefersReducedMotion ? 'hover:scale-110 transition-all duration-300' : ''}`}
                   >
-                    <Share2 className="w-4 h-4 sm:w-5 sm:h-5 text-gray-600" />
+                    <Share2 className="w-5 h-5 text-gray-600" />
                   </Button>
                 </div>
               </div>
 
-              {/* Thumbnail Images - Mobile Optimized */}
+              {/* Enhanced Thumbnail Images */}
               {product.images && product.images.length > 1 && (
                 <div className="flex gap-2 overflow-x-auto">
                   {product.images.map((image, index) => (
@@ -356,21 +364,21 @@ export default function ProductDetailPage({ params }: ProductDetailPageProps) {
                       key={image.id || index}
                       onClick={() => setSelectedImage(index)}
                       title={`Select image ${index + 1}`}
-                      className={`flex-shrink-0 w-16 h-16 sm:w-20 sm:h-20 rounded-md sm:rounded-lg overflow-hidden border-2 transition-all ${
+                      className={`flex-shrink-0 w-16 h-16 sm:w-20 sm:h-20 rounded-xl overflow-hidden border-2 transition-all duration-300 shadow-lg ${
                         index === selectedImage
-                          ? 'border-[#003DA5] ring-2 ring-[#003DA5]/20'
-                          : 'border-gray-200 hover:border-gray-300'
+                          ? 'border-[#003DA5] ring-2 ring-[#003DA5]/20 scale-105'
+                          : 'border-gray-200 hover:border-gray-300 hover:scale-105'
                       }`}
                     >
                       <Image
                         width={100}
                         height={100}
-                        src={image.url || 'https://placehold.co/600x400'}
+                        src={image.url || '/placeholder.svg'}
                         alt={image.alt || `${product.name} ${index + 1}`}
                         className="w-full h-full object-cover"
                         onError={(e) => {
                           const target = e.target as HTMLImageElement
-                          target.src = 'https://placehold.co/600x400'
+                          target.src = '/placeholder.svg'
                         }}
                       />
                     </button>
@@ -379,14 +387,16 @@ export default function ProductDetailPage({ params }: ProductDetailPageProps) {
               )}
             </div>
 
-            {/* Product Details - Mobile Optimized */}
-            <div className="space-y-4">
+            {/* Enhanced Product Details */}
+            <div
+              className={`space-y-4 ${!prefersReducedMotion ? 'animate-fade-in-up delay-200' : ''}`}
+            >
               {/* Brand */}
               {product.brand && (
                 <div className="flex">
                   <Link
                     href={`/products?brand=${product.brand.slug}`}
-                    className="text-[#003DA5] dark:text-[#4A90E2] font-bold text-base sm:text-xl hover:underline"
+                    className={`text-[#003DA5] dark:text-[#4A90E2] font-bold text-base sm:text-xl hover:underline ${!prefersReducedMotion ? 'hover:scale-105 transition-all duration-300' : ''}`}
                   >
                     {product.brand.name}
                   </Link>
@@ -398,34 +408,34 @@ export default function ProductDetailPage({ params }: ProductDetailPageProps) {
                 {product.name}
               </h1>
 
-              {/* Price - Mobile Optimized */}
-              <div className="">
-                <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-400">
+              {/* Price Info */}
+              <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl p-4 border border-blue-200">
+                <p className="text-xs sm:text-sm text-blue-800 font-medium">
                   Price includes tax. Free shipping on orders over LKR{' '}
-                  {SITE_CONFIG.shipping.freeShippingThreshold}.
+                  <span className="font-bold">{SITE_CONFIG.shipping.freeShippingThreshold}</span>.
                 </p>
               </div>
 
-              {/* Stock Status */}
+              {/* Enhanced Stock Status */}
               <div className="flex items-center gap-2">
                 {isOutOfStock ? (
-                  <Badge variant="destructive" className="font-bold">
+                  <Badge className="bg-gradient-to-r from-red-100 to-red-200 text-red-800 font-bold px-4 py-2 shadow-lg">
                     Out of Stock
                   </Badge>
                 ) : isLowStock ? (
-                  <Badge variant="secondary" className="bg-orange-100 text-orange-800 font-bold">
+                  <Badge className="bg-gradient-to-r from-orange-100 to-amber-100 text-orange-800 font-bold px-4 py-2 shadow-lg">
                     <Zap className="w-3 h-3 mr-1" />
                     Only {selectedVariant.inventory} left!
                   </Badge>
                 ) : (
-                  <Badge variant="secondary" className="bg-green-100 text-green-800 font-bold">
+                  <Badge className="bg-gradient-to-r from-green-100 to-emerald-100 text-green-800 font-bold px-4 py-2 shadow-lg">
                     <Check className="w-3 h-3 mr-1" />
                     In Stock
                   </Badge>
                 )}
               </div>
 
-              {/* Variant Selection - Design Consistent */}
+              {/* Enhanced Variant Selection */}
               <div className="space-y-4 sm:space-y-6">
                 {variants.length > 1 && (
                   <div className="space-y-3">
@@ -436,11 +446,9 @@ export default function ProductDetailPage({ params }: ProductDetailPageProps) {
                       {variants.map((variant) => {
                         const isSelected = selectedVariant?.id === variant.id
                         const isAvailable = variant.inventory > 0
-                        // Avoid duplicate info: if name === color or name === size, only show once
                         const mainLabel = variant.name || 'Standard'
                         let subLabel = ''
                         if (variant.size && variant.color) {
-                          // If name is not size or color, show both
                           if (variant.name !== variant.size && variant.name !== variant.color) {
                             subLabel = `${variant.size} - ${variant.color}`
                           } else if (
@@ -453,7 +461,7 @@ export default function ProductDetailPage({ params }: ProductDetailPageProps) {
                             variant.name !== variant.size
                           ) {
                             subLabel = variant.size
-                          } // else, both same as name, show nothing
+                          }
                         } else if (variant.size && variant.name !== variant.size) {
                           subLabel = variant.size
                         } else if (variant.color && variant.name !== variant.color) {
@@ -467,11 +475,11 @@ export default function ProductDetailPage({ params }: ProductDetailPageProps) {
                               setQuantity(1)
                             }}
                             disabled={!isAvailable}
-                            className={`min-w-[2.5rem] sm:min-w-[3rem] h-10 sm:h-12 px-3 sm:px-4 rounded-lg border-2 font-medium transition-all text-sm sm:text-base flex flex-col items-center justify-center text-center ${
+                            className={`min-w-[2.5rem] sm:min-w-[3rem] h-12 sm:h-14 px-3 sm:px-4 rounded-xl border-2 font-medium transition-all duration-300 text-sm sm:text-base flex flex-col items-center justify-center text-center shadow-lg ${
                               isSelected
-                                ? 'border-[#003DA5] bg-[#003DA5] text-white shadow-md'
+                                ? 'border-[#003DA5] bg-gradient-to-r from-[#003DA5] to-[#0052CC] text-white shadow-xl scale-105'
                                 : isAvailable
-                                  ? 'border-gray-300 bg-white text-gray-900 hover:border-[#003DA5]'
+                                  ? 'border-gray-300 bg-white text-gray-900 hover:border-[#003DA5] hover:scale-105'
                                   : 'border-gray-200 bg-gray-100 text-gray-400 cursor-not-allowed line-through'
                             }`}
                             aria-label={`Select variant ${mainLabel}${subLabel ? ' ' + subLabel : ''}`}
@@ -482,7 +490,6 @@ export default function ProductDetailPage({ params }: ProductDetailPageProps) {
                                 {subLabel}
                               </span>
                             )}
-                            {/* No price info here */}
                             {!isAvailable && (
                               <span className="text-xs text-red-500 mt-1">Out of stock</span>
                             )}
@@ -492,9 +499,10 @@ export default function ProductDetailPage({ params }: ProductDetailPageProps) {
                     </div>
                   </div>
                 )}
-                {/* Selected Variant Info */}
+
+                {/* Enhanced Selected Variant Info */}
                 {selectedVariant && variants.length > 1 && (
-                  <div className="p-3 sm:p-4 bg-gray-50 dark:bg-gray-800 rounded-lg">
+                  <div className="p-4 bg-gradient-to-r from-gray-50 to-blue-50 dark:from-gray-800 dark:to-gray-700 rounded-xl border border-gray-200 shadow-lg">
                     <div className="flex items-center justify-between">
                       <div>
                         <p className="font-medium text-gray-900 dark:text-white text-sm sm:text-base">
@@ -508,8 +516,8 @@ export default function ProductDetailPage({ params }: ProductDetailPageProps) {
                         </p>
                       </div>
                       <div className="text-right">
-                        <p className="font-bold text-[#003DA5] dark:text-[#4A90E2] text-sm sm:text-base">
-                          Rs. {selectedVariant.price}
+                        <p className="font-bold bg-gradient-to-r from-[#003DA5] to-[#0052CC] bg-clip-text text-transparent text-sm sm:text-base">
+                          Rs. {selectedVariant.price.toLocaleString()}
                         </p>
                         {selectedVariant.inventory <= 5 && selectedVariant.inventory > 0 && (
                           <p className="text-xs text-orange-600">
@@ -522,7 +530,7 @@ export default function ProductDetailPage({ params }: ProductDetailPageProps) {
                 )}
               </div>
 
-              {/* Quantity Selector - Mobile Optimized */}
+              {/* Enhanced Quantity Selector */}
               <div className="space-y-2">
                 <label
                   htmlFor="quantity"
@@ -531,54 +539,51 @@ export default function ProductDetailPage({ params }: ProductDetailPageProps) {
                   Quantity:
                 </label>
                 <div className="flex items-center gap-3">
-                  <div className="flex items-center border border-gray-300 rounded-lg">
+                  <div className="flex items-center border-2 border-gray-300 rounded-xl bg-white shadow-lg">
                     <Button
                       variant="ghost"
                       size="sm"
                       onClick={() => setQuantity(Math.max(1, quantity - 1))}
                       disabled={quantity <= 1}
-                      className="h-8 sm:h-10 w-8 sm:w-10 p-0"
+                      className={`h-10 w-10 p-0 rounded-l-xl ${!prefersReducedMotion ? 'hover:scale-110 transition-all duration-300' : ''}`}
                     >
-                      <Minus className="w-3 h-3 sm:w-4 sm:h-4" />
+                      <Minus className="w-4 h-4" />
                     </Button>
-                    <span className="w-12 sm:w-16 text-center font-medium text-sm sm:text-base">
-                      {quantity}
-                    </span>
+                    <span className="w-16 text-center font-bold text-base">{quantity}</span>
                     <Button
                       variant="ghost"
                       size="sm"
                       onClick={() => setQuantity(Math.min(maxQuantity, quantity + 1))}
                       disabled={quantity >= maxQuantity || isOutOfStock}
-                      className="h-8 sm:h-10 w-8 sm:w-10 p-0"
+                      className={`h-10 w-10 p-0 rounded-r-xl ${!prefersReducedMotion ? 'hover:scale-110 transition-all duration-300' : ''}`}
                     >
-                      <Plus className="w-3 h-3 sm:w-4 sm:h-4" />
+                      <Plus className="w-4 h-4" />
                     </Button>
                   </div>
-                  {/* Only show stock count if low stock */}
                   {isLowStock && (
-                    <span className="text-xs sm:text-sm text-orange-600 dark:text-orange-400 font-semibold">
+                    <span className="text-sm text-orange-600 dark:text-orange-400 font-semibold">
                       Only {selectedVariant.inventory} left
                     </span>
                   )}
                 </div>
               </div>
 
-              {/* Add to Cart - Mobile Optimized */}
+              {/* Enhanced Add to Cart Buttons */}
               <div className="space-y-3">
                 <Button
                   size="lg"
                   onClick={handleAddToCart}
                   disabled={isOutOfStock}
-                  className="w-full bg-[#FF3D00] hover:bg-[#FF3D00]/90 text-white font-bold py-3 sm:py-4 text-base sm:text-lg rounded-xl transition-all hover:scale-[1.02]"
+                  className={`w-full bg-gradient-to-r from-[#FF3D00] to-[#FF6B47] hover:from-[#FF6B47] hover:to-[#FF3D00] text-white font-bold py-4 text-lg rounded-xl shadow-2xl ${!prefersReducedMotion ? 'hover:scale-[1.02] transition-all duration-300' : ''}`}
                 >
-                  <ShoppingCart className="w-4 h-4 sm:w-5 sm:h-5 mr-2" />
+                  <ShoppingCart className="w-5 h-5 mr-2" />
                   {isOutOfStock ? 'Out of Stock' : 'Add to Cart'}
                 </Button>
 
                 <Button
                   variant="outline"
                   size="lg"
-                  className="w-full font-bold border-2 border-[#003DA5] text-[#003DA5] hover:bg-[#003DA5] hover:text-white py-3 sm:py-4 text-base sm:text-lg"
+                  className={`w-full font-bold border-2 border-[#003DA5] text-[#003DA5] hover:bg-gradient-to-r hover:from-[#003DA5] hover:to-[#0052CC] hover:text-white py-4 text-lg rounded-xl shadow-lg ${!prefersReducedMotion ? 'hover:scale-[1.02] transition-all duration-300' : ''}`}
                   onClick={() => {
                     handleAddToCart()
                     router.push('/checkout')
@@ -589,111 +594,100 @@ export default function ProductDetailPage({ params }: ProductDetailPageProps) {
                 </Button>
               </div>
 
-              {/* Trust Badges - Mobile Optimized */}
-              <div className="grid grid-cols-3 gap-2 sm:gap-4 pt-4 border-t">
-                <div className="text-center">
-                  <Truck className="w-4 h-4 sm:w-6 sm:h-6 mx-auto text-[#003DA5] mb-1 sm:mb-2" />
-                  <div className="text-xs font-medium">Free Shipping</div>
-                  <div className="text-xs text-gray-600 hidden sm:block">On orders above 50k</div>
-                </div>
-                <div className="text-center">
-                  <Shield className="w-4 h-4 sm:w-6 sm:h-6 mx-auto text-[#003DA5] mb-1 sm:mb-2" />
-                  <div className="text-xs font-medium">Secure Payment</div>
-                  <div className="text-xs text-gray-600 hidden sm:block">SSL Protected</div>
-                </div>
-                <div className="text-center">
-                  <RefreshCw className="w-4 h-4 sm:w-6 sm:h-6 mx-auto text-[#003DA5] mb-1 sm:mb-2" />
-                  <div className="text-xs font-medium">Easy Returns</div>
-                  <div className="text-xs text-gray-600 hidden sm:block">30-day policy</div>
-                </div>
+              {/* Enhanced Trust Badges */}
+              <div className="grid grid-cols-3 gap-4 pt-4 border-t border-gray-200">
+                {[
+                  { icon: Truck, title: 'Free Shipping', desc: 'On orders above 50k' },
+                  { icon: Shield, title: 'Secure Payment', desc: 'SSL Protected' },
+                  { icon: RefreshCw, title: 'Easy Returns', desc: '30-day policy' },
+                ].map((trust, index) => (
+                  <div
+                    key={trust.title}
+                    className={`text-center p-3 rounded-xl bg-gradient-to-r from-gray-50 to-blue-50 border border-gray-100 shadow-lg ${!prefersReducedMotion ? 'hover:scale-105 transition-all duration-300' : ''}`}
+                  >
+                    <trust.icon className="w-6 h-6 mx-auto text-[#003DA5] mb-2" />
+                    <div className="text-xs font-bold text-gray-900">{trust.title}</div>
+                    <div className="text-xs text-gray-600 hidden sm:block">{trust.desc}</div>
+                  </div>
+                ))}
               </div>
             </div>
           </div>
 
-          {/* Product Details Tabs - FIXED MOBILE TABLES */}
-          <div className="mt-12 sm:mt-16">
+          {/* Enhanced Product Details Tabs */}
+          <div
+            className={`mt-12 sm:mt-16 ${!prefersReducedMotion ? 'animate-fade-in-up delay-400' : ''}`}
+          >
             <Tabs defaultValue="description" className="w-full">
-              {/* Improved Tabs Navigation */}
-              <TabsList className="grid w-full grid-cols-3 mb-6 sm:mb-8 h-auto bg-gray-100 dark:bg-gray-800 rounded-lg p-1">
-                <TabsTrigger
-                  value="description"
-                  className="font-bold text-xs sm:text-sm py-2 sm:py-3 rounded-md data-[state=active]:bg-white dark:data-[state=active]:bg-gray-700 data-[state=active]:text-[#003DA5] dark:data-[state=active]:text-[#4A90E2] data-[state=active]:shadow-sm transition-all"
-                >
-                  Description
-                </TabsTrigger>
-                <TabsTrigger
-                  value="specifications"
-                  className="font-bold text-xs sm:text-sm py-2 sm:py-3 rounded-md data-[state=active]:bg-white dark:data-[state=active]:bg-gray-700 data-[state=active]:text-[#003DA5] dark:data-[state=active]:text-[#4A90E2] data-[state=active]:shadow-sm transition-all"
-                >
-                  Specifications
-                </TabsTrigger>
-                <TabsTrigger
-                  value="shipping"
-                  className="font-bold text-xs sm:text-sm py-2 sm:py-3 rounded-md data-[state=active]:bg-white dark:data-[state=active]:bg-gray-700 data-[state=active]:text-[#003DA5] dark:data-[state=active]:text-[#4A90E2] data-[state=active]:shadow-sm transition-all"
-                >
-                  Shipping
-                </TabsTrigger>
+              {/* Enhanced Tabs Navigation */}
+              <TabsList className="grid w-full grid-cols-3 mb-6 sm:mb-8 h-auto bg-gradient-to-r from-gray-100 to-blue-100 dark:from-gray-800 dark:to-gray-700 rounded-2xl p-2 shadow-xl">
+                {['description', 'specifications', 'shipping'].map((tab) => (
+                  <TabsTrigger
+                    key={tab}
+                    value={tab}
+                    className={`font-bold text-xs sm:text-sm py-3 rounded-xl data-[state=active]:bg-white dark:data-[state=active]:bg-gray-700 data-[state=active]:text-[#003DA5] dark:data-[state=active]:text-[#4A90E2] data-[state=active]:shadow-lg transition-all duration-300 ${!prefersReducedMotion ? 'hover:scale-105' : ''}`}
+                  >
+                    {tab.charAt(0).toUpperCase() + tab.slice(1)}
+                  </TabsTrigger>
+                ))}
               </TabsList>
 
               {/* Description Tab */}
               <TabsContent value="description" className="space-y-6">
-                <Card className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700">
-                  <CardContent className="p-4 sm:p-6">
-                    <h3 className="text-lg sm:text-xl font-bold mb-4 text-gray-900 dark:text-white">
+                <Card className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-md shadow-2xl border border-white/20">
+                  <CardContent className="p-6">
+                    <h3 className="text-xl font-bold mb-4 text-gray-900 dark:text-white">
                       Product Description
                     </h3>
                     <div className="prose max-w-none text-gray-700 dark:text-gray-300">
-                      {/* Description Section - Using RichTextRenderer */}
                       <div className="mb-6">
                         {product.description ? (
-                          <div className="leading-relaxed text-sm sm:text-base">
+                          <div className="leading-relaxed text-base">
                             <RichTextRenderer content={product.description} />
                           </div>
                         ) : (
-                          <p className="text-gray-500 italic text-sm sm:text-base">
-                            No description available
-                          </p>
+                          <p className="text-gray-500 italic">No description available</p>
                         )}
                       </div>
 
-                      {/* Features Section */}
+                      {/* Enhanced Features Section */}
                       <div className="mb-6">
-                        <h4 className="font-bold mb-3 text-gray-900 dark:text-white text-sm sm:text-base">
+                        <h4 className="font-bold mb-3 text-gray-900 dark:text-white">
                           Key Features:
                         </h4>
                         {product.features && product.features.length > 0 ? (
                           <ul className="space-y-2">
                             {product.features.map((feature, index) => (
-                              <li key={index} className="flex items-start gap-2">
-                                <Check className="w-3 h-3 sm:w-4 sm:h-4 text-green-600 mt-0.5 flex-shrink-0" />
-                                <span className="text-sm sm:text-base">{feature}</span>
+                              <li
+                                key={index}
+                                className={`flex items-start gap-2 p-2 rounded-lg bg-gradient-to-r from-green-50 to-emerald-50 border border-green-100 ${!prefersReducedMotion ? 'hover:scale-[1.02] transition-all duration-300' : ''}`}
+                              >
+                                <Check className="w-4 h-4 text-green-600 mt-0.5 flex-shrink-0" />
+                                <span>{feature}</span>
                               </li>
                             ))}
                           </ul>
                         ) : (
-                          <p className="text-gray-500 italic text-sm sm:text-base">
-                            No features listed
-                          </p>
+                          <p className="text-gray-500 italic">No features listed</p>
                         )}
                       </div>
 
-                      {/* Tags Section */}
+                      {/* Enhanced Tags Section */}
                       <div>
-                        <h4 className="font-bold mb-3 text-gray-900 dark:text-white text-sm sm:text-base">
-                          Tags:
-                        </h4>
+                        <h4 className="font-bold mb-3 text-gray-900 dark:text-white">Tags:</h4>
                         {product.tags && product.tags.length > 0 ? (
                           <div className="flex flex-wrap gap-2">
                             {product.tags.map((tag) => (
-                              <Badge key={tag} variant="outline" className="text-xs">
+                              <Badge
+                                key={tag}
+                                className="bg-gradient-to-r from-blue-100 to-indigo-100 text-blue-800 border border-blue-200 shadow-lg"
+                              >
                                 {tag}
                               </Badge>
                             ))}
                           </div>
                         ) : (
-                          <p className="text-gray-500 italic text-sm sm:text-base">
-                            No tags available
-                          </p>
+                          <p className="text-gray-500 italic">No tags available</p>
                         )}
                       </div>
                     </div>
@@ -701,42 +695,38 @@ export default function ProductDetailPage({ params }: ProductDetailPageProps) {
                 </Card>
               </TabsContent>
 
-              {/* Specifications Tab - FIXED MOBILE TABLE */}
+              {/* Enhanced Specifications Tab */}
               <TabsContent value="specifications" className="space-y-6">
-                <Card className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700">
-                  <CardContent className="p-4 sm:p-6">
-                    <h3 className="text-lg sm:text-xl font-bold mb-6 text-gray-900 dark:text-white">
+                <Card className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-md shadow-2xl border border-white/20">
+                  <CardContent className="p-6">
+                    <h3 className="text-xl font-bold mb-6 text-gray-900 dark:text-white">
                       Technical Specifications
                     </h3>
 
                     {product.specifications && Object.keys(product.specifications).length > 0 ? (
                       <div className="space-y-4">
-                        {/* Mobile-First Responsive Table */}
+                        {/* Desktop Table */}
                         <div className="hidden sm:block overflow-x-auto">
-                          <table className="w-full border-collapse">
+                          <table className="w-full border-collapse bg-white rounded-xl overflow-hidden shadow-lg">
                             <thead>
-                              <tr className="border-b-2 border-gray-200 dark:border-gray-600">
-                                <th className="text-left py-3 pr-6 font-bold text-gray-900 dark:text-white w-1/3">
-                                  Property
-                                </th>
-                                <th className="text-left py-3 font-bold text-gray-900 dark:text-white">
-                                  Value
-                                </th>
+                              <tr className="bg-gradient-to-r from-[#003DA5] to-[#0052CC] text-white">
+                                <th className="text-left py-4 px-6 font-bold w-1/3">Property</th>
+                                <th className="text-left py-4 px-6 font-bold">Value</th>
                               </tr>
                             </thead>
-                            <tbody className="divide-y divide-gray-200 dark:divide-gray-600">
+                            <tbody className="divide-y divide-gray-200">
                               {Object.entries(product.specifications).map(([key, value]) => (
                                 <tr
                                   key={key}
-                                  className="hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+                                  className={`hover:bg-gradient-to-r hover:from-gray-50 hover:to-blue-50 transition-all duration-300 ${!prefersReducedMotion ? 'hover:scale-[1.01]' : ''}`}
                                 >
-                                  <td className="py-4 pr-6 font-medium text-gray-600 dark:text-gray-400 capitalize align-top">
+                                  <td className="py-4 px-6 font-medium text-gray-600 capitalize">
                                     {key
                                       .replace(/([A-Z])/g, ' $1')
                                       .replace(/^./, (str) => str.toUpperCase())
                                       .trim()}
                                   </td>
-                                  <td className="py-4 font-semibold text-gray-900 dark:text-white align-top">
+                                  <td className="py-4 px-6 font-semibold text-gray-900">
                                     {value && value.toString().trim() ? (
                                       <span>{value.toString()}</span>
                                     ) : (
@@ -754,15 +744,15 @@ export default function ProductDetailPage({ params }: ProductDetailPageProps) {
                           {Object.entries(product.specifications).map(([key, value]) => (
                             <div
                               key={key}
-                              className="bg-gray-50 dark:bg-gray-700 rounded-lg p-3 border border-gray-200 dark:border-gray-600"
+                              className={`bg-gradient-to-r from-gray-50 to-blue-50 rounded-xl p-4 border border-gray-200 shadow-lg ${!prefersReducedMotion ? 'hover:scale-[1.02] transition-all duration-300' : ''}`}
                             >
-                              <div className="font-medium text-gray-600 dark:text-gray-400 text-sm mb-1 capitalize">
+                              <div className="font-medium text-gray-600 text-sm mb-1 capitalize">
                                 {key
                                   .replace(/([A-Z])/g, ' $1')
                                   .replace(/^./, (str) => str.toUpperCase())
                                   .trim()}
                               </div>
-                              <div className="font-semibold text-gray-900 dark:text-white text-sm">
+                              <div className="font-semibold text-gray-900">
                                 {value && value.toString().trim() ? (
                                   <span>{value.toString()}</span>
                                 ) : (
@@ -774,12 +764,12 @@ export default function ProductDetailPage({ params }: ProductDetailPageProps) {
                         </div>
                       </div>
                     ) : (
-                      <div className="text-center py-8 sm:py-12">
-                        <Package className="w-10 h-10 sm:w-12 sm:h-12 text-gray-400 mx-auto mb-4" />
-                        <p className="text-gray-500 italic text-base sm:text-lg">
-                          No specifications available
-                        </p>
-                        <p className="text-gray-400 text-xs sm:text-sm mt-2">
+                      <div className="text-center py-12">
+                        <div className="w-16 h-16 bg-gradient-to-br from-gray-200 to-gray-300 rounded-full flex items-center justify-center mx-auto mb-4">
+                          <Package className="w-8 h-8 text-gray-400" />
+                        </div>
+                        <p className="text-gray-500 italic text-lg">No specifications available</p>
+                        <p className="text-gray-400 text-sm mt-2">
                           Technical specifications will be displayed here when available
                         </p>
                       </div>
@@ -788,127 +778,133 @@ export default function ProductDetailPage({ params }: ProductDetailPageProps) {
                 </Card>
               </TabsContent>
 
-              {/* Shipping Tab */}
+              {/* Enhanced Shipping Tab */}
               <TabsContent value="shipping" className="space-y-6">
-                <Card className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700">
-                  <CardContent className="p-4 sm:p-6">
-                    <h3 className="text-lg sm:text-xl font-bold mb-6 text-gray-900 dark:text-white">
+                <Card className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-md shadow-2xl border border-white/20">
+                  <CardContent className="p-6">
+                    <h3 className="text-xl font-bold mb-6 text-gray-900 dark:text-white">
                       Shipping & Returns Information
                     </h3>
                     <div className="space-y-6">
-                      {/* Shipping Information */}
+                      {/* Enhanced Shipping Information */}
                       <div>
-                        <h4 className="font-bold mb-4 text-gray-900 dark:text-white text-sm sm:text-base">
+                        <h4 className="font-bold mb-4 text-gray-900 dark:text-white">
                           Shipping Options
                         </h4>
                         <div className="space-y-4">
-                          <div className="flex items-start gap-3 p-3 sm:p-4 bg-gray-50 dark:bg-gray-700 rounded-lg">
-                            <Truck className="w-4 h-4 sm:w-5 sm:h-5 text-[#003DA5] dark:text-[#4A90E2] mt-1 flex-shrink-0" />
-                            <div>
-                              <h5 className="font-semibold text-sm sm:text-base">
-                                {product.shipping?.freeShipping
-                                  ? 'Free Shipping'
-                                  : 'Standard Shipping'}
-                              </h5>
-                              <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-400 mt-1">
-                                {product.shipping?.freeShipping
-                                  ? 'Free shipping on this item. Delivered in 3-5 business days.'
-                                  : `Free shipping on orders over LKR ${SITE_CONFIG.shipping.freeShippingThreshold}. Standard rate applies for smaller orders.`}
-                              </p>
-                              <p className="text-xs text-gray-500 mt-2">
-                                Delivery: 3-5 business days
-                              </p>
-                            </div>
-                          </div>
-
-                          {product.shipping?.islandWideDelivery && (
-                            <div className="flex items-start gap-3 p-3 sm:p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
-                              <Globe className="w-4 h-4 sm:w-5 sm:h-5 text-[#003DA5] dark:text-[#4A90E2] mt-1 flex-shrink-0" />
+                          {[
+                            {
+                              icon: Truck,
+                              title: product.shipping?.freeShipping
+                                ? 'Free Shipping'
+                                : 'Standard Shipping',
+                              desc: product.shipping?.freeShipping
+                                ? 'Free shipping on this item. Delivered in 3-5 business days.'
+                                : `Free shipping on orders over LKR ${SITE_CONFIG.shipping.freeShippingThreshold}. Standard rate applies for smaller orders.`,
+                              gradient: 'from-blue-50 to-indigo-50',
+                              border: 'border-blue-200',
+                            },
+                            ...(product.shipping?.islandWideDelivery
+                              ? [
+                                  {
+                                    icon: Globe,
+                                    title: 'Island-wide Delivery',
+                                    desc: 'We deliver across all provinces in Sri Lanka with secure packaging.',
+                                    gradient: 'from-green-50 to-emerald-50',
+                                    border: 'border-green-200',
+                                  },
+                                ]
+                              : []),
+                            ...(product.shipping?.shippingWeight
+                              ? [
+                                  {
+                                    icon: Package,
+                                    title: 'Package Details',
+                                    desc: `Approximate weight: ${product.shipping.shippingWeight}kg`,
+                                    gradient: 'from-gray-50 to-slate-50',
+                                    border: 'border-gray-200',
+                                  },
+                                ]
+                              : []),
+                          ].map((item, index) => (
+                            <div
+                              key={item.title}
+                              className={`flex items-start gap-3 p-4 bg-gradient-to-r ${item.gradient} rounded-xl border ${item.border} shadow-lg ${!prefersReducedMotion ? 'hover:scale-[1.02] transition-all duration-300' : ''}`}
+                            >
+                              <item.icon className="w-5 h-5 text-[#003DA5] mt-1 flex-shrink-0" />
                               <div>
-                                <h5 className="font-semibold text-sm sm:text-base">
-                                  Island-wide Delivery
-                                </h5>
-                                <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-400 mt-1">
-                                  We deliver across all provinces in Sri Lanka with secure
-                                  packaging.
+                                <h5 className="font-semibold">{item.title}</h5>
+                                <p className="text-sm text-gray-600 mt-1">{item.desc}</p>
+                                <p className="text-xs text-gray-500 mt-2">
+                                  Delivery: 3-5 business days
                                 </p>
                               </div>
                             </div>
-                          )}
-
-                          {product.shipping?.shippingWeight && (
-                            <div className="flex items-start gap-3 p-3 sm:p-4 bg-gray-50 dark:bg-gray-700 rounded-lg">
-                              <Package className="w-4 h-4 sm:w-5 sm:h-5 text-[#003DA5] dark:text-[#4A90E2] mt-1 flex-shrink-0" />
-                              <div>
-                                <h5 className="font-semibold text-sm sm:text-base">
-                                  Package Details
-                                </h5>
-                                <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-400 mt-1">
-                                  Approximate weight: {product.shipping.shippingWeight}kg
-                                </p>
-                              </div>
-                            </div>
-                          )}
+                          ))}
                         </div>
                       </div>
 
                       <Separator />
 
-                      {/* Returns Information */}
+                      {/* Enhanced Returns Information */}
                       <div>
-                        <h4 className="font-bold mb-4 text-gray-900 dark:text-white text-sm sm:text-base">
+                        <h4 className="font-bold mb-4 text-gray-900 dark:text-white">
                           Returns & Exchanges
                         </h4>
                         <div className="space-y-4">
-                          <div className="flex items-start gap-3 p-3 sm:p-4 bg-green-50 dark:bg-green-900/20 rounded-lg">
-                            <RefreshCw className="w-4 h-4 sm:w-5 sm:h-5 text-green-600 mt-1 flex-shrink-0" />
-                            <div>
-                              <h5 className="font-semibold text-sm sm:text-base">
-                                {product.shipping?.easyReturn
-                                  ? '30-Day Easy Returns'
-                                  : '30-Day Returns'}
-                              </h5>
-                              <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-400 mt-1">
-                                Return unused items in original packaging within 30 days for a full
-                                refund.
-                              </p>
-                              <ul className="text-xs text-gray-500 mt-2 space-y-1">
-                                <li>• Items must be in original condition</li>
-                                <li>• Include all original packaging and tags</li>
-                                <li>• Return shipping costs may apply</li>
-                              </ul>
+                          {[
+                            {
+                              icon: RefreshCw,
+                              title: product.shipping?.easyReturn
+                                ? '30-Day Easy Returns'
+                                : '30-Day Returns',
+                              desc: 'Return unused items in original packaging within 30 days for a full refund.',
+                              gradient: 'from-green-50 to-emerald-50',
+                              border: 'border-green-200',
+                            },
+                            {
+                              icon: Shield,
+                              title: 'Quality Guarantee',
+                              desc: 'All products come with manufacturer warranty and our quality guarantee.',
+                              gradient: 'from-blue-50 to-indigo-50',
+                              border: 'border-blue-200',
+                            },
+                          ].map((item) => (
+                            <div
+                              key={item.title}
+                              className={`flex items-start gap-3 p-4 bg-gradient-to-r ${item.gradient} rounded-xl border ${item.border} shadow-lg ${!prefersReducedMotion ? 'hover:scale-[1.02] transition-all duration-300' : ''}`}
+                            >
+                              <item.icon className="w-5 h-5 text-blue-600 mt-1 flex-shrink-0" />
+                              <div>
+                                <h5 className="font-semibold">{item.title}</h5>
+                                <p className="text-sm text-gray-600 mt-1">{item.desc}</p>
+                                {item.title.includes('Returns') && (
+                                  <ul className="text-xs text-gray-500 mt-2 space-y-1">
+                                    <li>• Items must be in original condition</li>
+                                    <li>• Include all original packaging and tags</li>
+                                    <li>• Return shipping costs may apply</li>
+                                  </ul>
+                                )}
+                              </div>
                             </div>
-                          </div>
-
-                          <div className="flex items-start gap-3 p-3 sm:p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
-                            <Shield className="w-4 h-4 sm:w-5 sm:h-5 text-blue-600 mt-1 flex-shrink-0" />
-                            <div>
-                              <h5 className="font-semibold text-sm sm:text-base">
-                                Quality Guarantee
-                              </h5>
-                              <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-400 mt-1">
-                                All products come with manufacturer warranty and our quality
-                                guarantee.
-                              </p>
-                            </div>
-                          </div>
+                          ))}
                         </div>
                       </div>
 
                       <Separator />
 
-                      {/* Contact Information */}
-                      <div className="bg-[#003DA5]/5 dark:bg-[#003DA5]/10 rounded-lg p-3 sm:p-4">
-                        <h4 className="font-bold mb-2 text-[#003DA5] dark:text-[#4A90E2] text-sm sm:text-base">
+                      {/* Enhanced Contact Information */}
+                      <div className="bg-gradient-to-r from-[#003DA5]/5 to-[#FF3D00]/5 rounded-xl p-4 border border-[#003DA5]/20 shadow-lg">
+                        <h4 className="font-bold mb-2 text-[#003DA5] dark:text-[#4A90E2]">
                           Need Help?
                         </h4>
-                        <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-400 mb-3">
+                        <p className="text-sm text-gray-600 dark:text-gray-400 mb-3">
                           Contact our customer service team for shipping and returns assistance.
                         </p>
                         <div className="flex flex-col sm:flex-row gap-2">
                           <Button
                             size="sm"
-                            className="bg-[#25D366] hover:bg-[#25D366]/90 text-white text-xs sm:text-sm"
+                            className={`bg-gradient-to-r from-[#25D366] to-[#128C7E] hover:from-[#128C7E] hover:to-[#25D366] text-white shadow-lg ${!prefersReducedMotion ? 'hover:scale-105 transition-all duration-300' : ''}`}
                             onClick={() => {
                               const message = `Hello! I need help with shipping/returns for product: ${product.name} (SKU: ${product.sku})`
                               const whatsappUrl = `https://wa.me/94772350712?text=${encodeURIComponent(message)}`
@@ -921,7 +917,7 @@ export default function ProductDetailPage({ params }: ProductDetailPageProps) {
                             size="sm"
                             variant="outline"
                             asChild
-                            className="text-xs sm:text-sm"
+                            className={`border-2 border-[#003DA5] text-[#003DA5] hover:bg-[#003DA5] hover:text-white ${!prefersReducedMotion ? 'hover:scale-105 transition-all duration-300' : ''}`}
                           >
                             <Link href="/contact">Contact Us</Link>
                           </Button>
@@ -934,27 +930,37 @@ export default function ProductDetailPage({ params }: ProductDetailPageProps) {
             </Tabs>
           </div>
 
-          {/* Related Products - Mobile Optimized */}
+          {/* Enhanced Related Products */}
           {relatedProducts.length > 0 && (
-            <section className="mt-12 sm:mt-16">
+            <section
+              className={`mt-12 sm:mt-16 ${!prefersReducedMotion ? 'animate-fade-in-up delay-600' : ''}`}
+            >
               <div className="text-center mb-6 sm:mb-8">
                 <h2 className="text-2xl sm:text-3xl font-black text-gray-900 dark:text-white mb-4">
-                  More from {product.brand?.name}
+                  More from{' '}
+                  <span className="bg-gradient-to-r from-[#003DA5] to-[#0052CC] bg-clip-text text-transparent">
+                    {product.brand?.name}
+                  </span>
                 </h2>
-                <p className="text-gray-600 dark:text-gray-400 text-sm sm:text-base">
+                <p className="text-gray-600 dark:text-gray-400">
                   Discover other premium products from this brand
                 </p>
               </div>
 
-              <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 lg:gap-6">
-                {relatedProducts.map((relatedProduct) => (
-                  <ProductCard
+              <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 lg:gap-6">
+                {relatedProducts.map((relatedProduct, index) => (
+                  <div
                     key={relatedProduct.id}
-                    product={relatedProduct}
-                    showBrand={false}
-                    showCategory={true}
-                    className="mobile-optimized"
-                  />
+                    className={!prefersReducedMotion ? `animate-fade-in-up` : ''}
+                    style={!prefersReducedMotion ? { animationDelay: `${index * 100}ms` } : {}}
+                  >
+                    <ProductCard
+                      product={relatedProduct}
+                      showBrand={false}
+                      showCategory={true}
+                      className="mobile-optimized bg-white/80 backdrop-blur-sm shadow-lg hover:shadow-2xl transition-all duration-300 border border-white/20"
+                    />
+                  </div>
                 ))}
               </div>
 
@@ -962,7 +968,7 @@ export default function ProductDetailPage({ params }: ProductDetailPageProps) {
                 <Button
                   variant="outline"
                   size="lg"
-                  className="border-2 border-[#003DA5] text-[#003DA5] hover:bg-[#003DA5] hover:text-white font-bold text-sm sm:text-base"
+                  className={`border-2 border-[#003DA5] text-[#003DA5] hover:bg-gradient-to-r hover:from-[#003DA5] hover:to-[#0052CC] hover:text-white font-bold px-8 py-4 rounded-xl shadow-lg ${!prefersReducedMotion ? 'hover:scale-105 transition-all duration-300' : ''}`}
                   asChild
                 >
                   <Link href={`/products?brand=${product.brand?.slug}`}>
@@ -980,27 +986,27 @@ export default function ProductDetailPage({ params }: ProductDetailPageProps) {
 
 function ProductDetailSkeleton() {
   return (
-    <main className="min-h-screen pt-16">
+    <main className="min-h-screen pt-16 bg-gradient-to-br from-gray-50 via-white to-blue-50">
       <div className="max-w-7xl mx-auto px-4 py-8">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 sm:gap-12">
           <div className="space-y-4">
-            <div className="aspect-square bg-gray-200 rounded-xl animate-pulse" />
+            <div className="aspect-square bg-gradient-to-br from-gray-200 to-gray-300 rounded-2xl animate-pulse shadow-xl" />
             <div className="flex gap-2">
               {Array.from({ length: 4 }).map((_, i) => (
                 <div
                   key={i}
-                  className="w-16 h-16 sm:w-20 sm:h-20 bg-gray-200 rounded-lg animate-pulse"
+                  className="w-16 h-16 sm:w-20 sm:h-20 bg-gradient-to-br from-gray-200 to-gray-300 rounded-xl animate-pulse shadow-lg"
                 />
               ))}
             </div>
           </div>
           <div className="space-y-6">
-            <div className="h-6 sm:h-8 bg-gray-200 rounded animate-pulse w-1/3" />
-            <div className="h-8 sm:h-12 bg-gray-200 rounded animate-pulse w-2/3" />
-            <div className="h-4 sm:h-6 bg-gray-200 rounded animate-pulse w-1/4" />
-            <div className="h-6 sm:h-8 bg-gray-200 rounded animate-pulse w-1/3" />
-            <div className="h-12 sm:h-16 bg-gray-200 rounded animate-pulse" />
-            <div className="h-10 sm:h-12 bg-gray-200 rounded animate-pulse" />
+            <div className="h-8 bg-gradient-to-r from-gray-200 to-gray-300 rounded-xl animate-pulse w-1/3" />
+            <div className="h-12 bg-gradient-to-r from-gray-200 to-gray-300 rounded-xl animate-pulse w-2/3" />
+            <div className="h-6 bg-gradient-to-r from-gray-200 to-gray-300 rounded-xl animate-pulse w-1/4" />
+            <div className="h-8 bg-gradient-to-r from-gray-200 to-gray-300 rounded-xl animate-pulse w-1/3" />
+            <div className="h-16 bg-gradient-to-r from-gray-200 to-gray-300 rounded-xl animate-pulse" />
+            <div className="h-12 bg-gradient-to-r from-gray-200 to-gray-300 rounded-xl animate-pulse" />
           </div>
         </div>
       </div>

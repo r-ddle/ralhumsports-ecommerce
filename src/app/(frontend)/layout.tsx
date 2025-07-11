@@ -45,17 +45,17 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="en" suppressHydrationWarning>
       <body className={inter.className}>
-          <CartProvider>
-            <PerformanceOptimizer />
-            <AccessibilityEnhancements />
-            <Navigation />
-            <main id="main-content" role="main">
-              {children}
-            </main>
-            <Footer />
-            <CartSidebar />
-            <Toaster position="top-right" richColors />
-          </CartProvider>
+        <CartProvider>
+          <PerformanceOptimizer />
+          <AccessibilityEnhancements />
+          <Navigation />
+          <main id="main-content" role="main">
+            {children}
+          </main>
+          <Footer />
+          <CartSidebar />
+          <Toaster position="top-right" richColors />
+        </CartProvider>
       </body>
     </html>
   )
