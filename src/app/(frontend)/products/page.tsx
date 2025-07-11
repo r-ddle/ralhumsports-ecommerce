@@ -195,7 +195,7 @@ export default function StorePage() {
   }
 
   return (
-    <main className="min-h-screen pt-16 bg-gradient-to-br from-gray-50 via-white to-gray-100 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900">
+    <main className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-gray-100 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900">
       {/* Enhanced Hero Section with Glassmorphism */}
       <section className="py-12 sm:py-16 lg:py-20 bg-gradient-to-br from-[#003DA5] via-[#0052CC] to-[#1A1A1A] text-white relative overflow-hidden">
         {/* Animated Background Elements */}

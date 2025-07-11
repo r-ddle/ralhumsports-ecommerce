@@ -159,7 +159,7 @@ export default function ProductVerificationPage() {
   const verificationStatus = getVerificationStatus()
 
   return (
-    <main className="min-h-screen pt-16 bg-gradient-to-br from-gray-50 via-white to-blue-50">
+    <main className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-blue-50">
       {/* Enhanced Hero Section */}
       <section className="py-16 lg:py-20 bg-gradient-to-br from-[#003DA5] via-[#0052CC] to-[#1A1A1A] text-white relative overflow-hidden">
         {/* Animated Background Elements */}
