@@ -119,7 +119,7 @@ class ApiClient {
 
   // Category API methods
   async getCategories(): Promise<ApiResponse<Category[]>> {
-    return this.request<ApiResponse<Category[]>>('/api/categories')
+    return this.request<ApiResponse<Category[]>>('/api/public/category')
   }
 
   async getFeaturedCategories(): Promise<ApiResponse<Category[]>> {
@@ -180,7 +180,7 @@ class ApiClient {
   }
 
   async getOrder(orderId: string): Promise<ApiResponse<Order>> {
-    return this.request<ApiResponse<Order>>(`/api/orders/${orderId}`)
+    return this.request<ApiResponse<Order>>(`/api/public/orders/${orderId}`)
   }
 
   // Search API methods
