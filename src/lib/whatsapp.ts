@@ -42,7 +42,7 @@ export function formatWhatsAppMessage(order: OrderSummary): string {
   })
 
   // Build the message with improved formatting
-const message = `🏏 *RALHUM SPORTS - Order Confirmation* 🏏
+  const message = `🏏 *RALHUM SPORTS - Order Confirmation* 🏏
 
 ━━━━━━━━━━━━━━━━━━━
 📋 *ORDER DETAILS*
@@ -158,7 +158,7 @@ export function generateWhatsAppURL(order: OrderSummary | string, customMessage?
     customMessage || (typeof order === 'string' ? order : formatWhatsAppMessage(order))
   const encodedMessage = encodeURIComponent(message)
 
-  return `https://wa.me/${SITE_CONFIG.contact.whatsapp_contact_number}?text=${encodedMessage}`
+  return `https://wa.me/${SITE_CONFIG.contact.whatsapp}?text=${encodedMessage}`
 }
 
 /**

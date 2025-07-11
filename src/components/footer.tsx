@@ -1,5 +1,6 @@
 import { Facebook, Instagram, Phone, Mail, MapPin } from 'lucide-react'
 import Link from 'next/link'
+import { SITE_CONFIG } from '@/config/site-config'
 
 export default function Footer() {
   return (
@@ -10,21 +11,32 @@ export default function Footer() {
           {/* Company Info - Full width on mobile */}
           <div className="lg:col-span-1 text-center sm:text-left">
             <div className="text-2xl font-black text-[#FFD700] mb-4">
-              RALHUM
-              <span className="text-[#FF3D00]">SPORTS</span>
+              {SITE_CONFIG.branding.logoText.split(' ')[0]}
+              <span className="text-[#FF3D00]">{SITE_CONFIG.branding.logoText.split(' ')[1]}</span>
             </div>
             <p className="text-gray-300 mb-6 leading-relaxed text-sm sm:text-base max-w-sm mx-auto sm:mx-0">
-              Sri Lanka&apos;s #1 sports equipment distributor for 25+ years. Exclusive distributor
-              of world-renowned sports brands.
+              {SITE_CONFIG.about.description}
             </p>
             {/* Fixed social media icons with proper colors */}
             <div className="flex justify-center sm:justify-start space-x-4">
-              <div className="w-10 h-10 bg-[#1877F2] rounded-full flex items-center justify-center hover:bg-[#1877F2]/80 cursor-pointer transition-colors">
+              <a
+                href={SITE_CONFIG.social.facebook}
+                title="Facebook"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="w-10 h-10 bg-[#1877F2] rounded-full flex items-center justify-center hover:bg-[#1877F2]/80 cursor-pointer transition-colors"
+              >
                 <Facebook className="w-5 h-5 text-white" />
-              </div>
-              <div className="w-10 h-10 bg-gradient-to-r from-[#E4405F] to-[#5B51D8] rounded-full flex items-center justify-center hover:opacity-80 cursor-pointer transition-opacity">
+              </a>
+              <a
+                href={SITE_CONFIG.social.instagram}
+                title="Instagram"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="w-10 h-10 bg-gradient-to-r from-[#E4405F] to-[#5B51D8] rounded-full flex items-center justify-center hover:opacity-80 cursor-pointer transition-opacity"
+              >
                 <Instagram className="w-5 h-5 text-white" />
-              </div>
+              </a>
             </div>
           </div>
 
@@ -77,17 +89,16 @@ export default function Footer() {
               <div className="flex items-start gap-3 justify-center sm:justify-start">
                 <MapPin className="w-5 h-5 text-[#AEEA00] mt-1 flex-shrink-0" />
                 <div className="text-gray-300 text-sm sm:text-base">
-                  <p>27, Hildon Place</p>
-                  <p>Colombo 04, Sri Lanka</p>
+                  <p>{SITE_CONFIG.contact.address}</p>
                 </div>
               </div>
               <div className="flex items-center gap-3 justify-center sm:justify-start">
                 <Phone className="w-5 h-5 text-[#AEEA00] flex-shrink-0" />
-                <p className="text-gray-300 text-sm sm:text-base">+94 11 250 8082</p>
+                <p className="text-gray-300 text-sm sm:text-base">{SITE_CONFIG.contact.phone}</p>
               </div>
               <div className="flex items-center gap-3 justify-center sm:justify-start">
                 <Mail className="w-5 h-5 text-[#AEEA00] flex-shrink-0" />
-                <p className="text-gray-300 text-sm sm:text-base">info@ralhumsports.lk</p>
+                <p className="text-gray-300 text-sm sm:text-base">{SITE_CONFIG.contact.email}</p>
               </div>
             </div>
           </div>
@@ -97,10 +108,12 @@ export default function Footer() {
         <div className="border-t border-gray-700 mt-12 pt-8">
           <div className="flex flex-col space-y-4 md:flex-row md:justify-between md:items-center md:space-y-0">
             <p className="text-gray-400 text-sm text-center md:text-left">
-              © 2024 Ralhum Trading Company Pvt Ltd. All rights reserved.
+              © {new Date().getFullYear()} {SITE_CONFIG.about.companyName} Pvt Ltd. All rights
+              reserved.
             </p>
             <p className="text-gray-400 text-sm text-center md:text-right">
-              Part of S.M.M.Muhlar & Co - 75+ Years of Excellence
+              Part of {SITE_CONFIG.about.legacy.parentCompany} -{' '}
+              {SITE_CONFIG.about.legacy.parentCompanyYears} Years of Excellence
             </p>
           </div>
         </div>

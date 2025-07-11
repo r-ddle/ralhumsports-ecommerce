@@ -6,6 +6,7 @@ import { Badge } from '@/components/ui/badge'
 import { Phone, MapPin, Mail, Clock } from 'lucide-react'
 import WhatsAppButton from '@/components/whatsapp-button'
 import Image from 'next/image'
+import { SITE_CONFIG } from '@/config/site-config'
 
 export default function ContactCTA() {
   return (
@@ -32,7 +33,7 @@ export default function ContactCTA() {
             <CardContent className="p-4 sm:p-6 text-center">
               <Phone className="w-6 sm:w-8 h-6 sm:h-8 text-[#FFD700] mx-auto mb-3 sm:mb-4" />
               <h3 className="font-bold mb-2 text-sm sm:text-base text-white">Call Us</h3>
-              <p className="text-gray-300 text-sm sm:text-base">+94 11 250 8082</p>
+              <p className="text-gray-300 text-sm sm:text-base">{SITE_CONFIG.contact.phone}</p>
             </CardContent>
           </Card>
 
@@ -40,11 +41,7 @@ export default function ContactCTA() {
             <CardContent className="p-4 sm:p-6 text-center">
               <MapPin className="w-6 sm:w-8 h-6 sm:h-8 text-[#AEEA00] mx-auto mb-3 sm:mb-4" />
               <h3 className="font-bold mb-2 text-sm sm:text-base text-white">Visit Us</h3>
-              <p className="text-gray-300 text-sm sm:text-base">
-                27, Hildon Place
-                <br />
-                Colombo 04, Sri Lanka
-              </p>
+              <p className="text-gray-300 text-sm sm:text-base">{SITE_CONFIG.contact.address}</p>
             </CardContent>
           </Card>
 
@@ -52,7 +49,7 @@ export default function ContactCTA() {
             <CardContent className="p-4 sm:p-6 text-center">
               <Mail className="w-6 sm:w-8 h-6 sm:h-8 text-[#FF3D00] mx-auto mb-3 sm:mb-4" />
               <h3 className="font-bold mb-2 text-sm sm:text-base text-white">Email Us</h3>
-              <p className="text-gray-300 text-sm sm:text-base">info@ralhumsports.lk</p>
+              <p className="text-gray-300 text-sm sm:text-base">{SITE_CONFIG.contact.email}</p>
             </CardContent>
           </Card>
 
@@ -61,9 +58,7 @@ export default function ContactCTA() {
               <Clock className="w-6 sm:w-8 h-6 sm:h-8 text-[#FFD700] mx-auto mb-3 sm:mb-4" />
               <h3 className="font-bold mb-2 text-sm sm:text-base text-white">Business Hours</h3>
               <p className="text-gray-300 text-sm sm:text-base">
-                Mon-Sat: 9AM-6PM
-                <br />
-                Sunday: Closed
+                {SITE_CONFIG.contact.supportHours}
               </p>
             </CardContent>
           </Card>
@@ -84,7 +79,7 @@ export default function ContactCTA() {
               size="lg"
               variant="outline"
               className="w-full sm:w-auto border-2 border-[#FFD700] text-[#FFD700] hover:bg-[#FFD700] hover:text-[#1A1A1A] px-6 sm:px-8 py-4 text-base sm:text-lg font-bold rounded-full transition-all duration-300 bg-transparent"
-              message="Hello Ralhum Sports! I'm interested in getting a quote for sports equipment. Please contact me as soon as possible. Thank you!"
+              message={SITE_CONFIG.whatsapp.message}
             />
           </div>
         </div>
@@ -93,32 +88,46 @@ export default function ContactCTA() {
         <div className="text-center">
           <p className="text-gray-300 mb-4">Follow us for the latest updates</p>
           <div className="flex justify-center gap-4">
-            <Button
-              size="sm"
-              variant="outline"
-              className="border-white/30 text-white hover:bg-white/10 rounded-full p-3"
+            <a
+              href={SITE_CONFIG.social.facebook}
+              title="Facebook"
+              target="_blank"
+              rel="noopener noreferrer"
             >
-              <Image
-                src="/facebook.svg"
-                alt="Facebook"
-                width={20}
-                height={20}
-                className="w-5 h-5"
-              />
-            </Button>
-            <Button
-              size="sm"
-              variant="outline"
-              className="border-white/30 text-white hover:bg-white/10 rounded-full p-3"
+              <Button
+                size="sm"
+                variant="outline"
+                className="border-white/30 text-white hover:bg-white/10 rounded-full p-3"
+              >
+                <Image
+                  src="/facebook.svg"
+                  alt="Facebook"
+                  width={20}
+                  height={20}
+                  className="w-5 h-5"
+                />
+              </Button>
+            </a>
+            <a
+              href={SITE_CONFIG.social.instagram}
+              title="Instagram"
+              target="_blank"
+              rel="noopener noreferrer"
             >
-              <Image
-                src="/instagram.svg"
-                alt="Facebook"
-                width={20}
-                height={20}
-                className="w-5 h-5"
-              />
-            </Button>
+              <Button
+                size="sm"
+                variant="outline"
+                className="border-white/30 text-white hover:bg-white/10 rounded-full p-3"
+              >
+                <Image
+                  src="/instagram.svg"
+                  alt="Instagram"
+                  width={20}
+                  height={20}
+                  className="w-5 h-5"
+                />
+              </Button>
+            </a>
           </div>
         </div>
       </div>

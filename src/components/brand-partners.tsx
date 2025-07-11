@@ -3,45 +3,14 @@
 import { Card, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Trophy, Award, Star, Target } from 'lucide-react'
+import { SITE_CONFIG } from '@/config/site-config'
 
-const brands = [
-  {
-    name: 'Gray-Nicolls',
-    heritage: 'Since 1855',
-    specialty: 'Cricket Excellence',
-    description: 'Premium cricket bats & equipment trusted by professionals worldwide',
-    color: 'from-[#003DA5] to-[#1A1A1A]',
-    icon: Trophy,
-    achievements: ['Official England Cricket', 'World Cup Heritage', 'Professional Choice'],
-  },
-  {
-    name: 'Gilbert',
-    heritage: 'Since 1823',
-    specialty: 'Rugby World Leader',
-    description: "World's #1 rugby brand, official Rugby World Cup ball supplier",
-    color: 'from-[#FF3D00] to-[#1A1A1A]',
-    icon: Award,
-    achievements: ['Rugby World Cup Official', 'Professional Rugby', 'Global Standard'],
-  },
-  {
-    name: 'Grays',
-    heritage: 'Field Sports',
-    specialty: 'Hockey Excellence',
-    description: 'Hockey & field sports innovation trusted by Olympic athletes',
-    color: 'from-[#AEEA00] to-[#1A1A1A]',
-    icon: Star,
-    achievements: ['Olympic Standard', 'Professional Hockey', 'Field Sports Leader'],
-  },
-  {
-    name: 'Molten',
-    heritage: 'Innovation',
-    specialty: 'Basketball & Volleyball',
-    description: 'Official tournament supplier for basketball & volleyball worldwide',
-    color: 'from-[#FFD700] to-[#1A1A1A]',
-    icon: Target,
-    achievements: ['Olympic Official', 'Tournament Standard', 'Professional Choice'],
-  },
-]
+const brandIcons: Record<string, any> = {
+  'Gray-Nicolls': Trophy,
+  Gilbert: Award,
+  Grays: Star,
+  Molten: Target,
+}
 
 export default function BrandPartners() {
   return (
@@ -64,8 +33,8 @@ export default function BrandPartners() {
 
         {/* Brand Cards Grid - Improved mobile responsiveness */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
-          {brands.map((brand) => {
-            const IconComponent = brand.icon
+          {SITE_CONFIG.brands.map((brand) => {
+            const IconComponent = brandIcons[brand.name] || Trophy
             return (
               <Card
                 key={brand.name}

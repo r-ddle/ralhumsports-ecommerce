@@ -3,43 +3,37 @@
 import { Badge } from '@/components/ui/badge'
 import { Card, CardContent } from '@/components/ui/card'
 import { Calendar, Award, Users, TrendingUp } from 'lucide-react'
+import { SITE_CONFIG } from '@/config/site-config'
 
 const milestones = [
   {
-    year: '1996',
-    title: 'Ralhum Sports Founded',
+    year: SITE_CONFIG.about.established.toString(),
+    title: `${SITE_CONFIG.about.companyName} Founded`,
     description: "Established as Sri Lanka's premier sports equipment distributor",
     icon: Calendar,
-    color: 'bg-[#003DA5]',
+    color: `bg-[${SITE_CONFIG.branding.colors.primary}]`,
   },
   {
     year: '2000s',
     title: 'Brand Partnerships',
     description: 'Secured exclusive partnerships with Gray-Nicolls, Gilbert, and Grays',
     icon: Award,
-    color: 'bg-[#FF3D00]',
+    color: `bg-[${SITE_CONFIG.branding.colors.orange}]`,
   },
   {
     year: '2010s',
     title: 'Market Leadership',
-    description: "Became Sri Lanka's #1 sports equipment distributor",
+    description: `Became Sri Lanka's #1 sports equipment distributor`,
     icon: TrendingUp,
-    color: 'bg-[#FFD700]',
+    color: `bg-[${SITE_CONFIG.branding.colors.gold}]`,
   },
   {
     year: '2020s',
     title: 'Community Impact',
     description: 'Serving 1000+ schools, clubs, and professional athletes',
     icon: Users,
-    color: 'bg-[#AEEA00]',
+    color: `bg-[${SITE_CONFIG.branding.colors.lime}]`,
   },
-]
-
-const stats = [
-  { number: '25+', label: 'Years of Excellence', color: 'text-[#003DA5]' },
-  { number: '75+', label: 'Years Parent Company Heritage', color: 'text-[#FF3D00]' },
-  { number: '1000+', label: 'Schools & Clubs Served', color: 'text-[#FFD700]' },
-  { number: '#1', label: 'Sports Distributor in Sri Lanka', color: 'text-[#AEEA00]' },
 ]
 
 export default function Heritage() {
@@ -69,9 +63,9 @@ export default function Heritage() {
 
         {/* Stats Section */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-8 mb-16">
-          {stats.map((stat, index) => (
+          {SITE_CONFIG.stats.map((stat, index) => (
             <div key={index} className="text-center">
-              <div className={`text-5xl md:text-6xl font-black mb-2 ${stat.color}`}>
+              <div className="text-5xl md:text-6xl font-black mb-2" style={{ color: stat.color }}>
                 {stat.number}
               </div>
               <p className="text-gray-300 font-medium">{stat.label}</p>
@@ -110,9 +104,7 @@ export default function Heritage() {
               BUILT ON <span className="text-[#FFD700]">LEGACY</span>
             </h3>
             <p className="text-xl text-gray-300 mb-6 max-w-4xl mx-auto">
-              Our parent company, S.M.M.Muhlar & Co, has been a trusted name in Sri Lankan business
-              for over 75 years. This heritage of excellence and integrity forms the foundation of
-              everything we do at Ralhum Sports.
+              {SITE_CONFIG.about.legacy.legacyText}
             </p>
             <Badge className="bg-[#AEEA00] text-[#1A1A1A] px-8 py-3 text-base font-bold">
               Trusted by Generations of Athletes
