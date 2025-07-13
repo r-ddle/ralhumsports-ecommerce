@@ -646,31 +646,37 @@ export const Orders: CollectionConfig = {
         return typedData
       },
     ],
-    afterChange: [
-      async ({
-        req,
-        operation,
-        doc,
-        previousDoc,
-      }: {
-        req: any
-        operation: string
-        doc: any
-        previousDoc: any
-      }) => {
+    // afterChange removed: all side-effecting logic moved to afterOperation
+    afterOperation: [
+      async function afterOperationWithSideEffects(args) {
+        const { req, operation, result } = args
+        // previousDoc is only available for update/delete
+        const previousDoc = 'previousDoc' in args ? (args as any).previousDoc : undefined
+        // Only run for single document operations (not bulk)
+        if (
+          !result ||
+          Array.isArray(result) ||
+          typeof result !== 'object' ||
+          !('orderNumber' in result)
+        ) {
+          return
+        }
+        // Only run side-effect logic if result looks like an order document
+        const hasOrderFields = 'orderStatus' in result && 'orderItems' in result
+
         req.payload.logger.info(
-          `[HOOK] afterChange START for order: ${doc.orderNumber} (ID: ${doc.id})`,
+          `[HOOK] afterOperation START for order: ${result.orderNumber} (ID: ${result.id})`,
         )
-        req.payload.logger.info(`[HOOK] afterChange operation: ${operation}`)
-        req.payload.logger.info(`[HOOK] afterChange doc: ${JSON.stringify(doc)}`)
-        req.payload.logger.info(`[HOOK] afterChange previousDoc: ${JSON.stringify(previousDoc)}`)
+        req.payload.logger.info(`[HOOK] afterOperation operation: ${operation}`)
+        req.payload.logger.info(`[HOOK] afterOperation result: ${JSON.stringify(result)}`)
+        req.payload.logger.info(`[HOOK] afterOperation previousDoc: ${JSON.stringify(previousDoc)}`)
         try {
-          // Handle stock and analytics updates for new orders
-          if (operation === 'create' && doc.orderItems && Array.isArray(doc.orderItems)) {
+          // --- Stock and Analytics Updates for New Orders ---
+          if (operation === 'create' && hasOrderFields && Array.isArray(result.orderItems)) {
             req.payload.logger.info(
-              `[HOOK] Processing stock and analytics updates for order: ${doc.orderNumber}`,
+              `[HOOK] Processing stock and analytics updates for order: ${result.orderNumber}`,
             )
-            for (const item of doc.orderItems) {
+            for (const item of result.orderItems) {
               try {
                 const productId = item.productId
                 const quantityPurchased = item.quantity || 0
@@ -726,18 +732,24 @@ export const Orders: CollectionConfig = {
                   }
                   // Check if any variant still has stock
                   const hasVariantStock = hasAvailableStock({ variants: updatedVariants })
-                  await req.payload.update({
-                    collection: 'products',
-                    id: productId,
-                    data: {
-                      variants: updatedVariants,
-                      analytics: {
-                        orderCount: currentOrderCount + 1,
+                  try {
+                    await req.payload.update({
+                      collection: 'products',
+                      id: productId,
+                      data: {
+                        variants: updatedVariants,
+                        analytics: {
+                          orderCount: currentOrderCount + 1,
+                        },
+                        ...(product.status === 'active' &&
+                          !hasVariantStock && { status: 'out-of-stock' }),
                       },
-                      ...(product.status === 'active' &&
-                        !hasVariantStock && { status: 'out-of-stock' }),
-                    },
-                  })
+                    })
+                  } catch (updateErr) {
+                    req.payload.logger.error(
+                      `[HOOK] Error updating product variant stock: ${updateErr instanceof Error ? updateErr.stack : updateErr}`,
+                    )
+                  }
                   req.payload.logger.info(
                     `[HOOK] Updated variant stock for ${productId} (${variant.name}): ${currentVariantStock} → ${newVariantStock}`,
                   )
@@ -745,42 +757,50 @@ export const Orders: CollectionConfig = {
                   // Product has no variants - update base stock
                   const currentStock = typeof product.stock === 'number' ? product.stock : 0
                   const newStock = Math.max(0, currentStock - quantityPurchased)
-                  await req.payload.update({
-                    collection: 'products',
-                    id: productId,
-                    data: {
-                      stock: newStock,
-                      analytics: {
-                        orderCount: currentOrderCount + 1,
+                  try {
+                    await req.payload.update({
+                      collection: 'products',
+                      id: productId,
+                      data: {
+                        stock: newStock,
+                        analytics: {
+                          orderCount: currentOrderCount + 1,
+                        },
+                        ...(newStock === 0 && { status: 'out-of-stock' }),
                       },
-                      ...(newStock === 0 && { status: 'out-of-stock' }),
-                    },
-                  })
+                    })
+                  } catch (updateErr) {
+                    req.payload.logger.error(
+                      `[HOOK] Error updating product stock: ${updateErr instanceof Error ? updateErr.stack : updateErr}`,
+                    )
+                  }
                   req.payload.logger.info(
                     `[HOOK] Updated product ${productId}: stock ${currentStock} → ${newStock}, orders ${currentOrderCount} → ${currentOrderCount + 1}`,
                   )
                 }
               } catch (error) {
                 req.payload.logger.error(
-                  `[HOOK] Failed to update stock/analytics for product ${item.productId}: ${error}`,
+                  `[HOOK] Failed to update stock/analytics for product ${item.productId}: ${error instanceof Error ? error.stack : error}`,
                 )
                 // Continue processing other items even if one fails
               }
             }
           }
-          // Handle stock restoration for cancelled orders
+
+          // --- Stock Restoration for Cancelled Orders ---
           if (
             operation === 'update' &&
             previousDoc &&
+            'orderStatus' in previousDoc &&
+            hasOrderFields &&
             previousDoc.orderStatus !== 'cancelled' &&
-            doc.orderStatus === 'cancelled' &&
-            doc.orderItems &&
-            Array.isArray(doc.orderItems)
+            result.orderStatus === 'cancelled' &&
+            Array.isArray(result.orderItems)
           ) {
             req.payload.logger.info(
-              `[HOOK] Restoring stock for cancelled order: ${doc.orderNumber}`,
+              `[HOOK] Restoring stock for cancelled order: ${result.orderNumber}`,
             )
-            for (const item of doc.orderItems) {
+            for (const item of result.orderItems) {
               try {
                 const product = await req.payload.findByID({
                   collection: 'products',
@@ -821,16 +841,22 @@ export const Orders: CollectionConfig = {
                       }
                       // Check if product should be marked as active again
                       const hasVariantStock = hasAvailableStock({ variants: updatedVariants })
-                      await req.payload.update({
-                        collection: 'products',
-                        id: item.productId,
-                        data: {
-                          variants: updatedVariants,
-                          // Update status if back in stock
-                          ...(product.status === 'out-of-stock' &&
-                            hasVariantStock && { status: 'active' }),
-                        },
-                      })
+                      try {
+                        await req.payload.update({
+                          collection: 'products',
+                          id: item.productId,
+                          data: {
+                            variants: updatedVariants,
+                            // Update status if back in stock
+                            ...(product.status === 'out-of-stock' &&
+                              hasVariantStock && { status: 'active' }),
+                          },
+                        })
+                      } catch (updateErr) {
+                        req.payload.logger.error(
+                          `[HOOK] Error restoring variant stock: ${updateErr instanceof Error ? updateErr.stack : updateErr}`,
+                        )
+                      }
                       req.payload.logger.info(
                         `[HOOK] Restored variant stock for product ${item.productId} (${variant.name}): ${currentVariantStock} → ${restoredVariantStock}`,
                       )
@@ -839,15 +865,21 @@ export const Orders: CollectionConfig = {
                     // Product has no variants - restore base stock
                     const currentStock = typeof product.stock === 'number' ? product.stock : 0
                     const restoredStock = currentStock + (item.quantity || 0)
-                    await req.payload.update({
-                      collection: 'products',
-                      id: item.productId,
-                      data: {
-                        stock: restoredStock,
-                        // Update status if back in stock
-                        ...(currentStock === 0 && restoredStock > 0 && { status: 'active' }),
-                      },
-                    })
+                    try {
+                      await req.payload.update({
+                        collection: 'products',
+                        id: item.productId,
+                        data: {
+                          stock: restoredStock,
+                          // Update status if back in stock
+                          ...(currentStock === 0 && restoredStock > 0 && { status: 'active' }),
+                        },
+                      })
+                    } catch (updateErr) {
+                      req.payload.logger.error(
+                        `[HOOK] Error restoring product stock: ${updateErr instanceof Error ? updateErr.stack : updateErr}`,
+                      )
+                    }
                     req.payload.logger.info(
                       `[HOOK] Restored stock for product ${item.productId}: ${currentStock} → ${restoredStock}`,
                     )
@@ -855,19 +887,20 @@ export const Orders: CollectionConfig = {
                 }
               } catch (error) {
                 req.payload.logger.error(
-                  `[HOOK] Failed to restore stock for product ${item.productId}: ${error}`,
+                  `[HOOK] Failed to restore stock for product ${item.productId}: ${error instanceof Error ? error.stack : error}`,
                 )
               }
             }
           }
-          // Update customer order statistics
+
+          // --- Customer Order Statistics Update ---
           if (operation === 'create' || operation === 'update') {
             try {
               // Find customer by email
               const customerResult = await req.payload.find({
                 collection: 'customers',
                 where: {
-                  email: { equals: doc.customerEmail },
+                  email: { equals: result.customerEmail },
                 },
                 limit: 1,
               })
@@ -880,7 +913,7 @@ export const Orders: CollectionConfig = {
                 const allOrders = await req.payload.find({
                   collection: 'orders',
                   where: {
-                    customerEmail: { equals: doc.customerEmail },
+                    customerEmail: { equals: result.customerEmail },
                   },
                   limit: 1000, // Adjust as needed
                 })
@@ -905,27 +938,38 @@ export const Orders: CollectionConfig = {
                   stats.averageOrderValue = stats.totalSpent / stats.completedOrders
                 }
                 // Update customer
-                await req.payload.update({
-                  collection: 'customers',
-                  id: customer.id,
-                  data: {
-                    orderStats: stats,
-                  },
-                })
+                try {
+                  await req.payload.update({
+                    collection: 'customers',
+                    id: customer.id,
+                    data: {
+                      orderStats: stats,
+                    },
+                  })
+                } catch (updateErr) {
+                  req.payload.logger.error(
+                    `[HOOK] Error updating customer stats: ${updateErr instanceof Error ? updateErr.stack : updateErr}`,
+                  )
+                }
                 req.payload.logger.info(
                   `[HOOK] Updated order statistics for customer ${customer.email}`,
                 )
               }
             } catch (error) {
-              req.payload.logger.error(`[HOOK] Failed to update customer statistics: ${error}`)
+              req.payload.logger.error(
+                `[HOOK] Failed to update customer statistics: ${error instanceof Error ? error.stack : error}`,
+              )
             }
           }
+
           // --- Log after all hooks ---
           req.payload.logger.info(
-            `[HOOK] afterChange END for order: ${doc.orderNumber} (ID: ${doc.id})`,
+            `[HOOK] afterOperation END for order: ${result.orderNumber} (ID: ${result.id})`,
           )
         } catch (err) {
-          req.payload.logger.error(`[HOOK] afterChange hook failed: ${err}`)
+          req.payload.logger.error(
+            `[HOOK] afterOperation hook failed: ${err instanceof Error ? err.stack : err}`,
+          )
         }
       },
     ],

@@ -214,7 +214,7 @@ export default function StorePage() {
         {/* Glassmorphism Overlay */}
         <div className="absolute inset-0 bg-gradient-to-r from-black/20 via-transparent to-black/20 backdrop-blur-sm"></div>
 
-        <div className="max-w-7xl mx-auto px-4 relative z-10">
+        <div className="max-w-7xl mt-4 mx-auto px-4 relative z-10">
           <div className="text-center">
             <Badge className="bg-gradient-to-r from-[#FFD700] to-[#AEEA00] text-[#1A1A1A] px-4 sm:px-6 py-2 text-xs sm:text-sm font-bold mb-4 shadow-lg backdrop-blur-sm border border-white/20">
               PREMIUM SPORTS STORE

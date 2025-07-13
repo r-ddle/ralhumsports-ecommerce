@@ -168,14 +168,14 @@ export function ProductFilters({
       animate={{ opacity: 1, x: 0 }}
       transition={{ duration: 0.5 }}
     >
-      <Card className="w-full bg-white/80 dark:bg-slate-800/80 backdrop-blur-xl border border-white/20 shadow-lg hover:shadow-xl transition-all duration-300">
+      <Card className="w-full bg-white/80 backdrop-blur-xl border border-white/20 shadow-lg hover:shadow-xl transition-all duration-300">
         <CardHeader>
           <div className="flex items-center justify-between">
             <CardTitle className="flex items-center gap-2">
               <div className="p-2 rounded-lg bg-gradient-to-r from-blue-500 to-cyan-400">
                 <Filter className="w-4 h-4 text-white" />
               </div>
-              <span className="bg-gradient-to-r from-slate-900 to-slate-700 dark:from-white dark:to-slate-300 bg-clip-text text-transparent font-bold">
+              <span className="bg-gradient-to-r from-slate-900 to-slate-700 bg-clip-text text-transparent font-bold">
                 Filters
               </span>
               {activeFiltersCount > 0 && (
@@ -208,10 +208,7 @@ export function ProductFilters({
               <CardContent className="space-y-6">
                 {/* Enhanced Search */}
                 <div className="space-y-2">
-                  <Label
-                    htmlFor="search"
-                    className="text-sm font-semibold text-slate-700 dark:text-slate-300"
-                  >
+                  <Label htmlFor="search" className="text-sm font-semibold text-slate-700">
                     Search Products
                   </Label>
                   <form onSubmit={handleSearchSubmit} className="flex gap-2">
@@ -222,7 +219,7 @@ export function ProductFilters({
                         placeholder="Search products..."
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
-                        className="pl-10 bg-white/50 dark:bg-slate-700/50 backdrop-blur-sm border-white/20 focus:border-blue-400 transition-colors"
+                        className="pl-10 bg-white/50 backdrop-blur-sm border-gray-300 focus:border-blue-400 transition-colors"
                       />
                       <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-slate-400" />
                     </div>
@@ -238,17 +235,15 @@ export function ProductFilters({
 
                 {/* Enhanced Sort */}
                 <div className="space-y-2">
-                  <Label className="text-sm font-semibold text-slate-700 dark:text-slate-300">
-                    Sort By
-                  </Label>
+                  <Label className="text-sm font-semibold text-slate-700">Sort By</Label>
                   <Select
                     value={`${currentFilters.sort}-${currentFilters.order}`}
                     onValueChange={handleSortChange}
                   >
-                    <SelectTrigger className="bg-white/50 dark:bg-slate-700/50 backdrop-blur-sm border-white/20 focus:border-blue-400">
+                    <SelectTrigger className="bg-white/50 backdrop-blur-sm border-gray-300 focus:border-blue-400">
                       <SelectValue placeholder="Sort by..." />
                     </SelectTrigger>
-                    <SelectContent className="bg-white/95 dark:bg-slate-800/95 backdrop-blur-xl border border-white/20">
+                    <SelectContent className="bg-white/95 backdrop-blur-xl border border-white/20">
                       {PRODUCT_SORT_OPTIONS.map((option) => (
                         <SelectItem key={option.value} value={option.value}>
                           {option.label}
@@ -258,7 +253,7 @@ export function ProductFilters({
                   </Select>
                 </div>
 
-                <Separator className="bg-gradient-to-r from-transparent via-slate-300 to-transparent dark:via-slate-600" />
+                <Separator className="bg-gradient-to-r from-transparent via-slate-300 to-transparent" />
 
                 {/* Enhanced Categories */}
                 <Collapsible open={categoryOpen} onOpenChange={setCategoryOpen}>
@@ -267,9 +262,7 @@ export function ProductFilters({
                       variant="ghost"
                       className="w-full justify-between p-0 hover:bg-transparent"
                     >
-                      <span className="font-semibold text-slate-700 dark:text-slate-300">
-                        Categories
-                      </span>
+                      <span className="font-semibold text-slate-700">Categories</span>
                       <motion.div
                         animate={{ rotate: categoryOpen ? 180 : 0 }}
                         transition={{ duration: 0.2 }}
@@ -286,7 +279,7 @@ export function ProductFilters({
                         className={`w-full justify-start transition-all duration-300 ${
                           selectedCategory === ''
                             ? 'bg-gradient-to-r from-blue-600 to-cyan-500 text-white shadow-lg'
-                            : 'bg-white/50 dark:bg-slate-700/50 backdrop-blur-sm border-white/20 hover:bg-blue-50 dark:hover:bg-slate-600'
+                            : 'bg-white/50 backdrop-blur-sm border-white/20 hover:bg-blue-50'
                         }`}
                         onClick={() => handleCategoryChange('')}
                       >
@@ -304,16 +297,13 @@ export function ProductFilters({
                             className={`w-full justify-between transition-all duration-300 ${
                               selectedCategory === category.slug
                                 ? 'bg-gradient-to-r from-blue-600 to-cyan-500 text-white shadow-lg'
-                                : 'bg-white/50 dark:bg-slate-700/50 backdrop-blur-sm border-white/20 hover:bg-blue-50 dark:hover:bg-slate-600'
+                                : 'bg-white/50 backdrop-blur-sm border-white/20 hover:bg-blue-50'
                             }`}
                             onClick={() => handleCategoryChange(category.slug)}
                           >
                             <span className="truncate">{category.name}</span>
                             {category.productCount !== undefined && (
-                              <Badge
-                                variant="secondary"
-                                className="ml-2 bg-slate-100 dark:bg-slate-600"
-                              >
+                              <Badge variant="secondary" className="ml-2 bg-slate-100">
                                 {category.productCount}
                               </Badge>
                             )}
@@ -324,7 +314,7 @@ export function ProductFilters({
                   </CollapsibleContent>
                 </Collapsible>
 
-                <Separator className="bg-gradient-to-r from-transparent via-slate-300 to-transparent dark:via-slate-600" />
+                <Separator className="bg-gradient-to-r from-transparent via-slate-300 to-transparent" />
 
                 {/* Enhanced Brands */}
                 <Collapsible open={brandOpen} onOpenChange={setBrandOpen}>
@@ -333,9 +323,7 @@ export function ProductFilters({
                       variant="ghost"
                       className="w-full justify-between p-0 hover:bg-transparent"
                     >
-                      <span className="font-semibold text-slate-700 dark:text-slate-300">
-                        Brands
-                      </span>
+                      <span className="font-semibold text-slate-700">Brands</span>
                       <motion.div
                         animate={{ rotate: brandOpen ? 180 : 0 }}
                         transition={{ duration: 0.2 }}
@@ -352,7 +340,7 @@ export function ProductFilters({
                         className={`w-full justify-start transition-all duration-300 ${
                           selectedBrand === ''
                             ? 'bg-gradient-to-r from-blue-600 to-cyan-500 text-white shadow-lg'
-                            : 'bg-white/50 dark:bg-slate-700/50 backdrop-blur-sm border-white/20 hover:bg-blue-50 dark:hover:bg-slate-600'
+                            : 'bg-white/50 backdrop-blur-sm border-white/20 hover:bg-blue-50'
                         }`}
                         onClick={() => handleBrandChange('')}
                       >
@@ -370,16 +358,13 @@ export function ProductFilters({
                             className={`w-full justify-between transition-all duration-300 ${
                               selectedBrand === brand.slug
                                 ? 'bg-gradient-to-r from-blue-600 to-cyan-500 text-white shadow-lg'
-                                : 'bg-white/50 dark:bg-slate-700/50 backdrop-blur-sm border-white/20 hover:bg-blue-50 dark:hover:bg-slate-600'
+                                : 'bg-white/50 backdrop-blur-sm border-white/20 hover:bg-blue-50'
                             }`}
                             onClick={() => handleBrandChange(brand.slug)}
                           >
                             <span className="truncate">{brand.name}</span>
                             {brand.productCount !== undefined && (
-                              <Badge
-                                variant="secondary"
-                                className="ml-2 bg-slate-100 dark:bg-slate-600"
-                              >
+                              <Badge variant="secondary" className="ml-2 bg-slate-100">
                                 {brand.productCount}
                               </Badge>
                             )}
@@ -390,7 +375,7 @@ export function ProductFilters({
                   </CollapsibleContent>
                 </Collapsible>
 
-                <Separator className="bg-gradient-to-r from-transparent via-slate-300 to-transparent dark:via-slate-600" />
+                <Separator className="bg-gradient-to-r from-transparent via-slate-300 to-transparent" />
 
                 {/* Enhanced Price Range */}
                 <Collapsible open={priceOpen} onOpenChange={setPriceOpen}>
@@ -399,9 +384,7 @@ export function ProductFilters({
                       variant="ghost"
                       className="w-full justify-between p-0 hover:bg-transparent"
                     >
-                      <span className="font-semibold text-slate-700 dark:text-slate-300">
-                        Price Range
-                      </span>
+                      <span className="font-semibold text-slate-700">Price Range</span>
                       <motion.div
                         animate={{ rotate: priceOpen ? 180 : 0 }}
                         transition={{ duration: 0.2 }}
@@ -426,7 +409,7 @@ export function ProductFilters({
                           value={minPrice}
                           onChange={(e) => setMinPrice(e.target.value)}
                           onBlur={handlePriceChange}
-                          className="text-sm bg-white/50 dark:bg-slate-700/50 backdrop-blur-sm border-white/20 focus:border-blue-400"
+                          className="text-sm bg-white/50 backdrop-blur-sm border-gray-300 focus:border-blue-400"
                         />
                       </div>
                       <div>
@@ -443,26 +426,25 @@ export function ProductFilters({
                           value={maxPrice}
                           onChange={(e) => setMaxPrice(e.target.value)}
                           onBlur={handlePriceChange}
-                          className="text-sm bg-white/50 dark:bg-slate-700/50 backdrop-blur-sm border-white/20 focus:border-blue-400"
+                          className="text-sm bg-white/50 backdrop-blur-sm border-gray-300 focus:border-blue-400"
                         />
                       </div>
                     </div>
                     {priceRange.min > 0 && priceRange.max > 0 && (
-                      <p className="text-xs text-slate-500 dark:text-slate-400">
+                      <p className="text-xs text-slate-500">
                         Range: Rs.{priceRange.min} - Rs.{priceRange.max}
                       </p>
                     )}
                   </CollapsibleContent>
                 </Collapsible>
 
-                <Separator className="bg-gradient-to-r from-transparent via-slate-300 to-transparent dark:via-slate-600" />
+                <Separator className="bg-gradient-to-r from-transparent via-slate-300 to-transparent" />
 
                 {/* Enhanced Stock Filter */}
                 <div className="space-y-3">
                   <Label className="flex items-center gap-3 cursor-pointer group">
                     <div className="relative">
                       <input
-                        id="inStockOnly"
                         type="checkbox"
                         checked={inStockOnly}
                         onChange={(e) => handleInStockChange(e.target.checked)}
@@ -472,7 +454,7 @@ export function ProductFilters({
                         className={`w-5 h-5 rounded border-2 transition-all duration-300 ${
                           inStockOnly
                             ? 'bg-gradient-to-r from-blue-600 to-cyan-500 border-blue-600'
-                            : 'border-slate-300 dark:border-slate-600 bg-white/50 dark:bg-slate-700/50'
+                            : 'border-slate-300 bg-white/50'
                         }`}
                       >
                         {inStockOnly && (
@@ -497,13 +479,13 @@ export function ProductFilters({
                         )}
                       </div>
                     </div>
-                    <span className="text-sm font-medium text-slate-700 dark:text-slate-300 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
+                    <span className="text-sm font-medium text-slate-700 group-hover:text-blue-600 transition-colors">
                       In Stock Only
                     </span>
                   </Label>
                 </div>
 
-                <Separator className="bg-gradient-to-r from-transparent via-slate-300 to-transparent dark:via-slate-600" />
+                <Separator className="bg-gradient-to-r from-transparent via-slate-300 to-transparent" />
 
                 {/* Enhanced Active Filters */}
                 {activeFiltersCount > 0 && (
@@ -513,7 +495,7 @@ export function ProductFilters({
                     transition={{ duration: 0.3 }}
                     className="space-y-3"
                   >
-                    <Label className="text-sm font-semibold text-slate-700 dark:text-slate-300 flex items-center gap-2">
+                    <Label className="text-sm font-semibold text-slate-700 flex items-center gap-2">
                       <Sparkles className="w-4 h-4" />
                       Active Filters
                     </Label>
@@ -527,7 +509,6 @@ export function ProductFilters({
                           <Badge className="bg-gradient-to-r from-blue-500 to-cyan-400 text-white text-xs">
                             Search: {currentFilters.search}
                             <button
-                              title="Clear search filter"
                               onClick={() => {
                                 setSearchQuery('')
                                 onSearchChange('')
@@ -549,7 +530,6 @@ export function ProductFilters({
                             Category:{' '}
                             {categories.find((c) => c.slug === currentFilters.category)?.name}
                             <button
-                              title="Clear category filter"
                               onClick={() => handleCategoryChange('')}
                               className="ml-2 hover:bg-white/20 rounded-full p-0.5 transition-colors"
                             >
@@ -567,7 +547,6 @@ export function ProductFilters({
                           <Badge className="bg-gradient-to-r from-purple-500 to-pink-400 text-white text-xs">
                             Brand: {brands.find((b) => b.slug === currentFilters.brand)?.name}
                             <button
-                              title="Clear brand filter"
                               onClick={() => handleBrandChange('')}
                               className="ml-2 hover:bg-white/20 rounded-full p-0.5 transition-colors"
                             >
@@ -586,7 +565,6 @@ export function ProductFilters({
                             Price: Rs.{currentFilters.minPrice || 0} - Rs.
                             {currentFilters.maxPrice || '∞'}
                             <button
-                              title="Clear price filter"
                               onClick={() => {
                                 setMinPrice('')
                                 setMaxPrice('')
@@ -611,7 +589,6 @@ export function ProductFilters({
                           <Badge className="bg-gradient-to-r from-yellow-500 to-orange-400 text-white text-xs">
                             In Stock Only
                             <button
-                              title="Clear in-stock filter"
                               onClick={() => handleInStockChange(false)}
                               className="ml-2 hover:bg-white/20 rounded-full p-0.5 transition-colors"
                             >
@@ -635,7 +612,7 @@ export function ProductFilters({
                       variant="outline"
                       size="sm"
                       onClick={handleReset}
-                      className="w-full bg-white/50 dark:bg-slate-700/50 backdrop-blur-sm border-white/20 hover:bg-red-50 dark:hover:bg-red-950/20 hover:border-red-300 dark:hover:border-red-700 hover:text-red-600 dark:hover:text-red-400 transition-all duration-300"
+                      className="w-full bg-white/50 backdrop-blur-sm border-white/20 hover:bg-red-50 hover:border-red-300 hover:text-red-600 transition-all duration-300"
                     >
                       <SlidersHorizontal className="w-4 h-4 mr-2" />
                       Reset All Filters

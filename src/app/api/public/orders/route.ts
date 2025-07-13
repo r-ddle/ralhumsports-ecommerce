@@ -9,249 +9,208 @@ import { requireAdminOrManager } from '@/lib/auth'
 type PayloadError = Error & { status?: number }
 
 // POST /api/public/orders - Create new order (public with rate limiting)
-export const POST = withRateLimit(
-  rateLimitConfigs.strict, // Strict rate limiting for order creation
-  async (request: NextRequest) => {
-    console.log('\x1b[35m[Orders API] Processing order creation request\x1b[0m')
-    try {
-      const orderData: OrderInput = await request.json()
-      console.log(
-        '\x1b[33m[Orders API] Received order data:\x1b[0m',
-        JSON.stringify(orderData, null, 2),
-      )
+export const POST = withRateLimit(rateLimitConfigs.strict, async (request: NextRequest) => {
+  console.log('\x1b[35m[Orders API] Processing order creation request\x1b[0m')
+  try {
+    const orderData: OrderInput = await request.json()
+    console.log(
+      '\x1b[33m[Orders API] Received order data:\x1b[0m',
+      JSON.stringify(orderData, null, 2),
+    )
 
-      // Validate required fields
-      if (
-        !orderData.customer?.fullName ||
-        !orderData.customer?.email ||
-        !orderData.customer?.phone
-      ) {
-        return NextResponse.json(
-          { success: false, error: 'Customer information is required' },
-          { status: 400, headers: getSecurityHeaders() },
-        )
-      }
-
-      if (!orderData.items || orderData.items.length === 0) {
-        return NextResponse.json(
-          { success: false, error: 'Order items are required' },
-          { status: 400, headers: getSecurityHeaders() },
-        )
-      }
-
-      const payload = await getPayload({ config })
-
-      // Create or update customer first
-      let customer
-      try {
-        const existingCustomer = await payload.find({
-          collection: 'customers',
-          where: {
-            email: { equals: orderData.customer.email },
-          },
-          limit: 1,
-        })
-        console.log('[Orders API] Customer lookup result:', existingCustomer.docs)
-
-        if (existingCustomer.docs.length > 0) {
-          console.log('[Orders API] Updating existing customer:', existingCustomer.docs[0].id)
-          customer = await payload.update({
-            collection: 'customers',
-            id: existingCustomer.docs[0].id,
-            data: {
-              name: orderData.customer.fullName,
-              email: orderData.customer.email,
-              primaryPhone: orderData.customer.phone,
-              secondaryPhone: orderData.customer.secondaryPhone,
-              addresses: orderData.customer.address
-                ? [
-                    {
-                      type: 'home',
-                      address: `${orderData.customer.address.street}, ${orderData.customer.address.city}, ${orderData.customer.address.postalCode}, ${orderData.customer.address.province}`,
-                      isDefault: true,
-                    },
-                  ]
-                : [],
-              preferences: {
-                communicationMethod: 'whatsapp',
-                marketingOptIn: orderData.customer.marketingOptIn || false,
-              },
-              whatsapp: { isVerified: false },
-              status: 'active',
-              customerType: 'regular',
-            },
-          })
-          console.log('[Orders API] Customer updated:', customer)
-        } else {
-          console.log('[Orders API] Creating new customer')
-          customer = await payload.create({
-            collection: 'customers',
-            data: {
-              name: orderData.customer.fullName,
-              email: orderData.customer.email,
-              primaryPhone: orderData.customer.phone,
-              secondaryPhone: orderData.customer.secondaryPhone,
-              addresses: orderData.customer.address
-                ? [
-                    {
-                      type: 'home',
-                      address: `${orderData.customer.address.street}, ${orderData.customer.address.city}, ${orderData.customer.address.postalCode}, ${orderData.customer.address.province}`,
-                      isDefault: true,
-                    },
-                  ]
-                : [],
-              preferences: {
-                communicationMethod: 'whatsapp',
-                marketingOptIn: orderData.customer.marketingOptIn || false,
-              },
-              whatsapp: { isVerified: false },
-              status: 'active',
-              customerType: 'regular',
-            },
-          })
-          console.log('[Orders API] Customer created:', customer)
-        }
-        // Immediately check if customer exists in DB after create/update
-        const verifyCustomer = await payload.find({
-          collection: 'customers',
-          where: { email: { equals: orderData.customer.email } },
-          limit: 1,
-        })
-        console.log(
-          '\x1b[36m[Orders API] Post-create customer DB check:\x1b[0m',
-          verifyCustomer.docs,
-        )
-        if (!verifyCustomer.docs.length) {
-          throw new Error('Customer not found in DB after create/update!')
-        }
-      } catch (customerError) {
-        console.error(
-          '\x1b[41m[Orders API] Error creating/updating customer:\x1b[0m',
-          customerError,
-        )
-        return NextResponse.json(
-          {
-            success: false,
-            error: 'Failed to create customer',
-            details: customerError instanceof Error ? customerError.message : String(customerError),
-          },
-          { status: 500, headers: getSecurityHeaders() },
-        )
-      }
-
-      let order
-      // Create order
-      try {
-        console.log(
-          '\x1b[33m[Orders API] Creating order with data:\x1b[0m',
-          JSON.stringify(orderData, null, 2),
-        )
-        order = await payload.create({
-          collection: 'orders',
-          data: {
-            orderNumber: '', // Placeholder, will be auto-generated by hook
-            customerName: orderData.customer.fullName,
-            customerEmail: orderData.customer.email,
-            customerPhone: orderData.customer.phone,
-            customerSecondaryPhone: orderData.customer.secondaryPhone,
-            deliveryAddress: `${orderData.customer.address.street}, ${orderData.customer.address.city}, ${orderData.customer.address.postalCode}, ${orderData.customer.address.province}`,
-            specialInstructions: orderData.specialInstructions,
-            orderItems: orderData.items.map((item) => ({
-              productId: item.productId || 'unknown',
-              productName: item.productName || 'Unknown Product',
-              productSku: item.productSku || 'unknown',
-              unitPrice: item.unitPrice || 0,
-              quantity: item.quantity,
-              variantId: item.variantId || 'unknown',
-              subtotal: item.subtotal || 0,
-            })),
-            orderSubtotal: orderData.pricing.subtotal,
-            shippingCost: orderData.pricing.shipping || 0,
-            discount: 0,
-            orderTotal: orderData.pricing.total,
-            orderStatus: 'pending',
-            paymentStatus: 'pending',
-            paymentMethod: 'cod',
-            orderSource: orderData.orderSource || 'website',
-            whatsapp: {
-              messageSent: false,
-              messageTemplate: 'order-confirmation',
-            },
-          },
-        })
-        console.log('[Orders API] Order create result:', order)
-        // Add a short delay before DB check to rule out write latency
-        await new Promise((resolve) => setTimeout(resolve, 500))
-        // Immediately check if order exists in DB after create
-        const verifyOrder = await payload.find({
-          collection: 'orders',
-          where: { orderNumber: { equals: order.orderNumber } },
-          limit: 1,
-        })
-        console.log(
-          '[Orders API] Post-create order DB check (after 500ms delay):',
-          verifyOrder.docs,
-        )
-        if (!verifyOrder.docs.length) {
-          console.error(
-            '[Orders API] Order not found in DB after create! Full order object:',
-            order,
-          )
-          console.error('[Orders API] DB check query:', { orderNumber: order.orderNumber })
-          throw new Error('Order not found in DB after create!')
-        }
-
-        // Return limited order data (no sensitive info)
-        const responseData = {
-          orderId: order.id.toString(),
-          orderNumber: order.orderNumber,
-          customerId: orderData.customer.email, // Using order ID as customer reference
-          status: order.orderStatus,
-          total: order.orderTotal,
-          createdAt: order.createdAt,
-        }
-
-        console.log('\x1b[32m[Orders API] Order created:\x1b[0m', responseData)
-
-        return NextResponse.json(
-          { success: true, data: responseData },
-          { headers: getSecurityHeaders() },
-        )
-      } catch (orderError) {
-        console.error('\x1b[41m[Orders API] Error creating order:\x1b[0m', orderError)
-
-        let errorMessage = 'Failed to create order'
-        let statusCode = 500
-
-        if (orderError instanceof Error) {
-          errorMessage = orderError.message
-
-          // Check if it's a Payload validation error
-          if ('status' in orderError && typeof (orderError as PayloadError).status === 'number') {
-            statusCode = (orderError as PayloadError).status ?? 500
-          }
-        }
-
-        return NextResponse.json(
-          {
-            success: false,
-            error: errorMessage,
-            ...(process.env.NODE_ENV === 'development' && {
-              details: orderError instanceof Error ? orderError.stack : String(orderError),
-            }),
-          },
-          { status: statusCode, headers: getSecurityHeaders() },
-        )
-      }
-    } catch (error) {
-      console.error('\x1b[41m[Orders API] General error:\x1b[0m', error)
+    // Validate required fields
+    if (!orderData.customer?.fullName || !orderData.customer?.email || !orderData.customer?.phone) {
       return NextResponse.json(
-        { success: false, error: 'Invalid request data' },
+        { success: false, error: 'Customer information is required' },
         { status: 400, headers: getSecurityHeaders() },
       )
     }
-  },
-)
+
+    if (!orderData.items || orderData.items.length === 0) {
+      return NextResponse.json(
+        { success: false, error: 'Order items are required' },
+        { status: 400, headers: getSecurityHeaders() },
+      )
+    }
+
+    const payload = await getPayload({ config })
+
+    // Create or update customer first
+    let customer
+    try {
+      const existingCustomer = await payload.find({
+        collection: 'customers',
+        where: {
+          email: { equals: orderData.customer.email },
+        },
+        limit: 1,
+      })
+      console.log('[Orders API] Customer lookup result:', existingCustomer.docs)
+
+      if (existingCustomer.docs.length > 0) {
+        console.log('[Orders API] Updating existing customer:', existingCustomer.docs[0].id)
+        customer = await payload.update({
+          collection: 'customers',
+          id: existingCustomer.docs[0].id,
+          data: {
+            name: orderData.customer.fullName,
+            email: orderData.customer.email,
+            primaryPhone: orderData.customer.phone,
+            secondaryPhone: orderData.customer.secondaryPhone,
+            addresses: orderData.customer.address
+              ? [
+                  {
+                    type: 'home',
+                    address: `${orderData.customer.address.street}, ${orderData.customer.address.city}, ${orderData.customer.address.postalCode}, ${orderData.customer.address.province}`,
+                    isDefault: true,
+                  },
+                ]
+              : [],
+            preferences: {
+              communicationMethod: 'whatsapp',
+              marketingOptIn: orderData.customer.marketingOptIn || false,
+            },
+            whatsapp: { isVerified: false },
+            status: 'active',
+            customerType: 'regular',
+          },
+        })
+        console.log('[Orders API] Customer updated:', customer)
+      } else {
+        console.log('[Orders API] Creating new customer')
+        customer = await payload.create({
+          collection: 'customers',
+          data: {
+            name: orderData.customer.fullName,
+            email: orderData.customer.email,
+            primaryPhone: orderData.customer.phone,
+            secondaryPhone: orderData.customer.secondaryPhone,
+            addresses: orderData.customer.address
+              ? [
+                  {
+                    type: 'home',
+                    address: `${orderData.customer.address.street}, ${orderData.customer.address.city}, ${orderData.customer.address.postalCode}, ${orderData.customer.address.province}`,
+                    isDefault: true,
+                  },
+                ]
+              : [],
+            preferences: {
+              communicationMethod: 'whatsapp',
+              marketingOptIn: orderData.customer.marketingOptIn || false,
+            },
+            whatsapp: { isVerified: false },
+            status: 'active',
+            customerType: 'regular',
+          },
+        })
+        console.log('[Orders API] Customer created:', customer)
+      }
+    } catch (customerError) {
+      console.error('\x1b[41m[Orders API] Error creating/updating customer:\x1b[0m', customerError)
+      return NextResponse.json(
+        {
+          success: false,
+          error: 'Failed to create customer',
+          details: customerError instanceof Error ? customerError.message : String(customerError),
+        },
+        { status: 500, headers: getSecurityHeaders() },
+      )
+    }
+
+    // Create order with better error handling
+    try {
+      console.log(
+        '\x1b[33m[Orders API] Creating order with data:\x1b[0m',
+        JSON.stringify(orderData, null, 2),
+      )
+
+      const order = await payload.create({
+        collection: 'orders',
+        data: {
+          orderNumber: '', // Placeholder, will be auto-generated by hook
+          customerName: orderData.customer.fullName,
+          customerEmail: orderData.customer.email,
+          customerPhone: orderData.customer.phone,
+          customerSecondaryPhone: orderData.customer.secondaryPhone,
+          deliveryAddress: `${orderData.customer.address.street}, ${orderData.customer.address.city}, ${orderData.customer.address.postalCode}, ${orderData.customer.address.province}`,
+          specialInstructions: orderData.specialInstructions,
+          orderItems: orderData.items.map((item) => ({
+            productId: item.productId || 'unknown',
+            productName: item.productName || 'Unknown Product',
+            productSku: item.productSku || 'unknown',
+            unitPrice: item.unitPrice || 0,
+            quantity: item.quantity,
+            variantId: item.variantId || 'unknown',
+            subtotal: item.subtotal || 0,
+          })),
+          orderSubtotal: orderData.pricing.subtotal,
+          shippingCost: orderData.pricing.shipping || 0,
+          discount: 0,
+          tax: orderData.pricing.tax || 0, // Add tax field
+          orderTotal: orderData.pricing.total,
+          orderStatus: 'pending',
+          paymentStatus: 'pending',
+          paymentMethod: 'cod',
+          orderSource: orderData.orderSource || 'website',
+          whatsapp: {
+            messageSent: false,
+            messageTemplate: 'order-confirmation',
+          },
+        },
+      })
+
+      console.log('[Orders API] Order created successfully:', order)
+
+      // Return success immediately - don't verify in DB as hooks handle the rest
+      const responseData = {
+        orderId: order.id.toString(),
+        orderNumber: order.orderNumber,
+        customerId: orderData.customer.email,
+        status: order.orderStatus,
+        total: order.orderTotal,
+        createdAt: order.createdAt,
+      }
+
+      console.log('\x1b[32m[Orders API] Order creation completed:\x1b[0m', responseData)
+
+      return NextResponse.json(
+        { success: true, data: responseData },
+        { headers: getSecurityHeaders() },
+      )
+    } catch (orderError) {
+      console.error('\x1b[41m[Orders API] Error creating order:\x1b[0m', orderError)
+
+      let errorMessage = 'Failed to create order'
+      let statusCode = 500
+
+      if (orderError instanceof Error) {
+        errorMessage = orderError.message
+
+        // Check if it's a Payload validation error
+        if ('status' in orderError && typeof (orderError as PayloadError).status === 'number') {
+          statusCode = (orderError as PayloadError).status ?? 500
+        }
+      }
+
+      return NextResponse.json(
+        {
+          success: false,
+          error: errorMessage,
+          ...(process.env.NODE_ENV === 'development' && {
+            details: orderError instanceof Error ? orderError.stack : String(orderError),
+          }),
+        },
+        { status: statusCode, headers: getSecurityHeaders() },
+      )
+    }
+  } catch (error) {
+    console.error('\x1b[41m[Orders API] General error:\x1b[0m', error)
+    return NextResponse.json(
+      { success: false, error: 'Invalid request data' },
+      { status: 400, headers: getSecurityHeaders() },
+    )
+  }
+})
 
 // GET /api/public/orders - List orders (admin/manager only, with rate limiting)
 export const GET = withRateLimit(
@@ -282,7 +241,6 @@ export const GET = withRateLimit(
         whereConditions.customerEmail = { equals: customerEmail }
       }
 
-      // --- Logging query parameters and where conditions ---
       console.log('\x1b[36m[Orders API] Incoming GET request\x1b[0m')
       console.log('\x1b[36m[Orders API] Query Params:\x1b[0m', {
         page,
@@ -290,31 +248,24 @@ export const GET = withRateLimit(
         status,
         customerEmail,
       })
-      console.log('\x1b[36m[Orders API] Where Conditions:\x1b[0m', whereConditions)
 
       const result = await payload.find({
         collection: 'orders',
         where: whereConditions,
         page,
-        limit: Math.min(limit, 100), // Limit max results
-        sort: '-createdAt', // Newest first
+        limit: Math.min(limit, 100),
+        sort: '-createdAt',
       })
 
-      // --- Logging raw result from DB ---
       console.log(`\x1b[32m[Orders API] DB Query Success\x1b[0m`, {
         total: result.totalDocs,
         page: result.page,
         limit: result.limit,
-        docs: result.docs,
       })
 
-      // Filter sensitive data based on user permissions
       const filteredOrders = result.docs
         .map((order) => filterOrderData(order as unknown as Record<string, unknown>, auth!))
         .filter((order) => order !== null)
-
-      // --- Logging filtered orders ---
-      console.log('\x1b[36m[Orders API] Filtered Orders:\x1b[0m', filteredOrders)
 
       return NextResponse.json(
         {
@@ -332,7 +283,6 @@ export const GET = withRateLimit(
         { headers: getSecurityHeaders() },
       )
     } catch (error) {
-      // --- Error logging with color ---
       console.error('\x1b[41m\x1b[37m[Orders API ERROR]\x1b[0m', error)
       return NextResponse.json(
         {
