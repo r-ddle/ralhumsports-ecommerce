@@ -8,7 +8,6 @@ import { SITE_CONFIG } from '@/config/site-config'
 import { motion } from 'framer-motion'
 import { useInView } from 'framer-motion'
 import { useRef, useState, useEffect } from 'react'
-import Image from 'next/image'
 
 export default function Heritage() {
   const ref = useRef(null)
@@ -66,7 +65,7 @@ export default function Heritage() {
     },
     {
       year: '2024',
-      title: '25 Years of Excellence',
+      title: SITE_CONFIG.about.yearsOfExcellence + ' Years of Excellence',
       description:
         'Celebrating a quarter-century of providing premium sports equipment to Sri Lankan athletes',
       icon: Award,
@@ -76,7 +75,7 @@ export default function Heritage() {
 
   const achievements = [
     { label: 'Years of Excellence', value: SITE_CONFIG.about.yearsOfExcellence, suffix: '+' },
-    { label: 'Brand Partners', value: '6', suffix: '' },
+    { label: 'Brand Partners', value: SITE_CONFIG.brands.length.toString(), suffix: '' },
     { label: 'Products Available', value: '1000', suffix: '+' },
     { label: 'Happy Customers', value: '10K', suffix: '+' },
   ]
@@ -93,18 +92,18 @@ export default function Heritage() {
         >
           <Badge
             variant="secondary"
-            className="mb-4 px-4 py-2 text-sm font-semibold bg-gradient-to-r from-yellow-50 to-orange-50 text-[#FF3D00] border border-yellow-200"
+            className="mb-4 px-4 py-2 text-sm font-semibold bg-gradient-to-r from-brand-accent/10 to-brand-primary/10 text-brand-primary border border-brand-primary/20"
           >
             <Award className="w-4 h-4 mr-2" />
             OUR HERITAGE
           </Badge>
-          <h2 className="text-3xl sm:text-4xl lg:text-5xl font-black text-gray-900 mb-4 sm:mb-6">
+          <h2 className="text-3xl sm:text-4xl lg:text-5xl font-black text-text-primary mb-4 sm:mb-6">
             {SITE_CONFIG.about.yearsOfExcellence} Years of
-            <span className="block bg-gradient-to-r from-[#FF3D00] to-[#FFD700] bg-clip-text text-transparent">
+            <span className="block bg-gradient-to-r from-brand-primary to-brand-accent bg-clip-text text-transparent">
               Athletic Excellence
             </span>
           </h2>
-          <p className="text-lg sm:text-xl text-gray-600 max-w-3xl mx-auto leading-relaxed">
+          <p className="text-lg sm:text-xl text-text-secondary max-w-3xl mx-auto leading-relaxed">
             From humble beginnings to becoming Sri Lanka&apos;s premier sports equipment
             distributor, our journey has been driven by passion for sports and commitment to quality
           </p>
@@ -126,13 +125,13 @@ export default function Heritage() {
                 duration: reducedMotion ? 0.1 : 0.5,
                 delay: reducedMotion ? 0 : 0.3 + index * 0.1,
               }}
-              className="text-center p-4 sm:p-6 bg-gradient-to-br from-gray-50 to-blue-50 rounded-xl sm:rounded-2xl border border-gray-200"
+              className="text-center p-4 sm:p-6 bg-gradient-to-br from-brand-background to-blue-50 rounded-xl sm:rounded-2xl border border-gray-200"
             >
-              <div className="text-2xl sm:text-3xl lg:text-4xl font-black text-[#003DA5] mb-2">
+              <div className="text-2xl sm:text-3xl lg:text-4xl font-black text-brand-secondary mb-2">
                 {achievement.value}
                 {achievement.suffix}
               </div>
-              <div className="text-xs sm:text-sm text-gray-600 font-medium">
+              <div className="text-xs sm:text-sm text-text-secondary font-medium">
                 {achievement.label}
               </div>
             </motion.div>
@@ -142,7 +141,7 @@ export default function Heritage() {
         {/* Timeline */}
         <div className="relative">
           {/* Timeline Line - Hidden on mobile */}
-          <div className="hidden lg:block absolute left-1/2 transform -translate-x-1/2 w-1 bg-gradient-to-b from-[#003DA5] via-[#FF3D00] to-[#FFD700] rounded-full h-full" />
+          <div className="hidden lg:block absolute left-1/2 transform -translate-x-1/2 w-1 bg-gradient-to-b from-brand-secondary via-brand-primary to-brand-accent rounded-full h-full" />
 
           <div className="space-y-8 sm:space-y-12">
             {milestones.map((milestone, index) => {
@@ -163,7 +162,7 @@ export default function Heritage() {
                   } flex-col lg:gap-8`}
                 >
                   {/* Timeline Node - Hidden on mobile */}
-                  <div className="hidden lg:block absolute left-1/2 transform -translate-x-1/2 w-4 h-4 bg-white border-4 border-[#003DA5] rounded-full z-10" />
+                  <div className="hidden lg:block absolute left-1/2 transform -translate-x-1/2 w-4 h-4 bg-white border-4 border-brand-secondary rounded-full z-10" />
 
                   {/* Content Card */}
                   <div
@@ -178,10 +177,10 @@ export default function Heritage() {
                         {milestone.year}
                       </div>
 
-                      <h3 className="text-xl sm:text-2xl font-bold text-gray-900 mb-3">
+                      <h3 className="text-xl sm:text-2xl font-bold text-text-primary mb-3">
                         {milestone.title}
                       </h3>
-                      <p className="text-gray-600 text-sm sm:text-base leading-relaxed">
+                      <p className="text-text-secondary text-sm sm:text-base leading-relaxed">
                         {milestone.description}
                       </p>
                     </div>
@@ -195,52 +194,40 @@ export default function Heritage() {
           </div>
         </div>
 
-        {/* CTA Section */}
+        {/* Clean CTA Section - No Background Image */}
         <motion.div
           initial={reducedMotion ? false : { opacity: 0, y: 30 }}
           animate={isInView ? { opacity: 1, y: 0 } : {}}
           transition={{ duration: reducedMotion ? 0.1 : 0.6, delay: reducedMotion ? 0 : 0.8 }}
-          className="text-center mt-12 sm:mt-16 bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 rounded-2xl sm:rounded-3xl p-8 sm:p-12 text-white relative overflow-hidden"
+          className="text-center mt-12 sm:mt-16 bg-gradient-to-r from-brand-secondary to-secondary-600 rounded-2xl sm:rounded-3xl p-8 sm:p-12 text-white"
         >
-          {/* Background Pattern */}
-          <div className="absolute inset-0 opacity-10">
-            <Image
-              src="/placeholder.svg?height=400&width=800&text=Sports+Pattern"
-              alt="Sports pattern background"
-              fill
-              className="object-cover"
-            />
-          </div>
-
-          <div className="relative z-10">
-            <h3 className="text-2xl sm:text-3xl lg:text-4xl font-black mb-4 sm:mb-6">
-              Be Part of Our Continuing Story
-            </h3>
-            <p className="text-lg sm:text-xl text-gray-300 mb-6 sm:mb-8 max-w-2xl mx-auto">
-              Join thousands of athletes who trust Ralhum Sports for their equipment needs.
-              Experience the quality and service that has made us Sri Lanka&apos;s #1 choice for 25
-              years.
-            </p>
-            <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              <Button
-                size="lg"
-                className="bg-[#FF3D00] hover:bg-[#FF3D00]/90 text-white font-bold px-8 py-4 text-lg rounded-full shadow-xl hover:shadow-2xl transition-all duration-300 hover:scale-105 focus-visible:ring-2 focus-visible:ring-orange-400 focus-visible:ring-offset-2"
-                asChild
-              >
-                <Link href="/products">
-                  Shop Now
-                  <ArrowRight className="w-5 h-5 ml-2" />
-                </Link>
-              </Button>
-              <Button
-                size="lg"
-                variant="outline"
-                className="border-2 border-white text-white hover:bg-white hover:text-gray-900 font-bold px-8 py-4 text-lg rounded-full transition-all duration-300 hover:scale-105 focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 bg-transparent"
-                asChild
-              >
-                <Link href="/about">Learn More</Link>
-              </Button>
-            </div>
+          <h3 className="text-2xl sm:text-3xl lg:text-4xl font-black mb-4 sm:mb-6">
+            Be Part of Our Continuing Story
+          </h3>
+          <p className="text-lg sm:text-xl text-blue-100 mb-6 sm:mb-8 max-w-2xl mx-auto">
+            Join thousands of athletes who trust Ralhum Sports for their equipment needs. Experience
+            the quality and service that has made us Sri Lanka&apos;s #1 choice for{' '}
+            {SITE_CONFIG.about.yearsOfExcellence} years.
+          </p>
+          <div className="flex flex-col sm:flex-row gap-4 justify-center">
+            <Button
+              size="lg"
+              className="bg-brand-surface text-brand-secondary hover:bg-gray-100 font-bold px-8 py-4 text-lg rounded-full shadow-xl hover:shadow-2xl transition-all duration-300 hover:scale-105 focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2"
+              asChild
+            >
+              <Link href="/products">
+                Shop Now
+                <ArrowRight className="w-5 h-5 ml-2" />
+              </Link>
+            </Button>
+            <Button
+              size="lg"
+              variant="outline"
+              className="border-2 border-white text-white hover:bg-white hover:text-brand-secondary font-bold px-8 py-4 text-lg rounded-full transition-all duration-300 hover:scale-105 focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 bg-transparent"
+              asChild
+            >
+              <Link href="/about">Learn More</Link>
+            </Button>
           </div>
         </motion.div>
       </div>

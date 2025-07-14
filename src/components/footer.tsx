@@ -8,7 +8,7 @@ import { SITE_CONFIG } from '@/config/site-config'
 export default function Footer() {
   return (
     <footer
-      className="relative text-white py-16 sm:py-20 overflow-hidden"
+      className="relative text-white py-10 overflow-hidden"
       style={{ background: 'linear-gradient(135deg, var(--text-primary), var(--secondary-blue))' }}
     >
       {/* Animated Background Elements */}
@@ -250,11 +250,11 @@ export default function Footer() {
           className="border-t border-slate-700/50 mt-12 pt-8"
         >
           <div className="flex flex-col space-y-4 md:flex-row md:justify-between md:items-center md:space-y-0">
-            <p className="text-slate-400 text-sm text-center md:text-left">
+            <p className="text-slate-300 text-sm text-center md:text-left">
               © {new Date().getFullYear()} {SITE_CONFIG.about.companyName} Pvt Ltd. All rights
               reserved.
             </p>
-            <p className="text-slate-400 text-sm text-center md:text-right">
+            <p className="text-slate-300 text-sm text-center md:text-right">
               Part of {SITE_CONFIG.about.legacy.parentCompany} -{' '}
               {SITE_CONFIG.about.legacy.parentCompanyYears} Years of Excellence
             </p>

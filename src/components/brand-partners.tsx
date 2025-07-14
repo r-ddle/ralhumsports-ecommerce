@@ -8,7 +8,6 @@ import { SITE_CONFIG } from '@/config/site-config'
 import { motion } from 'framer-motion'
 import { useInView } from 'framer-motion'
 import { useRef, useState, useEffect } from 'react'
-import Image from 'next/image'
 
 export default function BrandPartners() {
   const ref = useRef(null)
@@ -24,40 +23,19 @@ export default function BrandPartners() {
     return () => mediaQuery.removeEventListener('change', handleChange)
   }, [])
 
-  const featuredBrands = SITE_CONFIG.brands.slice(0, 6).map((brand, index) => ({
+  // Use all brands from SITE_CONFIG
+  const featuredBrands = SITE_CONFIG.brands.slice(0, 6).map((brand) => ({
     ...brand,
-    logo: `/placeholder.svg?height=80&width=200&text=${encodeURIComponent(brand.name)}`,
-    description: [
-      'World-renowned cricket equipment manufacturer',
-      'Official rugby ball supplier for international matches',
-      'Premium basketball and volleyball equipment',
-      'Professional hockey equipment and accessories',
-      'High-quality sports balls and training equipment',
-      'Innovative sports gear and accessories',
-    ][index],
-    stats: [
-      '150+ Years',
-      'Official Partner',
-      'Global Leader',
-      'Premium Quality',
-      'Trusted Brand',
-      'Innovation First',
-    ][index],
-    specialties: [
-      ['Cricket Bats', 'Protective Gear', 'Accessories'],
-      ['Rugby Balls', 'Training Equipment', 'Match Gear'],
-      ['Basketballs', 'Volleyballs', 'Court Equipment'],
-      ['Hockey Sticks', 'Balls', 'Protective Gear'],
-      ['Sports Balls', 'Training Aids', 'Equipment'],
-      ['Innovative Gear', 'Accessories', 'Equipment'],
-    ][index],
+    stats: brand.heritage,
+    specialties: brand.products?.slice(0, 3)?.map((p) => p.name) || [
+      brand.category,
+      'Equipment',
+      'Accessories',
+    ],
   }))
 
   return (
-    <section
-      ref={ref}
-      className="py-12 sm:py-16 lg:py-24 bg-gradient-to-br from-gray-50 to-blue-50 overflow-hidden"
-    >
+    <section ref={ref} className="py-12 sm:py-16 lg:py-24 bg-brand-background overflow-hidden">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Section Header */}
         <motion.div
@@ -68,14 +46,14 @@ export default function BrandPartners() {
         >
           <Badge
             variant="secondary"
-            className="mb-4 px-4 py-2 text-sm font-semibold bg-gradient-to-r from-orange-50 to-red-50 text-brand-primary border border-orange-200"
+            className="mb-4 px-4 py-2 text-sm font-semibold bg-gradient-to-r from-brand-accent/10 to-brand-primary/10 text-white border border-brand-primary/20"
           >
             <Award className="w-4 h-4 mr-2" />
             TRUSTED PARTNERS
           </Badge>
           <h2 className="text-3xl sm:text-4xl lg:text-5xl font-black text-text-primary mb-4 sm:mb-6">
             World-Class Brands,
-            <span className="block bg-gradient-to-r from-brand-primary to-primary-600 bg-clip-text text-transparent">
+            <span className="block bg-gradient-to-r from-brand-primary to-brand-accent bg-clip-text text-transparent">
               Exclusive Distribution
             </span>
           </h2>
@@ -93,10 +71,20 @@ export default function BrandPartners() {
           className="grid grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 mb-12 sm:mb-16"
         >
           {[
-            { icon: Globe, label: 'Global Brands', value: '6+' },
-            { icon: Star, label: 'Years Experience', value: '25+' },
-            { icon: CheckCircle, label: 'Products', value: '1000+' },
-            { icon: Award, label: 'Satisfied Customers', value: '10K+' },
+            {
+              icon: Globe,
+              label: 'Global Brands',
+              value: `${SITE_CONFIG.brands.length}+`,
+              color: 'text-brand-secondary',
+            },
+            {
+              icon: Star,
+              label: 'Years Experience',
+              value: SITE_CONFIG.about.yearsOfExcellence + '+',
+              color: 'text-brand-primary',
+            },
+            { icon: CheckCircle, label: 'Products', value: '1000+', color: 'text-brand-accent' },
+            { icon: Award, label: 'Happy Customers', value: '10K+', color: 'text-brand-secondary' },
           ].map((stat, index) => (
             <motion.div
               key={stat.label}
@@ -106,9 +94,9 @@ export default function BrandPartners() {
                 duration: reducedMotion ? 0.1 : 0.5,
                 delay: reducedMotion ? 0 : 0.3 + index * 0.1,
               }}
-              className="text-center p-4 sm:p-6 bg-brand-surface rounded-xl sm:rounded-2xl shadow-lg border border-brand-border"
+              className="text-center p-4 sm:p-6 bg-brand-surface rounded-xl sm:rounded-2xl shadow-lg border border-brand-border hover:shadow-xl transition-all duration-300"
             >
-              <stat.icon className="w-6 h-6 sm:w-8 sm:h-8 text-brand-secondary mx-auto mb-2 sm:mb-3" />
+              <stat.icon className={`w-6 h-6 sm:w-8 sm:h-8 ${stat.color} mx-auto mb-2 sm:mb-3`} />
               <div className="text-2xl sm:text-3xl font-black text-text-primary mb-1">
                 {stat.value}
               </div>
@@ -117,8 +105,8 @@ export default function BrandPartners() {
           ))}
         </motion.div>
 
-        {/* Brand Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8 mb-12 sm:mb-16">
+        {/* Enhanced Brand Grid with 6 brands */}
+        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6 sm:gap-8 mb-12 sm:mb-16">
           {featuredBrands.map((brand, index) => (
             <motion.div
               key={brand.name}
@@ -130,16 +118,23 @@ export default function BrandPartners() {
               }}
               className="group bg-brand-surface rounded-2xl sm:rounded-3xl p-6 sm:p-8 shadow-lg hover:shadow-xl border border-brand-border hover:border-gray-200 transition-all duration-300"
             >
-              {/* Brand Logo */}
+              {/* Brand Header with Color */}
               <div className="mb-6 text-center">
-                <div className="bg-gray-50 rounded-xl p-4 mb-4 group-hover:bg-gray-100 transition-colors duration-300">
-                  <Image
-                    src={brand.logo || '/placeholder.svg'}
-                    alt={`${brand.name} logo`}
-                    width={200}
-                    height={80}
-                    className="h-12 sm:h-16 w-auto mx-auto object-contain"
-                  />
+                <div
+                  className={`bg-gradient-to-br rounded-xl p-6 mb-4 group-hover:scale-105 transition-transform duration-300`}
+                >
+                  {brand.image ? (
+                    <img
+                      src={brand.image}
+                      alt={brand.name + ' logo'}
+                      className="object-contain w-16 h-16 mx-auto"
+                      loading="lazy"
+                    />
+                  ) : (
+                    <div className="text-white font-black text-2xl sm:text-3xl tracking-wider">
+                      {brand.name}
+                    </div>
+                  )}
                 </div>
                 <Badge
                   variant="secondary"
@@ -152,9 +147,9 @@ export default function BrandPartners() {
               {/* Brand Info */}
               <div className="mb-6">
                 <h3 className="text-xl sm:text-2xl font-bold text-text-primary mb-3">
-                  {brand.name}
+                  {brand.tagline}
                 </h3>
-                <p className="text-text-secondary text-sm sm:text-base leading-relaxed mb-4">
+                <p className="text-text-secondary text-sm sm:text-base leading-relaxed mb-4 line-clamp-3">
                   {brand.description}
                 </p>
 
@@ -179,8 +174,8 @@ export default function BrandPartners() {
                 className="w-full border-brand-secondary/30 text-brand-secondary hover:bg-brand-secondary hover:text-white hover:border-brand-secondary transition-all duration-200 group-hover:scale-105 focus-visible:ring-2 focus-visible:ring-brand-secondary bg-transparent"
                 asChild
               >
-                <Link href={`/brands?brand=${brand.name.toLowerCase().replace(/\s+/g, '-')}`}>
-                  View Products
+                <Link href={`/brands/${brand.slug}`}>
+                  View {brand.name} Products
                   <ArrowRight className="w-4 h-4 ml-2 transition-transform group-hover:translate-x-1" />
                 </Link>
               </Button>

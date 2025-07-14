@@ -202,39 +202,49 @@ export default function Hero() {
           </Link>
         </motion.div>
 
-        {/* Brand Logos */}
+        {/* Enhanced Responsive Brand Carousel */}
         <motion.div
           initial={getInitial() ?? { opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ duration: reducedMotion ? 0.1 : 1, delay: reducedMotion ? 0 : 0.8 }}
-          className="mt-8 sm:mt-12 lg:mt-16 overflow-hidden"
+          className="mt-8 sm:mt-12 lg:mt-16 relative w-full"
           role="region"
           aria-label="Partner brands"
         >
-          <div
-            className={`flex gap-2 sm:gap-3 lg:gap-6 ${!reducedMotion ? 'animate-infinite-scroll' : 'justify-center flex-wrap'}`}
-          >
-            {(reducedMotion
-              ? SITE_CONFIG.brands.slice(0, 6)
-              : [...SITE_CONFIG.brands, ...SITE_CONFIG.brands]
-            ).map((brand, index) => (
-              <motion.div
-                key={`${brand.name}-${index}`}
-                initial={getInitial() ?? { opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{
-                  duration: reducedMotion ? 0.1 : 0.6,
-                  delay: reducedMotion ? 0 : 0.8 + (index % SITE_CONFIG.brands.length) * 0.1,
-                }}
-                whileHover={!reducedMotion ? { scale: 1.05, y: -5 } : {}}
-                className="bg-white/10 backdrop-blur-md border border-white/20 px-3 sm:px-4 lg:px-6 py-2 sm:py-3 lg:py-4 rounded-xl sm:rounded-2xl hover:bg-white/20 hover:border-white/40 transition-all duration-300 cursor-pointer shadow-lg whitespace-nowrap flex-shrink-0"
-              >
-                <span className="text-white font-semibold text-xs sm:text-sm lg:text-base tracking-wide">
-                  {brand.name}
-                </span>
-              </motion.div>
-            ))}
+          <div className="overflow-x-auto w-full scrollbar-none">
+            <div
+              className={`flex gap-3 sm:gap-4 lg:gap-6 w-max ${!reducedMotion ? 'animate-infinite-scroll' : 'justify-center flex-wrap max-w-none'}`}
+            >
+              {(reducedMotion
+                ? SITE_CONFIG.brands
+                : [...SITE_CONFIG.brands, ...SITE_CONFIG.brands, ...SITE_CONFIG.brands]
+              ).map((brand, index) => (
+                <motion.div
+                  key={`${brand.name}-${index}`}
+                  initial={getInitial() ?? { opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{
+                    duration: reducedMotion ? 0.1 : 0.6,
+                    delay: reducedMotion ? 0 : 0.8 + (index % SITE_CONFIG.brands.length) * 0.1,
+                  }}
+                  whileHover={!reducedMotion ? { scale: 1.05, y: -5 } : {}}
+                  className="bg-white/15 backdrop-blur-md border border-white/30 px-3 sm:px-5 lg:px-7 py-3 sm:py-4 lg:py-5 rounded-xl sm:rounded-2xl hover:bg-white/25 hover:border-white/50 transition-all duration-300 cursor-pointer shadow-lg flex-shrink-0 group"
+                  style={{ minWidth: '140px' }}
+                >
+                  <div className="text-center">
+                    <div className="text-white font-bold text-sm sm:text-base lg:text-lg tracking-wide mb-1 group-hover:scale-105 transition-transform duration-300">
+                      {brand.name}
+                    </div>
+                    <div className="text-white/70 text-xs sm:text-sm font-medium">
+                      {brand.category}
+                    </div>
+                  </div>
+                </motion.div>
+              ))}
+            </div>
           </div>
+
+          {/* Removed gradient fade edges for better visual */}
         </motion.div>
       </div>
     </section>

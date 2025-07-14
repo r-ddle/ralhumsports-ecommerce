@@ -1,8 +1,7 @@
 'use client'
 
 import type React from 'react'
-
-import { useState } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
@@ -10,6 +9,7 @@ import { Label } from '@/components/ui/label'
 import { Separator } from '@/components/ui/separator'
 import { Badge } from '@/components/ui/badge'
 import { Skeleton } from '@/components/ui/skeleton'
+
 import {
   Select,
   SelectContent,
@@ -19,29 +19,35 @@ import {
 } from '@/components/ui/select'
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible'
 import {
-  Filter,
   Search,
   X,
   ChevronDown,
   ChevronUp,
   SlidersHorizontal,
-  Sparkles,
+  Filter,
+  RotateCcw,
+  Check,
 } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
-import type { Category, Brand, ProductQueryParams } from '@/types/api'
-import { PRODUCT_SORT_OPTIONS } from '@/types/api'
+import { Checkbox } from '@/components/ui/checkbox'
 
 interface ProductFiltersProps {
-  categories: Category[]
-  brands: Brand[]
+  categories: Array<{ id: number; name: string; slug: string }>
+  brands: Array<{ id: number; name: string; slug: string }>
   priceRange: { min: number; max: number }
-  currentFilters: ProductQueryParams
-  onFiltersChange: (filters: ProductQueryParams) => void
-  onSortChange: (
-    sortField: 'name' | 'createdAt' | 'updatedAt' | 'price',
-    sortOrder: 'asc' | 'desc',
-  ) => void
-  onSearchChange: (query: string) => void
+  currentFilters: {
+    search?: string
+    category?: string
+    brand?: string
+    sort?: string
+    order?: string
+    minPrice?: number
+    maxPrice?: number
+    inStock?: boolean
+  }
+  onFiltersChange: (filters: any) => void
+  onSortChange: (sort: string, order: string) => void
+  onSearchChange: (search: string) => void
   onReset: () => void
   isOpen: boolean
   onToggle: () => void
@@ -61,571 +67,424 @@ export function ProductFilters({
   onToggle,
   loading = false,
 }: ProductFiltersProps) {
-  const [searchQuery, setSearchQuery] = useState(currentFilters.search || '')
-  const [selectedCategory, setSelectedCategory] = useState(currentFilters.category || '')
-  const [selectedBrand, setSelectedBrand] = useState(currentFilters.brand || '')
-  const [minPrice, setMinPrice] = useState(currentFilters.minPrice?.toString() || '')
-  const [maxPrice, setMaxPrice] = useState(currentFilters.maxPrice?.toString() || '')
-  const [inStockOnly, setInStockOnly] = useState(currentFilters.inStock || false)
+  // State management
+  const [searchTerm, setSearchTerm] = useState(currentFilters.search || '')
+  const [selectedCategories, setSelectedCategories] = useState<string[]>(
+    currentFilters.category ? [currentFilters.category] : [],
+  )
+  const [selectedBrands, setSelectedBrands] = useState<string[]>(
+    currentFilters.brand ? [currentFilters.brand] : [],
+  )
+  const [priceFilter, setPriceFilter] = useState<[number, number]>([
+    currentFilters.minPrice || priceRange.min,
+    currentFilters.maxPrice || priceRange.max,
+  ])
+  const [stockFilter, setStockFilter] = useState(currentFilters.inStock || false)
+  const [expandedSections, setExpandedSections] = useState<Record<string, boolean>>({
+    search: true,
+    sort: true,
+    categories: true,
+    brands: true,
+    price: true,
+    stock: true,
+  })
 
-  const [categoryOpen, setCategoryOpen] = useState(true)
-  const [brandOpen, setBrandOpen] = useState(true)
-  const [priceOpen, setPriceOpen] = useState(true)
-
-  const handleSearchSubmit = (e: React.FormEvent) => {
-    e.preventDefault()
-    onSearchChange(searchQuery)
-  }
-
-  const handleCategoryChange = (categorySlug: string) => {
-    setSelectedCategory(categorySlug)
-    onFiltersChange({ ...currentFilters, category: categorySlug || undefined })
-  }
-
-  const handleBrandChange = (brandSlug: string) => {
-    setSelectedBrand(brandSlug)
-    onFiltersChange({ ...currentFilters, brand: brandSlug || undefined })
-  }
-
-  const handlePriceChange = () => {
-    const filters = { ...currentFilters }
-
-    if (minPrice) {
-      filters.minPrice = Number.parseFloat(minPrice)
+  // Handlers now only update local state
+  const handleCategoryChange = (categorySlug: string, checked: boolean) => {
+    let newCategories: string[]
+    if (checked) {
+      newCategories = [...selectedCategories, categorySlug]
     } else {
-      delete filters.minPrice
+      newCategories = selectedCategories.filter((c) => c !== categorySlug)
     }
+    setSelectedCategories(newCategories)
+  }
 
-    if (maxPrice) {
-      filters.maxPrice = Number.parseFloat(maxPrice)
+  const handleBrandChange = (brandSlug: string, checked: boolean) => {
+    let newBrands: string[]
+    if (checked) {
+      newBrands = [...selectedBrands, brandSlug]
     } else {
-      delete filters.maxPrice
+      newBrands = selectedBrands.filter((b) => b !== brandSlug)
     }
-
-    onFiltersChange(filters)
+    setSelectedBrands(newBrands)
   }
 
-  const handleInStockChange = (checked: boolean) => {
-    setInStockOnly(checked)
-    onFiltersChange({ ...currentFilters, inStock: checked || undefined })
+  const handlePriceChange = (value: [number, number]) => {
+    setPriceFilter(value)
   }
 
-  const handleSortChange = (value: string) => {
-    const sortOption = PRODUCT_SORT_OPTIONS.find((option) => option.value === value)
-    if (sortOption) {
-      onSortChange(
-        sortOption.field as 'name' | 'createdAt' | 'updatedAt' | 'price',
-        sortOption.order as 'asc' | 'desc',
-      )
-    }
+  const handleStockChange = (checked: boolean) => {
+    setStockFilter(checked)
+  }
+
+  // Apply filters only when button is clicked
+  const handleApplyFilters = () => {
+    onFiltersChange({
+      category: selectedCategories.length > 0 ? selectedCategories[0] : undefined,
+      brand: selectedBrands.length > 0 ? selectedBrands[0] : undefined,
+      minPrice: priceFilter[0] > priceRange.min ? priceFilter[0] : undefined,
+      maxPrice: priceFilter[1] < priceRange.max ? priceFilter[1] : undefined,
+      inStock: stockFilter || undefined,
+    })
+    onSearchChange(searchTerm)
+    // Optionally close the filter panel on mobile
+    if (onToggle) onToggle()
+  }
+
+  const handleSectionToggle = (section: string) => {
+    setExpandedSections((prev) => ({ ...prev, [section]: !prev[section] }))
   }
 
   const handleReset = () => {
-    setSearchQuery('')
-    setSelectedCategory('')
-    setSelectedBrand('')
-    setMinPrice('')
-    setMaxPrice('')
-    setInStockOnly(false)
+    setSearchTerm('')
+    setSelectedCategories([])
+    setSelectedBrands([])
+    setPriceFilter([priceRange.min, priceRange.max])
+    setStockFilter(false)
     onReset()
   }
 
-  const getActiveFiltersCount = () => {
+  // Get active filters count
+  const activeFiltersCount = useMemo(() => {
     let count = 0
-    if (currentFilters.search) count++
-    if (currentFilters.category) count++
-    if (currentFilters.brand) count++
-    if (currentFilters.minPrice || currentFilters.maxPrice) count++
-    if (currentFilters.inStock) count++
+    if (searchTerm) count++
+    if (selectedCategories.length > 0) count++
+    if (selectedBrands.length > 0) count++
+    if (priceFilter[0] > priceRange.min || priceFilter[1] < priceRange.max) count++
+    if (stockFilter) count++
     return count
-  }
+  }, [searchTerm, selectedCategories, selectedBrands, priceFilter, priceRange, stockFilter])
 
-  const activeFiltersCount = getActiveFiltersCount()
+  // Performance optimization
+  const prefersReducedMotion =
+    typeof window !== 'undefined'
+      ? window.matchMedia('(prefers-reduced-motion: reduce)').matches
+      : false
 
   if (loading) {
     return (
-      <Card className="w-full bg-white/80 backdrop-blur-xl border border-white/20 shadow-lg">
-        <CardHeader>
-          <div className="flex items-center justify-between">
-            <Skeleton className="h-6 w-24" />
-            <Skeleton className="h-4 w-4" />
-          </div>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <Skeleton className="h-10 w-full" />
-          <Skeleton className="h-8 w-full" />
-          <Skeleton className="h-32 w-full" />
-          <Skeleton className="h-32 w-full" />
-          <Skeleton className="h-20 w-full" />
-        </CardContent>
-      </Card>
+      <div className="space-y-4 p-6">
+        <Skeleton className="h-8 w-full" />
+        <Skeleton className="h-32 w-full" />
+        <Skeleton className="h-24 w-full" />
+        <Skeleton className="h-24 w-full" />
+      </div>
     )
   }
 
   return (
-    <motion.div
-      initial={{ opacity: 0, x: -20 }}
-      animate={{ opacity: 1, x: 0 }}
-      transition={{ duration: 0.5 }}
+    <form
+      onSubmit={(e) => {
+        e.preventDefault()
+        return false
+      }}
+      className="w-full"
     >
-      <Card className="w-full bg-white/80 backdrop-blur-xl border border-white/20 shadow-lg hover:shadow-xl transition-all duration-300">
-        <CardHeader>
-          <div className="flex items-center justify-between">
-            <CardTitle className="flex items-center gap-2">
-              <div className="p-2 rounded-lg bg-gradient-to-r from-blue-500 to-cyan-400">
-                <Filter className="w-4 h-4 text-white" />
-              </div>
-              <span className="bg-gradient-to-r from-slate-900 to-slate-700 bg-clip-text text-transparent font-bold">
-                Filters
-              </span>
-              {activeFiltersCount > 0 && (
-                <motion.div
-                  initial={{ scale: 0 }}
-                  animate={{ scale: 1 }}
-                  transition={{ duration: 0.3 }}
-                >
-                  <Badge className="bg-gradient-to-r from-orange-500 to-red-400 text-white">
-                    {activeFiltersCount}
-                  </Badge>
-                </motion.div>
-              )}
-            </CardTitle>
-            <Button variant="ghost" size="sm" onClick={onToggle} className="lg:hidden">
-              {isOpen ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+      {/* Header */}
+      <CardHeader className="pb-4">
+        <div className="flex items-center justify-between">
+          <CardTitle className="text-lg font-bold text-text-primary flex items-center gap-2">
+            <SlidersHorizontal className="w-5 h-5 text-brand-primary" />
+            Filters
+          </CardTitle>
+          <div className="flex items-center gap-2">
+            {activeFiltersCount > 0 && (
+              <Badge variant="secondary" className="text-xs">
+                {activeFiltersCount}
+              </Badge>
+            )}
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={handleReset}
+              className="text-xs h-7 px-2"
+              disabled={activeFiltersCount === 0}
+            >
+              <RotateCcw className="w-3 h-3 mr-1" />
+              Reset
             </Button>
           </div>
-        </CardHeader>
+        </div>
+      </CardHeader>
 
-        <AnimatePresence>
-          {(isOpen || window.innerWidth >= 1024) && (
-            <motion.div
-              initial={{ height: 0, opacity: 0 }}
-              animate={{ height: 'auto', opacity: 1 }}
-              exit={{ height: 0, opacity: 0 }}
-              transition={{ duration: 0.3 }}
-              className="lg:block"
-            >
-              <CardContent className="space-y-6">
-                {/* Enhanced Search */}
-                <div className="space-y-2">
-                  <Label htmlFor="search" className="text-sm font-semibold text-slate-700">
-                    Search Products
+      <CardContent className="space-y-6">
+        {/* Search */}
+        <Collapsible
+          open={expandedSections.search}
+          onOpenChange={() => handleSectionToggle('search')}
+        >
+          <CollapsibleTrigger className="flex items-center justify-between w-full p-0 hover:no-underline">
+            <h3 className="text-sm font-semibold text-text-primary">Search</h3>
+            <ChevronDown
+              className={`w-4 h-4 transition-transform ${expandedSections.search ? 'rotate-180' : ''}`}
+            />
+          </CollapsibleTrigger>
+          <CollapsibleContent className="mt-3">
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-text-secondary" />
+              <Input
+                type="text"
+                placeholder="Search products..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') {
+                    e.preventDefault()
+                  }
+                }}
+                className="pl-10 pr-10 bg-brand-background border-brand-border focus:border-brand-primary"
+              />
+              {searchTerm && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setSearchTerm('')}
+                  className="absolute right-1 top-1/2 transform -translate-y-1/2 h-6 w-6 p-0"
+                >
+                  <X className="w-3 h-3" />
+                </Button>
+              )}
+            </div>
+          </CollapsibleContent>
+        </Collapsible>
+
+        <Separator />
+
+        {/* Sort */}
+        <Collapsible open={expandedSections.sort} onOpenChange={() => handleSectionToggle('sort')}>
+          <CollapsibleTrigger className="flex items-center justify-between w-full p-0 hover:no-underline">
+            <h3 className="text-sm font-semibold text-text-primary">Sort By</h3>
+            <ChevronDown
+              className={`w-4 h-4 transition-transform ${expandedSections.sort ? 'rotate-180' : ''}`}
+            />
+          </CollapsibleTrigger>
+          <CollapsibleContent className="mt-3">
+            <div className="space-y-2">
+              <Select
+                value={`${currentFilters.sort || 'createdAt'}-${currentFilters.order || 'desc'}`}
+                onValueChange={(value) => {
+                  const [sort, order] = value.split('-')
+                  onSortChange(sort, order)
+                }}
+              >
+                <SelectTrigger className="bg-brand-background border-brand-border">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="createdAt-desc">Newest First</SelectItem>
+                  <SelectItem value="createdAt-asc">Oldest First</SelectItem>
+                  <SelectItem value="name-asc">Name: A to Z</SelectItem>
+                  <SelectItem value="name-desc">Name: Z to A</SelectItem>
+                  <SelectItem value="price-asc">Price: Low to High</SelectItem>
+                  <SelectItem value="price-desc">Price: High to Low</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </CollapsibleContent>
+        </Collapsible>
+
+        <Separator />
+
+        {/* Categories */}
+        <Collapsible
+          open={expandedSections.categories}
+          onOpenChange={() => handleSectionToggle('categories')}
+        >
+          <CollapsibleTrigger className="flex items-center justify-between w-full p-0 hover:no-underline">
+            <h3 className="text-sm font-semibold text-text-primary">Categories</h3>
+            <div className="flex items-center gap-2">
+              {selectedCategories.length > 0 && (
+                <Badge variant="secondary" className="text-xs">
+                  {selectedCategories.length}
+                </Badge>
+              )}
+              <ChevronDown
+                className={`w-4 h-4 transition-transform ${expandedSections.categories ? 'rotate-180' : ''}`}
+              />
+            </div>
+          </CollapsibleTrigger>
+          <CollapsibleContent className="mt-3">
+            <div className="space-y-2 max-h-48 overflow-y-auto">
+              {categories.map((category) => (
+                <motion.div
+                  key={category.id}
+                  className="flex items-center space-x-2"
+                  initial={prefersReducedMotion ? false : { opacity: 0, x: -10 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ duration: prefersReducedMotion ? 0 : 0.2 }}
+                >
+                  <Checkbox
+                    id={`category-${category.id}`}
+                    checked={selectedCategories.includes(category.slug)}
+                    onCheckedChange={(checked) =>
+                      handleCategoryChange(category.slug, checked as boolean)
+                    }
+                  />
+                  <Label
+                    htmlFor={`category-${category.id}`}
+                    className="text-sm font-medium text-text-primary cursor-pointer flex-1 hover:text-brand-primary transition-colors"
+                  >
+                    {category.name}
                   </Label>
-                  <form onSubmit={handleSearchSubmit} className="flex gap-2">
-                    <div className="relative flex-1">
-                      <Input
-                        id="search"
-                        type="text"
-                        placeholder="Search products..."
-                        value={searchQuery}
-                        onChange={(e) => setSearchQuery(e.target.value)}
-                        className="pl-10 bg-white/50 backdrop-blur-sm border-gray-300 focus:border-blue-400 transition-colors"
-                      />
-                      <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-slate-400" />
-                    </div>
-                    <Button
-                      type="submit"
-                      size="sm"
-                      className="bg-gradient-to-r from-blue-600 to-cyan-500 hover:from-blue-700 hover:to-cyan-600 text-white shadow-lg hover:shadow-xl transition-all duration-300"
-                    >
-                      <Search className="w-4 h-4" />
-                    </Button>
-                  </form>
-                </div>
+                </motion.div>
+              ))}
+            </div>
+          </CollapsibleContent>
+        </Collapsible>
 
-                {/* Enhanced Sort */}
-                <div className="space-y-2">
-                  <Label className="text-sm font-semibold text-slate-700">Sort By</Label>
-                  <Select
-                    value={`${currentFilters.sort}-${currentFilters.order}`}
-                    onValueChange={handleSortChange}
+        <Separator />
+
+        {/* Brands */}
+        <Collapsible
+          open={expandedSections.brands}
+          onOpenChange={() => handleSectionToggle('brands')}
+        >
+          <CollapsibleTrigger className="flex items-center justify-between w-full p-0 hover:no-underline">
+            <h3 className="text-sm font-semibold text-text-primary">Brands</h3>
+            <div className="flex items-center gap-2">
+              {selectedBrands.length > 0 && (
+                <Badge variant="secondary" className="text-xs">
+                  {selectedBrands.length}
+                </Badge>
+              )}
+              <ChevronDown
+                className={`w-4 h-4 transition-transform ${expandedSections.brands ? 'rotate-180' : ''}`}
+              />
+            </div>
+          </CollapsibleTrigger>
+          <CollapsibleContent className="mt-3">
+            <div className="space-y-2 max-h-48 overflow-y-auto">
+              {brands.map((brand) => (
+                <motion.div
+                  key={brand.id}
+                  className="flex items-center space-x-2"
+                  initial={prefersReducedMotion ? false : { opacity: 0, x: -10 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ duration: prefersReducedMotion ? 0 : 0.2 }}
+                >
+                  <Checkbox
+                    id={`brand-${brand.id}`}
+                    checked={selectedBrands.includes(brand.slug)}
+                    onCheckedChange={(checked) => handleBrandChange(brand.slug, checked as boolean)}
+                  />
+                  <Label
+                    htmlFor={`brand-${brand.id}`}
+                    className="text-sm font-medium text-text-primary cursor-pointer flex-1 hover:text-brand-primary transition-colors"
                   >
-                    <SelectTrigger className="bg-white/50 backdrop-blur-sm border-gray-300 focus:border-blue-400">
-                      <SelectValue placeholder="Sort by..." />
-                    </SelectTrigger>
-                    <SelectContent className="bg-white/95 backdrop-blur-xl border border-white/20">
-                      {PRODUCT_SORT_OPTIONS.map((option) => (
-                        <SelectItem key={option.value} value={option.value}>
-                          {option.label}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                <Separator className="bg-gradient-to-r from-transparent via-slate-300 to-transparent" />
-
-                {/* Enhanced Categories */}
-                <Collapsible open={categoryOpen} onOpenChange={setCategoryOpen}>
-                  <CollapsibleTrigger asChild>
-                    <Button
-                      variant="ghost"
-                      className="w-full justify-between p-0 hover:bg-transparent"
-                    >
-                      <span className="font-semibold text-slate-700">Categories</span>
-                      <motion.div
-                        animate={{ rotate: categoryOpen ? 180 : 0 }}
-                        transition={{ duration: 0.2 }}
-                      >
-                        <ChevronDown className="w-4 h-4" />
-                      </motion.div>
-                    </Button>
-                  </CollapsibleTrigger>
-                  <CollapsibleContent className="space-y-2 mt-3">
-                    <div className="space-y-2">
-                      <Button
-                        variant={selectedCategory === '' ? 'default' : 'outline'}
-                        size="sm"
-                        className={`w-full justify-start transition-all duration-300 ${
-                          selectedCategory === ''
-                            ? 'bg-gradient-to-r from-blue-600 to-cyan-500 text-white shadow-lg'
-                            : 'bg-white/50 backdrop-blur-sm border-white/20 hover:bg-blue-50'
-                        }`}
-                        onClick={() => handleCategoryChange('')}
-                      >
-                        All Categories
-                      </Button>
-                      {categories.map((category) => (
-                        <motion.div
-                          key={category.id}
-                          whileHover={{ scale: 1.02 }}
-                          whileTap={{ scale: 0.98 }}
-                        >
-                          <Button
-                            variant={selectedCategory === category.slug ? 'default' : 'outline'}
-                            size="sm"
-                            className={`w-full justify-between transition-all duration-300 ${
-                              selectedCategory === category.slug
-                                ? 'bg-gradient-to-r from-blue-600 to-cyan-500 text-white shadow-lg'
-                                : 'bg-white/50 backdrop-blur-sm border-white/20 hover:bg-blue-50'
-                            }`}
-                            onClick={() => handleCategoryChange(category.slug)}
-                          >
-                            <span className="truncate">{category.name}</span>
-                            {category.productCount !== undefined && (
-                              <Badge variant="secondary" className="ml-2 bg-slate-100">
-                                {category.productCount}
-                              </Badge>
-                            )}
-                          </Button>
-                        </motion.div>
-                      ))}
-                    </div>
-                  </CollapsibleContent>
-                </Collapsible>
-
-                <Separator className="bg-gradient-to-r from-transparent via-slate-300 to-transparent" />
-
-                {/* Enhanced Brands */}
-                <Collapsible open={brandOpen} onOpenChange={setBrandOpen}>
-                  <CollapsibleTrigger asChild>
-                    <Button
-                      variant="ghost"
-                      className="w-full justify-between p-0 hover:bg-transparent"
-                    >
-                      <span className="font-semibold text-slate-700">Brands</span>
-                      <motion.div
-                        animate={{ rotate: brandOpen ? 180 : 0 }}
-                        transition={{ duration: 0.2 }}
-                      >
-                        <ChevronDown className="w-4 h-4" />
-                      </motion.div>
-                    </Button>
-                  </CollapsibleTrigger>
-                  <CollapsibleContent className="space-y-2 mt-3">
-                    <div className="space-y-2">
-                      <Button
-                        variant={selectedBrand === '' ? 'default' : 'outline'}
-                        size="sm"
-                        className={`w-full justify-start transition-all duration-300 ${
-                          selectedBrand === ''
-                            ? 'bg-gradient-to-r from-blue-600 to-cyan-500 text-white shadow-lg'
-                            : 'bg-white/50 backdrop-blur-sm border-white/20 hover:bg-blue-50'
-                        }`}
-                        onClick={() => handleBrandChange('')}
-                      >
-                        All Brands
-                      </Button>
-                      {brands.map((brand) => (
-                        <motion.div
-                          key={brand.id}
-                          whileHover={{ scale: 1.02 }}
-                          whileTap={{ scale: 0.98 }}
-                        >
-                          <Button
-                            variant={selectedBrand === brand.slug ? 'default' : 'outline'}
-                            size="sm"
-                            className={`w-full justify-between transition-all duration-300 ${
-                              selectedBrand === brand.slug
-                                ? 'bg-gradient-to-r from-blue-600 to-cyan-500 text-white shadow-lg'
-                                : 'bg-white/50 backdrop-blur-sm border-white/20 hover:bg-blue-50'
-                            }`}
-                            onClick={() => handleBrandChange(brand.slug)}
-                          >
-                            <span className="truncate">{brand.name}</span>
-                            {brand.productCount !== undefined && (
-                              <Badge variant="secondary" className="ml-2 bg-slate-100">
-                                {brand.productCount}
-                              </Badge>
-                            )}
-                          </Button>
-                        </motion.div>
-                      ))}
-                    </div>
-                  </CollapsibleContent>
-                </Collapsible>
-
-                <Separator className="bg-gradient-to-r from-transparent via-slate-300 to-transparent" />
-
-                {/* Enhanced Price Range */}
-                <Collapsible open={priceOpen} onOpenChange={setPriceOpen}>
-                  <CollapsibleTrigger asChild>
-                    <Button
-                      variant="ghost"
-                      className="w-full justify-between p-0 hover:bg-transparent"
-                    >
-                      <span className="font-semibold text-slate-700">Price Range</span>
-                      <motion.div
-                        animate={{ rotate: priceOpen ? 180 : 0 }}
-                        transition={{ duration: 0.2 }}
-                      >
-                        <ChevronDown className="w-4 h-4" />
-                      </motion.div>
-                    </Button>
-                  </CollapsibleTrigger>
-                  <CollapsibleContent className="space-y-3 mt-3">
-                    <div className="grid grid-cols-2 gap-3">
-                      <div>
-                        <Label
-                          htmlFor="minPrice"
-                          className="text-xs font-medium"
-                          style={{ color: 'var(--text-secondary)' }}
-                        >
-                          Min Price
-                        </Label>
-                        <Input
-                          id="minPrice"
-                          type="number"
-                          placeholder="Min"
-                          value={minPrice}
-                          onChange={(e) => setMinPrice(e.target.value)}
-                          onBlur={handlePriceChange}
-                          className="text-sm bg-white/50 backdrop-blur-sm border-gray-300 focus:border-blue-400"
-                        />
-                      </div>
-                      <div>
-                        <Label
-                          htmlFor="maxPrice"
-                          className="text-xs font-medium"
-                          style={{ color: 'var(--text-secondary)' }}
-                        >
-                          Max Price
-                        </Label>
-                        <Input
-                          id="maxPrice"
-                          type="number"
-                          placeholder="Max"
-                          value={maxPrice}
-                          onChange={(e) => setMaxPrice(e.target.value)}
-                          onBlur={handlePriceChange}
-                          className="text-sm bg-white/50 backdrop-blur-sm border-gray-300 focus:border-blue-400"
-                        />
-                      </div>
-                    </div>
-                    {priceRange.min > 0 && priceRange.max > 0 && (
-                      <p className="text-xs text-slate-500">
-                        Range: Rs.{priceRange.min} - Rs.{priceRange.max}
-                      </p>
-                    )}
-                  </CollapsibleContent>
-                </Collapsible>
-
-                <Separator className="bg-gradient-to-r from-transparent via-slate-300 to-transparent" />
-
-                {/* Enhanced Stock Filter */}
-                <div className="space-y-3">
-                  <Label className="flex items-center gap-3 cursor-pointer group">
-                    <div className="relative">
-                      <input
-                        type="checkbox"
-                        checked={inStockOnly}
-                        onChange={(e) => handleInStockChange(e.target.checked)}
-                        className="sr-only"
-                      />
-                      <div
-                        className={`w-5 h-5 rounded border-2 transition-all duration-300 ${
-                          inStockOnly
-                            ? 'bg-gradient-to-r from-blue-600 to-cyan-500 border-blue-600'
-                            : 'border-slate-300 bg-white/50'
-                        }`}
-                      >
-                        {inStockOnly && (
-                          <motion.div
-                            initial={{ scale: 0 }}
-                            animate={{ scale: 1 }}
-                            transition={{ duration: 0.2 }}
-                            className="flex items-center justify-center h-full"
-                          >
-                            <svg
-                              className="w-3 h-3 text-white"
-                              fill="currentColor"
-                              viewBox="0 0 20 20"
-                            >
-                              <path
-                                fillRule="evenodd"
-                                d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
-                                clipRule="evenodd"
-                              />
-                            </svg>
-                          </motion.div>
-                        )}
-                      </div>
-                    </div>
-                    <span className="text-sm font-medium text-slate-700 group-hover:text-blue-600 transition-colors">
-                      In Stock Only
-                    </span>
+                    {brand.name}
                   </Label>
-                </div>
+                </motion.div>
+              ))}
+            </div>
+          </CollapsibleContent>
+        </Collapsible>
 
-                <Separator className="bg-gradient-to-r from-transparent via-slate-300 to-transparent" />
+        <Separator />
 
-                {/* Enhanced Active Filters */}
-                {activeFiltersCount > 0 && (
-                  <motion.div
-                    initial={{ opacity: 0, y: 10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.3 }}
-                    className="space-y-3"
-                  >
-                    <Label className="text-sm font-semibold text-slate-700 flex items-center gap-2">
-                      <Sparkles className="w-4 h-4" />
-                      Active Filters
-                    </Label>
-                    <div className="flex flex-wrap gap-2">
-                      {currentFilters.search && (
-                        <motion.div
-                          initial={{ scale: 0 }}
-                          animate={{ scale: 1 }}
-                          transition={{ duration: 0.2 }}
-                        >
-                          <Badge className="bg-gradient-to-r from-blue-500 to-cyan-400 text-white text-xs">
-                            Search: {currentFilters.search}
-                            <button
-                              onClick={() => {
-                                setSearchQuery('')
-                                onSearchChange('')
-                              }}
-                              className="ml-2 hover:bg-white/20 rounded-full p-0.5 transition-colors"
-                            >
-                              <X className="w-3 h-3" />
-                            </button>
-                          </Badge>
-                        </motion.div>
-                      )}
-                      {currentFilters.category && (
-                        <motion.div
-                          initial={{ scale: 0 }}
-                          animate={{ scale: 1 }}
-                          transition={{ duration: 0.2, delay: 0.1 }}
-                        >
-                          <Badge className="bg-gradient-to-r from-orange-500 to-red-400 text-white text-xs">
-                            Category:{' '}
-                            {categories.find((c) => c.slug === currentFilters.category)?.name}
-                            <button
-                              onClick={() => handleCategoryChange('')}
-                              className="ml-2 hover:bg-white/20 rounded-full p-0.5 transition-colors"
-                            >
-                              <X className="w-3 h-3" />
-                            </button>
-                          </Badge>
-                        </motion.div>
-                      )}
-                      {currentFilters.brand && (
-                        <motion.div
-                          initial={{ scale: 0 }}
-                          animate={{ scale: 1 }}
-                          transition={{ duration: 0.2, delay: 0.2 }}
-                        >
-                          <Badge className="bg-gradient-to-r from-purple-500 to-pink-400 text-white text-xs">
-                            Brand: {brands.find((b) => b.slug === currentFilters.brand)?.name}
-                            <button
-                              onClick={() => handleBrandChange('')}
-                              className="ml-2 hover:bg-white/20 rounded-full p-0.5 transition-colors"
-                            >
-                              <X className="w-3 h-3" />
-                            </button>
-                          </Badge>
-                        </motion.div>
-                      )}
-                      {(currentFilters.minPrice || currentFilters.maxPrice) && (
-                        <motion.div
-                          initial={{ scale: 0 }}
-                          animate={{ scale: 1 }}
-                          transition={{ duration: 0.2, delay: 0.3 }}
-                        >
-                          <Badge className="bg-gradient-to-r from-green-500 to-emerald-400 text-white text-xs">
-                            Price: Rs.{currentFilters.minPrice || 0} - Rs.
-                            {currentFilters.maxPrice || '∞'}
-                            <button
-                              onClick={() => {
-                                setMinPrice('')
-                                setMaxPrice('')
-                                const filters = { ...currentFilters }
-                                delete filters.minPrice
-                                delete filters.maxPrice
-                                onFiltersChange(filters)
-                              }}
-                              className="ml-2 hover:bg-white/20 rounded-full p-0.5 transition-colors"
-                            >
-                              <X className="w-3 h-3" />
-                            </button>
-                          </Badge>
-                        </motion.div>
-                      )}
-                      {currentFilters.inStock && (
-                        <motion.div
-                          initial={{ scale: 0 }}
-                          animate={{ scale: 1 }}
-                          transition={{ duration: 0.2, delay: 0.4 }}
-                        >
-                          <Badge className="bg-gradient-to-r from-yellow-500 to-orange-400 text-white text-xs">
-                            In Stock Only
-                            <button
-                              onClick={() => handleInStockChange(false)}
-                              className="ml-2 hover:bg-white/20 rounded-full p-0.5 transition-colors"
-                            >
-                              <X className="w-3 h-3" />
-                            </button>
-                          </Badge>
-                        </motion.div>
-                      )}
-                    </div>
-                  </motion.div>
-                )}
+        {/* Price Range */}
+        <Collapsible
+          open={expandedSections.price}
+          onOpenChange={() => handleSectionToggle('price')}
+        >
+          <CollapsibleTrigger className="flex items-center justify-between w-full p-0 hover:no-underline">
+            <h3 className="text-sm font-semibold text-text-primary">Price Range</h3>
+            <div className="flex items-center gap-2">
+              {(priceFilter[0] > priceRange.min || priceFilter[1] < priceRange.max) && (
+                <Badge variant="secondary" className="text-xs">
+                  Active
+                </Badge>
+              )}
+              <ChevronDown
+                className={`w-4 h-4 transition-transform ${expandedSections.price ? 'rotate-180' : ''}`}
+              />
+            </div>
+          </CollapsibleTrigger>
+          <CollapsibleContent className="mt-3">
+            <div className="space-y-4">
+              <div className="grid grid-cols-2 gap-2">
+                <Input
+                  type="number"
+                  placeholder="Min"
+                  value={priceFilter[0]}
+                  onChange={(e) => {
+                    e.preventDefault()
+                    const value = parseInt(e.target.value) || priceRange.min
+                    handlePriceChange([value, priceFilter[1]])
+                  }}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') {
+                      e.preventDefault()
+                    }
+                  }}
+                  className="text-sm bg-brand-background border-brand-border"
+                />
+                <Input
+                  type="number"
+                  placeholder="Max"
+                  value={priceFilter[1]}
+                  onChange={(e) => {
+                    e.preventDefault()
+                    const value = parseInt(e.target.value) || priceRange.max
+                    handlePriceChange([priceFilter[0], value])
+                  }}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') {
+                      e.preventDefault()
+                    }
+                  }}
+                  className="text-sm bg-brand-background border-brand-border"
+                />
+              </div>
+            </div>
+          </CollapsibleContent>
+        </Collapsible>
 
-                {/* Enhanced Reset Button */}
-                {activeFiltersCount > 0 && (
-                  <motion.div
-                    initial={{ opacity: 0, y: 10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.3, delay: 0.2 }}
-                  >
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={handleReset}
-                      className="w-full bg-white/50 backdrop-blur-sm border-white/20 hover:bg-red-50 hover:border-red-300 hover:text-red-600 transition-all duration-300"
-                    >
-                      <SlidersHorizontal className="w-4 h-4 mr-2" />
-                      Reset All Filters
-                    </Button>
-                  </motion.div>
-                )}
-              </CardContent>
-            </motion.div>
-          )}
-        </AnimatePresence>
-      </Card>
-    </motion.div>
+        <Separator />
+
+        {/* Availability */}
+        <Collapsible
+          open={expandedSections.stock}
+          onOpenChange={() => handleSectionToggle('stock')}
+        >
+          <CollapsibleTrigger className="flex items-center justify-between w-full p-0 hover:no-underline">
+            <h3 className="text-sm font-semibold text-text-primary">Availability</h3>
+            <div className="flex items-center gap-2">
+              {stockFilter && (
+                <Badge variant="secondary" className="text-xs">
+                  In Stock
+                </Badge>
+              )}
+              <ChevronDown
+                className={`w-4 h-4 transition-transform ${expandedSections.stock ? 'rotate-180' : ''}`}
+              />
+            </div>
+          </CollapsibleTrigger>
+          <CollapsibleContent className="mt-3">
+            <div className="flex items-center space-x-2">
+              <Checkbox id="in-stock" checked={stockFilter} onCheckedChange={handleStockChange} />
+              <Label
+                htmlFor="in-stock"
+                className="text-sm font-medium text-text-primary cursor-pointer hover:text-brand-primary transition-colors"
+              >
+                In Stock Only
+              </Label>
+            </div>
+          </CollapsibleContent>
+        </Collapsible>
+
+        {/* Apply Filters Button */}
+        <div className="pt-4">
+          <Button
+            type="button"
+            onClick={handleApplyFilters}
+            className="w-full bg-brand-primary hover:bg-primary-600"
+          >
+            <Check className="w-4 h-4 mr-2" />
+            Apply Filters {activeFiltersCount > 0 && `(${activeFiltersCount})`}
+          </Button>
+        </div>
+      </CardContent>
+    </form>
   )
 }

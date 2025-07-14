@@ -664,7 +664,7 @@ export default function ProductDetailPage({ params }: ProductDetailPageProps) {
                     key={tab}
                     value={tab}
                     className={`font-bold text-xs sm:text-sm py-3 rounded-xl data-[state=active]:bg-white data-[state=active]:shadow-lg transition-all duration-300 ${!prefersReducedMotion ? 'hover:scale-105' : ''}`}
-                    style={{ '[data-state=active]': { color: 'var(--secondary-blue)' } }}
+                    // style moved to CSS or handled by className
                   >
                     {tab.charAt(0).toUpperCase() + tab.slice(1)}
                   </TabsTrigger>
@@ -675,10 +675,8 @@ export default function ProductDetailPage({ params }: ProductDetailPageProps) {
               <TabsContent value="description" className="space-y-6">
                 <Card className="bg-white/80 backdrop-blur-md shadow-2xl border border-white/20">
                   <CardContent className="p-6">
-                    <h3 className="text-xl font-bold mb-4 text-gray-900 dark:text-white">
-                      Product Description
-                    </h3>
-                    <div className="prose max-w-none text-gray-700 dark:text-gray-300">
+                    <h3 className="text-xl font-bold mb-4 text-gray-900">Product Description</h3>
+                    <div className="prose max-w-none text-gray-700">
                       <div className="mb-6">
                         {product.description ? (
                           <div className="leading-relaxed text-base">
@@ -691,9 +689,7 @@ export default function ProductDetailPage({ params }: ProductDetailPageProps) {
 
                       {/* Enhanced Features Section */}
                       <div className="mb-6">
-                        <h4 className="font-bold mb-3 text-gray-900 dark:text-white">
-                          Key Features:
-                        </h4>
+                        <h4 className="font-bold mb-3 text-gray-900">Key Features:</h4>
                         {product.features && product.features.length > 0 ? (
                           <ul className="space-y-2">
                             {product.features.map((feature, index) => (
@@ -713,7 +709,7 @@ export default function ProductDetailPage({ params }: ProductDetailPageProps) {
 
                       {/* Enhanced Tags Section */}
                       <div>
-                        <h4 className="font-bold mb-3 text-gray-900 dark:text-white">Tags:</h4>
+                        <h4 className="font-bold mb-3 text-gray-900">Tags:</h4>
                         {product.tags && product.tags.length > 0 ? (
                           <div className="flex flex-wrap gap-2">
                             {product.tags.map((tag) => (
@@ -738,7 +734,7 @@ export default function ProductDetailPage({ params }: ProductDetailPageProps) {
               <TabsContent value="specifications" className="space-y-6">
                 <Card className="bg-white/80 backdrop-blur-md shadow-2xl border border-white/20">
                   <CardContent className="p-6">
-                    <h3 className="text-xl font-bold mb-6 text-gray-900 dark:text-white">
+                    <h3 className="text-xl font-bold mb-6 text-gray-900">
                       Technical Specifications
                     </h3>
 
@@ -821,15 +817,13 @@ export default function ProductDetailPage({ params }: ProductDetailPageProps) {
               <TabsContent value="shipping" className="space-y-6">
                 <Card className="bg-white/80 backdrop-blur-md shadow-2xl border border-white/20">
                   <CardContent className="p-6">
-                    <h3 className="text-xl font-bold mb-6 text-gray-900 dark:text-white">
+                    <h3 className="text-xl font-bold mb-6 text-gray-900">
                       Shipping & Returns Information
                     </h3>
                     <div className="space-y-6">
                       {/* Enhanced Shipping Information */}
                       <div>
-                        <h4 className="font-bold mb-4 text-gray-900 dark:text-white">
-                          Shipping Options
-                        </h4>
+                        <h4 className="font-bold mb-4 text-gray-900">Shipping Options</h4>
                         <div className="space-y-4">
                           {[
                             {
@@ -887,9 +881,7 @@ export default function ProductDetailPage({ params }: ProductDetailPageProps) {
 
                       {/* Enhanced Returns Information */}
                       <div>
-                        <h4 className="font-bold mb-4 text-gray-900 dark:text-white">
-                          Returns & Exchanges
-                        </h4>
+                        <h4 className="font-bold mb-4 text-gray-900">Returns & Exchanges</h4>
                         <div className="space-y-4">
                           {[
                             {
@@ -934,10 +926,8 @@ export default function ProductDetailPage({ params }: ProductDetailPageProps) {
 
                       {/* Enhanced Contact Information */}
                       <div className="bg-gradient-to-r from-[#003DA5]/5 to-[#FF3D00]/5 rounded-xl p-4 border border-[#003DA5]/20 shadow-lg">
-                        <h4 className="font-bold mb-2 text-[#003DA5] dark:text-[#4A90E2]">
-                          Need Help?
-                        </h4>
-                        <p className="text-sm text-gray-600 dark:text-gray-400 mb-3">
+                        <h4 className="font-bold mb-2 text-[#003DA5]">Need Help?</h4>
+                        <p className="text-sm text-gray-600 mb-3">
                           Contact our customer service team for shipping and returns assistance.
                         </p>
                         <div className="flex flex-col sm:flex-row gap-2">
@@ -975,15 +965,13 @@ export default function ProductDetailPage({ params }: ProductDetailPageProps) {
               className={`mt-12 sm:mt-16 ${!prefersReducedMotion ? 'animate-fade-in-up delay-600' : ''}`}
             >
               <div className="text-center mb-6 sm:mb-8">
-                <h2 className="text-2xl sm:text-3xl font-black text-gray-900 dark:text-white mb-4">
+                <h2 className="text-2xl sm:text-3xl font-black text-gray-900 mb-4">
                   More from{' '}
                   <span className="bg-gradient-to-r from-[#003DA5] to-[#0052CC] bg-clip-text text-transparent">
                     {product.brand?.name}
                   </span>
                 </h2>
-                <p className="text-gray-600 dark:text-gray-400">
-                  Discover other premium products from this brand
-                </p>
+                <p className="text-gray-600">Discover other premium products from this brand</p>
               </div>
 
               <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 lg:gap-6">

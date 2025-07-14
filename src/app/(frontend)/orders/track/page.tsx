@@ -28,47 +28,48 @@ import { toast } from 'sonner'
 import Link from 'next/link'
 import type { Order } from '@/types/api'
 import { motion, AnimatePresence } from 'framer-motion'
+import { SITE_CONFIG } from '@/config/site-config'
 
 const ORDER_STATUS_CONFIG = {
   pending: {
     label: 'Pending',
-    color: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/20 dark:text-yellow-400',
+    color: 'bg-yellow-100 text-yellow-800 border-yellow-200',
     icon: Clock,
     description: 'Your order has been received and is being processed.',
   },
   confirmed: {
     label: 'Confirmed',
-    color: 'bg-blue-100 text-blue-800 dark:bg-blue-900/20 dark:text-blue-400',
+    color: 'bg-blue-100 text-blue-800 border-blue-200',
     icon: Check,
     description: 'Your order has been confirmed and is being prepared.',
   },
   processing: {
     label: 'Processing',
-    color: 'bg-orange-100 text-orange-800 dark:bg-orange-900/20 dark:text-orange-400',
+    color: 'bg-orange-100 text-orange-800 border-orange-200',
     icon: Package,
     description: 'Your order is being packed and prepared for shipment.',
   },
   shipped: {
     label: 'Shipped',
-    color: 'bg-purple-100 text-purple-800 dark:bg-purple-900/20 dark:text-purple-400',
+    color: 'bg-purple-100 text-purple-800 border-purple-200',
     icon: Truck,
     description: 'Your order has been shipped and is on its way to you.',
   },
   delivered: {
     label: 'Delivered',
-    color: 'bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400',
+    color: 'bg-green-100 text-green-800 border-green-200',
     icon: CheckCircle,
     description: 'Your order has been successfully delivered.',
   },
   cancelled: {
     label: 'Cancelled',
-    color: 'bg-red-100 text-red-800 dark:bg-red-900/20 dark:text-red-400',
+    color: 'bg-red-100 text-red-800 border-red-200',
     icon: X,
     description: 'Your order has been cancelled.',
   },
   refunded: {
     label: 'Refunded',
-    color: 'bg-gray-100 text-gray-800 dark:bg-gray-900/20 dark:text-gray-400',
+    color: 'bg-gray-100 text-gray-800 border-gray-200',
     icon: RefreshCw,
     description: 'Your order has been refunded.',
   },
@@ -77,23 +78,23 @@ const ORDER_STATUS_CONFIG = {
 const PAYMENT_STATUS_CONFIG = {
   pending: {
     label: 'Pending Payment',
-    color: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/20 dark:text-yellow-400',
+    color: 'bg-yellow-100 text-yellow-800 border-yellow-200',
   },
   'partially-paid': {
     label: 'Partially Paid',
-    color: 'bg-orange-100 text-orange-800 dark:bg-orange-900/20 dark:text-orange-400',
+    color: 'bg-orange-100 text-orange-800 border-orange-200',
   },
   paid: {
     label: 'Paid',
-    color: 'bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400',
+    color: 'bg-green-100 text-green-800 border-green-200',
   },
   refunded: {
     label: 'Refunded',
-    color: 'bg-gray-100 text-gray-800 dark:bg-gray-900/20 dark:text-gray-400',
+    color: 'bg-gray-100 text-gray-800 border-gray-200',
   },
   failed: {
     label: 'Payment Failed',
-    color: 'bg-red-100 text-red-800 dark:bg-red-900/20 dark:text-red-400',
+    color: 'bg-red-100 text-red-800 border-red-200',
   },
 }
 
@@ -253,13 +254,13 @@ export default function OrderTrackingPage() {
   }
 
   return (
-    <main className="min-h-screen pt-16 bg-gradient-to-br from-slate-50 via-blue-50/30 to-slate-100 dark:from-slate-900 dark:via-slate-800 dark:to-slate-900">
-      {/* Enhanced Hero Section with Glassmorphism */}
+    <main className="min-h-screen pt-8 bg-brand-background">
+      {/* Enhanced Hero Section */}
       <section className="relative py-16 sm:py-20 overflow-hidden">
         {/* Animated Background Elements */}
         <div className="absolute inset-0 overflow-hidden pointer-events-none">
           <motion.div
-            className="absolute top-1/4 left-1/6 w-72 h-72 bg-gradient-to-br from-blue-500/20 to-cyan-400/20 rounded-full blur-3xl"
+            className="absolute top-1/4 left-1/6 w-72 h-72 bg-gradient-to-br from-brand-secondary/10 to-brand-primary/10 rounded-full blur-3xl"
             animate={
               prefersReducedMotion
                 ? {}
@@ -277,7 +278,7 @@ export default function OrderTrackingPage() {
             }}
           />
           <motion.div
-            className="absolute top-1/3 right-1/4 w-96 h-96 bg-gradient-to-br from-emerald-500/15 to-teal-400/15 rounded-full blur-3xl"
+            className="absolute top-1/3 right-1/4 w-96 h-96 bg-gradient-to-br from-brand-accent/10 to-brand-primary/10 rounded-full blur-3xl"
             animate={
               prefersReducedMotion
                 ? {}
@@ -306,7 +307,7 @@ export default function OrderTrackingPage() {
           >
             <motion.div
               variants={itemVariants}
-              className="inline-flex items-center gap-2 px-6 py-3 rounded-full font-bold text-sm mb-6 bg-gradient-to-r from-yellow-400 to-orange-400 text-gray-900 shadow-lg backdrop-blur-sm border border-yellow-300/30"
+              className="inline-flex items-center gap-2 px-6 py-3 rounded-full font-bold text-sm mb-6 bg-brand-accent text-white shadow-lg"
             >
               <Sparkles className="w-4 h-4" />
               ORDER TRACKING
@@ -316,17 +317,15 @@ export default function OrderTrackingPage() {
               variants={itemVariants}
               className="text-4xl sm:text-5xl md:text-6xl font-black mb-6 leading-tight"
             >
-              <span className="bg-gradient-to-r from-slate-900 via-blue-900 to-slate-900 dark:from-white dark:via-blue-200 dark:to-white bg-clip-text text-transparent">
-                TRACK YOUR
-              </span>
-              <span className="block bg-gradient-to-r from-orange-500 to-red-500 bg-clip-text text-transparent">
+              <span className="text-text-primary">TRACK YOUR</span>
+              <span className="block bg-gradient-to-r from-brand-primary to-brand-accent bg-clip-text text-transparent">
                 ORDER
               </span>
             </motion.h1>
 
             <motion.p
               variants={itemVariants}
-              className="text-lg sm:text-xl text-gray-600 dark:text-gray-300 max-w-2xl mx-auto leading-relaxed"
+              className="text-lg sm:text-xl text-text-secondary max-w-2xl mx-auto leading-relaxed"
             >
               Enter your order ID to check the status and track your shipment in real-time
             </motion.p>
@@ -344,10 +343,10 @@ export default function OrderTrackingPage() {
           >
             {/* Enhanced Order Search Form */}
             <motion.div variants={itemVariants}>
-              <Card className="backdrop-blur-lg bg-white/80 dark:bg-gray-800/80 border border-white/20 shadow-2xl">
+              <Card className="bg-brand-surface border-brand-border shadow-2xl">
                 <CardHeader>
-                  <CardTitle className="flex items-center gap-2 text-xl font-bold">
-                    <div className="p-2 rounded-lg bg-gradient-to-br from-blue-500 to-cyan-500 text-white">
+                  <CardTitle className="flex items-center gap-2 text-xl font-bold text-text-primary">
+                    <div className="p-2 rounded-lg bg-gradient-to-br from-brand-secondary to-secondary-600 text-white">
                       <Search className="w-5 h-5" />
                     </div>
                     Track Your Order
@@ -356,7 +355,10 @@ export default function OrderTrackingPage() {
                 <CardContent>
                   <form onSubmit={handleTrackOrder} className="space-y-6">
                     <div>
-                      <Label htmlFor="orderId" className="text-base font-semibold">
+                      <Label
+                        htmlFor="orderId"
+                        className="text-base font-semibold text-text-primary"
+                      >
                         Order ID
                       </Label>
                       <div className="flex gap-3 mt-3">
@@ -366,13 +368,13 @@ export default function OrderTrackingPage() {
                           value={orderId}
                           onChange={(e) => setOrderId(e.target.value)}
                           placeholder="Enter your order ID (e.g., RS-20240101-ABCDE)"
-                          className="flex-1 h-12 text-base border-2 border-gray-200 dark:border-gray-600 focus:border-blue-500 dark:focus:border-blue-400 rounded-xl bg-white/50 dark:bg-gray-700/50 backdrop-blur-sm"
+                          className="flex-1 h-12 text-base border-2 border-brand-border focus:border-brand-secondary rounded-xl bg-brand-background"
                           disabled={loading}
                         />
                         <Button
                           type="submit"
                           disabled={loading}
-                          className="h-12 px-6 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white font-bold rounded-xl shadow-lg hover:shadow-xl transition-all duration-300"
+                          className="h-12 px-6 bg-gradient-to-r from-brand-secondary to-secondary-600 hover:from-secondary-600 hover:to-brand-secondary text-white font-bold rounded-xl shadow-lg hover:shadow-xl transition-all duration-300"
                         >
                           {loading ? (
                             <motion.div
@@ -391,11 +393,11 @@ export default function OrderTrackingPage() {
                       </div>
                     </div>
 
-                    <div className="p-4 bg-gradient-to-r from-blue-50 to-cyan-50 dark:from-blue-900/20 dark:to-cyan-900/20 rounded-xl border border-blue-200/50 dark:border-blue-700/50">
-                      <p className="text-sm font-semibold text-blue-900 dark:text-blue-200 mb-2">
+                    <div className="p-4 bg-gradient-to-r from-blue-50 to-cyan-50 rounded-xl border border-blue-200">
+                      <p className="text-sm font-semibold text-blue-900 mb-2">
                         💡 Where to find your Order ID:
                       </p>
-                      <ul className="list-disc list-inside text-sm text-blue-800 dark:text-blue-300 space-y-1">
+                      <ul className="list-disc list-inside text-sm text-blue-800 space-y-1">
                         <li>Check your WhatsApp confirmation message</li>
                         <li>Look for emails from Ralhum Sports</li>
                         <li>Check your order confirmation page</li>
@@ -415,11 +417,9 @@ export default function OrderTrackingPage() {
                   exit={{ opacity: 0, scale: 0.95 }}
                   transition={{ duration: 0.3 }}
                 >
-                  <Alert className="border-red-200 bg-red-50 dark:bg-red-900/20 dark:border-red-800">
+                  <Alert className="border-red-200 bg-red-50 border">
                     <AlertCircle className="h-4 w-4 text-red-600" />
-                    <AlertDescription className="text-red-800 dark:text-red-200">
-                      {error}
-                    </AlertDescription>
+                    <AlertDescription className="text-red-800">{error}</AlertDescription>
                   </Alert>
                 </motion.div>
               )}
@@ -436,14 +436,14 @@ export default function OrderTrackingPage() {
                   className="space-y-8"
                 >
                   {/* Order Status Overview */}
-                  <Card className="backdrop-blur-lg bg-white/80 dark:bg-gray-800/80 border border-white/20 shadow-2xl overflow-hidden">
-                    <CardHeader className="bg-gradient-to-r from-blue-600/10 to-purple-600/10 dark:from-blue-400/10 dark:to-purple-400/10">
+                  <Card className="bg-brand-surface border-brand-border shadow-2xl overflow-hidden">
+                    <CardHeader className="bg-gradient-to-r from-brand-secondary/5 to-brand-primary/5">
                       <div className="flex items-center justify-between flex-wrap gap-4">
-                        <CardTitle className="text-2xl font-black">
+                        <CardTitle className="text-2xl font-black text-text-primary">
                           Order {order.orderNumber}
                         </CardTitle>
                         <Badge
-                          className={`${ORDER_STATUS_CONFIG[order.orderStatus]?.color || 'bg-gray-100 text-gray-800'} px-4 py-2 text-sm font-bold`}
+                          className={`${ORDER_STATUS_CONFIG[order.orderStatus]?.color || 'bg-gray-100 text-gray-800'} px-4 py-2 text-sm font-bold border`}
                         >
                           {ORDER_STATUS_CONFIG[order.orderStatus]?.label || order.orderStatus}
                         </Badge>
@@ -451,19 +451,18 @@ export default function OrderTrackingPage() {
                     </CardHeader>
                     <CardContent className="space-y-8 p-6">
                       {/* Status Description */}
-                      <div className="flex items-start gap-4 p-6 bg-gradient-to-r from-blue-50 to-cyan-50 dark:from-blue-900/20 dark:to-cyan-900/20 rounded-2xl border border-blue-200/50 dark:border-blue-700/50">
+                      <div className="flex items-start gap-4 p-6 bg-gradient-to-r from-blue-50 to-cyan-50 rounded-2xl border border-blue-200">
                         {React.createElement(
                           ORDER_STATUS_CONFIG[order.orderStatus]?.icon || Clock,
                           {
-                            className:
-                              'w-6 h-6 text-blue-600 dark:text-blue-400 mt-1 flex-shrink-0',
+                            className: 'w-6 h-6 text-blue-600 mt-1 flex-shrink-0',
                           },
                         )}
                         <div>
-                          <p className="font-bold text-blue-900 dark:text-blue-200 text-lg">
+                          <p className="font-bold text-blue-900 text-lg">
                             {ORDER_STATUS_CONFIG[order.orderStatus]?.label || order.orderStatus}
                           </p>
-                          <p className="text-blue-700 dark:text-blue-300 mt-1">
+                          <p className="text-blue-700 mt-1">
                             {ORDER_STATUS_CONFIG[order.orderStatus]?.description ||
                               'Order status updated.'}
                           </p>
@@ -472,9 +471,7 @@ export default function OrderTrackingPage() {
 
                       {/* Enhanced Progress Steps */}
                       <div className="space-y-6">
-                        <h3 className="text-xl font-bold text-gray-900 dark:text-white">
-                          Order Progress
-                        </h3>
+                        <h3 className="text-xl font-bold text-text-primary">Order Progress</h3>
                         <div className="space-y-4">
                           {getOrderSteps(order.orderStatus).map((step, index) => (
                             <motion.div
@@ -482,15 +479,15 @@ export default function OrderTrackingPage() {
                               initial={{ opacity: 0, x: -20 }}
                               animate={{ opacity: 1, x: 0 }}
                               transition={{ delay: index * 0.1, duration: 0.5 }}
-                              className="flex items-center gap-6 p-4 rounded-xl bg-gradient-to-r from-gray-50 to-gray-100 dark:from-gray-800 dark:to-gray-700"
+                              className="flex items-center gap-6 p-4 rounded-xl bg-brand-background"
                             >
                               <div
                                 className={`w-12 h-12 rounded-full flex items-center justify-center shadow-lg ${
                                   step.completed
-                                    ? 'bg-gradient-to-br from-blue-500 to-blue-600 text-white'
+                                    ? 'bg-gradient-to-br from-brand-secondary to-secondary-600 text-white'
                                     : step.current
-                                      ? 'bg-gradient-to-br from-orange-500 to-red-500 text-white'
-                                      : 'bg-gray-200 dark:bg-gray-600 text-gray-400'
+                                      ? 'bg-gradient-to-br from-brand-primary to-primary-600 text-white'
+                                      : 'bg-gray-200 text-gray-400'
                                 }`}
                               >
                                 {React.createElement(step.icon, { className: 'w-6 h-6' })}
@@ -499,7 +496,7 @@ export default function OrderTrackingPage() {
                                 <p
                                   className={`font-bold text-lg ${
                                     step.completed || step.current
-                                      ? 'text-gray-900 dark:text-white'
+                                      ? 'text-text-primary'
                                       : 'text-gray-400'
                                   }`}
                                 >
@@ -521,24 +518,22 @@ export default function OrderTrackingPage() {
                       </div>
 
                       {/* Order Dates */}
-                      <div className="grid md:grid-cols-2 gap-6 pt-6 border-t border-gray-200 dark:border-gray-700">
-                        <div className="flex items-center gap-3 p-4 bg-gradient-to-r from-gray-50 to-gray-100 dark:from-gray-800 dark:to-gray-700 rounded-xl">
-                          <Calendar className="w-5 h-5 text-blue-600 dark:text-blue-400" />
+                      <div className="grid md:grid-cols-2 gap-6 pt-6 border-t border-brand-border">
+                        <div className="flex items-center gap-3 p-4 bg-brand-background rounded-xl">
+                          <Calendar className="w-5 h-5 text-brand-secondary" />
                           <div>
-                            <p className="font-semibold text-gray-900 dark:text-white">Ordered</p>
-                            <p className="text-gray-600 dark:text-gray-300">
+                            <p className="font-semibold text-text-primary">Ordered</p>
+                            <p className="text-text-secondary">
                               {new Date(order.createdAt).toLocaleDateString('en-GB')}
                             </p>
                           </div>
                         </div>
                         {order.shipping?.estimatedDelivery && (
-                          <div className="flex items-center gap-3 p-4 bg-gradient-to-r from-gray-50 to-gray-100 dark:from-gray-800 dark:to-gray-700 rounded-xl">
-                            <Truck className="w-5 h-5 text-green-600 dark:text-green-400" />
+                          <div className="flex items-center gap-3 p-4 bg-brand-background rounded-xl">
+                            <Truck className="w-5 h-5 text-green-600" />
                             <div>
-                              <p className="font-semibold text-gray-900 dark:text-white">
-                                Expected Delivery
-                              </p>
-                              <p className="text-gray-600 dark:text-gray-300">
+                              <p className="font-semibold text-text-primary">Expected Delivery</p>
+                              <p className="text-text-secondary">
                                 {new Date(order.shipping.estimatedDelivery).toLocaleDateString(
                                   'en-GB',
                                 )}
@@ -552,9 +547,9 @@ export default function OrderTrackingPage() {
 
                   {/* Enhanced Shipping Information */}
                   {order.shipping && (order.shipping.trackingNumber || order.shipping.courier) && (
-                    <Card className="backdrop-blur-lg bg-white/80 dark:bg-gray-800/80 border border-white/20 shadow-2xl">
+                    <Card className="bg-brand-surface border-brand-border shadow-2xl">
                       <CardHeader>
-                        <CardTitle className="flex items-center gap-3 text-xl font-bold">
+                        <CardTitle className="flex items-center gap-3 text-xl font-bold text-text-primary">
                           <div className="p-2 rounded-lg bg-gradient-to-br from-green-500 to-emerald-500 text-white">
                             <Truck className="w-5 h-5" />
                           </div>
@@ -563,35 +558,29 @@ export default function OrderTrackingPage() {
                       </CardHeader>
                       <CardContent className="space-y-6">
                         {order.shipping.courier && (
-                          <div className="flex items-center justify-between p-4 bg-gradient-to-r from-green-50 to-emerald-50 dark:from-green-900/20 dark:to-emerald-900/20 rounded-xl">
-                            <span className="font-semibold text-green-900 dark:text-green-200">
-                              Courier:
-                            </span>
-                            <span className="font-bold text-green-800 dark:text-green-300">
+                          <div className="flex items-center justify-between p-4 bg-gradient-to-r from-green-50 to-emerald-50 rounded-xl border border-green-200">
+                            <span className="font-semibold text-green-900">Courier:</span>
+                            <span className="font-bold text-green-800">
                               {order.shipping.courier}
                             </span>
                           </div>
                         )}
                         {order.shipping.trackingNumber && (
-                          <div className="p-4 bg-gradient-to-r from-blue-50 to-cyan-50 dark:from-blue-900/20 dark:to-cyan-900/20 rounded-xl">
+                          <div className="p-4 bg-gradient-to-r from-blue-50 to-cyan-50 rounded-xl border border-blue-200">
                             <div className="flex items-center justify-between mb-2">
-                              <span className="font-semibold text-blue-900 dark:text-blue-200">
-                                Tracking Number:
-                              </span>
+                              <span className="font-semibold text-blue-900">Tracking Number:</span>
                             </div>
-                            <code className="block w-full p-3 bg-white dark:bg-gray-800 rounded-lg text-center font-mono text-lg font-bold border-2 border-dashed border-blue-300 dark:border-blue-600">
+                            <code className="block w-full p-3 bg-white rounded-lg text-center font-mono text-lg font-bold border-2 border-dashed border-blue-300">
                               {order.shipping.trackingNumber}
                             </code>
                           </div>
                         )}
                         {order.shipping.actualDelivery && (
-                          <div className="flex items-center gap-3 p-4 bg-gradient-to-r from-green-100 to-emerald-100 dark:from-green-900/30 dark:to-emerald-900/30 rounded-xl border border-green-300 dark:border-green-700">
+                          <div className="flex items-center gap-3 p-4 bg-gradient-to-r from-green-100 to-emerald-100 rounded-xl border border-green-300">
                             <CheckCircle className="w-6 h-6 text-green-600" />
                             <div>
-                              <p className="font-bold text-green-800 dark:text-green-200">
-                                Delivered!
-                              </p>
-                              <p className="text-green-700 dark:text-green-300">
+                              <p className="font-bold text-green-800">Delivered!</p>
+                              <p className="text-green-700">
                                 {new Date(order.shipping.actualDelivery).toLocaleDateString(
                                   'en-GB',
                                 )}
@@ -604,10 +593,10 @@ export default function OrderTrackingPage() {
                   )}
 
                   {/* Enhanced Order Items */}
-                  <Card className="backdrop-blur-lg bg-white/80 dark:bg-gray-800/80 border border-white/20 shadow-2xl">
+                  <Card className="bg-brand-surface border-brand-border shadow-2xl">
                     <CardHeader>
-                      <CardTitle className="flex items-center gap-3 text-xl font-bold">
-                        <div className="p-2 rounded-lg bg-gradient-to-br from-purple-500 to-pink-500 text-white">
+                      <CardTitle className="flex items-center gap-3 text-xl font-bold text-text-primary">
+                        <div className="p-2 rounded-lg bg-gradient-to-br from-brand-primary to-primary-600 text-white">
                           <ShoppingBag className="w-5 h-5" />
                         </div>
                         Order Items
@@ -621,38 +610,38 @@ export default function OrderTrackingPage() {
                             initial={{ opacity: 0, y: 10 }}
                             animate={{ opacity: 1, y: 0 }}
                             transition={{ delay: index * 0.1 }}
-                            className="flex items-center gap-6 p-6 bg-gradient-to-r from-gray-50 to-gray-100 dark:from-gray-800 dark:to-gray-700 rounded-xl border border-gray-200 dark:border-gray-600"
+                            className="flex items-center gap-6 p-6 bg-brand-background rounded-xl border border-brand-border"
                           >
                             <div className="flex-1">
-                              <h4 className="font-bold text-lg text-gray-900 dark:text-white">
+                              <h4 className="font-bold text-lg text-text-primary">
                                 {item.productName}
                               </h4>
                               {item.productSku && (
-                                <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
+                                <p className="text-sm text-text-secondary mt-1">
                                   SKU: {item.productSku}
                                 </p>
                               )}
                               <div className="flex gap-4 mt-2 text-sm">
                                 {item.selectedSize && (
-                                  <Badge variant="outline" className="bg-white dark:bg-gray-700">
+                                  <Badge variant="outline" className="bg-brand-surface">
                                     Size: {item.selectedSize}
                                   </Badge>
                                 )}
                                 {item.selectedColor && (
-                                  <Badge variant="outline" className="bg-white dark:bg-gray-700">
+                                  <Badge variant="outline" className="bg-brand-surface">
                                     Color: {item.selectedColor}
                                   </Badge>
                                 )}
                               </div>
                             </div>
                             <div className="text-right">
-                              <p className="font-bold text-lg text-gray-900 dark:text-white">
+                              <p className="font-bold text-lg text-text-primary">
                                 Qty: {item.quantity}
                               </p>
-                              <p className="text-sm text-gray-600 dark:text-gray-400">
+                              <p className="text-sm text-text-secondary">
                                 {item.unitPrice} LKR each
                               </p>
-                              <p className="font-bold text-xl text-blue-600 dark:text-blue-400">
+                              <p className="font-bold text-xl text-brand-secondary">
                                 {item.subtotal} LKR
                               </p>
                             </div>
@@ -664,19 +653,17 @@ export default function OrderTrackingPage() {
 
                       <div className="space-y-4">
                         <div className="flex justify-between items-center text-2xl font-black">
-                          <span className="text-gray-900 dark:text-white">Total:</span>
-                          <span className="bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+                          <span className="text-text-primary">Total:</span>
+                          <span className="bg-gradient-to-r from-brand-secondary to-secondary-600 bg-clip-text text-transparent">
                             {order.orderTotal} LKR
                           </span>
                         </div>
                       </div>
 
-                      <div className="mt-6 pt-6 border-t border-gray-200 dark:border-gray-700">
+                      <div className="mt-6 pt-6 border-t border-brand-border">
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                          <div className="flex items-center justify-between p-3 bg-gradient-to-r from-blue-50 to-cyan-50 dark:from-blue-900/20 dark:to-cyan-900/20 rounded-lg">
-                            <span className="font-semibold text-blue-900 dark:text-blue-200">
-                              Payment Status:
-                            </span>
+                          <div className="flex items-center justify-between p-3 bg-gradient-to-r from-blue-50 to-cyan-50 rounded-lg border border-blue-200">
+                            <span className="font-semibold text-blue-900">Payment Status:</span>
                             <Badge
                               className={
                                 PAYMENT_STATUS_CONFIG[order.paymentStatus]?.color ||
@@ -688,11 +675,11 @@ export default function OrderTrackingPage() {
                             </Badge>
                           </div>
                           {order.paymentMethod && (
-                            <div className="flex items-center justify-between p-3 bg-gradient-to-r from-gray-50 to-gray-100 dark:from-gray-800 dark:to-gray-700 rounded-lg">
-                              <span className="font-semibold text-gray-900 dark:text-white">
+                            <div className="flex items-center justify-between p-3 bg-brand-background rounded-lg border border-brand-border">
+                              <span className="font-semibold text-text-primary">
                                 Payment Method:
                               </span>
-                              <span className="text-sm font-bold capitalize text-gray-700 dark:text-gray-300">
+                              <span className="text-sm font-bold capitalize text-text-secondary">
                                 {order.paymentMethod.replace('-', ' ')}
                               </span>
                             </div>
@@ -703,13 +690,11 @@ export default function OrderTrackingPage() {
                   </Card>
 
                   {/* Enhanced Contact Support */}
-                  <Card className="backdrop-blur-lg bg-gradient-to-br from-blue-50 to-cyan-50 dark:from-blue-900/20 dark:to-cyan-900/20 border border-blue-200/50 dark:border-blue-700/50 shadow-2xl">
+                  <Card className="bg-gradient-to-br from-blue-50 to-cyan-50 border-blue-200 shadow-2xl">
                     <CardContent className="p-8">
                       <div className="text-center">
-                        <h3 className="text-2xl font-black text-blue-900 dark:text-blue-200 mb-3">
-                          Need Help?
-                        </h3>
-                        <p className="text-blue-700 dark:text-blue-300 mb-6 text-lg">
+                        <h3 className="text-2xl font-black text-blue-900 mb-3">Need Help?</h3>
+                        <p className="text-blue-700 mb-6 text-lg">
                           Have questions about your order? Our team is here to help.
                         </p>
                         <div className="flex flex-col sm:flex-row gap-4 justify-center">
@@ -718,7 +703,7 @@ export default function OrderTrackingPage() {
                             className="bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white font-bold px-8 py-4 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300"
                             onClick={() => {
                               const message = `Hello! I need help with my order #${order.orderNumber}. Can you please assist me?`
-                              const whatsappUrl = `https://wa.me/94772350712?text=${encodeURIComponent(message)}`
+                              const whatsappUrl = `https://wa.me/${SITE_CONFIG.whatsapp.number}?text=${encodeURIComponent(message)}`
                               window.open(whatsappUrl, '_blank')
                             }}
                           >
@@ -728,7 +713,7 @@ export default function OrderTrackingPage() {
                           <Button
                             variant="outline"
                             size="lg"
-                            className="border-2 border-blue-300 dark:border-blue-600 text-blue-700 dark:text-blue-300 hover:bg-blue-100 dark:hover:bg-blue-900/30 font-bold px-8 py-4 rounded-xl bg-transparent"
+                            className="border-2 border-blue-300 text-blue-700 hover:bg-blue-100 font-bold px-8 py-4 rounded-xl bg-transparent"
                             asChild
                           >
                             <Link href="/contact">
@@ -747,16 +732,18 @@ export default function OrderTrackingPage() {
             {/* Enhanced Help Section */}
             {!order && !loading && (
               <motion.div variants={itemVariants}>
-                <Card className="backdrop-blur-lg bg-white/80 dark:bg-gray-800/80 border border-white/20 shadow-2xl">
+                <Card className="bg-brand-surface border-brand-border shadow-2xl">
                   <CardHeader>
-                    <CardTitle className="text-xl font-bold">Can&apos;t Find Your Order?</CardTitle>
+                    <CardTitle className="text-xl font-bold text-text-primary">
+                      Can&apos;t Find Your Order?
+                    </CardTitle>
                   </CardHeader>
                   <CardContent className="space-y-6">
-                    <div className="p-6 bg-gradient-to-r from-yellow-50 to-orange-50 dark:from-yellow-900/20 dark:to-orange-900/20 rounded-xl border border-yellow-200/50 dark:border-yellow-700/50">
-                      <p className="font-semibold text-yellow-900 dark:text-yellow-200 mb-3">
+                    <div className="p-6 bg-gradient-to-r from-yellow-50 to-orange-50 rounded-xl border border-yellow-200">
+                      <p className="font-semibold text-yellow-900 mb-3">
                         Double-check your Order ID:
                       </p>
-                      <ul className="list-disc list-inside text-yellow-800 dark:text-yellow-300 space-y-2">
+                      <ul className="list-disc list-inside text-yellow-800 space-y-2">
                         <li>
                           Order IDs start with &quot;RS-&quot; followed by numbers and letters
                         </li>
@@ -769,11 +756,11 @@ export default function OrderTrackingPage() {
                       <Button
                         variant="outline"
                         size="lg"
-                        className="flex-1 border-2 border-green-300 dark:border-green-600 text-green-700 dark:text-green-300 hover:bg-green-50 dark:hover:bg-green-900/20 font-bold py-4 rounded-xl bg-transparent"
+                        className="flex-1 border-2 border-green-300 text-green-700 hover:bg-green-50 font-bold py-4 rounded-xl bg-transparent"
                         onClick={() => {
                           const message =
                             "Hello! I can't find my order ID. Can you help me track my order?"
-                          const whatsappUrl = `https://wa.me/94772350712?text=${encodeURIComponent(message)}`
+                          const whatsappUrl = `https://wa.me/${SITE_CONFIG.whatsapp.number}?text=${encodeURIComponent(message)}`
                           window.open(whatsappUrl, '_blank')
                         }}
                       >
@@ -783,7 +770,7 @@ export default function OrderTrackingPage() {
                       <Button
                         variant="outline"
                         size="lg"
-                        className="flex-1 border-2 border-blue-300 dark:border-blue-600 text-blue-700 dark:text-blue-300 hover:bg-blue-50 dark:hover:bg-blue-900/20 font-bold py-4 rounded-xl bg-transparent"
+                        className="flex-1 border-2 border-blue-300 text-blue-700 hover:bg-blue-50 font-bold py-4 rounded-xl bg-transparent"
                         asChild
                       >
                         <Link href="/contact">

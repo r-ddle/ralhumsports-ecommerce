@@ -77,11 +77,9 @@ export default function ContactCTA() {
   }
 
   return (
-    <section className="py-20 bg-gradient-to-br from-[#003DA5] to-[#1A1A1A] text-white relative overflow-hidden">
+    <section className="py-20 bg-brand-surface text-white relative overflow-hidden">
       {/* Background Effects */}
       <div className="absolute inset-0 pointer-events-none">
-        <div className="absolute top-0 right-0 w-96 h-96 bg-gradient-to-bl from-orange-500/10 to-transparent rounded-full blur-3xl" />
-        <div className="absolute bottom-0 left-0 w-80 h-80 bg-gradient-to-tr from-yellow-500/10 to-transparent rounded-full blur-3xl" />
         <div className="absolute inset-0 bg-grid-pattern opacity-5" />
       </div>
 
@@ -97,13 +95,13 @@ export default function ContactCTA() {
           <Badge className="bg-[#FFD700] text-[#1A1A1A] px-6 py-2 text-sm font-bold mb-4 hover:bg-[#FFD700]/90 transition-colors">
             GET IN TOUCH
           </Badge>
-          <h2 className="text-4xl md:text-6xl font-black mb-6">
+          <h2 className="text-4xl md:text-6xl font-black text-black mb-6">
             READY TO ELEVATE
             <span className="block text-[#FF3D00] bg-gradient-to-r from-[#FF3D00] to-[#FF6B47] bg-clip-text text-transparent">
               YOUR GAME?
             </span>
           </h2>
-          <p className="text-xl text-gray-300 max-w-3xl mx-auto mb-8 leading-relaxed">
+          <p className="text-xl text-gray-400 max-w-3xl mx-auto mb-8 leading-relaxed">
             Contact Sri Lanka&apos;s #1 sports equipment distributor today. Our expert team is ready
             to help you find the perfect equipment for your needs.
           </p>
@@ -141,10 +139,10 @@ export default function ContactCTA() {
                     className="w-6 sm:w-8 h-6 sm:h-8 mx-auto mb-3 sm:mb-4 transition-transform group-hover:scale-110"
                     style={{ color: card.color }}
                   />
-                  <h3 className="font-bold mb-2 text-sm sm:text-base text-white group-hover:text-gray-100 transition-colors">
+                  <h3 className="font-bold mb-2 text-sm sm:text-base text-black group-hover:text-gray-500 transition-colors">
                     {card.title}
                   </h3>
-                  <p className="text-gray-300 text-sm sm:text-base group-hover:text-gray-200 transition-colors">
+                  <p className="text-gray-400 text-sm sm:text-base group-hover:text-gray-900 transition-colors">
                     {card.content}
                   </p>
                 </CardContent>
@@ -178,55 +176,6 @@ export default function ContactCTA() {
               message={SITE_CONFIG.whatsapp.message}
               aria-label="Contact us via WhatsApp"
             />
-          </div>
-        </motion.div>
-
-        {/* Social Media */}
-        <motion.div
-          initial={reducedMotion ? {} : { opacity: 0 }}
-          whileInView={{ opacity: 1 }}
-          viewport={{ once: true }}
-          transition={{ duration: reducedMotion ? 0 : 0.6, delay: reducedMotion ? 0 : 0.6 }}
-          className="text-center"
-        >
-          <p className="text-gray-300 mb-4">Follow us for the latest updates</p>
-          <div className="flex justify-center gap-4">
-            <motion.a
-              href={SITE_CONFIG.social.facebook}
-              title="Follow us on Facebook"
-              target="_blank"
-              rel="noopener noreferrer"
-              whileHover={!reducedMotion ? { scale: 1.1 } : {}}
-              whileTap={!reducedMotion ? { scale: 0.95 } : {}}
-              className="focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 rounded-full"
-              aria-label="Follow us on Facebook"
-            >
-              <Button
-                size="sm"
-                variant="outline"
-                className="border-white/30 text-white hover:bg-white/10 rounded-full p-3 transition-all duration-300 bg-transparent"
-              >
-                <Image src="/facebook.svg" alt="" width={20} height={20} className="w-5 h-5" />
-              </Button>
-            </motion.a>
-            <motion.a
-              href={SITE_CONFIG.social.instagram}
-              title="Follow us on Instagram"
-              target="_blank"
-              rel="noopener noreferrer"
-              whileHover={!reducedMotion ? { scale: 1.1 } : {}}
-              whileTap={!reducedMotion ? { scale: 0.95 } : {}}
-              className="focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 rounded-full"
-              aria-label="Follow us on Instagram"
-            >
-              <Button
-                size="sm"
-                variant="outline"
-                className="border-white/30 text-white hover:bg-white/10 rounded-full p-3 transition-all duration-300 bg-transparent"
-              >
-                <Image src="/instagram.svg" alt="" width={20} height={20} className="w-5 h-5" />
-              </Button>
-            </motion.a>
           </div>
         </motion.div>
       </div>

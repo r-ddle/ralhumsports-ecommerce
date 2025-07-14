@@ -3,399 +3,382 @@
 import { Badge } from '@/components/ui/badge'
 import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
-import { Calendar, Users, Award, TrendingUp, Target, Globe, Star, Trophy } from 'lucide-react'
+import {
+  Calendar,
+  Trophy,
+  Award,
+  TrendingUp,
+  Target,
+  Globe,
+  Star,
+  CheckCircle,
+  ArrowRight,
+  Package,
+  Sparkles,
+} from 'lucide-react'
+import Link from 'next/link'
 import { SITE_CONFIG } from '@/config/site-config'
+import { motion } from 'framer-motion'
+import { useEffect, useState } from 'react'
+import Image from 'next/image'
 
-// All data is now managed by SITE_CONFIG
-const iconMap = { Calendar, Trophy, Award, TrendingUp } as const
+// Icon mapping for dynamic icon rendering
+const iconMap = {
+  Calendar,
+  Trophy,
+  Award,
+  TrendingUp,
+  Target,
+  Globe,
+  Star,
+  CheckCircle,
+  Package,
+} as const
 type IconMapKey = keyof typeof iconMap
 
-const timeline = SITE_CONFIG.about.timeline.map((item) => ({
-  ...item,
-  icon: iconMap[item.icon as IconMapKey] || Calendar,
-}))
-const brands = SITE_CONFIG.brands.map((b) => b.name)
-const achievements = SITE_CONFIG.stats.map((stat, i) => {
-  // Map color to gradient for visual consistency
-  const gradients = [
-    'from-[#003DA5] to-[#0052CC]',
-    'from-[#FF3D00] to-[#FF6B47]',
-    'from-[#AEEA00] to-[#7CB342]',
-    'from-[#FFD700] to-[#FFA500]',
-  ]
-  const icons = [Calendar, Trophy, Globe, Star]
-  return {
-    number: stat.number,
-    label: stat.label,
-    icon: icons[i % icons.length],
-    gradient: gradients[i % gradients.length],
-  }
-})
+export default function BrandsPage() {
+  const [prefersReducedMotion, setPrefersReducedMotion] = useState(false)
 
-export default function AboutPage() {
-  // Detect reduced motion preference
-  const prefersReducedMotion =
-    typeof window !== 'undefined'
-      ? window.matchMedia('(prefers-reduced-motion: reduce)').matches
-      : false
+  // Performance optimization: Check for reduced motion preference
+  useEffect(() => {
+    const mediaQuery = window.matchMedia('(prefers-reduced-motion: reduce)')
+    setPrefersReducedMotion(mediaQuery.matches)
+
+    const handleChange = () => setPrefersReducedMotion(mediaQuery.matches)
+    mediaQuery.addEventListener('change', handleChange)
+    return () => mediaQuery.removeEventListener('change', handleChange)
+  }, [])
+
+  // Show all brands from SITE_CONFIG
+  const enhancedBrands = SITE_CONFIG.brands.map((brand, index) => ({
+    ...brand,
+    icon: iconMap[brand.icon as IconMapKey] || Trophy,
+    gradient: [
+      'from-brand-secondary to-secondary-600',
+      'from-brand-primary to-primary-600',
+      'from-brand-accent to-warning',
+      'from-green-500 to-emerald-500',
+      'from-purple-500 to-purple-600',
+      'from-cyan-500 to-cyan-600',
+    ][index % 6],
+  }))
+
+  const containerVariants = {
+    hidden: { opacity: 0 },
+    visible: {
+      opacity: 1,
+      transition: {
+        staggerChildren: prefersReducedMotion ? 0 : 0.1,
+        duration: prefersReducedMotion ? 0 : 0.6,
+      },
+    },
+  }
+
+  const itemVariants = {
+    hidden: { opacity: 0, y: prefersReducedMotion ? 0 : 20 },
+    visible: {
+      opacity: 1,
+      y: 0,
+      transition: { duration: prefersReducedMotion ? 0 : 0.5 },
+    },
+  }
 
   return (
-    <main className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-blue-50">
-      {/* Enhanced Hero Section */}
-      <section className="py-20 lg:py-24 bg-gradient-to-br from-[#003DA5] via-[#0052CC] to-[#1A1A1A] text-white relative overflow-hidden">
+    <main className="min-h-screen pt-8 bg-brand-background">
+      {/* Clean Hero Section - Like tracking page */}
+      <section className="relative py-16 sm:py-20 overflow-hidden bg-brand-background">
         {/* Animated Background Elements */}
-        <div className="absolute inset-0 opacity-20">
-          <div
-            className={`absolute top-20 left-20 w-32 h-32 bg-[#FFD700] rounded-full blur-3xl ${!prefersReducedMotion ? 'animate-pulse' : ''}`}
-          ></div>
-          <div
-            className={`absolute bottom-20 right-20 w-40 h-40 bg-[#AEEA00] rounded-full blur-3xl ${!prefersReducedMotion ? 'animate-pulse delay-1000' : ''}`}
-          ></div>
-          <div
-            className={`absolute top-1/2 left-1/3 w-24 h-24 bg-[#FF3D00] rounded-full blur-2xl ${!prefersReducedMotion ? 'animate-bounce' : ''}`}
-          ></div>
-        </div>
-
-        {/* Glassmorphism Overlay */}
-        <div className="absolute inset-0 bg-gradient-to-r from-black/20 via-transparent to-black/20 backdrop-blur-sm"></div>
-
-        <div className="max-w-7xl mx-auto px-4 relative z-10">
-          <div className="text-center">
-            <Badge
-              className={`bg-gradient-to-r from-[#FFD700] to-[#FFA500] text-[#1A1A1A] px-6 py-2 text-sm font-bold mb-4 shadow-lg backdrop-blur-sm border border-white/20 ${!prefersReducedMotion ? 'animate-fade-in-up' : ''}`}
-            >
-              {SITE_CONFIG.about.companyName?.toUpperCase() || 'OUR STORY'}
-            </Badge>
-            <h1
-              className={`text-4xl md:text-5xl lg:text-6xl font-black mb-6 bg-gradient-to-r from-white via-gray-100 to-white bg-clip-text text-transparent ${!prefersReducedMotion ? 'animate-fade-in-up delay-200' : ''}`}
-            >
-              {SITE_CONFIG.about.yearsOfExcellence || '75+'} YEARS OF
-              <span className="block bg-gradient-to-r from-[#FF3D00] to-[#FF6B47] bg-clip-text text-transparent">
-                EXCELLENCE
-              </span>
-            </h1>
-            <p
-              className={`text-xl text-gray-200 max-w-4xl mx-auto leading-relaxed ${!prefersReducedMotion ? 'animate-fade-in-up delay-400' : ''}`}
-            >
-              {SITE_CONFIG.about.description}
-            </p>
-          </div>
-        </div>
-      </section>
-
-      {/* Enhanced Achievement Stats */}
-      <section className="py-20 bg-white relative">
-        {/* Background Pattern */}
-        <div className="absolute inset-0 opacity-5">
-          <div
-            className="absolute inset-0"
-            style={{
-              backgroundImage: `radial-gradient(circle at 25% 25%, #003DA5 2px, transparent 2px), radial-gradient(circle at 75% 75%, #FF3D00 2px, transparent 2px)`,
-              backgroundSize: '50px 50px',
+        <div className="absolute inset-0 overflow-hidden pointer-events-none">
+          <motion.div
+            className="absolute top-1/4 left-1/6 w-72 h-72 bg-gradient-to-br from-brand-secondary/10 to-brand-primary/10 rounded-full blur-3xl"
+            animate={
+              prefersReducedMotion
+                ? {}
+                : {
+                    scale: [1, 1.2, 1],
+                    opacity: [0.3, 0.6, 0.3],
+                    x: [0, 30, 0],
+                    y: [0, -20, 0],
+                  }
+            }
+            transition={{
+              duration: 8,
+              repeat: Number.POSITIVE_INFINITY,
+              ease: 'easeInOut',
             }}
-          ></div>
+          />
+          <motion.div
+            className="absolute top-1/3 right-1/4 w-96 h-96 bg-gradient-to-br from-brand-accent/10 to-brand-primary/10 rounded-full blur-3xl"
+            animate={
+              prefersReducedMotion
+                ? {}
+                : {
+                    scale: [1, 0.8, 1],
+                    opacity: [0.4, 0.7, 0.4],
+                    x: [0, -40, 0],
+                    y: [0, 30, 0],
+                  }
+            }
+            transition={{
+              duration: 10,
+              repeat: Number.POSITIVE_INFINITY,
+              ease: 'easeInOut',
+              delay: 2,
+            }}
+          />
         </div>
 
         <div className="max-w-7xl mx-auto px-4 relative z-10">
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-8">
-            {achievements.map((achievement, index) => {
-              const IconComponent = achievement.icon
-              return (
-                <div
-                  key={index}
-                  className={`text-center p-6 rounded-2xl bg-white/80 backdrop-blur-md shadow-xl border border-white/20 ${!prefersReducedMotion ? 'hover:scale-105 transition-all duration-300 animate-fade-in-up' : ''}`}
-                  style={!prefersReducedMotion ? { animationDelay: `${index * 150}ms` } : {}}
-                >
-                  <div
-                    className={`w-16 h-16 bg-gradient-to-br ${achievement.gradient} rounded-full flex items-center justify-center mx-auto mb-4 shadow-2xl`}
-                  >
-                    <IconComponent className="w-8 h-8 text-white" />
-                  </div>
-                  <div
-                    className={`text-4xl md:text-5xl font-black bg-gradient-to-r ${achievement.gradient} bg-clip-text text-transparent mb-2`}
-                  >
-                    {achievement.number}
-                  </div>
-                  <p className="text-gray-600 font-medium leading-tight">{achievement.label}</p>
-                </div>
-              )
-            })}
-          </div>
-        </div>
-      </section>
-
-      {/* Enhanced Who We Are Section */}
-      <section className="py-20 bg-gradient-to-br from-gray-50 to-blue-50">
-        <div className="max-w-7xl mx-auto px-4">
-          <div className="grid lg:grid-cols-2 gap-12 items-center">
-            <div className={!prefersReducedMotion ? 'animate-fade-in-up' : ''}>
-              <Badge className="bg-gradient-to-r from-[#003DA5] to-[#0052CC] text-white px-4 py-2 text-sm font-bold mb-4 shadow-lg">
-                WHO WE ARE
-              </Badge>
-              <h2 className="text-4xl md:text-5xl font-black text-[#1A1A1A] mb-6 leading-tight">
-                {SITE_CONFIG.about.companyName?.toUpperCase() || 'RALHUM TRADING'}
-                <span className="block bg-gradient-to-r from-[#FF3D00] to-[#FF6B47] bg-clip-text text-transparent">
-                  COMPANY
-                </span>
-              </h2>
-              <div className="space-y-6 text-gray-600 leading-relaxed">
-                <p className="text-lg">
-                  <strong className="text-[#003DA5]">{SITE_CONFIG.about.companyName}</strong> was
-                  established in {SITE_CONFIG.about.established} primarily to take care of the
-                  sports and consumer industry. Originally, the parent company of{' '}
-                  {SITE_CONFIG.about.companyName} was{' '}
-                  <strong className="text-[#FF3D00]">
-                    {SITE_CONFIG.about.legacy.parentCompany}
-                  </strong>
-                  , which was formed more than {SITE_CONFIG.about.legacy.parentCompanyYears} years
-                  ago by S.M.M.Muhlar.
-                </p>
-                <p>{SITE_CONFIG.about.legacy.legacyText}</p>
-                <div className="bg-gradient-to-r from-[#003DA5]/10 to-[#FF3D00]/10 rounded-xl p-4 border-l-4 border-[#003DA5]">
-                  <p className="text-lg font-semibold text-[#003DA5]">
-                    It can now be proudly stated that {SITE_CONFIG.about.companyName} is the leading
-                    sports distributing company in Sri Lanka for over{' '}
-                    {SITE_CONFIG.about.yearsOfExcellence} years.
-                  </p>
-                </div>
-              </div>
-            </div>
-
-            <div
-              className={`relative ${!prefersReducedMotion ? 'animate-fade-in-up delay-200' : ''}`}
+          <motion.div
+            className="text-center"
+            variants={containerVariants}
+            initial="hidden"
+            animate="visible"
+          >
+            <motion.div
+              variants={itemVariants}
+              className="inline-flex items-center gap-2 px-6 py-3 rounded-full font-bold text-sm mb-6 bg-brand-accent text-white shadow-lg"
             >
-              <div className="bg-gradient-to-br from-[#003DA5] via-[#0052CC] to-[#FF3D00] rounded-2xl p-8 text-white shadow-2xl backdrop-blur-md">
-                <h3 className="text-2xl font-black mb-6 text-center">OUR GLOBAL BRANDS</h3>
-                <div className="grid grid-cols-2 gap-4">
-                  {brands.map((brand, index) => (
-                    <div
-                      key={brand}
-                      className={`bg-white/10 rounded-lg p-3 text-center backdrop-blur-sm border border-white/20 shadow-lg ${!prefersReducedMotion ? 'hover:scale-105 transition-all duration-300' : ''}`}
-                      style={!prefersReducedMotion ? { animationDelay: `${index * 100}ms` } : {}}
-                    >
-                      <span className="font-bold text-sm">{brand}</span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
+              <Sparkles className="w-4 h-4" />
+              PREMIUM BRANDS
+            </motion.div>
 
-      {/* Enhanced Timeline Section */}
-      <section className="py-20 bg-gradient-to-br from-[#1A1A1A] via-[#2D2D2D] to-[#1A1A1A] text-white relative overflow-hidden">
-        {/* Animated Background */}
-        <div className="absolute inset-0 opacity-20">
-          <div
-            className={`absolute top-10 left-10 w-32 h-32 bg-[#FFD700] rounded-full blur-3xl ${!prefersReducedMotion ? 'animate-float' : ''}`}
-          ></div>
-          <div
-            className={`absolute bottom-10 right-10 w-40 h-40 bg-[#AEEA00] rounded-full blur-3xl ${!prefersReducedMotion ? 'animate-float delay-1000' : ''}`}
-          ></div>
-        </div>
-
-        <div className="max-w-7xl mx-auto px-4 relative z-10">
-          <div className={`text-center mb-16 ${!prefersReducedMotion ? 'animate-fade-in-up' : ''}`}>
-            <Badge className="bg-gradient-to-r from-[#FFD700] to-[#FFA500] text-[#1A1A1A] px-6 py-2 text-sm font-bold mb-4 shadow-lg">
-              OUR JOURNEY
-            </Badge>
-            <h2 className="text-4xl md:text-5xl font-black mb-6 bg-gradient-to-r from-white via-gray-100 to-white bg-clip-text text-transparent">
-              HERITAGE
-              <span className="block bg-gradient-to-r from-[#AEEA00] to-[#7CB342] bg-clip-text text-transparent">
-                TIMELINE
+            <motion.h1
+              variants={itemVariants}
+              className="text-4xl sm:text-5xl md:text-6xl font-black mb-6 leading-tight"
+            >
+              <span className="text-text-primary">WORLD-CLASS</span>
+              <span className="block bg-gradient-to-r from-brand-primary to-brand-accent bg-clip-text text-transparent">
+                SPORTS BRANDS
               </span>
-            </h2>
-          </div>
+            </motion.h1>
 
-          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
-            {timeline.map((milestone, index) => {
-              const IconComponent = milestone.icon
-              return (
-                <Card
-                  key={index}
-                  className={`bg-white/5 border-white/10 backdrop-blur-md hover:bg-white/10 transition-all duration-500 shadow-2xl ${!prefersReducedMotion ? 'hover:scale-105 animate-fade-in-up' : ''}`}
-                  style={!prefersReducedMotion ? { animationDelay: `${index * 200}ms` } : {}}
-                >
-                  <CardContent className="p-6 text-center">
-                    <div
-                      className={`w-16 h-16 bg-gradient-to-br ${milestone.color} rounded-full flex items-center justify-center mx-auto mb-4 shadow-2xl`}
-                    >
-                      <IconComponent className="w-8 h-8 text-white" />
-                    </div>
-                    <div className="text-2xl font-black bg-gradient-to-r from-[#FFD700] to-[#FFA500] bg-clip-text text-transparent mb-2">
-                      {milestone.year}
-                    </div>
-                    <h3 className="text-xl font-bold mb-3 text-white">{milestone.title}</h3>
-                    <p className="text-gray-300 leading-relaxed text-sm">{milestone.description}</p>
-                  </CardContent>
-                </Card>
-              )
-            })}
-          </div>
+            <motion.p
+              variants={itemVariants}
+              className="text-lg sm:text-xl text-text-secondary max-w-2xl mx-auto leading-relaxed"
+            >
+              As Sri Lanka&apos;s #1 sports equipment distributor, we&apos;re proud to be the
+              exclusive distributor for premium sports brands trusted by professionals worldwide.
+            </motion.p>
+          </motion.div>
         </div>
       </section>
 
-      {/* Enhanced Present Day Section */}
-      <section className="py-20 bg-white">
+      {/* Enhanced Brand Statistics */}
+      <section className="py-16 bg-brand-surface">
         <div className="max-w-7xl mx-auto px-4">
-          <div className="grid lg:grid-cols-2 gap-12 items-center">
-            <div
-              className={`order-2 lg:order-1 ${!prefersReducedMotion ? 'animate-fade-in-up' : ''}`}
-            >
-              <div className="bg-gradient-to-br from-[#AEEA00] via-[#7CB342] to-[#FFD700] rounded-2xl p-8 text-[#1A1A1A] shadow-2xl">
-                <h3 className="text-2xl font-black mb-6">CURRENT LEADERSHIP</h3>
-                <div className="space-y-4">
-                  {[
-                    {
-                      icon: Users,
-                      title: 'M.M.Mohamed',
-                      desc: 'Current Head & Son of Founder Chairman',
-                    },
-                    {
-                      icon: Globe,
-                      title: 'Nationwide Network',
-                      desc: 'Well-spread dealer network across Sri Lanka',
-                    },
-                    {
-                      icon: TrendingUp,
-                      title: 'Export Operations',
-                      desc: 'Exporting sports brands to other countries',
-                    },
-                  ].map((item, index) => (
-                    <div
-                      key={item.title}
-                      className={`flex items-center gap-4 p-3 rounded-xl bg-[#1A1A1A]/10 backdrop-blur-sm ${!prefersReducedMotion ? 'hover:scale-[1.02] transition-all duration-300' : ''}`}
-                    >
-                      <div className="w-12 h-12 bg-[#1A1A1A] rounded-full flex items-center justify-center shadow-lg">
-                        <item.icon className="w-6 h-6 text-white" />
-                      </div>
-                      <div>
-                        <p className="font-bold">{item.title}</p>
-                        <p className="text-sm opacity-80">{item.desc}</p>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </div>
-
-            <div
-              className={`order-1 lg:order-2 ${!prefersReducedMotion ? 'animate-fade-in-up delay-200' : ''}`}
-            >
-              <Badge className="bg-gradient-to-r from-[#FF3D00] to-[#FF6B47] text-white px-4 py-2 text-sm font-bold mb-4 shadow-lg">
-                RALHUM PRESENTLY
-              </Badge>
-              <h2 className="text-4xl md:text-5xl font-black text-[#1A1A1A] mb-6 leading-tight">
-                LEADING THE
-                <span className="block bg-gradient-to-r from-[#003DA5] to-[#0052CC] bg-clip-text text-transparent">
-                  INDUSTRY
-                </span>
-              </h2>
-              <div className="space-y-6 text-gray-600 leading-relaxed">
-                <p className="text-lg">
-                  Ralhum currently headed by <strong className="text-[#003DA5]">M.M.Mohamed</strong>
-                  , the son of the founder company chairman S.M.M.Muhlar, is the leading sports
-                  equipment distributor in Sri Lanka having in its portfolio all the leading brands.
-                </p>
-                <p>
-                  With a well-spread dealer network right across the country, we ensure that quality
-                  sports equipment reaches every corner of Sri Lanka. We also export some of our
-                  sports brands to other countries, expanding our reach beyond national borders.
-                </p>
-                <div className="bg-gradient-to-r from-[#003DA5]/10 to-[#FF3D00]/10 rounded-xl p-4 border-l-4 border-[#003DA5] backdrop-blur-sm">
-                  <p className="font-semibold text-[#003DA5]">
-                    &quot;Our commitment to excellence and quality has made us the trusted choice
-                    for athletes, schools, and sports enthusiasts across Sri Lanka.&quot;
-                  </p>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* Enhanced Vision Section */}
-      <section className="py-20 bg-gradient-to-br from-[#003DA5] via-[#0052CC] to-[#FF3D00] text-white relative overflow-hidden">
-        {/* Animated Background */}
-        <div className="absolute inset-0 opacity-20">
-          <div
-            className={`absolute top-10 left-10 w-20 h-20 bg-white rounded-full blur-2xl ${!prefersReducedMotion ? 'animate-float' : ''}`}
-          ></div>
-          <div
-            className={`absolute bottom-10 right-10 w-32 h-32 bg-[#FFD700] rounded-full blur-3xl ${!prefersReducedMotion ? 'animate-float delay-1000' : ''}`}
-          ></div>
-        </div>
-
-        <div className="max-w-7xl mx-auto px-4 relative z-10">
-          <div className={`text-center mb-16 ${!prefersReducedMotion ? 'animate-fade-in-up' : ''}`}>
-            <Badge className="bg-white text-[#003DA5] px-6 py-2 text-sm font-bold mb-4 shadow-lg">
-              RALHUM IN THE FUTURE
-            </Badge>
-            <h2 className="text-4xl md:text-5xl font-black mb-6 bg-gradient-to-r from-white via-gray-100 to-white bg-clip-text text-transparent">
-              OUR
-              <span className="block bg-gradient-to-r from-[#FFD700] to-[#FFA500] bg-clip-text text-transparent">
-                VISION
-              </span>
-            </h2>
-          </div>
-
-          <div className="grid lg:grid-cols-3 gap-8">
+          <motion.div
+            className="grid grid-cols-2 lg:grid-cols-4 gap-6"
+            variants={containerVariants}
+            initial="hidden"
+            animate="visible"
+          >
             {[
               {
-                icon: Target,
-                title: 'HOUSEHOLD NAME',
-                description:
-                  'To make Ralhum a household name for sports having a very solid reputation in whatever sports it serves and to give consumers the best quality at an affordable price.',
-                gradient: 'from-[#FFD700] to-[#FFA500]',
-              },
-              {
+                number: `${SITE_CONFIG.brands.length}+`,
+                label: 'Premium Brands',
                 icon: Trophy,
-                title: 'RALHUM ELITE SQUAD',
-                description:
-                  'To have under our sponsorship a leading squad of players using the particular brands which Ralhum distributes. This elite squad will carry our name forward.',
-                gradient: 'from-[#AEEA00] to-[#7CB342]',
+                color: 'text-brand-secondary',
               },
               {
-                icon: Globe,
-                title: 'REGIONAL EXPANSION',
-                description:
-                  'To expand the horizons of Ralhum to serve regions like South Asia and the Middle East with products and brands which are in demand.',
-                gradient: 'from-[#FF3D00] to-[#E53935]',
+                number: SITE_CONFIG.about.yearsOfExcellence + '+',
+                label: 'Years of Excellence',
+                icon: Calendar,
+                color: 'text-brand-primary',
               },
-            ].map((vision, index) => (
-              <Card
-                key={index}
-                className={`bg-white/10 border-white/20 backdrop-blur-md shadow-2xl ${!prefersReducedMotion ? 'hover:scale-105 transition-all duration-500 animate-fade-in-up' : ''}`}
-                style={!prefersReducedMotion ? { animationDelay: `${index * 200}ms` } : {}}
+              {
+                number: '1000+',
+                label: 'Products Available',
+                icon: Package,
+                color: 'text-brand-accent',
+              },
+              {
+                number: '10K+',
+                label: 'Happy Customers',
+                icon: CheckCircle,
+                color: 'text-green-600',
+              },
+            ].map((stat, index) => (
+              <motion.div
+                key={stat.label}
+                variants={itemVariants}
+                className="text-center p-6 rounded-2xl bg-brand-background shadow-xl border border-brand-border hover:shadow-2xl transition-all duration-300"
               >
-                <CardContent className="p-8 text-center">
-                  <div
-                    className={`w-16 h-16 bg-gradient-to-br ${vision.gradient} rounded-full flex items-center justify-center mx-auto mb-4 shadow-2xl`}
-                  >
-                    <vision.icon className="w-8 h-8 text-white" />
-                  </div>
-                  <h3 className="text-xl font-bold mb-4 text-white">{vision.title}</h3>
-                  <p className="text-gray-200 leading-relaxed">{vision.description}</p>
-                </CardContent>
-              </Card>
+                <stat.icon className={`w-8 h-8 ${stat.color} mx-auto mb-4`} />
+                <div className={`text-4xl md:text-5xl font-black ${stat.color} mb-2`}>
+                  {stat.number}
+                </div>
+                <p className="text-text-secondary font-medium leading-tight">{stat.label}</p>
+              </motion.div>
             ))}
-          </div>
+          </motion.div>
+        </div>
+      </section>
 
-          <div
-            className={`text-center mt-12 ${!prefersReducedMotion ? 'animate-fade-in-up delay-600' : ''}`}
+      {/* Enhanced Brands Grid - Show All Brands */}
+      <section className="py-16 bg-brand-background">
+        <div className="max-w-7xl mx-auto px-4">
+          <motion.div
+            className="text-center mb-12"
+            variants={containerVariants}
+            initial="hidden"
+            animate="visible"
           >
-            <p className="text-xl mb-8 opacity-90 leading-relaxed">
-              Carrying out operations in an ethically professional manner while building the future
-              of sports in Sri Lanka
+            <Badge className="bg-gradient-to-r from-brand-primary to-primary-600 text-white px-6 py-2 text-sm font-bold mb-4 shadow-lg">
+              OUR EXCLUSIVE PARTNERS
+            </Badge>
+            <h2 className="text-4xl md:text-5xl font-black text-text-primary mb-6 leading-tight">
+              TRUSTED BY
+              <span className="block bg-gradient-to-r from-brand-secondary to-secondary-600 bg-clip-text text-transparent">
+                PROFESSIONALS
+              </span>
+            </h2>
+            <p className="text-xl text-text-secondary max-w-3xl mx-auto leading-relaxed">
+              From cricket legends to Olympic athletes, our partner brands are chosen by champions
+              worldwide.
             </p>
-            <Button
-              size="lg"
-              className={`bg-white text-[#003DA5] hover:bg-gray-100 px-8 py-4 text-lg font-bold rounded-full shadow-2xl ${!prefersReducedMotion ? 'hover:scale-105 transition-all duration-300' : ''}`}
+          </motion.div>
+
+          {/* Display ALL brands from SITE_CONFIG */}
+          <motion.div
+            className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-8"
+            variants={containerVariants}
+            initial="hidden"
+            animate="visible"
+          >
+            {enhancedBrands.map((brand, index) => (
+              <motion.div
+                key={brand.name}
+                variants={itemVariants}
+                className="group bg-brand-surface rounded-3xl p-8 shadow-xl hover:shadow-2xl border border-brand-border hover:border-gray-200 transition-all duration-500 hover:scale-[1.02]"
+              >
+                {/* Brand Header */}
+                <div className="flex items-start justify-between mb-6">
+                  <div className="flex-1">
+                    <div className="flex items-center gap-3 mb-2">
+                      <div
+                        className={`w-12 h-12 bg-gradient-to-br rounded-full flex items-center justify-center shadow-lg overflow-hidden`}
+                      >
+                        {brand.image ? (
+                          <Image
+                            src={brand.image}
+                            alt={brand.name + ' logo'}
+                            width={48}
+                            height={48}
+                            className="object-contain w-10 h-10"
+                            unoptimized
+                          />
+                        ) : (
+                          <brand.icon className="w-6 h-6 text-white" />
+                        )}
+                      </div>
+                      <div>
+                        <h3 className="text-2xl font-black text-text-primary">{brand.name}</h3>
+                        <p className="text-sm text-text-secondary font-medium">{brand.heritage}</p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Brand Description */}
+                <div className="mb-6">
+                  <h4 className="text-lg font-bold text-brand-secondary mb-2">{brand.tagline}</h4>
+                  <p className="text-text-secondary leading-relaxed mb-4 line-clamp-3">
+                    {brand.description}
+                  </p>
+                </div>
+
+                {/* Achievements */}
+                <div className="mb-6">
+                  <h5 className="text-sm font-bold text-text-primary mb-3 uppercase tracking-wide">
+                    Key Achievements
+                  </h5>
+                  <div className="grid grid-cols-1 gap-2">
+                    {brand.achievements.slice(0, 3).map((achievement, i) => (
+                      <div key={i} className="flex items-center gap-2 text-sm">
+                        <CheckCircle className="w-4 h-4 text-green-500 flex-shrink-0" />
+                        <span className="text-text-secondary">{achievement}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Products */}
+                <div className="mb-6">
+                  <h5 className="text-sm font-bold text-text-primary mb-3 uppercase tracking-wide">
+                    Product Range
+                  </h5>
+                  <div className="flex flex-wrap gap-2">
+                    {(brand.products ?? []).slice(0, 3).map((product) => (
+                      <Badge
+                        key={product.name}
+                        variant="outline"
+                        className="text-xs border-brand-border text-text-secondary hover:border-brand-secondary hover:text-brand-secondary transition-colors duration-200"
+                      >
+                        {product.name}
+                      </Badge>
+                    ))}
+                  </div>
+                </div>
+
+                {/* CTA Button */}
+                <Button
+                  size="sm"
+                  className={`w-full bg-gradient-to-r ${brand.gradient} text-white hover:shadow-lg transition-all duration-200 group-hover:scale-105 focus-visible:ring-2 focus-visible:ring-brand-secondary`}
+                  asChild
+                >
+                  <Link href={`/products?brand=${brand.slug}`}>
+                    Explore {brand.name} Products
+                    <ArrowRight className="w-4 h-4 ml-2 transition-transform group-hover:translate-x-1" />
+                  </Link>
+                </Button>
+              </motion.div>
+            ))}
+          </motion.div>
+        </div>
+      </section>
+
+      {/* Clean CTA Section */}
+      <section className="py-16 bg-brand-surface">
+        <div className="max-w-4xl mx-auto px-4 text-center">
+          <motion.div variants={containerVariants} initial="hidden" animate="visible">
+            <motion.h2
+              variants={itemVariants}
+              className="text-3xl md:text-4xl font-black mb-4 text-text-primary leading-tight"
             >
-              JOIN OUR JOURNEY
-            </Button>
-          </div>
+              Ready to Experience Premium Quality?
+            </motion.h2>
+            <motion.p
+              variants={itemVariants}
+              className="text-xl mb-8 text-text-secondary leading-relaxed"
+            >
+              Discover why professional athletes and sports enthusiasts across Sri Lanka choose our
+              authentic equipment.
+            </motion.p>
+            <motion.div
+              variants={itemVariants}
+              className="flex flex-col sm:flex-row gap-4 justify-center"
+            >
+              <Button
+                size="lg"
+                className="bg-gradient-to-r from-brand-primary to-primary-600 hover:from-primary-600 hover:to-brand-primary text-white font-bold px-8 py-4 text-lg rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-[1.02]"
+                asChild
+              >
+                <Link href="/products">
+                  Shop Now
+                  <ArrowRight className="w-5 h-5 ml-2" />
+                </Link>
+              </Button>
+              <Button
+                variant="outline"
+                size="lg"
+                className="border-2 border-brand-secondary text-brand-secondary hover:bg-brand-secondary hover:text-white font-bold px-8 py-4 text-lg rounded-xl transition-all duration-300 hover:scale-[1.02]"
+                asChild
+              >
+                <Link href="/contact">Get Expert Advice</Link>
+              </Button>
+            </motion.div>
+          </motion.div>
         </div>
       </section>
     </main>

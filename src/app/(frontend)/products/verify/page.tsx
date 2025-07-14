@@ -18,11 +18,13 @@ import {
   Award,
   Zap,
   AlertCircle,
+  Sparkles,
 } from 'lucide-react'
 import { toast } from 'sonner'
 import Link from 'next/link'
 import { ProductListItem } from '@/types/api'
 import Image from 'next/image'
+import { motion } from 'framer-motion'
 
 export default function ProductVerificationPage() {
   const [sku, setSku] = useState('')
@@ -158,97 +160,155 @@ export default function ProductVerificationPage() {
 
   const verificationStatus = getVerificationStatus()
 
+  const containerVariants = {
+    hidden: { opacity: 0 },
+    visible: {
+      opacity: 1,
+      transition: {
+        staggerChildren: prefersReducedMotion ? 0 : 0.1,
+        duration: prefersReducedMotion ? 0 : 0.6,
+      },
+    },
+  }
+
+  const itemVariants = {
+    hidden: { opacity: 0, y: prefersReducedMotion ? 0 : 20 },
+    visible: {
+      opacity: 1,
+      y: 0,
+      transition: { duration: prefersReducedMotion ? 0 : 0.5 },
+    },
+  }
+
   return (
-    <main className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-blue-50">
-      {/* Enhanced Hero Section */}
-      <section className="py-16 lg:py-20 bg-gradient-to-br from-[#003DA5] via-[#0052CC] to-[#1A1A1A] text-white relative overflow-hidden">
+    <main className="min-h-screen pt-8 bg-brand-background">
+      {/* Clean Hero Section - Like tracking page */}
+      <section className="relative py-16 sm:py-20 overflow-hidden bg-brand-background">
         {/* Animated Background Elements */}
-        <div className="absolute inset-0 opacity-20">
-          <div
-            className={`absolute top-20 left-20 w-32 h-32 bg-[#FFD700] rounded-full blur-3xl ${!prefersReducedMotion ? 'animate-pulse' : ''}`}
-          ></div>
-          <div
-            className={`absolute bottom-20 right-20 w-40 h-40 bg-[#AEEA00] rounded-full blur-3xl ${!prefersReducedMotion ? 'animate-pulse delay-1000' : ''}`}
-          ></div>
-          <div
-            className={`absolute top-1/2 left-1/3 w-24 h-24 bg-[#FF3D00] rounded-full blur-2xl ${!prefersReducedMotion ? 'animate-bounce' : ''}`}
-          ></div>
+        <div className="absolute inset-0 overflow-hidden pointer-events-none">
+          <motion.div
+            className="absolute top-1/4 left-1/6 w-72 h-72 bg-gradient-to-br from-brand-secondary/10 to-brand-primary/10 rounded-full blur-3xl"
+            animate={
+              prefersReducedMotion
+                ? {}
+                : {
+                    scale: [1, 1.2, 1],
+                    opacity: [0.3, 0.6, 0.3],
+                    x: [0, 30, 0],
+                    y: [0, -20, 0],
+                  }
+            }
+            transition={{
+              duration: 8,
+              repeat: Number.POSITIVE_INFINITY,
+              ease: 'easeInOut',
+            }}
+          />
+          <motion.div
+            className="absolute top-1/3 right-1/4 w-96 h-96 bg-gradient-to-br from-brand-accent/10 to-brand-primary/10 rounded-full blur-3xl"
+            animate={
+              prefersReducedMotion
+                ? {}
+                : {
+                    scale: [1, 0.8, 1],
+                    opacity: [0.4, 0.7, 0.4],
+                    x: [0, -40, 0],
+                    y: [0, 30, 0],
+                  }
+            }
+            transition={{
+              duration: 10,
+              repeat: Number.POSITIVE_INFINITY,
+              ease: 'easeInOut',
+              delay: 2,
+            }}
+          />
         </div>
 
-        {/* Glassmorphism Overlay */}
-        <div className="absolute inset-0 bg-gradient-to-r from-black/20 via-transparent to-black/20 backdrop-blur-sm"></div>
+        <div className="max-w-7xl mx-auto px-4 relative z-10">
+          <motion.div
+            className="text-center"
+            variants={containerVariants}
+            initial="hidden"
+            animate="visible"
+          >
+            <motion.div
+              variants={itemVariants}
+              className="inline-flex items-center gap-2 px-6 py-3 rounded-full font-bold text-sm mb-6 bg-brand-accent text-white shadow-lg"
+            >
+              <Sparkles className="w-4 h-4" />
+              PRODUCT VERIFICATION
+            </motion.div>
 
-        <div className="max-w-7xl mx-auto px-4 text-center relative z-10">
-          <div
-            className={`w-20 h-20 bg-gradient-to-br from-[#FFD700] to-[#FFA500] rounded-full flex items-center justify-center mx-auto mb-6 shadow-2xl ${!prefersReducedMotion ? 'animate-bounce' : ''}`}
-          >
-            <Shield className="w-10 h-10 text-[#1A1A1A]" />
-          </div>
-          <h1
-            className={`text-4xl md:text-5xl lg:text-6xl font-black mb-4 bg-gradient-to-r from-white via-gray-100 to-white bg-clip-text text-transparent ${!prefersReducedMotion ? 'animate-fade-in-up' : ''}`}
-          >
-            PRODUCT
-            <span className="block bg-gradient-to-r from-[#FF3D00] to-[#FF6B47] bg-clip-text text-transparent">
-              VERIFICATION
-            </span>
-          </h1>
-          <p
-            className={`text-xl text-gray-200 max-w-3xl mx-auto mb-8 leading-relaxed ${!prefersReducedMotion ? 'animate-fade-in-up delay-200' : ''}`}
-          >
-            Verify the authenticity of your sports equipment using our secure verification system.
-            Protect yourself from counterfeit products.
-          </p>
+            <motion.h1
+              variants={itemVariants}
+              className="text-4xl sm:text-5xl md:text-6xl font-black mb-6 leading-tight"
+            >
+              <span className="text-text-primary">PRODUCT</span>
+              <span className="block bg-gradient-to-r from-brand-primary to-brand-accent bg-clip-text text-transparent">
+                VERIFICATION
+              </span>
+            </motion.h1>
 
-          {/* Enhanced Trust Indicators */}
-          <div
-            className={`grid grid-cols-2 md:grid-cols-3 gap-6 max-w-4xl mx-auto ${!prefersReducedMotion ? 'animate-fade-in-up delay-400' : ''}`}
-          >
-            {[
-              {
-                icon: Shield,
-                label: 'Authentic Products',
-                desc: '100% Genuine',
-                gradient: 'from-[#FFD700] to-[#FFA500]',
-              },
-              {
-                icon: Award,
-                label: 'Official Distributor',
-                desc: 'Authorized Seller',
-                gradient: 'from-[#AEEA00] to-[#7CB342]',
-              },
-              {
-                icon: CheckCircle,
-                label: 'Instant Verification',
-                desc: 'Real-time Check',
-                gradient: 'from-[#FF3D00] to-[#E53935]',
-              },
-            ].map((item, index) => (
-              <div
-                key={item.label}
-                className={`text-center p-4 rounded-2xl bg-white/10 backdrop-blur-md border border-white/20 shadow-xl ${index === 2 ? 'md:block hidden' : ''} ${!prefersReducedMotion ? 'hover:scale-105 transition-all duration-300' : ''}`}
-              >
-                <div
-                  className={`w-12 h-12 bg-gradient-to-br ${item.gradient} rounded-full flex items-center justify-center mx-auto mb-3 shadow-lg`}
+            <motion.p
+              variants={itemVariants}
+              className="text-lg sm:text-xl text-text-secondary max-w-2xl mx-auto leading-relaxed mb-8"
+            >
+              Verify the authenticity of your sports equipment using our secure verification system.
+              Protect yourself from counterfeit products.
+            </motion.p>
+
+            {/* Enhanced Trust Indicators */}
+            <motion.div
+              variants={containerVariants}
+              className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-4xl mx-auto"
+            >
+              {[
+                {
+                  icon: Shield,
+                  label: 'Authentic Products',
+                  desc: '100% Genuine',
+                  color: 'text-brand-accent',
+                },
+                {
+                  icon: Award,
+                  label: 'Official Distributor',
+                  desc: 'Authorized Seller',
+                  color: 'text-brand-primary',
+                },
+                {
+                  icon: CheckCircle,
+                  label: 'Instant Verification',
+                  desc: 'Real-time Check',
+                  color: 'text-brand-secondary',
+                },
+              ].map((item, index) => (
+                <motion.div
+                  key={item.label}
+                  variants={itemVariants}
+                  className="text-center p-4 rounded-2xl bg-brand-surface border border-brand-border shadow-lg hover:shadow-xl transition-all duration-300"
                 >
-                  <item.icon className="w-6 h-6 text-white" />
-                </div>
-                <div className="text-sm font-bold text-white">{item.label}</div>
-                <div className="text-xs text-gray-300">{item.desc}</div>
-              </div>
-            ))}
-          </div>
+                  <div
+                    className={`w-12 h-12 ${item.color} bg-brand-background rounded-full flex items-center justify-center mx-auto mb-3 shadow border-2 border-current`}
+                  >
+                    <item.icon className="w-6 h-6" />
+                  </div>
+                  <div className="text-sm font-bold text-text-primary">{item.label}</div>
+                  <div className="text-xs text-text-secondary">{item.desc}</div>
+                </motion.div>
+              ))}
+            </motion.div>
+          </motion.div>
         </div>
       </section>
 
       <section className="py-16 lg:py-20">
         <div className="max-w-4xl mx-auto px-4">
           {/* Enhanced Verification Form */}
-          <Card
-            className={`mb-8 bg-white/80 backdrop-blur-md shadow-2xl border border-white/20 ${!prefersReducedMotion ? 'animate-fade-in-up hover:shadow-3xl transition-all duration-300' : ''}`}
-          >
-            <CardHeader className="bg-gradient-to-r from-[#003DA5]/5 to-[#FF3D00]/5">
+          <Card className="mb-8 bg-brand-surface shadow-2xl border border-brand-border">
+            <CardHeader className="bg-brand-background">
               <CardTitle className="flex items-center gap-2 text-xl">
-                <div className="w-8 h-8 bg-gradient-to-br from-[#003DA5] to-[#0052CC] rounded-lg flex items-center justify-center">
+                <div className="w-8 h-8 bg-brand-secondary rounded-lg flex items-center justify-center">
                   <Search className="w-4 h-4 text-white" />
                 </div>
                 Verify Product Authenticity
@@ -257,7 +317,7 @@ export default function ProductVerificationPage() {
             <CardContent className="p-6">
               <form onSubmit={handleVerifyProduct} className="space-y-6">
                 <div>
-                  <Label htmlFor="sku" className="text-base font-semibold text-gray-700">
+                  <Label htmlFor="sku" className="text-base font-semibold text-text-primary">
                     Product SKU Code
                   </Label>
                   <div className="flex gap-3 mt-3">
@@ -267,13 +327,13 @@ export default function ProductVerificationPage() {
                       value={sku}
                       onChange={(e) => setSku(e.target.value.toUpperCase())}
                       placeholder="Enter SKU code (e.g., RS-123456-ABC)"
-                      className="flex-1 font-mono text-lg p-4 border-2 border-gray-200 focus:border-[#003DA5] rounded-xl bg-white/80 backdrop-blur-sm"
+                      className="flex-1 font-mono text-lg p-4 border-2 border-brand-border focus:border-brand-secondary rounded-xl bg-brand-background"
                       disabled={loading}
                     />
                     <Button
                       type="submit"
                       disabled={loading}
-                      className={`bg-gradient-to-r from-[#003DA5] to-[#0052CC] hover:from-[#0052CC] hover:to-[#003DA5] text-white px-8 py-4 text-lg font-bold rounded-xl shadow-lg ${!prefersReducedMotion ? 'hover:scale-105 transition-all duration-300' : ''}`}
+                      className="bg-gradient-to-r from-brand-secondary to-secondary-600 hover:from-secondary-600 hover:to-brand-secondary text-white px-8 py-4 text-lg font-bold rounded-xl shadow-lg hover:scale-105 transition-all duration-300"
                     >
                       {loading ? (
                         <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
@@ -305,7 +365,7 @@ export default function ProductVerificationPage() {
           {/* Enhanced Verification Result */}
           {verificationStatus && (
             <Card
-              className={`mb-8 ${verificationStatus.borderColor} border-2 ${verificationStatus.bgColor} backdrop-blur-md shadow-2xl ${verificationStatus.glowColor} ${!prefersReducedMotion ? 'animate-fade-in-up' : ''}`}
+              className={`mb-8 ${verificationStatus.borderColor} border-2 ${verificationStatus.bgColor} shadow-2xl ${verificationStatus.glowColor}`}
             >
               <CardContent className="p-6">
                 <div className="flex items-start gap-4">
@@ -323,9 +383,7 @@ export default function ProductVerificationPage() {
                     </p>
 
                     {verificationStatus.type === 'not-found' && (
-                      <Alert
-                        className={`bg-white/80 border-red-200 backdrop-blur-sm ${!prefersReducedMotion ? 'animate-shake' : ''}`}
-                      >
+                      <Alert className="bg-white/80 border-red-200">
                         <AlertCircle className="h-4 w-4 text-red-600" />
                         <AlertDescription className="text-red-800">
                           <strong>Important:</strong> If you purchased this product from Ralhum
@@ -342,9 +400,7 @@ export default function ProductVerificationPage() {
 
           {/* Enhanced Product Details */}
           {product && (
-            <Card
-              className={`mb-8 bg-white/80 backdrop-blur-md shadow-2xl border border-white/20 ${!prefersReducedMotion ? 'animate-fade-in-up' : ''}`}
-            >
+            <Card className="mb-8 bg-brand-surface shadow-2xl border border-brand-border">
               <CardHeader className="bg-gradient-to-r from-green-50 to-emerald-50">
                 <CardTitle className="flex items-center gap-2 text-xl">
                   <div className="w-8 h-8 bg-gradient-to-br from-green-500 to-emerald-500 rounded-lg flex items-center justify-center">
@@ -357,7 +413,7 @@ export default function ProductVerificationPage() {
                 <div className="grid md:grid-cols-2 gap-8">
                   {/* Enhanced Product Image */}
                   <div className="space-y-4">
-                    <div className="aspect-square bg-gradient-to-br from-gray-100 to-gray-200 rounded-2xl overflow-hidden shadow-xl">
+                    <div className="aspect-square bg-brand-background rounded-2xl overflow-hidden shadow-xl border border-brand-border">
                       <Image
                         width={600}
                         height={400}
@@ -370,7 +426,7 @@ export default function ProductVerificationPage() {
                         alt={
                           product.images[0]?.image?.alt || product.images[0]?.alt || product.name
                         }
-                        className={`w-full h-full object-cover ${!prefersReducedMotion ? 'hover:scale-105 transition-transform duration-500' : ''}`}
+                        className="w-full h-full object-cover hover:scale-105 transition-transform duration-500"
                       />
                     </div>
                     {product.images.length > 1 && (
@@ -382,7 +438,7 @@ export default function ProductVerificationPage() {
                               height={100}
                               src={image.image?.url || image.url || 'https://placehold.co/100x100'}
                               alt={image.image?.alt || image.alt || product.name}
-                              className={`w-20 h-20 object-cover rounded-lg shadow-md ${!prefersReducedMotion ? 'hover:scale-110 transition-transform duration-300' : ''}`}
+                              className="w-20 h-20 object-cover rounded-lg shadow-md hover:scale-110 transition-transform duration-300"
                             />
                           </div>
                         ))}
@@ -394,37 +450,37 @@ export default function ProductVerificationPage() {
                   <div className="space-y-6">
                     {product.brand && (
                       <div>
-                        <Badge className="bg-gradient-to-r from-[#003DA5] to-[#0052CC] text-white px-4 py-2 text-sm font-bold shadow-lg">
+                        <Badge className="bg-brand-secondary text-white px-4 py-2 text-sm font-bold shadow-lg">
                           {product.brand.name}
                         </Badge>
                       </div>
                     )}
 
-                    <h2 className="text-3xl font-black text-gray-900 leading-tight">
+                    <h2 className="text-3xl font-black text-text-primary leading-tight">
                       {product.name}
                     </h2>
 
                     <div className="space-y-3">
                       <div className="flex items-baseline gap-3">
-                        <span className="text-3xl font-black bg-gradient-to-r from-[#003DA5] to-[#0052CC] bg-clip-text text-transparent">
+                        <span className="text-3xl font-black bg-gradient-to-r from-brand-secondary to-secondary-600 bg-clip-text text-transparent">
                           Rs. {product.price.toLocaleString('en-LK')}
                         </span>
                         {product.originalPrice && product.originalPrice > product.price && (
-                          <span className="text-xl text-gray-500 line-through">
+                          <span className="text-xl text-text-secondary line-through">
                             Rs. {product.originalPrice.toLocaleString('en-LK')}
                           </span>
                         )}
                       </div>
                     </div>
 
-                    <div className="space-y-4 bg-gradient-to-r from-gray-50 to-blue-50 rounded-xl p-4">
+                    <div className="space-y-4 bg-brand-background rounded-xl p-4 border border-brand-border">
                       {[
                         { label: 'SKU', value: product.sku, mono: true },
                         { label: 'Status', value: product.status, badge: true },
                         { label: 'Category', value: product.category?.name },
                       ].map((item) => (
                         <div key={item.label} className="flex justify-between items-center">
-                          <span className="font-semibold text-gray-700">{item.label}:</span>
+                          <span className="font-semibold text-text-primary">{item.label}:</span>
                           {item.badge ? (
                             <Badge
                               className={
@@ -444,7 +500,7 @@ export default function ProductVerificationPage() {
                             </Badge>
                           ) : (
                             <span
-                              className={`${item.mono ? 'font-mono bg-gray-100 px-2 py-1 rounded text-sm' : 'font-medium'} text-gray-900`}
+                              className={`${item.mono ? 'font-mono bg-brand-background px-2 py-1 rounded text-sm border' : 'font-medium'} text-text-primary`}
                             >
                               {item.value}
                             </span>
@@ -457,7 +513,7 @@ export default function ProductVerificationPage() {
                     <div className="flex flex-col sm:flex-row gap-4 pt-4">
                       <Button
                         size="lg"
-                        className={`bg-gradient-to-r from-[#003DA5] to-[#0052CC] hover:from-[#0052CC] hover:to-[#003DA5] text-white flex-1 py-4 text-lg font-bold rounded-xl shadow-lg ${!prefersReducedMotion ? 'hover:scale-105 transition-all duration-300' : ''}`}
+                        className="bg-gradient-to-r from-brand-secondary to-secondary-600 hover:from-secondary-600 hover:to-brand-secondary text-white flex-1 py-4 text-lg font-bold rounded-xl shadow-lg hover:scale-105 transition-all duration-300"
                         asChild
                       >
                         <Link href={`/products/${product.slug}`}>
@@ -475,12 +531,10 @@ export default function ProductVerificationPage() {
           {/* Enhanced Information Cards */}
           <div className="grid md:grid-cols-2 gap-8">
             {/* Why Verify Card */}
-            <Card
-              className={`bg-white/80 backdrop-blur-md shadow-2xl border border-white/20 ${!prefersReducedMotion ? 'hover:shadow-3xl transition-all duration-300' : ''}`}
-            >
+            <Card className="bg-brand-surface shadow-2xl border border-brand-border hover:shadow-3xl transition-all duration-300">
               <CardHeader className="bg-gradient-to-r from-blue-50 to-indigo-50">
                 <CardTitle className="flex items-center gap-2 text-xl">
-                  <div className="w-8 h-8 bg-gradient-to-br from-[#003DA5] to-[#0052CC] rounded-lg flex items-center justify-center">
+                  <div className="w-8 h-8 bg-brand-secondary rounded-lg flex items-center justify-center">
                     <Shield className="w-4 h-4 text-white" />
                   </div>
                   Why Verify Products?
@@ -507,7 +561,7 @@ export default function ProductVerificationPage() {
                 ].map((item, index) => (
                   <div
                     key={item.title}
-                    className={`flex items-start gap-3 p-3 rounded-xl bg-gradient-to-r from-green-50 to-emerald-50 border border-green-100 ${!prefersReducedMotion ? 'hover:scale-[1.02] transition-all duration-300' : ''}`}
+                    className="flex items-start gap-3 p-3 rounded-xl bg-gradient-to-r from-green-50 to-emerald-50 border border-green-100 hover:scale-[1.02] transition-all duration-300"
                   >
                     <div className="w-6 h-6 bg-gradient-to-br from-green-500 to-emerald-500 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
                       <CheckCircle className="w-3 h-3 text-white" />
@@ -522,19 +576,17 @@ export default function ProductVerificationPage() {
             </Card>
 
             {/* Contact Support Card */}
-            <Card
-              className={`bg-white/80 backdrop-blur-md shadow-2xl border border-white/20 ${!prefersReducedMotion ? 'hover:shadow-3xl transition-all duration-300' : ''}`}
-            >
+            <Card className="bg-brand-surface shadow-2xl border border-brand-border hover:shadow-3xl transition-all duration-300">
               <CardHeader className="bg-gradient-to-r from-orange-50 to-red-50">
                 <CardTitle className="flex items-center gap-2 text-xl">
-                  <div className="w-8 h-8 bg-gradient-to-br from-[#FF3D00] to-[#E53935] rounded-lg flex items-center justify-center">
+                  <div className="w-8 h-8 bg-gradient-to-br from-brand-primary to-primary-600 rounded-lg flex items-center justify-center">
                     <AlertTriangle className="w-4 h-4 text-white" />
                   </div>
                   Found a Problem?
                 </CardTitle>
               </CardHeader>
               <CardContent className="p-6 space-y-6">
-                <p className="text-gray-700 leading-relaxed">
+                <p className="text-text-secondary leading-relaxed">
                   If you believe you have a counterfeit product or if verification failed for a
                   genuine Ralhum Sports product, please contact us immediately.
                 </p>
@@ -542,7 +594,7 @@ export default function ProductVerificationPage() {
                 <div className="space-y-4">
                   <Button
                     size="lg"
-                    className={`w-full bg-gradient-to-r from-[#25D366] to-[#128C7E] hover:from-[#128C7E] hover:to-[#25D366] text-white py-4 text-lg font-bold rounded-xl shadow-lg ${!prefersReducedMotion ? 'hover:scale-105 transition-all duration-300' : ''}`}
+                    className="w-full bg-gradient-to-r from-green-600 to-emerald-600 hover:from-emerald-600 hover:to-green-600 text-white py-4 text-lg font-bold rounded-xl shadow-lg hover:scale-105 transition-all duration-300"
                     onClick={() => {
                       const message = `Hello! I need to report a product verification issue. SKU: ${sku}`
                       const whatsappUrl = `https://wa.me/94772350712?text=${encodeURIComponent(message)}`
@@ -555,18 +607,18 @@ export default function ProductVerificationPage() {
                   <Button
                     size="lg"
                     variant="outline"
-                    className={`w-full border-2 border-[#003DA5] text-[#003DA5] hover:bg-[#003DA5] hover:text-white py-4 text-lg font-bold rounded-xl ${!prefersReducedMotion ? 'hover:scale-105 transition-all duration-300' : ''}`}
+                    className="w-full border-2 border-brand-secondary text-brand-secondary hover:bg-brand-secondary hover:text-white py-4 text-lg font-bold rounded-xl hover:scale-105 transition-all duration-300"
                     asChild
                   >
                     <Link href="/contact">Contact Support</Link>
                   </Button>
                 </div>
 
-                <div className="bg-gradient-to-r from-gray-50 to-blue-50 rounded-xl p-4 border border-gray-200">
-                  <p className="text-sm font-semibold text-gray-700 mb-2">
+                <div className="bg-brand-background rounded-xl p-4 border border-brand-border">
+                  <p className="text-sm font-semibold text-text-primary mb-2">
                     <strong>What to include in your report:</strong>
                   </p>
-                  <ul className="list-disc list-inside text-sm text-gray-600 space-y-1">
+                  <ul className="list-disc list-inside text-sm text-text-secondary space-y-1">
                     <li>Product SKU code</li>
                     <li>Where you purchased the product</li>
                     <li>Photos of the product and packaging</li>
@@ -578,18 +630,16 @@ export default function ProductVerificationPage() {
           </div>
 
           {/* Enhanced Additional Information */}
-          <Card
-            className={`mt-8 bg-gradient-to-br from-white/90 to-blue-50/90 backdrop-blur-md shadow-2xl border border-white/20 ${!prefersReducedMotion ? 'animate-fade-in-up' : ''}`}
-          >
+          <Card className="mt-8 bg-brand-surface shadow-2xl border border-brand-border">
             <CardContent className="p-8">
               <div className="text-center space-y-6">
-                <div className="w-16 h-16 bg-gradient-to-br from-[#003DA5] to-[#0052CC] rounded-full flex items-center justify-center mx-auto shadow-xl">
+                <div className="w-16 h-16 bg-brand-secondary rounded-full flex items-center justify-center mx-auto shadow-xl">
                   <Shield className="w-8 h-8 text-white" />
                 </div>
-                <h3 className="text-2xl font-black text-gray-900">
+                <h3 className="text-2xl font-black text-text-primary">
                   🛡️ Your Safety is Our Priority
                 </h3>
-                <p className="text-gray-700 max-w-2xl mx-auto text-lg leading-relaxed">
+                <p className="text-text-secondary max-w-2xl mx-auto text-lg leading-relaxed">
                   As Sri Lanka&apos;s #1 sports equipment distributor, we&apos;re committed to
                   ensuring every customer receives authentic, high-quality products. Our
                   verification system helps protect you from counterfeit sports equipment that may
@@ -600,7 +650,7 @@ export default function ProductVerificationPage() {
                   <Button
                     variant="outline"
                     size="lg"
-                    className={`border-2 border-[#003DA5] text-[#003DA5] hover:bg-[#003DA5] hover:text-white px-8 py-4 text-lg font-bold rounded-xl ${!prefersReducedMotion ? 'hover:scale-105 transition-all duration-300' : ''}`}
+                    className="border-2 border-brand-secondary text-brand-secondary hover:bg-brand-secondary hover:text-white px-8 py-4 text-lg font-bold rounded-xl hover:scale-105 transition-all duration-300"
                     asChild
                   >
                     <Link href="/products">Browse Authentic Products</Link>
@@ -608,7 +658,7 @@ export default function ProductVerificationPage() {
                   <Button
                     variant="outline"
                     size="lg"
-                    className={`border-2 border-[#FF3D00] text-[#FF3D00] hover:bg-[#FF3D00] hover:text-white px-8 py-4 text-lg font-bold rounded-xl ${!prefersReducedMotion ? 'hover:scale-105 transition-all duration-300' : ''}`}
+                    className="border-2 border-brand-primary text-brand-primary hover:bg-brand-primary hover:text-white px-8 py-4 text-lg font-bold rounded-xl hover:scale-105 transition-all duration-300"
                     asChild
                   >
                     <Link href="/orders/track">Track Your Order</Link>

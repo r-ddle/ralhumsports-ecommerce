@@ -157,7 +157,7 @@ export default function Navigation() {
                       position: 'absolute',
                       zIndex: 1,
                       borderRadius: '0.75rem',
-                      background: '#2D3436',
+                      background: '#FF6B35',
                       pointerEvents: 'none',
                     }}
                   />

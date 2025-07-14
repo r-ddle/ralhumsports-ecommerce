@@ -321,32 +321,24 @@ export default function CheckoutPage() {
   }
 
   return (
-    <main className="min-h-screen pt-16 bg-gradient-to-br from-slate-50 via-blue-50/30 to-slate-100 dark:from-slate-900 dark:via-slate-800 dark:to-slate-900">
+    <main className="min-h-screen pt-8 bg-brand-background">
       <div className="max-w-7xl mx-auto px-4 py-8">
         <motion.div variants={containerVariants} initial="hidden" animate="visible">
           {/* Enhanced Header */}
           <motion.div variants={itemVariants} className="mb-8">
             <Link href="/products">
-              <Button
-                variant="ghost"
-                size="sm"
-                className="mb-4 hover:bg-white/50 dark:hover:bg-gray-800/50 backdrop-blur-sm"
-              >
+              <Button variant="ghost" size="sm" className="mb-4 hover:bg-white/50 backdrop-blur-sm">
                 <ArrowLeft className="w-4 h-4 mr-2" />
                 Continue Shopping
               </Button>
             </Link>
             <div className="flex items-center gap-3 mb-4">
-              <div className="p-2 rounded-lg bg-gradient-to-br from-blue-500 to-purple-500 text-white">
+              <div className="p-2 rounded-lg bg-gradient-to-br from-brand-secondary to-secondary-600 text-white">
                 <Package className="w-6 h-6" />
               </div>
               <div>
-                <h1 className="text-3xl font-black bg-gradient-to-r from-slate-900 to-blue-900 dark:from-white dark:to-blue-200 bg-clip-text text-transparent">
-                  Checkout
-                </h1>
-                <p className="text-gray-600 dark:text-gray-300">
-                  Review your order and complete your purchase
-                </p>
+                <h1 className="text-3xl font-black text-text-primary">Checkout</h1>
+                <p className="text-text-secondary">Review your order and complete your purchase</p>
               </div>
             </div>
           </motion.div>
@@ -361,11 +353,9 @@ export default function CheckoutPage() {
                 transition={{ duration: 0.3 }}
                 className="mb-6"
               >
-                <Alert className="border-red-200 bg-red-50 dark:bg-red-900/20 dark:border-red-800 backdrop-blur-sm">
+                <Alert className="border-red-200 bg-red-50 backdrop-blur-sm">
                   <AlertCircle className="h-4 w-4 text-red-600" />
-                  <AlertDescription className="text-red-800 dark:text-red-200">
-                    {apiError}
-                  </AlertDescription>
+                  <AlertDescription className="text-red-800">{apiError}</AlertDescription>
                 </Alert>
               </motion.div>
             )}
@@ -374,7 +364,7 @@ export default function CheckoutPage() {
           <div className="grid lg:grid-cols-2 gap-8">
             {/* Enhanced Left Column - Customer Information */}
             <motion.div variants={itemVariants} className="space-y-6">
-              <Card className="backdrop-blur-lg bg-white/80 dark:bg-gray-800/80 border border-white/20 shadow-2xl">
+              <Card className="bg-brand-surface border-brand-border shadow-2xl">
                 <CardHeader>
                   <CardTitle className="flex items-center gap-3">
                     <div className="p-2 rounded-lg bg-gradient-to-br from-green-500 to-emerald-500 text-white">
@@ -386,17 +376,21 @@ export default function CheckoutPage() {
                 <CardContent className="space-y-6">
                   <div className="grid grid-cols-1 gap-6">
                     <div>
-                      <Label htmlFor="fullName" className="text-base font-semibold">
+                      <Label
+                        htmlFor="fullName"
+                        className="text-base font-semibold text-text-primary"
+                      >
                         Full Name *
                       </Label>
                       <Input
                         id="fullName"
                         value={checkoutState.customerInfo.fullName || ''}
                         onChange={(e) => handleInputChange('fullName', e.target.value)}
-                        className={`mt-2 h-12 border-2 rounded-xl bg-white/50 dark:bg-gray-700/50 backdrop-blur-sm ${
+                        required
+                        className={`mt-2 h-12 border-2 rounded-xl bg-brand-background text-base ${
                           checkoutState.errors.fullName
                             ? 'border-red-500'
-                            : 'border-gray-200 dark:border-gray-600 focus:border-blue-500'
+                            : 'border-brand-border focus:border-brand-secondary'
                         }`}
                         placeholder="Enter your full name"
                       />
@@ -407,7 +401,10 @@ export default function CheckoutPage() {
 
                     <div className="grid md:grid-cols-2 gap-6">
                       <div>
-                        <Label htmlFor="email" className="text-base font-semibold">
+                        <Label
+                          htmlFor="email"
+                          className="text-base font-semibold text-text-primary"
+                        >
                           Email Address *
                         </Label>
                         <Input
@@ -415,10 +412,11 @@ export default function CheckoutPage() {
                           type="email"
                           value={checkoutState.customerInfo.email || ''}
                           onChange={(e) => handleInputChange('email', e.target.value)}
-                          className={`mt-2 h-12 border-2 rounded-xl bg-white/50 dark:bg-gray-700/50 backdrop-blur-sm ${
+                          required
+                          className={`mt-2 h-12 border-2 rounded-xl bg-brand-background ${
                             checkoutState.errors.email
                               ? 'border-red-500'
-                              : 'border-gray-200 dark:border-gray-600 focus:border-blue-500'
+                              : 'border-brand-border focus:border-brand-secondary'
                           }`}
                           placeholder="your@email.com"
                         />
@@ -428,17 +426,21 @@ export default function CheckoutPage() {
                       </div>
 
                       <div>
-                        <Label htmlFor="phone" className="text-base font-semibold">
+                        <Label
+                          htmlFor="phone"
+                          className="text-base font-semibold text-text-primary"
+                        >
                           Phone Number *
                         </Label>
                         <Input
                           id="phone"
                           value={checkoutState.customerInfo.phone || ''}
                           onChange={(e) => handleInputChange('phone', e.target.value)}
-                          className={`mt-2 h-12 border-2 rounded-xl bg-white/50 dark:bg-gray-700/50 backdrop-blur-sm ${
+                          required
+                          className={`mt-2 h-12 border-2 rounded-xl bg-brand-background ${
                             checkoutState.errors.phone
                               ? 'border-red-500'
-                              : 'border-gray-200 dark:border-gray-600 focus:border-blue-500'
+                              : 'border-brand-border focus:border-brand-secondary'
                           }`}
                           placeholder="+94 77 123 4567"
                         />
@@ -449,14 +451,17 @@ export default function CheckoutPage() {
                     </div>
 
                     <div>
-                      <Label htmlFor="secondaryPhone" className="text-base font-semibold">
+                      <Label
+                        htmlFor="secondaryPhone"
+                        className="text-base font-semibold text-text-primary"
+                      >
                         Secondary Phone (Optional)
                       </Label>
                       <Input
                         id="secondaryPhone"
                         value={checkoutState.customerInfo.secondaryPhone || ''}
                         onChange={(e) => handleInputChange('secondaryPhone', e.target.value)}
-                        className="mt-2 h-12 border-2 border-gray-200 dark:border-gray-600 focus:border-blue-500 rounded-xl bg-white/50 dark:bg-gray-700/50 backdrop-blur-sm"
+                        className="mt-2 h-12 border-2 border-brand-border focus:border-brand-secondary rounded-xl bg-brand-background"
                         placeholder="+94 71 123 4567"
                       />
                     </div>
@@ -464,10 +469,10 @@ export default function CheckoutPage() {
                 </CardContent>
               </Card>
 
-              <Card className="backdrop-blur-lg bg-white/80 dark:bg-gray-800/80 border border-white/20 shadow-2xl">
+              <Card className="bg-brand-surface border-brand-border shadow-2xl">
                 <CardHeader>
                   <CardTitle className="flex items-center gap-3">
-                    <div className="p-2 rounded-lg bg-gradient-to-br from-orange-500 to-red-500 text-white">
+                    <div className="p-2 rounded-lg bg-gradient-to-br from-brand-primary to-primary-600 text-white">
                       <MapPin className="w-5 h-5" />
                     </div>
                     Delivery Address
@@ -475,17 +480,18 @@ export default function CheckoutPage() {
                 </CardHeader>
                 <CardContent className="space-y-6">
                   <div>
-                    <Label htmlFor="street" className="text-base font-semibold">
+                    <Label htmlFor="street" className="text-base font-semibold text-text-primary">
                       Street Address *
                     </Label>
                     <Input
                       id="street"
                       value={checkoutState.customerInfo.address?.street || ''}
                       onChange={(e) => handleInputChange('address.street', e.target.value)}
-                      className={`mt-2 h-12 border-2 rounded-xl bg-white/50 dark:bg-gray-700/50 backdrop-blur-sm ${
+                      required
+                      className={`mt-2 h-12 border-2 rounded-xl bg-brand-background ${
                         checkoutState.errors.street
                           ? 'border-red-500'
-                          : 'border-gray-200 dark:border-gray-600 focus:border-blue-500'
+                          : 'border-brand-border focus:border-brand-secondary'
                       }`}
                       placeholder="Enter your street address"
                     />
@@ -496,17 +502,18 @@ export default function CheckoutPage() {
 
                   <div className="grid md:grid-cols-2 gap-6">
                     <div>
-                      <Label htmlFor="city" className="text-base font-semibold">
+                      <Label htmlFor="city" className="text-base font-semibold text-text-primary">
                         City *
                       </Label>
                       <Input
                         id="city"
                         value={checkoutState.customerInfo.address?.city || ''}
                         onChange={(e) => handleInputChange('address.city', e.target.value)}
-                        className={`mt-2 h-12 border-2 rounded-xl bg-white/50 dark:bg-gray-700/50 backdrop-blur-sm ${
+                        required
+                        className={`mt-2 h-12 border-2 rounded-xl bg-brand-background ${
                           checkoutState.errors.city
                             ? 'border-red-500'
-                            : 'border-gray-200 dark:border-gray-600 focus:border-blue-500'
+                            : 'border-brand-border focus:border-brand-secondary'
                         }`}
                         placeholder="City"
                       />
@@ -516,17 +523,21 @@ export default function CheckoutPage() {
                     </div>
 
                     <div>
-                      <Label htmlFor="postalCode" className="text-base font-semibold">
+                      <Label
+                        htmlFor="postalCode"
+                        className="text-base font-semibold text-text-primary"
+                      >
                         Postal Code *
                       </Label>
                       <Input
                         id="postalCode"
                         value={checkoutState.customerInfo.address?.postalCode || ''}
                         onChange={(e) => handleInputChange('address.postalCode', e.target.value)}
-                        className={`mt-2 h-12 border-2 rounded-xl bg-white/50 dark:bg-gray-700/50 backdrop-blur-sm ${
+                        required
+                        className={`mt-2 h-12 border-2 rounded-xl bg-brand-background ${
                           checkoutState.errors.postalCode
                             ? 'border-red-500'
-                            : 'border-gray-200 dark:border-gray-600 focus:border-blue-500'
+                            : 'border-brand-border focus:border-brand-secondary'
                         }`}
                         placeholder="10100"
                       />
@@ -539,7 +550,7 @@ export default function CheckoutPage() {
                   </div>
 
                   <div>
-                    <Label htmlFor="province" className="text-base font-semibold">
+                    <Label htmlFor="province" className="text-base font-semibold text-text-primary">
                       Province *
                     </Label>
                     <Select
@@ -547,10 +558,10 @@ export default function CheckoutPage() {
                       onValueChange={(value) => handleInputChange('address.province', value)}
                     >
                       <SelectTrigger
-                        className={`mt-2 h-12 border-2 rounded-xl bg-white/50 dark:bg-gray-700/50 backdrop-blur-sm ${
+                        className={`mt-2 h-12 border-2 rounded-xl bg-brand-background ${
                           checkoutState.errors.province
                             ? 'border-red-500'
-                            : 'border-gray-200 dark:border-gray-600 focus:border-blue-500'
+                            : 'border-brand-border focus:border-brand-secondary'
                         }`}
                       >
                         <SelectValue placeholder="Select your province" />
@@ -569,7 +580,10 @@ export default function CheckoutPage() {
                   </div>
 
                   <div>
-                    <Label htmlFor="specialInstructions" className="text-base font-semibold">
+                    <Label
+                      htmlFor="specialInstructions"
+                      className="text-base font-semibold text-text-primary"
+                    >
                       Special Instructions (Optional)
                     </Label>
                     <Textarea
@@ -578,7 +592,7 @@ export default function CheckoutPage() {
                       onChange={(e) => handleInputChange('specialInstructions', e.target.value)}
                       placeholder="Any special delivery instructions..."
                       rows={3}
-                      className="mt-2 border-2 border-gray-200 dark:border-gray-600 focus:border-blue-500 rounded-xl bg-white/50 dark:bg-gray-700/50 backdrop-blur-sm resize-none"
+                      className="mt-2 border-2 border-brand-border focus:border-brand-secondary rounded-xl bg-brand-background resize-none"
                     />
                   </div>
                 </CardContent>
@@ -587,10 +601,10 @@ export default function CheckoutPage() {
 
             {/* Enhanced Right Column - Order Summary */}
             <motion.div variants={itemVariants} className="space-y-6">
-              <Card className="backdrop-blur-lg bg-white/80 dark:bg-gray-800/80 border border-white/20 shadow-2xl">
+              <Card className="bg-brand-surface border-brand-border shadow-2xl">
                 <CardHeader>
                   <CardTitle className="flex items-center gap-3">
-                    <div className="p-2 rounded-lg bg-gradient-to-br from-purple-500 to-pink-500 text-white">
+                    <div className="p-2 rounded-lg bg-gradient-to-br from-brand-accent to-warning text-white">
                       <Package className="w-5 h-5" />
                     </div>
                     Order Summary
@@ -604,7 +618,7 @@ export default function CheckoutPage() {
                       return (
                         <div
                           key={item.id}
-                          className="flex items-center gap-4 pb-4 border-b last:border-b-0 border-gray-200 dark:border-gray-700"
+                          className="flex items-center gap-4 pb-4 border-b last:border-b-0 border-brand-border"
                         >
                           <Image
                             width={64}
@@ -614,19 +628,17 @@ export default function CheckoutPage() {
                             className="w-16 h-16 object-cover rounded-lg"
                           />
                           <div className="flex-1">
-                            <h4 className="font-semibold text-gray-900 dark:text-white">
+                            <h4 className="font-semibold text-text-primary">
                               {item.product.title}
                             </h4>
-                            <p className="text-sm text-gray-600 dark:text-gray-400">
-                              {item.variant.name}
-                            </p>
-                            <p className="text-sm text-gray-600 dark:text-gray-400">
-                              Qty: {item.quantity}
-                            </p>
+                            <p className="text-sm text-text-secondary">{item.variant.name}</p>
+                            <p className="text-sm text-text-secondary">Qty: {item.quantity}</p>
                           </div>
                           <div className="text-right">
-                            <p className="font-semibold">{formatCurrency(itemTotal)}</p>
-                            <p className="text-xs text-gray-500">
+                            <p className="font-semibold text-text-primary">
+                              {formatCurrency(itemTotal)}
+                            </p>
+                            <p className="text-xs text-text-secondary">
                               {formatCurrency(item.variant.price)} each
                             </p>
                           </div>
@@ -637,40 +649,40 @@ export default function CheckoutPage() {
                 </CardContent>
               </Card>
 
-              <Card className="backdrop-blur-lg bg-white/80 dark:bg-gray-800/80 border border-white/20 shadow-2xl">
+              <Card className="bg-brand-surface border-brand-border shadow-2xl">
                 <CardHeader>
-                  <CardTitle>Pricing Breakdown</CardTitle>
+                  <CardTitle className="text-text-primary">Pricing Breakdown</CardTitle>
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-4">
                     <div className="flex justify-between">
-                      <span className="text-gray-600 dark:text-gray-400">Subtotal</span>
-                      <span className="font-semibold">
+                      <span className="text-text-secondary">Subtotal</span>
+                      <span className="font-semibold text-text-primary">
                         {formatCurrency(checkoutState.pricing.subtotal)}
                       </span>
                     </div>
                     <div className="flex justify-between">
-                      <span className="text-gray-600 dark:text-gray-400">Shipping</span>
+                      <span className="text-text-secondary">Shipping</span>
                       <span>
                         {checkoutState.pricing.shipping === 0 ? (
-                          <Badge className="bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400 font-bold">
-                            FREE
-                          </Badge>
+                          <Badge className="bg-green-100 text-green-800 font-bold">FREE</Badge>
                         ) : (
-                          formatCurrency(checkoutState.pricing.shipping)
+                          <span className="text-text-primary">
+                            {formatCurrency(checkoutState.pricing.shipping)}
+                          </span>
                         )}
                       </span>
                     </div>
                     <div className="flex justify-between">
-                      <span className="text-gray-600 dark:text-gray-400">Tax (15%)</span>
-                      <span className="font-semibold">
+                      <span className="text-text-secondary">Tax (15%)</span>
+                      <span className="font-semibold text-text-primary">
                         {formatCurrency(checkoutState.pricing.tax)}
                       </span>
                     </div>
                     <Separator />
                     <div className="flex justify-between text-xl font-black">
-                      <span>Total</span>
-                      <span className="bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+                      <span className="text-text-primary">Total</span>
+                      <span className="text-brand-secondary">
                         {formatCurrency(checkoutState.pricing.total)}
                       </span>
                     </div>
@@ -678,27 +690,25 @@ export default function CheckoutPage() {
                 </CardContent>
               </Card>
 
-              <Card className="backdrop-blur-lg bg-white/80 dark:bg-gray-800/80 border border-white/20 shadow-2xl">
+              <Card className="bg-brand-surface border-brand-border shadow-2xl">
                 <CardHeader>
-                  <CardTitle>Payment Options</CardTitle>
+                  <CardTitle className="text-text-primary">Payment Options</CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-6">
                   {/* Disabled Online Payment */}
                   <div className="relative">
                     <Button
                       disabled
-                      className="w-full h-16 bg-gray-100 dark:bg-gray-700 text-gray-400 cursor-not-allowed rounded-xl"
+                      className="w-full h-16 bg-gray-100 text-gray-400 cursor-not-allowed rounded-xl"
                       variant="outline"
                     >
                       <CreditCard className="w-6 h-6 mr-3" />
                       Pay Online
-                      <Badge className="ml-auto bg-orange-100 text-orange-800 dark:bg-orange-900/20 dark:text-orange-400">
-                        Coming Soon
-                      </Badge>
+                      <Badge className="ml-auto bg-orange-100 text-orange-800">Coming Soon</Badge>
                     </Button>
                   </div>
 
-                  <div className="text-center text-sm text-gray-500">OR</div>
+                  <div className="text-center text-sm text-text-secondary">OR</div>
 
                   {/* Enhanced WhatsApp Payment */}
                   <Button
@@ -727,9 +737,9 @@ export default function CheckoutPage() {
                     )}
                   </Button>
 
-                  <Alert className="bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-800">
+                  <Alert className="bg-blue-50 border-blue-200">
                     <AlertCircle className="h-4 w-4 text-blue-600" />
-                    <AlertDescription className="text-blue-800 dark:text-blue-200 text-sm">
+                    <AlertDescription className="text-blue-800 text-sm">
                       Your order will be sent to WhatsApp for confirmation. Our team will provide
                       payment instructions and process your order.
                     </AlertDescription>
@@ -744,7 +754,7 @@ export default function CheckoutPage() {
                     icon: Truck,
                     title: 'Free Shipping',
                     subtitle: `On orders over LKR ${SITE_CONFIG.shipping.freeShippingThreshold}`,
-                    color: 'from-blue-500 to-cyan-500',
+                    color: 'from-brand-secondary to-secondary-600',
                   },
                   {
                     icon: Shield,
@@ -755,16 +765,14 @@ export default function CheckoutPage() {
                 ].map((badge) => (
                   <div
                     key={badge.title}
-                    className="flex flex-col items-center gap-3 p-4 bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm rounded-xl border border-white/20"
+                    className="flex flex-col items-center gap-3 p-4 bg-brand-surface rounded-xl border border-brand-border"
                   >
                     <div className={`p-3 rounded-lg bg-gradient-to-br ${badge.color} text-white`}>
                       <badge.icon className="w-6 h-6" />
                     </div>
                     <div>
-                      <div className="font-bold text-gray-900 dark:text-white">{badge.title}</div>
-                      <div className="text-gray-600 dark:text-gray-400 text-xs">
-                        {badge.subtitle}
-                      </div>
+                      <div className="font-bold text-text-primary">{badge.title}</div>
+                      <div className="text-text-secondary text-xs">{badge.subtitle}</div>
                     </div>
                   </div>
                 ))}
@@ -808,10 +816,10 @@ function CheckoutConfirmation({ orderId }: { orderId: string }) {
   }
 
   return (
-    <main className="min-h-screen pt-16 bg-gradient-to-br from-slate-50 via-blue-50/30 to-slate-100 dark:from-slate-900 dark:via-slate-800 dark:to-slate-900">
+    <main className="min-h-screen pt-8 bg-brand-background">
       <div className="max-w-2xl mx-auto px-4 py-16 text-center">
         <motion.div
-          className="backdrop-blur-lg bg-white/80 dark:bg-gray-800/80 border border-white/20 rounded-2xl p-8 shadow-2xl"
+          className="bg-brand-surface border-brand-border rounded-2xl p-8 shadow-2xl"
           variants={containerVariants}
           initial="hidden"
           animate="visible"
@@ -835,17 +843,15 @@ function CheckoutConfirmation({ orderId }: { orderId: string }) {
             <CheckCircle className="w-10 h-10 text-white" />
           </motion.div>
 
-          <h1 className="text-3xl font-black mb-4 bg-gradient-to-r from-green-600 to-emerald-600 bg-clip-text text-transparent">
-            Order Sent Successfully!
-          </h1>
-          <p className="text-gray-600 dark:text-gray-300 mb-6 leading-relaxed">
+          <h1 className="text-3xl font-black mb-4 text-green-600">Order Sent Successfully!</h1>
+          <p className="text-text-secondary mb-6 leading-relaxed">
             Your order has been redirected to WhatsApp. We&apos;ll contact you shortly to confirm
             your order and provide payment instructions.
           </p>
 
-          <Alert className="mb-6 bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-800">
+          <Alert className="mb-6 bg-blue-50 border-blue-200">
             <AlertCircle className="h-5 w-5 text-blue-600" />
-            <AlertDescription className="text-blue-800 dark:text-blue-200 text-left">
+            <AlertDescription className="text-blue-800 text-left">
               If you were not redirected to WhatsApp, you can manually open WhatsApp and confirm
               your order using the button below.
             </AlertDescription>
@@ -865,30 +871,28 @@ function CheckoutConfirmation({ orderId }: { orderId: string }) {
             </motion.a>
           )}
 
-          <div className="bg-gradient-to-r from-blue-50 to-cyan-50 dark:from-blue-900/20 dark:to-cyan-900/20 rounded-xl p-6 mb-6 border border-blue-200/50 dark:border-blue-700/50">
-            <p className="text-sm font-semibold text-blue-900 dark:text-blue-200 mb-2">Order ID</p>
-            <p className="text-2xl font-black bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
-              {orderId || 'Processing...'}
-            </p>
+          <div className="bg-gradient-to-r from-blue-50 to-cyan-50 rounded-xl p-6 mb-6 border border-blue-200">
+            <p className="text-sm font-semibold text-blue-900 mb-2">Order ID</p>
+            <p className="text-2xl font-black text-brand-secondary">{orderId || 'Processing...'}</p>
           </div>
 
           <div className="space-y-4">
             <Button
               asChild
-              className="w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white font-bold py-4 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300"
+              className="w-full bg-gradient-to-r from-brand-secondary to-secondary-600 hover:from-secondary-600 hover:to-brand-secondary text-white font-bold py-4 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300"
             >
               <Link href="/products">Continue Shopping</Link>
             </Button>
             <Button
               asChild
               variant="outline"
-              className="w-full border-2 border-blue-300 dark:border-blue-600 text-blue-700 dark:text-blue-300 hover:bg-blue-50 dark:hover:bg-blue-900/20 font-bold py-4 rounded-xl bg-transparent"
+              className="w-full border-2 border-brand-border text-brand-secondary hover:bg-brand-background font-bold py-4 rounded-xl bg-transparent"
             >
               <Link href={`/orders/track?orderId=${orderId}`}>Track Your Order</Link>
             </Button>
           </div>
 
-          <div className="mt-8 pt-6 border-t border-gray-200 dark:border-gray-700 text-sm text-gray-600 dark:text-gray-400">
+          <div className="mt-8 pt-6 border-t border-brand-border text-sm text-text-secondary">
             <p className="flex items-center justify-center gap-2">
               <Phone className="w-4 h-4" />
               Questions? Call us at {SITE_CONFIG.contact.phone}

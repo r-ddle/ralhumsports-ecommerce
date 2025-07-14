@@ -120,7 +120,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                 <Navigation />
               </Suspense>
 
-              <main className="flex-1 pt-16 sm:pt-20">
+              <main className="flex-1">
                 <Suspense fallback={<LoadingSpinner />}>{children}</Suspense>
               </main>
 

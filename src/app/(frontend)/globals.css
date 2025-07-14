@@ -202,3 +202,39 @@
     color-scheme: light !important;
   }
 }
+
+@keyframes infinite-scroll {
+          0% {
+            transform: translateX(0);
+          }
+          100% {
+            transform: translateX(-50%);
+          }
+        }
+
+        .animate-infinite-scroll {
+          animation: infinite-scroll 30s linear infinite;
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+          .animate-infinite-scroll {
+            animation: none;
+          }
+        }
+
+        .mask-edges {
+          mask-image: linear-gradient(
+            to right,
+            transparent,
+            black 2rem,
+            black calc(100% - 2rem),
+            transparent
+          );
+          -webkit-mask-image: linear-gradient(
+            to right,
+            transparent,
+            black 2rem,
+            black calc(100% - 2rem),
+            transparent
+          );
+        }

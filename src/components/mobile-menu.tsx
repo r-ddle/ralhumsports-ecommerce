@@ -6,7 +6,7 @@ import { useState, useEffect } from 'react'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { X, Phone, Mail, MapPin, MessageCircle, ArrowRight } from 'lucide-react'
-import { motion, AnimatePresence } from 'framer-motion'
+import { motion, AnimatePresence, easeInOut, easeOut } from 'framer-motion'
 import Link from 'next/link'
 import { SITE_CONFIG } from '@/config/site-config'
 
@@ -62,7 +62,7 @@ export default function MobileMenu({ isOpen, onToggle }: MobileMenuProps) {
       x: '100%',
       transition: {
         duration: reducedMotion ? 0 : 0.3,
-        ease: 'easeInOut',
+        ease: easeInOut,
       },
     },
     open: {
@@ -70,7 +70,7 @@ export default function MobileMenu({ isOpen, onToggle }: MobileMenuProps) {
       x: 0,
       transition: {
         duration: reducedMotion ? 0 : 0.3,
-        ease: 'easeOut',
+        ease: easeOut,
         staggerChildren: reducedMotion ? 0 : 0.05,
         delayChildren: reducedMotion ? 0 : 0.1,
       },

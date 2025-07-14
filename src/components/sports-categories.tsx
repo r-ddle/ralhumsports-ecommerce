@@ -29,18 +29,17 @@ export default function SportsCategories() {
       name: 'Cricket',
       description: 'Professional cricket equipment from Gray-Nicolls, Grays & more',
       icon: Target,
-      image: '/placeholder.svg?height=400&width=600',
+      image: '/cricket.avif',
       products: ['Bats', 'Balls', 'Protective Gear', 'Accessories'],
       featured: true,
       color: 'from-green-500 to-emerald-600',
-      stats: '500+ Products',
     },
     {
       id: 'rugby',
       name: 'Rugby',
       description: 'Official Gilbert rugby balls and professional equipment',
       icon: Trophy,
-      image: '/placeholder.svg?height=400&width=600',
+      image: '/rugby.avif',
       products: ['Balls', 'Training Equipment', 'Protective Gear'],
       featured: true,
       color: 'from-brand-secondary to-secondary-600',
@@ -51,22 +50,20 @@ export default function SportsCategories() {
       name: 'Basketball',
       description: 'Premium Molten basketballs and court equipment',
       icon: Zap,
-      image: '/placeholder.svg?height=400&width=600',
+      image: '/basketball.avif',
       products: ['Balls', 'Hoops', 'Training Aids', 'Accessories'],
       featured: false,
       color: 'from-brand-primary to-primary-600',
-      stats: '150+ Products',
     },
     {
       id: 'hockey',
       name: 'Hockey',
       description: 'Professional hockey sticks, balls and protective equipment',
       icon: Users,
-      image: '/placeholder.svg?height=400&width=600',
+      image: '/hockey.avif',
       products: ['Sticks', 'Balls', 'Protective Gear', 'Goals'],
       featured: false,
       color: 'from-brand-accent to-warning',
-      stats: '100+ Products',
     },
   ]
 
@@ -175,7 +172,6 @@ export default function SportsCategories() {
 
                   {/* Footer */}
                   <div className="flex items-center justify-between">
-                    <div className="text-white/80 text-sm font-medium">{category.stats}</div>
                     <Button
                       size="sm"
                       className="bg-white/20 hover:bg-white/30 text-white border border-white/30 hover:border-white/50 backdrop-blur-sm transition-all duration-200 group-hover:scale-105 focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2"

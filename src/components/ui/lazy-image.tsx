@@ -1,33 +1,43 @@
 'use client'
 
-import { useState, useRef, useEffect } from 'react'
-import Image, { ImageProps } from 'next/image'
-import { cn } from '@/lib/utils'
+import { useState, useEffect, useRef } from 'react'
+import Image from 'next/image'
+import { motion } from 'framer-motion'
+import { Skeleton } from './skeleton'
 
-interface LazyImageProps extends Omit<ImageProps, 'src' | 'alt'> {
+interface LazyImageProps {
   src: string
   alt: string
-  fallback?: string
+  width: number
+  height: number
   className?: string
-  skeletonClassName?: string
   containerClassName?: string
+  priority?: boolean
+  onClick?: () => void
 }
 
 export function LazyImage({
   src,
   alt,
-  fallback = '/placeholder.svg',
-  className,
-  skeletonClassName,
-  containerClassName,
-  ...props
+  width,
+  height,
+  className = '',
+  containerClassName = '',
+  priority = false,
+  onClick,
 }: LazyImageProps) {
   const [isLoading, setIsLoading] = useState(true)
-  const [isError, setIsError] = useState(false)
+  const [error, setError] = useState(false)
   const [isInView, setIsInView] = useState(false)
   const imgRef = useRef<HTMLDivElement>(null)
 
+  // Intersection Observer for lazy loading
   useEffect(() => {
+    if (!imgRef.current || priority) {
+      setIsInView(true)
+      return
+    }
+
     const observer = new IntersectionObserver(
       ([entry]) => {
         if (entry.isIntersecting) {
@@ -35,189 +45,163 @@ export function LazyImage({
           observer.disconnect()
         }
       },
-      {
-        rootMargin: '50px', // Start loading 50px before the image comes into view
-        threshold: 0.1,
-      },
+      { threshold: 0.1, rootMargin: '50px' },
     )
 
-    if (imgRef.current) {
-      observer.observe(imgRef.current)
-    }
+    observer.observe(imgRef.current)
 
     return () => observer.disconnect()
-  }, [])
+  }, [priority])
 
   const handleLoad = () => {
     setIsLoading(false)
-    setIsError(false)
+    setError(false)
   }
 
   const handleError = () => {
     setIsLoading(false)
-    setIsError(true)
+    setError(true)
   }
 
   return (
-    <div ref={imgRef} className={cn('relative overflow-hidden', containerClassName)}>
-      {/* Skeleton Loading State */}
-      {isLoading && (
-        <div
-          className={cn('absolute inset-0 animate-pulse rounded-lg', skeletonClassName)}
-          style={{ background: 'linear-gradient(90deg, #F3F4F6 25%, #E5E7EB 50%, #F3F4F6 75%)' }}
-        />
-      )}
-
-      {/* Actual Image */}
+    <div ref={imgRef} className={containerClassName} onClick={onClick}>
       {isInView && (
-        <Image
-          src={isError ? fallback : src}
-          alt={alt}
-          className={cn(
-            'transition-opacity duration-300',
-            isLoading ? 'opacity-0' : 'opacity-100',
-            className,
+        <>
+          {isLoading && (
+            <Skeleton className="absolute inset-0 w-full h-full rounded-lg animate-pulse" />
           )}
-          onLoad={handleLoad}
-          onError={handleError}
-          loading="lazy"
-          {...props}
-        />
+          {error ? (
+            <div className="w-full h-full bg-gray-100 flex items-center justify-center rounded-lg">
+              <div className="text-center text-gray-400">
+                <div className="text-2xl mb-2">📷</div>
+                <div className="text-xs">Image not found</div>
+              </div>
+            </div>
+          ) : (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: isLoading ? 0 : 1 }}
+              transition={{ duration: 0.3 }}
+              className="w-full h-full"
+            >
+              <Image
+                src={src}
+                alt={alt}
+                width={width}
+                height={height}
+                className={className}
+                onLoad={handleLoad}
+                onError={handleError}
+                priority={priority}
+                sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+              />
+            </motion.div>
+          )}
+        </>
       )}
     </div>
   )
 }
 
-// Product Card Skeleton
-export function ProductCardSkeleton({ className }: { className?: string }) {
+// Optimized Product Card Skeleton
+export function ProductCardSkeleton() {
   return (
-    <div
-      className={cn('animate-pulse rounded-xl border shadow-lg p-4 space-y-4', className)}
-      style={{ backgroundColor: 'var(--surface)', borderColor: 'var(--border-gray)' }}
-    >
+    <div className="bg-brand-surface border border-brand-border rounded-lg overflow-hidden animate-pulse">
       {/* Image skeleton */}
-      <div
-        className="aspect-square rounded-lg"
-        style={{ background: 'linear-gradient(90deg, #F3F4F6 25%, #E5E7EB 50%, #F3F4F6 75%)' }}
-      />
+      <div className="aspect-square bg-gray-200" />
 
       {/* Content skeleton */}
-      <div className="space-y-2">
-        <div
-          className="h-4 rounded"
-          style={{
-            background: 'linear-gradient(90deg, #F3F4F6 25%, #E5E7EB 50%, #F3F4F6 75%)',
-            width: '60%',
-          }}
-        />
-        <div
-          className="h-6 rounded"
-          style={{
-            background: 'linear-gradient(90deg, #F3F4F6 25%, #E5E7EB 50%, #F3F4F6 75%)',
-            width: '80%',
-          }}
-        />
-        <div
-          className="h-4 rounded"
-          style={{
-            background: 'linear-gradient(90deg, #F3F4F6 25%, #E5E7EB 50%, #F3F4F6 75%)',
-            width: '40%',
-          }}
-        />
-      </div>
+      <div className="p-4 space-y-3">
+        {/* Brand badge */}
+        <div className="h-4 w-16 bg-gray-200 rounded" />
 
-      {/* Price skeleton */}
-      <div
-        className="h-6 rounded"
-        style={{
-          background: 'linear-gradient(90deg, #F3F4F6 25%, #E5E7EB 50%, #F3F4F6 75%)',
-          width: '50%',
-        }}
-      />
-    </div>
-  )
-}
-
-// List View Skeleton
-export function ProductListSkeleton({ className }: { className?: string }) {
-  return (
-    <div
-      className={cn('animate-pulse rounded-xl border shadow-lg p-4', className)}
-      style={{ backgroundColor: 'var(--surface)', borderColor: 'var(--border-gray)' }}
-    >
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        {/* Image skeleton */}
-        <div
-          className="aspect-square sm:aspect-auto sm:h-32 md:h-40 rounded-lg"
-          style={{ background: 'linear-gradient(90deg, #F3F4F6 25%, #E5E7EB 50%, #F3F4F6 75%)' }}
-        />
-
-        {/* Content skeleton */}
-        <div className="sm:col-span-2 space-y-3">
-          <div
-            className="h-4 rounded"
-            style={{
-              background: 'linear-gradient(90deg, #F3F4F6 25%, #E5E7EB 50%, #F3F4F6 75%)',
-              width: '30%',
-            }}
-          />
-          <div
-            className="h-6 rounded"
-            style={{
-              background: 'linear-gradient(90deg, #F3F4F6 25%, #E5E7EB 50%, #F3F4F6 75%)',
-              width: '90%',
-            }}
-          />
-          <div
-            className="h-4 rounded"
-            style={{
-              background: 'linear-gradient(90deg, #F3F4F6 25%, #E5E7EB 50%, #F3F4F6 75%)',
-              width: '40%',
-            }}
-          />
-          <div
-            className="h-6 rounded"
-            style={{
-              background: 'linear-gradient(90deg, #F3F4F6 25%, #E5E7EB 50%, #F3F4F6 75%)',
-              width: '60%',
-            }}
-          />
-        </div>
-      </div>
-    </div>
-  )
-}
-
-// Page Loading Skeleton
-export function PageLoadingSkeleton() {
-  return (
-    <div className="min-h-screen" style={{ backgroundColor: 'var(--background)' }}>
-      <div className="max-w-7xl mx-auto px-4 py-8">
-        {/* Header skeleton */}
-        <div className="mb-8 space-y-4">
-          <div
-            className="h-8 rounded-lg"
-            style={{
-              background: 'linear-gradient(90deg, #F3F4F6 25%, #E5E7EB 50%, #F3F4F6 75%)',
-              width: '40%',
-            }}
-          />
-          <div
-            className="h-4 rounded"
-            style={{
-              background: 'linear-gradient(90deg, #F3F4F6 25%, #E5E7EB 50%, #F3F4F6 75%)',
-              width: '60%',
-            }}
-          />
+        {/* Product name */}
+        <div className="space-y-2">
+          <div className="h-4 w-full bg-gray-200 rounded" />
+          <div className="h-4 w-3/4 bg-gray-200 rounded" />
         </div>
 
-        {/* Grid skeleton */}
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
-          {Array.from({ length: 8 }).map((_, i) => (
-            <ProductCardSkeleton key={i} />
+        {/* Category */}
+        <div className="h-3 w-20 bg-gray-200 rounded" />
+
+        {/* Rating */}
+        <div className="flex gap-1">
+          {[...Array(5)].map((_, i) => (
+            <div key={i} className="w-3 h-3 bg-gray-200 rounded" />
           ))}
         </div>
+
+        {/* Price */}
+        <div className="h-5 w-24 bg-gray-200 rounded" />
+
+        {/* Stock badge */}
+        <div className="h-4 w-16 bg-gray-200 rounded" />
+
+        {/* Button */}
+        <div className="h-8 w-full bg-gray-200 rounded" />
       </div>
+    </div>
+  )
+}
+
+// Optimized Product List Skeleton
+export function ProductListSkeleton() {
+  return (
+    <div className="bg-brand-surface border border-brand-border rounded-lg overflow-hidden animate-pulse">
+      <div className="grid grid-cols-1 sm:grid-cols-4 gap-4 p-6">
+        {/* Image skeleton */}
+        <div className="aspect-square sm:aspect-auto sm:h-32 bg-gray-200 rounded-xl" />
+
+        {/* Content skeleton */}
+        <div className="sm:col-span-3 space-y-3">
+          {/* Brand */}
+          <div className="h-4 w-16 bg-gray-200 rounded" />
+
+          {/* Name */}
+          <div className="space-y-2">
+            <div className="h-5 w-full bg-gray-200 rounded" />
+            <div className="h-5 w-2/3 bg-gray-200 rounded" />
+          </div>
+
+          {/* Category */}
+          <div className="h-3 w-20 bg-gray-200 rounded" />
+
+          {/* Rating */}
+          <div className="flex gap-1">
+            {[...Array(5)].map((_, i) => (
+              <div key={i} className="w-4 h-4 bg-gray-200 rounded" />
+            ))}
+          </div>
+
+          {/* Price and button */}
+          <div className="flex items-center justify-between">
+            <div className="h-6 w-32 bg-gray-200 rounded" />
+            <div className="h-8 w-24 bg-gray-200 rounded" />
+          </div>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+// Grid skeleton container
+export function ProductGridSkeleton({ count = 24 }: { count?: number }) {
+  return (
+    <div className="grid gap-4 sm:gap-6 grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6">
+      {Array.from({ length: count }).map((_, i) => (
+        <ProductCardSkeleton key={i} />
+      ))}
+    </div>
+  )
+}
+
+// List skeleton container
+export function ProductListSkeletonContainer({ count = 12 }: { count?: number }) {
+  return (
+    <div className="space-y-4">
+      {Array.from({ length: count }).map((_, i) => (
+        <ProductListSkeleton key={i} />
+      ))}
     </div>
   )
 }
