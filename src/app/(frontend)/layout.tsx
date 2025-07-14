@@ -18,53 +18,56 @@ const inter = Inter({
 })
 
 export const metadata: Metadata = {
-  title: "Ralhum Sports - Sri Lanka's #1 Sports Equipment Distributor & Online Store",
+  title: 'Ralhum Sports | Sri Lanka Sports Equipment Store – Cricket, Rugby, Hockey Gear',
   description:
-    'Shop premium sports equipment from world-renowned brands. Exclusive distributor of Gray-Nicolls, Gilbert, Grays & Molten in Sri Lanka. 25+ years of athletic excellence.',
+    'Shop top‑quality cricket, rugby, hockey, basketball & tennis gear in Sri Lanka. Official distributor of Gray‑Nicolls, Gilbert, Molten & Grays. Fast nationwide delivery.',
   keywords: [
     'sports equipment',
-    'cricket',
-    'rugby',
-    'basketball',
-    'hockey',
-    'tennis',
-    'Sri Lanka',
-    'Gray-Nicolls',
-    'Gilbert',
-    'Molten',
-    'Grays',
+    'cricket gear',
+    'rugby equipment',
+    'basketball shoes',
+    'hockey sticks',
+    'tennis rackets',
+    'Sri Lanka sports shop',
+    'buy sports gear Sri Lanka',
+    'Colombo sports store',
+    'Gray-Nicolls Sri Lanka',
+    'Gilbert rugby Sri Lanka',
+    'Molten basketball Sri Lanka',
+    'Grays hockey sticks',
+    'sportswear Sri Lanka',
+    'online sports store LK',
+    'cricket bats Sri Lanka',
+    'official sports distributor',
+    'sports gear for schools',
+    'athletic equipment',
     'Ralhum Sports',
   ].join(', '),
   authors: [{ name: 'Ralhum Sports' }],
-  creator: 'Ralhum Sports',
   publisher: 'Ralhum Sports',
-  formatDetection: {
-    email: false,
-    address: false,
-    telephone: false,
-  },
   openGraph: {
-    title: 'Ralhum Sports - Premium Sports Equipment Store',
+    title: 'Ralhum Sports – Premium Cricket, Rugby & Hockey Gear in Sri Lanka',
     description:
-      'Shop the best sports equipment from trusted global brands. Fast delivery across Sri Lanka.',
-    type: 'website',
-    locale: 'en_US',
+      'Official distributor of Gray‑Nicolls, Gilbert, Grays & Molten. Shop cricket, rugby, hockey & basketball equipment with fast delivery across Sri Lanka.',
     url: 'https://ralhumsports.lk',
     siteName: 'Ralhum Sports',
     images: [
       {
-        url: '/og-image.jpg',
+        url: '/ralhumbanner.png',
         width: 1200,
         height: 630,
-        alt: 'Ralhum Sports - Premium Sports Equipment',
+        alt: 'Ralhum Sports – Sri Lanka Sports Gear',
       },
     ],
+    type: 'website',
+    locale: 'en_LK',
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'Ralhum Sports - Premium Sports Equipment Store',
-    description: 'Shop the best sports equipment from trusted global brands.',
-    images: ['/og-image.jpg'],
+    title: 'Ralhum Sports – Sports Gear Store in Sri Lanka',
+    description:
+      'Official distributor of Gray‑Nicolls, Gilbert, Grays & Molten with nationwide delivery.',
+    images: ['/ralhumbanner.png'],
   },
   robots: {
     index: true,
@@ -72,18 +75,16 @@ export const metadata: Metadata = {
     googleBot: {
       index: true,
       follow: true,
-      'max-video-preview': -1,
       'max-image-preview': 'large',
-      'max-snippet': -1,
     },
   },
   verification: {
-    google: 'your-google-verification-code',
+    google: 'YOUR_GOOGLE_VERIFICATION_CODE',
   },
   alternates: {
     canonical: 'https://ralhumsports.lk',
   },
-  category: 'Sports Equipment',
+  category: 'Sports Equipment Store',
 }
 
 // Loading component for Suspense boundaries
@@ -106,9 +107,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <meta name="theme-color" content="#FF6B35" />
         <meta name="color-scheme" content="light" />
         <link rel="manifest" href="/manifest.json" />
+        <link rel="icon" href="/ralhumlogo.svg" type="image/svg+xml" />
         <link rel="icon" href="/favicon.ico" sizes="any" />
-        <link rel="icon" href="/icon.svg" type="image/svg+xml" />
-        <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+        <link rel="apple-touch-icon" href="/ralhumlogo.svg" />
       </head>
       <body
         className={`${inter.className} antialiased bg-brand-background text-text-primary overflow-x-hidden`}
