@@ -566,7 +566,7 @@ export default function CheckoutPage() {
                       >
                         <SelectValue placeholder="Select your province" />
                       </SelectTrigger>
-                      <SelectContent>
+                      <SelectContent className="bg-white">
                         {SRI_LANKAN_PROVINCES.map((province) => (
                           <SelectItem key={province} value={province}>
                             {province}
