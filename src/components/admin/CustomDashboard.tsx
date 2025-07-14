@@ -31,6 +31,7 @@ import {
   Award,
   Zap,
 } from 'lucide-react'
+import Link from 'next/link'
 
 interface DashboardStats {
   products: {
@@ -378,12 +379,12 @@ export default function CustomDashboard() {
             <AlertDescription className="text-warning">
               <strong>Inventory Alert:</strong> {stats.products.outOfStock} products are out of
               stock and {stats.products.lowStock} products are running low on inventory.{' '}
-              <a
+              <Link
                 href="/admin/collections/products"
                 className="underline hover:no-underline font-medium"
               >
                 Review inventory now
-              </a>
+              </Link>
             </AlertDescription>
           </Alert>
         )}
@@ -404,7 +405,7 @@ export default function CustomDashboard() {
               <CardContent>
                 <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
                   {quickActions.map((action, index) => (
-                    <a
+                    <Link
                       key={index}
                       href={action.href}
                       className="flex flex-col items-center p-4 rounded-lg border border-brand-border hover:bg-brand-background transition-colors group"
@@ -418,7 +419,7 @@ export default function CustomDashboard() {
                       <p className="text-xs text-text-secondary text-center mt-1">
                         {action.description}
                       </p>
-                    </a>
+                    </Link>
                   ))}
                 </div>
               </CardContent>
@@ -436,7 +437,7 @@ export default function CustomDashboard() {
               <CardContent>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   {collectionCards.map((collection, index) => (
-                    <a
+                    <Link
                       key={index}
                       href={collection.href}
                       className="flex items-center p-4 rounded-lg border border-brand-border hover:bg-brand-background transition-colors group"
@@ -453,7 +454,7 @@ export default function CustomDashboard() {
                           {collection.count.toLocaleString()}
                         </p>
                       </div>
-                    </a>
+                    </Link>
                   ))}
                 </div>
               </CardContent>
@@ -568,29 +569,29 @@ export default function CustomDashboard() {
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-2">
-                <a
+                <Link
                   href="/admin/collections/products/create"
                   className="flex items-center gap-3 p-2 rounded-lg hover:bg-brand-background transition-colors"
                 >
                   <Plus className="w-4 h-4 text-brand-primary" />
                   <span className="text-sm text-text-primary">Add New Product</span>
-                </a>
-                <a
+                </Link>
+                <Link
                   href="/admin/collections/orders"
                   className="flex items-center gap-3 p-2 rounded-lg hover:bg-brand-background transition-colors"
                 >
                   <ShoppingCart className="w-4 h-4 text-brand-secondary" />
                   <span className="text-sm text-text-primary">Manage Orders</span>
-                </a>
-                <a
+                </Link>
+                <Link
                   href="/admin/collections/customers"
                   className="flex items-center gap-3 p-2 rounded-lg hover:bg-brand-background transition-colors"
                 >
                   <Users className="w-4 h-4 text-brand-accent" />
                   <span className="text-sm text-text-primary">Customer Management</span>
-                </a>
+                </Link>
                 <Separator className="my-2" />
-                <a
+                <Link
                   href="/"
                   target="_blank"
                   rel="noopener noreferrer"
@@ -598,7 +599,7 @@ export default function CustomDashboard() {
                 >
                   <Globe className="w-4 h-4 text-success" />
                   <span className="text-sm text-text-primary">View Website</span>
-                </a>
+                </Link>
               </CardContent>
             </Card>
           </div>
