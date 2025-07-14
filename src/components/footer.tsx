@@ -7,11 +7,17 @@ import { SITE_CONFIG } from '@/config/site-config'
 
 export default function Footer() {
   return (
-    <footer className="relative bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 text-white py-16 sm:py-20 overflow-hidden">
+    <footer
+      className="relative text-white py-16 sm:py-20 overflow-hidden"
+      style={{ background: 'linear-gradient(135deg, var(--text-primary), var(--secondary-blue))' }}
+    >
       {/* Animated Background Elements */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
         <motion.div
-          className="absolute top-1/4 left-1/6 w-72 h-72 bg-gradient-to-br from-blue-500/10 to-cyan-400/10 rounded-full blur-3xl"
+          className="absolute top-1/4 left-1/6 w-72 h-72 rounded-full blur-3xl"
+          style={{
+            background: 'radial-gradient(circle, rgba(59, 130, 246, 0.1), rgba(243, 156, 18, 0.1))',
+          }}
           animate={{
             scale: [1, 1.2, 1],
             opacity: [0.3, 0.6, 0.3],
@@ -25,7 +31,10 @@ export default function Footer() {
           }}
         />
         <motion.div
-          className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-gradient-to-br from-orange-500/10 to-red-400/10 rounded-full blur-3xl"
+          className="absolute bottom-1/4 right-1/4 w-96 h-96 rounded-full blur-3xl"
+          style={{
+            background: 'radial-gradient(circle, rgba(255, 107, 53, 0.1), rgba(243, 156, 18, 0.1))',
+          }}
           animate={{
             scale: [1, 0.8, 1],
             opacity: [0.4, 0.7, 0.4],

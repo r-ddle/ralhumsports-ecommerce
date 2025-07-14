@@ -282,7 +282,7 @@ export default function ProductDetailPage({ params }: ProductDetailPageProps) {
   const maxQuantity = selectedVariant.inventory
 
   return (
-    <main className="min-h-screen pt-16 bg-gradient-to-br from-gray-50 via-white to-blue-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900">
+    <main className="min-h-screen pt-16" style={{ background: 'var(--background)' }}>
       <section className="py-4 sm:py-6 lg:py-8">
         <div className="max-w-7xl mx-auto px-4">
           {/* Enhanced Back Button */}
@@ -304,7 +304,7 @@ export default function ProductDetailPage({ params }: ProductDetailPageProps) {
               className={`space-y-3 sm:space-y-4 ${!prefersReducedMotion ? 'animate-fade-in-up' : ''}`}
             >
               {/* Main Image with Enhanced Styling */}
-              <div className="relative aspect-square bg-gradient-to-br from-gray-100 to-gray-200 dark:from-gray-800 dark:to-gray-700 rounded-2xl overflow-hidden group shadow-2xl">
+              <div className="relative aspect-square bg-gradient-to-br from-gray-100 to-gray-200 rounded-2xl overflow-hidden group shadow-2xl">
                 <Image
                   width={600}
                   height={400}
@@ -396,7 +396,8 @@ export default function ProductDetailPage({ params }: ProductDetailPageProps) {
                 <div className="flex">
                   <Link
                     href={`/products?brand=${product.brand.slug}`}
-                    className={`text-[#003DA5] dark:text-[#4A90E2] font-bold text-base sm:text-xl hover:underline ${!prefersReducedMotion ? 'hover:scale-105 transition-all duration-300' : ''}`}
+                    className={`font-bold text-base sm:text-xl hover:underline ${!prefersReducedMotion ? 'hover:scale-105 transition-all duration-300' : ''}`}
+                    style={{ color: 'var(--secondary-blue)' }}
                   >
                     {product.brand.name}
                   </Link>
@@ -404,16 +405,42 @@ export default function ProductDetailPage({ params }: ProductDetailPageProps) {
               )}
 
               {/* Title */}
-              <h1 className="text-2xl sm:text-3xl lg:text-4xl font-black text-gray-900 dark:text-white leading-tight">
+              <h1
+                className="text-2xl sm:text-3xl lg:text-4xl font-black leading-tight"
+                style={{ color: 'var(--text-primary)' }}
+              >
                 {product.name}
               </h1>
 
-              {/* Price Info */}
-              <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl p-4 border border-blue-200">
-                <p className="text-xs sm:text-sm text-blue-800 font-medium">
-                  Price includes tax. Free shipping on orders over LKR{' '}
-                  <span className="font-bold">{SITE_CONFIG.shipping.freeShippingThreshold}</span>.
-                </p>
+              {/* Enhanced Price Display */}
+              <div className="space-y-4">
+                {/* Main Price */}
+                <div className="flex items-baseline gap-3">
+                  <span
+                    className="text-3xl sm:text-4xl font-black"
+                    style={{ color: 'var(--primary-orange)' }}
+                  >
+                    Rs. {selectedVariant.price.toLocaleString()}
+                  </span>
+                  {product.originalPrice && product.originalPrice > product.price && (
+                    <span className="text-lg text-gray-500 line-through">
+                      Rs. {product.originalPrice.toLocaleString()}
+                    </span>
+                  )}
+                  {product.originalPrice && product.originalPrice > product.price && (
+                    <Badge className="bg-gradient-to-r from-red-500 to-red-600 text-white font-bold text-sm">
+                      Save Rs. {(product.originalPrice - product.price).toLocaleString()}
+                    </Badge>
+                  )}
+                </div>
+
+                {/* Price Info */}
+                <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl p-4 border border-blue-200">
+                  <p className="text-xs sm:text-sm text-blue-800 font-medium">
+                    Price includes tax. Free shipping on orders over LKR{' '}
+                    <span className="font-bold">{SITE_CONFIG.shipping.freeShippingThreshold}</span>.
+                  </p>
+                </div>
               </div>
 
               {/* Enhanced Stock Status */}
@@ -439,7 +466,10 @@ export default function ProductDetailPage({ params }: ProductDetailPageProps) {
               <div className="space-y-4 sm:space-y-6">
                 {variants.length > 1 && (
                   <div className="space-y-3">
-                    <h3 className="font-bold text-gray-900 dark:text-white text-sm sm:text-base">
+                    <h3
+                      className="font-bold text-sm sm:text-base"
+                      style={{ color: 'var(--text-primary)' }}
+                    >
                       Select Variant:
                     </h3>
                     <div className="flex flex-wrap gap-2 sm:gap-3">
@@ -486,9 +516,7 @@ export default function ProductDetailPage({ params }: ProductDetailPageProps) {
                           >
                             <span className="font-bold">{mainLabel}</span>
                             {subLabel && (
-                              <span className="text-xs text-white dark:text-gray-300 font-normal">
-                                {subLabel}
-                              </span>
+                              <span className="text-xs text-white font-normal">{subLabel}</span>
                             )}
                             {!isAvailable && (
                               <span className="text-xs text-red-500 mt-1">Out of stock</span>
@@ -502,13 +530,19 @@ export default function ProductDetailPage({ params }: ProductDetailPageProps) {
 
                 {/* Enhanced Selected Variant Info */}
                 {selectedVariant && variants.length > 1 && (
-                  <div className="p-4 bg-gradient-to-r from-gray-50 to-blue-50 dark:from-gray-800 dark:to-gray-700 rounded-xl border border-gray-200 shadow-lg">
+                  <div className="p-4 bg-gradient-to-r from-gray-50 to-blue-50 rounded-xl border border-gray-200 shadow-lg">
                     <div className="flex items-center justify-between">
                       <div>
-                        <p className="font-medium text-gray-900 dark:text-white text-sm sm:text-base">
+                        <p
+                          className="font-medium text-sm sm:text-base"
+                          style={{ color: 'var(--text-primary)' }}
+                        >
                           Selected:
                         </p>
-                        <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-400">
+                        <p
+                          className="text-xs sm:text-sm"
+                          style={{ color: 'var(--text-secondary)' }}
+                        >
                           {selectedVariant.name ||
                             (selectedVariant.size && selectedVariant.color
                               ? `${selectedVariant.size} - ${selectedVariant.color}`
@@ -516,7 +550,10 @@ export default function ProductDetailPage({ params }: ProductDetailPageProps) {
                         </p>
                       </div>
                       <div className="text-right">
-                        <p className="font-bold bg-gradient-to-r from-[#003DA5] to-[#0052CC] bg-clip-text text-transparent text-sm sm:text-base">
+                        <p
+                          className="font-bold text-sm sm:text-base"
+                          style={{ color: 'var(--secondary-blue)' }}
+                        >
                           Rs. {selectedVariant.price.toLocaleString()}
                         </p>
                         {selectedVariant.inventory <= 5 && selectedVariant.inventory > 0 && (
@@ -534,7 +571,8 @@ export default function ProductDetailPage({ params }: ProductDetailPageProps) {
               <div className="space-y-2">
                 <label
                   htmlFor="quantity"
-                  className="font-bold text-gray-900 dark:text-white text-sm sm:text-base"
+                  className="font-bold text-sm sm:text-base"
+                  style={{ color: 'var(--text-primary)' }}
                 >
                   Quantity:
                 </label>
@@ -620,12 +658,13 @@ export default function ProductDetailPage({ params }: ProductDetailPageProps) {
           >
             <Tabs defaultValue="description" className="w-full">
               {/* Enhanced Tabs Navigation */}
-              <TabsList className="grid w-full grid-cols-3 mb-6 sm:mb-8 h-auto bg-gradient-to-r from-gray-100 to-blue-100 dark:from-gray-800 dark:to-gray-700 rounded-2xl p-2 shadow-xl">
+              <TabsList className="grid w-full grid-cols-3 mb-6 sm:mb-8 h-auto bg-gradient-to-r from-gray-100 to-blue-100 rounded-2xl p-2 shadow-xl">
                 {['description', 'specifications', 'shipping'].map((tab) => (
                   <TabsTrigger
                     key={tab}
                     value={tab}
-                    className={`font-bold text-xs sm:text-sm py-3 rounded-xl data-[state=active]:bg-white dark:data-[state=active]:bg-gray-700 data-[state=active]:text-[#003DA5] dark:data-[state=active]:text-[#4A90E2] data-[state=active]:shadow-lg transition-all duration-300 ${!prefersReducedMotion ? 'hover:scale-105' : ''}`}
+                    className={`font-bold text-xs sm:text-sm py-3 rounded-xl data-[state=active]:bg-white data-[state=active]:shadow-lg transition-all duration-300 ${!prefersReducedMotion ? 'hover:scale-105' : ''}`}
+                    style={{ '[data-state=active]': { color: 'var(--secondary-blue)' } }}
                   >
                     {tab.charAt(0).toUpperCase() + tab.slice(1)}
                   </TabsTrigger>
@@ -634,7 +673,7 @@ export default function ProductDetailPage({ params }: ProductDetailPageProps) {
 
               {/* Description Tab */}
               <TabsContent value="description" className="space-y-6">
-                <Card className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-md shadow-2xl border border-white/20">
+                <Card className="bg-white/80 backdrop-blur-md shadow-2xl border border-white/20">
                   <CardContent className="p-6">
                     <h3 className="text-xl font-bold mb-4 text-gray-900 dark:text-white">
                       Product Description
@@ -697,7 +736,7 @@ export default function ProductDetailPage({ params }: ProductDetailPageProps) {
 
               {/* Enhanced Specifications Tab */}
               <TabsContent value="specifications" className="space-y-6">
-                <Card className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-md shadow-2xl border border-white/20">
+                <Card className="bg-white/80 backdrop-blur-md shadow-2xl border border-white/20">
                   <CardContent className="p-6">
                     <h3 className="text-xl font-bold mb-6 text-gray-900 dark:text-white">
                       Technical Specifications
@@ -780,7 +819,7 @@ export default function ProductDetailPage({ params }: ProductDetailPageProps) {
 
               {/* Enhanced Shipping Tab */}
               <TabsContent value="shipping" className="space-y-6">
-                <Card className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-md shadow-2xl border border-white/20">
+                <Card className="bg-white/80 backdrop-blur-md shadow-2xl border border-white/20">
                   <CardContent className="p-6">
                     <h3 className="text-xl font-bold mb-6 text-gray-900 dark:text-white">
                       Shipping & Returns Information

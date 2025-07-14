@@ -189,7 +189,8 @@ export default function Navigation() {
               </div>
               <Button
                 size="sm"
-                className="font-bold px-3 lg:px-5 py-2 text-sm lg:text-base rounded-full transition-all text-white shadow-lg hover:shadow-xl focus-visible:ring-2 focus-visible:ring-brand-primary focus-visible:ring-offset-2 bg-brand-primary hover:bg-primary-600"
+                className="font-bold px-3 lg:px-5 py-2 text-sm lg:text-base rounded-full transition-all text-white shadow-lg hover:shadow-xl focus-visible:ring-2 focus-visible:ring-offset-2"
+                style={{ background: 'linear-gradient(135deg, var(--primary-orange), #FF8B35)' }}
                 asChild
               >
                 <Link href="/contact">
@@ -207,7 +208,14 @@ export default function Navigation() {
               </div>
               <button
                 onClick={() => setIsOpen(!isOpen)}
-                className="p-2 rounded-full hover:bg-gray-100 transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-primary focus-visible:ring-offset-2"
+                className="p-2 rounded-full transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2"
+                style={{ backgroundColor: 'transparent' }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.backgroundColor = 'var(--surface-hover)'
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.backgroundColor = 'transparent'
+                }}
                 aria-label={isOpen ? 'Close menu' : 'Open menu'}
                 aria-expanded={isOpen}
                 aria-controls="mobile-menu"
@@ -251,7 +259,8 @@ export default function Navigation() {
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               transition={{ duration: reducedMotion ? 0.1 : 0.2 }}
-              className="fixed inset-0 bg-gray-900/20 backdrop-blur-sm z-40 md:hidden"
+              className="fixed inset-0 backdrop-blur-sm z-40 md:hidden"
+              style={{ backgroundColor: 'rgba(45, 52, 54, 0.2)' }}
               onClick={() => setIsOpen(false)}
               aria-hidden="true"
             />

@@ -1,260 +1,245 @@
 'use client'
 
 import { Badge } from '@/components/ui/badge'
-import { Card, CardContent } from '@/components/ui/card'
-import { Calendar, Award, Users, TrendingUp, Sparkles } from 'lucide-react'
-import { motion } from 'framer-motion'
+import { Button } from '@/components/ui/button'
+import { ArrowRight, Calendar, Trophy, Users, Target, Award, Zap } from 'lucide-react'
+import Link from 'next/link'
 import { SITE_CONFIG } from '@/config/site-config'
-
-const milestones = [
-  {
-    year: SITE_CONFIG.about.established.toString(),
-    title: `${SITE_CONFIG.about.companyName} Founded`,
-    description: "Established as Sri Lanka's premier sports equipment distributor",
-    icon: Calendar,
-    gradient: 'from-blue-500 to-cyan-400',
-  },
-  {
-    year: '2000s',
-    title: 'Brand Partnerships',
-    description: 'Secured exclusive partnerships with Gray-Nicolls, Gilbert, and Grays',
-    icon: Award,
-    gradient: 'from-orange-500 to-red-400',
-  },
-  {
-    year: '2010s',
-    title: 'Market Leadership',
-    description: `Became Sri Lanka's #1 sports equipment distributor`,
-    icon: TrendingUp,
-    gradient: 'from-yellow-500 to-orange-400',
-  },
-  {
-    year: '2020s',
-    title: 'Community Impact',
-    description: 'Serving 1000+ schools, clubs, and professional athletes',
-    icon: Users,
-    gradient: 'from-lime-500 to-green-400',
-  },
-]
+import { motion } from 'framer-motion'
+import { useInView } from 'framer-motion'
+import { useRef, useState, useEffect } from 'react'
+import Image from 'next/image'
 
 export default function Heritage() {
+  const ref = useRef(null)
+  const isInView = useInView(ref, { once: true, margin: '-100px' })
+  const [reducedMotion, setReducedMotion] = useState(false)
+
+  useEffect(() => {
+    const mediaQuery = window.matchMedia('(prefers-reduced-motion: reduce)')
+    setReducedMotion(mediaQuery.matches)
+
+    const handleChange = () => setReducedMotion(mediaQuery.matches)
+    mediaQuery.addEventListener('change', handleChange)
+    return () => mediaQuery.removeEventListener('change', handleChange)
+  }, [])
+
+  const milestones = [
+    {
+      year: '1999',
+      title: 'Company Founded',
+      description:
+        'Started as a small sports equipment retailer with a vision to bring quality gear to Sri Lankan athletes',
+      icon: Calendar,
+      color: 'from-blue-500 to-cyan-500',
+    },
+    {
+      year: '2005',
+      title: 'First Brand Partnership',
+      description:
+        'Became the exclusive distributor for Gray-Nicolls cricket equipment in Sri Lanka',
+      icon: Trophy,
+      color: 'from-green-500 to-emerald-500',
+    },
+    {
+      year: '2010',
+      title: 'Expanded Portfolio',
+      description:
+        'Added Gilbert, Grays, and Molten to our brand portfolio, covering multiple sports',
+      icon: Target,
+      color: 'from-orange-500 to-red-500',
+    },
+    {
+      year: '2015',
+      title: '10,000+ Customers',
+      description:
+        'Reached a milestone of serving over 10,000 satisfied customers across the island',
+      icon: Users,
+      color: 'from-purple-500 to-pink-500',
+    },
+    {
+      year: '2020',
+      title: 'Digital Transformation',
+      description: 'Launched our online store and digital presence to serve customers nationwide',
+      icon: Zap,
+      color: 'from-indigo-500 to-blue-500',
+    },
+    {
+      year: '2024',
+      title: '25 Years of Excellence',
+      description:
+        'Celebrating a quarter-century of providing premium sports equipment to Sri Lankan athletes',
+      icon: Award,
+      color: 'from-yellow-500 to-orange-500',
+    },
+  ]
+
+  const achievements = [
+    { label: 'Years of Excellence', value: SITE_CONFIG.about.yearsOfExcellence, suffix: '+' },
+    { label: 'Brand Partners', value: '6', suffix: '' },
+    { label: 'Products Available', value: '1000', suffix: '+' },
+    { label: 'Happy Customers', value: '10K', suffix: '+' },
+  ]
+
   return (
-    <section className="relative py-16 sm:py-20 lg:py-24 overflow-hidden">
-      {/* Modern Background */}
-      <div className="absolute inset-0 bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900" />
-
-      {/* Animated Background Elements */}
-      <div className="absolute inset-0 overflow-hidden pointer-events-none">
+    <section ref={ref} className="py-12 sm:py-16 lg:py-24 bg-white overflow-hidden">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        {/* Section Header */}
         <motion.div
-          className="absolute top-0 left-0 w-96 h-96 bg-gradient-to-br from-yellow-400/20 to-orange-300/20 rounded-full blur-3xl"
-          animate={{
-            scale: [1, 1.2, 1],
-            opacity: [0.3, 0.6, 0.3],
-            x: [0, 50, 0],
-            y: [0, -30, 0],
-          }}
-          transition={{
-            duration: 15,
-            repeat: Number.POSITIVE_INFINITY,
-            ease: 'easeInOut',
-          }}
-        />
-        <motion.div
-          className="absolute bottom-0 right-0 w-80 h-80 bg-gradient-to-br from-lime-400/20 to-green-300/20 rounded-full blur-3xl"
-          animate={{
-            scale: [1, 0.8, 1],
-            opacity: [0.4, 0.7, 0.4],
-            x: [0, -40, 0],
-            y: [0, 20, 0],
-          }}
-          transition={{
-            duration: 12,
-            repeat: Number.POSITIVE_INFINITY,
-            ease: 'easeInOut',
-            delay: 5,
-          }}
-        />
-      </div>
-
-      <div className="relative z-10 max-w-7xl mx-auto px-4">
-        {/* Enhanced Section Header */}
-        <motion.div
-          initial={{ opacity: 0, y: 30 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.8 }}
-          viewport={{ once: true }}
+          initial={reducedMotion ? false : { opacity: 0, y: 30 }}
+          animate={isInView ? { opacity: 1, y: 0 } : {}}
+          transition={{ duration: reducedMotion ? 0.1 : 0.6 }}
           className="text-center mb-12 sm:mb-16"
         >
-          <motion.div
-            initial={{ opacity: 0, scale: 0.9 }}
-            whileInView={{ opacity: 1, scale: 1 }}
-            transition={{ duration: 0.6, delay: 0.2 }}
-            className="inline-flex items-center gap-2 px-6 py-3 rounded-full font-bold text-sm mb-6 bg-gradient-to-r from-yellow-400 to-orange-400 text-slate-900 shadow-lg backdrop-blur-sm border border-yellow-300/30"
+          <Badge
+            variant="secondary"
+            className="mb-4 px-4 py-2 text-sm font-semibold bg-gradient-to-r from-yellow-50 to-orange-50 text-[#FF3D00] border border-yellow-200"
           >
-            <Sparkles className="w-4 h-4" />
+            <Award className="w-4 h-4 mr-2" />
             OUR HERITAGE
-          </motion.div>
-
-          <motion.h2
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8, delay: 0.3 }}
-            className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-black text-white mb-6 leading-tight"
-          >
-            25+ YEARS OF
-            <span className="block bg-gradient-to-r from-orange-400 to-red-400 bg-clip-text text-transparent">
-              ATHLETIC EXCELLENCE
+          </Badge>
+          <h2 className="text-3xl sm:text-4xl lg:text-5xl font-black text-gray-900 mb-4 sm:mb-6">
+            {SITE_CONFIG.about.yearsOfExcellence} Years of
+            <span className="block bg-gradient-to-r from-[#FF3D00] to-[#FFD700] bg-clip-text text-transparent">
+              Athletic Excellence
             </span>
-          </motion.h2>
-
-          <motion.p
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8, delay: 0.4 }}
-            className="text-lg sm:text-xl text-slate-300 max-w-3xl mx-auto leading-relaxed"
-          >
-            From humble beginnings to Sri Lanka&apos;s leading sports equipment distributor, our
-            journey is built on trust, quality, and unwavering commitment to sports excellence.
-          </motion.p>
+          </h2>
+          <p className="text-lg sm:text-xl text-gray-600 max-w-3xl mx-auto leading-relaxed">
+            From humble beginnings to becoming Sri Lanka&apos;s premier sports equipment
+            distributor, our journey has been driven by passion for sports and commitment to quality
+          </p>
         </motion.div>
 
-        {/* Enhanced Stats Section */}
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-6 sm:gap-8 mb-16">
-          {SITE_CONFIG.stats.map((stat, index) => (
+        {/* Achievements Grid */}
+        <motion.div
+          initial={reducedMotion ? false : { opacity: 0, y: 20 }}
+          animate={isInView ? { opacity: 1, y: 0 } : {}}
+          transition={{ duration: reducedMotion ? 0.1 : 0.6, delay: reducedMotion ? 0 : 0.2 }}
+          className="grid grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 mb-12 sm:mb-16"
+        >
+          {achievements.map((achievement, index) => (
             <motion.div
-              key={index}
-              initial={{ opacity: 0, scale: 0.8 }}
-              whileInView={{ opacity: 1, scale: 1 }}
-              transition={{ duration: 0.6, delay: index * 0.1 }}
-              viewport={{ once: true }}
-              whileHover={{ scale: 1.05 }}
-              className="text-center group"
+              key={achievement.label}
+              initial={reducedMotion ? false : { opacity: 0, scale: 0.9 }}
+              animate={isInView ? { opacity: 1, scale: 1 } : {}}
+              transition={{
+                duration: reducedMotion ? 0.1 : 0.5,
+                delay: reducedMotion ? 0 : 0.3 + index * 0.1,
+              }}
+              className="text-center p-4 sm:p-6 bg-gradient-to-br from-gray-50 to-blue-50 rounded-xl sm:rounded-2xl border border-gray-200"
             >
-              <div className="relative">
-                <motion.div
-                  initial={{ scale: 0 }}
-                  whileInView={{ scale: 1 }}
-                  transition={{ duration: 0.8, delay: 0.2 + index * 0.1 }}
-                  className="text-4xl sm:text-5xl md:text-6xl font-black mb-2 bg-gradient-to-r from-yellow-400 to-orange-400 bg-clip-text text-transparent group-hover:scale-110 transition-transform duration-300"
-                >
-                  {stat.number}
-                </motion.div>
-                <motion.p
-                  initial={{ opacity: 0, y: 10 }}
-                  whileInView={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.6, delay: 0.4 + index * 0.1 }}
-                  className="text-slate-300 font-medium text-sm sm:text-base"
-                >
-                  {stat.label}
-                </motion.p>
+              <div className="text-2xl sm:text-3xl lg:text-4xl font-black text-[#003DA5] mb-2">
+                {achievement.value}
+                {achievement.suffix}
+              </div>
+              <div className="text-xs sm:text-sm text-gray-600 font-medium">
+                {achievement.label}
               </div>
             </motion.div>
           ))}
+        </motion.div>
+
+        {/* Timeline */}
+        <div className="relative">
+          {/* Timeline Line - Hidden on mobile */}
+          <div className="hidden lg:block absolute left-1/2 transform -translate-x-1/2 w-1 bg-gradient-to-b from-[#003DA5] via-[#FF3D00] to-[#FFD700] rounded-full h-full" />
+
+          <div className="space-y-8 sm:space-y-12">
+            {milestones.map((milestone, index) => {
+              const IconComponent = milestone.icon
+              const isEven = index % 2 === 0
+
+              return (
+                <motion.div
+                  key={milestone.year}
+                  initial={reducedMotion ? false : { opacity: 0, x: isEven ? -50 : 50 }}
+                  animate={isInView ? { opacity: 1, x: 0 } : {}}
+                  transition={{
+                    duration: reducedMotion ? 0.1 : 0.6,
+                    delay: reducedMotion ? 0 : 0.4 + index * 0.1,
+                  }}
+                  className={`relative flex items-center ${
+                    isEven ? 'lg:flex-row' : 'lg:flex-row-reverse'
+                  } flex-col lg:gap-8`}
+                >
+                  {/* Timeline Node - Hidden on mobile */}
+                  <div className="hidden lg:block absolute left-1/2 transform -translate-x-1/2 w-4 h-4 bg-white border-4 border-[#003DA5] rounded-full z-10" />
+
+                  {/* Content Card */}
+                  <div
+                    className={`w-full lg:w-5/12 ${isEven ? 'lg:text-right' : 'lg:text-left'} text-center`}
+                  >
+                    <div className="bg-white rounded-2xl sm:rounded-3xl p-6 sm:p-8 shadow-lg border border-gray-100 hover:shadow-xl transition-all duration-300">
+                      {/* Year Badge */}
+                      <div
+                        className={`inline-flex items-center gap-2 px-4 py-2 rounded-full text-white font-bold text-sm mb-4 bg-gradient-to-r ${milestone.color}`}
+                      >
+                        <IconComponent className="w-4 h-4" />
+                        {milestone.year}
+                      </div>
+
+                      <h3 className="text-xl sm:text-2xl font-bold text-gray-900 mb-3">
+                        {milestone.title}
+                      </h3>
+                      <p className="text-gray-600 text-sm sm:text-base leading-relaxed">
+                        {milestone.description}
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Spacer for opposite side on desktop */}
+                  <div className="hidden lg:block w-5/12" />
+                </motion.div>
+              )
+            })}
+          </div>
         </div>
 
-        {/* Enhanced Timeline */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 sm:gap-8">
-          {milestones.map((milestone, index) => {
-            const IconComponent = milestone.icon
-            return (
-              <motion.div
-                key={index}
-                initial={{ opacity: 0, y: 30 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.6, delay: index * 0.1 }}
-                viewport={{ once: true }}
-                whileHover={{ y: -8, scale: 1.02 }}
-                className="group"
-              >
-                <Card className="bg-white/10 backdrop-blur-xl border border-white/20 hover:bg-white/15 transition-all duration-500 shadow-xl hover:shadow-2xl">
-                  <CardContent className="p-6 text-center">
-                    <motion.div
-                      initial={{ scale: 0, rotate: -180 }}
-                      whileInView={{ scale: 1, rotate: 0 }}
-                      transition={{ duration: 0.6, delay: 0.2 + index * 0.1 }}
-                      className={`w-16 h-16 bg-gradient-to-r ${milestone.gradient} rounded-full flex items-center justify-center mx-auto mb-4 shadow-lg group-hover:shadow-xl transition-shadow duration-300`}
-                    >
-                      <IconComponent className="w-8 h-8 text-white" />
-                    </motion.div>
-
-                    <motion.div
-                      initial={{ opacity: 0, scale: 0.8 }}
-                      whileInView={{ opacity: 1, scale: 1 }}
-                      transition={{ duration: 0.5, delay: 0.3 + index * 0.1 }}
-                      className="text-2xl font-black bg-gradient-to-r from-yellow-400 to-orange-400 bg-clip-text text-transparent mb-2"
-                    >
-                      {milestone.year}
-                    </motion.div>
-
-                    <motion.h3
-                      initial={{ opacity: 0, y: 10 }}
-                      whileInView={{ opacity: 1, y: 0 }}
-                      transition={{ duration: 0.6, delay: 0.4 + index * 0.1 }}
-                      className="text-xl font-bold mb-3 text-white"
-                    >
-                      {milestone.title}
-                    </motion.h3>
-
-                    <motion.p
-                      initial={{ opacity: 0, y: 10 }}
-                      whileInView={{ opacity: 1, y: 0 }}
-                      transition={{ duration: 0.6, delay: 0.5 + index * 0.1 }}
-                      className="text-slate-300 leading-relaxed text-sm"
-                    >
-                      {milestone.description}
-                    </motion.p>
-                  </CardContent>
-                </Card>
-              </motion.div>
-            )
-          })}
-        </div>
-
-        {/* Enhanced Legacy Section */}
+        {/* CTA Section */}
         <motion.div
-          initial={{ opacity: 0, y: 30 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.8, delay: 0.5 }}
-          viewport={{ once: true }}
-          className="mt-16 sm:mt-20"
+          initial={reducedMotion ? false : { opacity: 0, y: 30 }}
+          animate={isInView ? { opacity: 1, y: 0 } : {}}
+          transition={{ duration: reducedMotion ? 0.1 : 0.6, delay: reducedMotion ? 0 : 0.8 }}
+          className="text-center mt-12 sm:mt-16 bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 rounded-2xl sm:rounded-3xl p-8 sm:p-12 text-white relative overflow-hidden"
         >
-          <div className="relative overflow-hidden rounded-3xl bg-gradient-to-r from-blue-600/20 via-purple-600/20 to-cyan-500/20 backdrop-blur-xl border border-white/20 p-8 sm:p-12 shadow-2xl">
-            {/* Background Pattern */}
-            <div className="absolute inset-0 bg-grid-pattern opacity-10" />
+          {/* Background Pattern */}
+          <div className="absolute inset-0 opacity-10">
+            <Image
+              src="/placeholder.svg?height=400&width=800&text=Sports+Pattern"
+              alt="Sports pattern background"
+              fill
+              className="object-cover"
+            />
+          </div>
 
-            <div className="relative z-10 text-center">
-              <motion.h3
-                initial={{ opacity: 0, scale: 0.9 }}
-                whileInView={{ opacity: 1, scale: 1 }}
-                transition={{ duration: 0.6 }}
-                className="text-2xl sm:text-3xl md:text-4xl font-black mb-6 text-white"
+          <div className="relative z-10">
+            <h3 className="text-2xl sm:text-3xl lg:text-4xl font-black mb-4 sm:mb-6">
+              Be Part of Our Continuing Story
+            </h3>
+            <p className="text-lg sm:text-xl text-gray-300 mb-6 sm:mb-8 max-w-2xl mx-auto">
+              Join thousands of athletes who trust Ralhum Sports for their equipment needs.
+              Experience the quality and service that has made us Sri Lanka&apos;s #1 choice for 25
+              years.
+            </p>
+            <div className="flex flex-col sm:flex-row gap-4 justify-center">
+              <Button
+                size="lg"
+                className="bg-[#FF3D00] hover:bg-[#FF3D00]/90 text-white font-bold px-8 py-4 text-lg rounded-full shadow-xl hover:shadow-2xl transition-all duration-300 hover:scale-105 focus-visible:ring-2 focus-visible:ring-orange-400 focus-visible:ring-offset-2"
+                asChild
               >
-                BUILT ON{' '}
-                <span className="bg-gradient-to-r from-yellow-400 to-orange-400 bg-clip-text text-transparent">
-                  LEGACY
-                </span>
-              </motion.h3>
-
-              <motion.p
-                initial={{ opacity: 0, y: 20 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.6, delay: 0.2 }}
-                className="text-lg sm:text-xl text-slate-300 mb-8 max-w-4xl mx-auto leading-relaxed"
+                <Link href="/products">
+                  Shop Now
+                  <ArrowRight className="w-5 h-5 ml-2" />
+                </Link>
+              </Button>
+              <Button
+                size="lg"
+                variant="outline"
+                className="border-2 border-white text-white hover:bg-white hover:text-gray-900 font-bold px-8 py-4 text-lg rounded-full transition-all duration-300 hover:scale-105 focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 bg-transparent"
+                asChild
               >
-                {SITE_CONFIG.about.legacy.legacyText}
-              </motion.p>
-
-              <motion.div
-                initial={{ opacity: 0, scale: 0.8 }}
-                whileInView={{ opacity: 1, scale: 1 }}
-                transition={{ duration: 0.6, delay: 0.4 }}
-                whileHover={{ scale: 1.05 }}
-              >
-                <Badge className="bg-gradient-to-r from-lime-400 to-green-400 text-slate-900 px-8 py-4 text-base font-bold shadow-lg hover:shadow-xl transition-all duration-300">
-                  <Sparkles className="w-4 h-4 mr-2" />
-                  Trusted by Generations of Athletes
-                </Badge>
-              </motion.div>
+                <Link href="/about">Learn More</Link>
+              </Button>
             </div>
           </div>
         </motion.div>

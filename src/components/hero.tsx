@@ -30,16 +30,29 @@ export default function Hero() {
   }
 
   return (
-    <section className="relative overflow-hidden bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 py-24 sm:py-32 md:py-40 lg:py-48">
+    <section
+      className="relative overflow-hidden py-24 sm:py-32 md:py-40 lg:py-48"
+      style={{ background: 'linear-gradient(135deg, var(--text-primary), var(--secondary-blue))' }}
+    >
       {/* Enhanced Animated Background - Only on desktop and with motion preference */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute inset-0 bg-gradient-to-br from-brand-secondary/20 via-brand-primary/20 to-brand-accent/20" />
+        <div
+          className="absolute inset-0"
+          style={{
+            background:
+              'linear-gradient(135deg, rgba(59, 130, 246, 0.2), rgba(255, 107, 53, 0.2), rgba(243, 156, 18, 0.2))',
+          }}
+        />
 
         {/* Floating Orbs - Only on desktop without reduced motion */}
         {!reducedMotion && (
           <>
             <motion.div
-              className="hidden lg:block absolute top-1/4 left-1/6 w-72 h-72 bg-gradient-to-br from-brand-secondary/30 to-brand-primary/30 rounded-full blur-3xl"
+              className="hidden lg:block absolute top-1/4 left-1/6 w-72 h-72 rounded-full blur-3xl"
+              style={{
+                background:
+                  'radial-gradient(circle, rgba(59, 130, 246, 0.3), rgba(255, 107, 53, 0.3))',
+              }}
               animate={{
                 scale: [1, 1.2, 1],
                 opacity: [0.3, 0.6, 0.3],

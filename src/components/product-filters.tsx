@@ -398,7 +398,8 @@ export function ProductFilters({
                       <div>
                         <Label
                           htmlFor="minPrice"
-                          className="text-xs font-medium text-slate-600 dark:text-slate-400"
+                          className="text-xs font-medium"
+                          style={{ color: 'var(--text-secondary)' }}
                         >
                           Min Price
                         </Label>
@@ -415,7 +416,8 @@ export function ProductFilters({
                       <div>
                         <Label
                           htmlFor="maxPrice"
-                          className="text-xs font-medium text-slate-600 dark:text-slate-400"
+                          className="text-xs font-medium"
+                          style={{ color: 'var(--text-secondary)' }}
                         >
                           Max Price
                         </Label>

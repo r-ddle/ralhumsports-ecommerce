@@ -6,8 +6,8 @@ import { ProductFilters as FiltersComponent } from '@/components/product-filters
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
-import { Skeleton } from '@/components/ui/skeleton'
 import { Alert, AlertDescription } from '@/components/ui/alert'
+import { ProductCardSkeleton, ProductListSkeleton } from '@/components/ui/lazy-image'
 import {
   Grid3X3,
   List,
@@ -195,9 +195,14 @@ export default function StorePage() {
   }
 
   return (
-    <main className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-gray-100 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900">
+    <main className="min-h-screen" style={{ background: 'var(--background)' }}>
       {/* Enhanced Hero Section with Glassmorphism */}
-      <section className="py-12 sm:py-16 lg:py-20 bg-gradient-to-br from-[#003DA5] via-[#0052CC] to-[#1A1A1A] text-white relative overflow-hidden">
+      <section
+        className="py-12 sm:py-16 lg:py-20 text-white relative overflow-hidden"
+        style={{
+          background: 'linear-gradient(135deg, var(--secondary-blue), var(--primary-orange))',
+        }}
+      >
         {/* Animated Background Elements */}
         <div className="absolute inset-0 opacity-20">
           <div
@@ -216,14 +221,27 @@ export default function StorePage() {
 
         <div className="max-w-7xl mt-4 mx-auto px-4 relative z-10">
           <div className="text-center">
-            <Badge className="bg-gradient-to-r from-[#FFD700] to-[#AEEA00] text-[#1A1A1A] px-4 sm:px-6 py-2 text-xs sm:text-sm font-bold mb-4 shadow-lg backdrop-blur-sm border border-white/20">
+            <Badge
+              className="px-4 sm:px-6 py-2 text-xs sm:text-sm font-bold mb-4 shadow-lg backdrop-blur-sm border border-white/20"
+              style={{
+                background: 'linear-gradient(135deg, var(--accent-amber), #FBBF24)',
+                color: 'white',
+              }}
+            >
               PREMIUM SPORTS STORE
             </Badge>
             <h1
               className={`text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-black mb-6 leading-tight bg-gradient-to-r from-white via-gray-100 to-white bg-clip-text text-transparent ${!prefersReducedMotion ? 'animate-fade-in-up' : ''}`}
             >
               PROFESSIONAL
-              <span className="block bg-gradient-to-r from-[#FF3D00] to-[#FF6B47] bg-clip-text text-transparent">
+              <span
+                className="block"
+                style={{
+                  background: 'linear-gradient(135deg, var(--primary-orange), #FF8B35)',
+                  WebkitBackgroundClip: 'text',
+                  WebkitTextFillColor: 'transparent',
+                }}
+              >
                 SPORTS EQUIPMENT
               </span>
             </h1>
@@ -308,9 +326,19 @@ export default function StorePage() {
             <Badge className="bg-gradient-to-r from-[#AEEA00] to-[#7CB342] text-[#1A1A1A] px-4 sm:px-6 py-2 text-xs sm:text-sm font-bold mb-4 shadow-lg">
               COMPLETE CATALOG
             </Badge>
-            <h2 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-black text-[#1A1A1A] dark:text-white mb-4 leading-tight">
+            <h2
+              className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-black mb-4 leading-tight"
+              style={{ color: 'var(--text-primary)' }}
+            >
               ALL
-              <span className="block bg-gradient-to-r from-[#FF3D00] to-[#FF6B47] bg-clip-text text-transparent">
+              <span
+                className="block"
+                style={{
+                  background: 'linear-gradient(135deg, var(--primary-orange), #FF8B35)',
+                  WebkitBackgroundClip: 'text',
+                  WebkitTextFillColor: 'transparent',
+                }}
+              >
                 PRODUCTS
               </span>
             </h2>
@@ -380,7 +408,9 @@ export default function StorePage() {
                         <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-300 font-medium">
                           Showing {(pagination.page - 1) * pagination.limit + 1}-
                           {Math.min(pagination.page * pagination.limit, pagination.totalDocs)} of{' '}
-                          <span className="font-bold text-[#003DA5]">{pagination.totalDocs}</span>{' '}
+                          <span className="font-bold" style={{ color: 'var(--secondary-blue)' }}>
+                            {pagination.totalDocs}
+                          </span>{' '}
                           products
                         </p>
                       )}
@@ -419,7 +449,7 @@ export default function StorePage() {
                 </CardContent>
               </Card>
 
-              {/* Enhanced Products Grid with Staggered Animation */}
+              {/* Enhanced Products Grid with Optimized Skeleton Loading */}
               {loading ? (
                 <div
                   className={`grid gap-3 sm:gap-4 md:gap-6 ${
@@ -428,26 +458,13 @@ export default function StorePage() {
                       : 'grid-cols-1'
                   }`}
                 >
-                  {Array.from({ length: 12 }).map((_, i) => (
-                    <Card
-                      key={i}
-                      className="overflow-hidden bg-white/80 backdrop-blur-sm shadow-lg"
-                    >
-                      <CardContent className="p-0">
-                        <Skeleton className="h-32 sm:h-48 w-full" />
-                        <div className="p-2 sm:p-4 space-y-2 sm:space-y-3">
-                          <Skeleton className="h-3 sm:h-4 w-3/4" />
-                          <Skeleton className="h-4 sm:h-6 w-1/2" />
-                          <Skeleton className="h-3 sm:h-4 w-full" />
-                          <Skeleton className="h-3 sm:h-4 w-full" />
-                          <div className="flex gap-2">
-                            <Skeleton className="h-6 sm:h-8 flex-1" />
-                            <Skeleton className="h-6 sm:h-8 w-16 sm:w-20" />
-                          </div>
-                        </div>
-                      </CardContent>
-                    </Card>
-                  ))}
+                  {Array.from({ length: 12 }).map((_, i) =>
+                    viewMode === 'grid' ? (
+                      <ProductCardSkeleton key={i} />
+                    ) : (
+                      <ProductListSkeleton key={i} />
+                    ),
+                  )}
                 </div>
               ) : products.length > 0 ? (
                 <>
@@ -523,15 +540,22 @@ export default function StorePage() {
                 </>
               ) : (
                 <Card
-                  className={`p-8 sm:p-12 text-center bg-white/80 dark:bg-gray-700/80 backdrop-blur-md shadow-2xl border border-white/20 ${!prefersReducedMotion ? 'animate-fade-in' : ''}`}
+                  className={`p-8 sm:p-12 text-center backdrop-blur-md shadow-2xl border border-white/20 ${!prefersReducedMotion ? 'animate-fade-in' : ''}`}
+                  style={{ backgroundColor: 'var(--surface)' }}
                 >
                   <div className="w-16 h-16 bg-gradient-to-br from-gray-200 to-gray-300 rounded-full flex items-center justify-center mx-auto mb-4">
                     <Package className="w-8 h-8 text-gray-400" />
                   </div>
-                  <h3 className="text-lg sm:text-xl font-bold text-gray-900 dark:text-white mb-2">
+                  <h3
+                    className="text-lg sm:text-xl font-bold mb-2"
+                    style={{ color: 'var(--text-primary)' }}
+                  >
                     No Products Found
                   </h3>
-                  <p className="text-gray-600 dark:text-gray-300 mb-6 text-sm sm:text-base">
+                  <p
+                    className="mb-6 text-sm sm:text-base"
+                    style={{ color: 'var(--text-secondary)' }}
+                  >
                     Try adjusting your filters or search terms to find what you&apos;re looking for.
                   </p>
                   <Button

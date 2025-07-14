@@ -9,7 +9,7 @@ import { motion } from 'framer-motion'
 import Link from 'next/link'
 import { useCart } from '@/hooks/use-cart'
 import type { ProductListItem } from '@/types/api'
-import Image from 'next/image'
+import { LazyImage } from '@/components/ui/lazy-image'
 
 interface ProductCardProps {
   product: ProductListItem
@@ -48,183 +48,192 @@ export function ProductCard({
 
   const getAvailableStock = () => {
     if (Array.isArray(product.variants) && product.variants.length > 0) {
-      return product.variants.reduce((sum: number, v: any) => sum + (v.inventory || 0), 0)
+      return product.variants.reduce((total, variant) => total + (variant.inventory || 0), 0)
     }
-    return typeof product.stock === 'number' ? product.stock : 0
+    return product.stock || 0
   }
 
   const availableStock = getAvailableStock()
-  const isOutOfStock = availableStock <= 0 || product.status === 'out-of-stock'
-  const isLowStock = !isOutOfStock && availableStock > 0 && availableStock <= lowStockThreshold
+  const isOutOfStock = availableStock === 0
+  const isLowStock = !isOutOfStock && availableStock <= lowStockThreshold
+
   const hasDiscount = product.originalPrice && product.originalPrice > product.price
   const discountPercentage = hasDiscount
     ? Math.round(((product.originalPrice! - product.price) / product.originalPrice!) * 100)
     : 0
 
-  const priceInLKR = product.price
-  const originalPriceInLKR = product.originalPrice ? product.originalPrice : null
-  const isMobileOptimized = className.includes('mobile-optimized')
+  const priceInLKR = product.price.toLocaleString()
+
+  // Detect reduced motion preference
+  const prefersReducedMotion =
+    typeof window !== 'undefined'
+      ? window.matchMedia('(prefers-reduced-motion: reduce)').matches
+      : false
+
+  const isMobileOptimized = typeof window !== 'undefined' && window.innerWidth < 768
 
   if (variant === 'list') {
     return (
       <motion.div
+        onHoverStart={() => setIsHovered(true)}
+        onHoverEnd={() => setIsHovered(false)}
         initial={{ opacity: 0, y: 20 }}
         whileInView={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5 }}
         viewport={{ once: true }}
-        whileHover={{ scale: 1.01 }}
+        whileHover={prefersReducedMotion ? {} : { scale: 1.01 }}
       >
         <Card
-          className={`overflow-hidden bg-white/80 dark:bg-slate-800/80 backdrop-blur-xl border border-white/20 shadow-lg hover:shadow-xl transition-all duration-300 ${className}`}
+          className={`overflow-hidden border border-gray-200 shadow-lg hover:shadow-xl transition-all duration-300 ${className}`}
+          style={{ backgroundColor: 'var(--surface)' }}
         >
           <Link href={`/products/${product.slug}`}>
             <CardContent className="p-0">
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 p-4">
                 {/* Enhanced Image Section */}
-                <div className="relative aspect-square sm:aspect-auto sm:h-32 md:h-40 bg-gradient-to-br from-slate-100 to-slate-200 dark:from-slate-700 dark:to-slate-600 rounded-xl overflow-hidden group">
-                  <Image
+                <div
+                  className="relative aspect-square sm:aspect-auto sm:h-32 md:h-40 rounded-xl overflow-hidden group"
+                  style={{ background: 'linear-gradient(135deg, #F3F4F6, #E5E7EB)' }}
+                >
+                  <LazyImage
                     width={600}
                     height={400}
-                    src={product.images[0]?.url || 'https://placehold.co/600x400'}
+                    src={product.images[0]?.url || '/placeholder.svg'}
                     alt={product.images[0]?.alt || product.name}
-                    className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
+                    className={`w-full h-full object-cover ${!prefersReducedMotion ? 'group-hover:scale-110 transition-transform duration-500' : ''}`}
+                    containerClassName="w-full h-full"
                   />
 
                   {/* Enhanced Badges */}
                   <div className="absolute top-2 left-2 flex flex-col gap-1">
                     {hasDiscount && (
-                      <Badge className="bg-gradient-to-r from-red-500 to-orange-400 text-white text-xs font-bold shadow-lg">
+                      <Badge
+                        className="text-white text-xs font-bold shadow-lg"
+                        style={{
+                          background: 'linear-gradient(135deg, var(--accent-amber), #FBBF24)',
+                        }}
+                      >
                         <Sparkles className="w-3 h-3 mr-1" />-{discountPercentage}%
                       </Badge>
                     )}
                     {isOutOfStock && (
-                      <Badge variant="destructive" className="text-xs font-bold shadow-lg">
-                        OUT OF STOCK
+                      <Badge
+                        className="text-white text-xs font-bold shadow-lg"
+                        style={{ background: 'var(--error)' }}
+                      >
+                        <X className="w-3 h-3 mr-1" />
+                        Out of Stock
                       </Badge>
                     )}
-                    {isLowStock && !isOutOfStock && (
-                      <Badge className="bg-gradient-to-r from-orange-500 to-yellow-400 text-white text-xs font-bold shadow-lg">
+                    {isLowStock && (
+                      <Badge
+                        className="text-white text-xs font-bold shadow-lg"
+                        style={{ background: 'var(--warning)' }}
+                      >
                         <Zap className="w-3 h-3 mr-1" />
-                        LOW STOCK
+                        Low Stock
                       </Badge>
                     )}
                   </div>
                 </div>
 
-                {/* Enhanced Content Section */}
-                <div className="sm:col-span-2 space-y-3">
-                  <div className="flex flex-wrap items-center gap-2">
-                    {showBrand && product.brand && (
-                      <Badge
-                        variant="outline"
-                        className="text-xs border-blue-500 text-blue-600 dark:border-blue-400 dark:text-blue-400 bg-blue-50 dark:bg-blue-950/50"
-                      >
-                        {product.brand.name}
-                      </Badge>
-                    )}
-                    <h3 className="text-sm sm:text-base md:text-lg font-bold text-slate-900 dark:text-white line-clamp-2 hover:text-blue-600 dark:hover:text-blue-400 transition-colors flex-1">
-                      {product.name}
-                    </h3>
-                  </div>
+                {/* Content Section */}
+                <div className="sm:col-span-2 flex flex-col gap-2">
+                  {showBrand && product.brand && (
+                    <Badge
+                      variant="outline"
+                      className="text-xs border-blue-500 bg-blue-50 w-fit"
+                      style={{
+                        color: 'var(--secondary-blue)',
+                        borderColor: 'var(--secondary-blue)',
+                      }}
+                    >
+                      {product.brand.name}
+                    </Badge>
+                  )}
+                  <h3
+                    className="text-sm sm:text-base md:text-lg font-bold line-clamp-2 transition-colors flex-1"
+                    style={{ color: 'var(--text-primary)' }}
+                  >
+                    {product.name}
+                  </h3>
 
                   {showCategory && product.category && (
                     <Badge
                       variant="secondary"
-                      className="text-xs bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-300"
+                      className="text-xs w-fit"
+                      style={{ backgroundColor: '#F3F4F6', color: 'var(--text-secondary)' }}
                     >
                       {product.category.name}
                     </Badge>
                   )}
 
                   {/* Enhanced Rating */}
-                  {product.rating && product.reviewCount && (
+                  {product.rating && product.rating > 0 && (
                     <div className="flex items-center gap-2">
                       <div className="flex items-center gap-1">
-                        {Array.from({ length: 5 }).map((_, i) => (
+                        {[...Array(5)].map((_, i) => (
                           <Star
                             key={i}
                             className={`w-3 h-3 ${
                               i < Math.floor(product.rating!)
                                 ? 'fill-yellow-400 text-yellow-400'
-                                : 'text-slate-300'
+                                : 'text-gray-300'
                             }`}
                           />
                         ))}
-                        <span className="text-xs text-slate-600 dark:text-slate-400">
+                        <span className="text-xs" style={{ color: 'var(--text-secondary)' }}>
                           ({product.rating})
                         </span>
                       </div>
-                      <span className="text-xs text-slate-500 dark:text-slate-400">
+                      <span className="text-xs" style={{ color: 'var(--text-secondary)' }}>
                         {product.reviewCount} reviews
                       </span>
                     </div>
                   )}
 
-                  {/* Enhanced Features */}
+                  {/* Enhanced Features Preview */}
                   {product.features && product.features.length > 0 && (
                     <div className="flex flex-wrap gap-1">
                       {product.features.slice(0, 2).map((feature, index) => (
                         <Badge
                           key={index}
                           variant="outline"
-                          className="text-xs bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-600"
+                          className="text-xs border-gray-200"
+                          style={{ backgroundColor: 'var(--surface)' }}
                         >
+                          <Check className="w-3 h-3 mr-1" />
                           {feature}
                         </Badge>
                       ))}
                       {product.features.length > 2 && (
-                        <Badge variant="outline" className="text-xs bg-white dark:bg-slate-800">
+                        <Badge
+                          variant="outline"
+                          className="text-xs"
+                          style={{ backgroundColor: 'var(--surface)' }}
+                        >
                           +{product.features.length - 2}
                         </Badge>
                       )}
                     </div>
                   )}
 
-                  {/* Enhanced Price & Actions */}
-                  <div className="flex items-center justify-between pt-2">
-                    <div className="space-y-1">
-                      <div className="flex items-center gap-2">
-                        <span className="text-lg sm:text-xl font-bold bg-gradient-to-r from-slate-900 to-slate-700 dark:from-white dark:to-slate-300 bg-clip-text text-transparent">
-                          Rs.{priceInLKR}
-                        </span>
-                        {originalPriceInLKR && (
-                          <span className="text-sm text-slate-500 line-through">
-                            Rs.{originalPriceInLKR}
-                          </span>
-                        )}
-                      </div>
-                      <div className="text-right">
-                        {isOutOfStock ? (
-                          <div className="flex items-center gap-1 text-red-600">
-                            <X className="w-3 h-3" />
-                            <span className="text-xs font-medium">Out of Stock</span>
-                          </div>
-                        ) : isLowStock ? (
-                          <div className="flex items-center gap-1 text-orange-600">
-                            <Zap className="w-3 h-3" />
-                            <span className="text-xs font-medium">Only {availableStock} left</span>
-                          </div>
-                        ) : (
-                          <div className="flex items-center gap-1 text-green-600">
-                            <Check className="w-3 h-3" />
-                            <span className="text-xs font-medium">Available</span>
-                          </div>
-                        )}
-                      </div>
-                    </div>
-
-                    <div className="flex items-center gap-2">
-                      <Button
-                        size="sm"
-                        className="bg-gradient-to-r from-blue-600 to-cyan-500 hover:from-blue-700 hover:to-cyan-600 text-white px-4 py-2 text-xs sm:text-sm min-w-[80px] shadow-lg hover:shadow-xl transition-all duration-300"
-                        asChild
+                  {/* Enhanced Price */}
+                  <div className="flex items-center gap-2 mt-auto">
+                    <span
+                      className="text-lg sm:text-xl font-bold"
+                      style={{ color: 'var(--primary-orange)' }}
+                    >
+                      Rs. {priceInLKR}
+                    </span>
+                    {hasDiscount && (
+                      <span
+                        className="text-sm line-through"
+                        style={{ color: 'var(--text-secondary)' }}
                       >
-                        <Link href={`/products/${product.slug}`}>
-                          <Eye className="w-4 h-4 mr-1" />
-                          View
-                        </Link>
-                      </Button>
-                    </div>
+                        Rs. {product.originalPrice!.toLocaleString()}
+                      </span>
+                    )}
                   </div>
                 </div>
               </div>
@@ -235,254 +244,280 @@ export function ProductCard({
     )
   }
 
+  // Grid variant (default)
   return (
     <motion.div
+      onHoverStart={() => setIsHovered(true)}
+      onHoverEnd={() => setIsHovered(false)}
       initial={{ opacity: 0, y: 20 }}
       whileInView={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.5 }}
       viewport={{ once: true }}
-      whileHover={{ y: -8, scale: 1.02 }}
-      onMouseEnter={() => setIsHovered(true)}
-      onMouseLeave={() => setIsHovered(false)}
-      className="group"
+      whileHover={prefersReducedMotion ? {} : { scale: 1.02 }}
     >
       <Card
-        className={`overflow-hidden bg-white/80 dark:bg-slate-800/80 backdrop-blur-xl border border-white/20 shadow-lg hover:shadow-2xl transition-all duration-500 ${className}`}
+        className={`overflow-hidden border border-gray-200 shadow-lg hover:shadow-2xl transition-all duration-500 ${className}`}
+        style={{ backgroundColor: 'var(--surface)' }}
       >
         <Link href={`/products/${product.slug}`}>
           <CardContent className="p-0">
-            {/* Enhanced Image Section */}
+            {/* Enhanced Image */}
             <div
-              className={`relative bg-gradient-to-br from-slate-100 to-slate-200 dark:from-slate-700 dark:to-slate-600 overflow-hidden group/image ${
+              className={`relative overflow-hidden group/image ${
                 isMobileOptimized ? 'aspect-[4/3] sm:aspect-square' : 'aspect-square'
               }`}
+              style={{ background: 'linear-gradient(135deg, #F3F4F6, #E5E7EB)' }}
             >
-              <Image
-                width={600}
+              <LazyImage
+                width={400}
                 height={400}
-                src={product.images[currentImageIndex]?.url || 'https://placehold.co/600x400'}
-                alt={product.images[currentImageIndex]?.alt || product.name}
-                className="w-full h-full object-cover group-hover/image:scale-110 transition-transform duration-700"
+                src={product.images?.[currentImageIndex]?.url || '/placeholder.svg'}
+                alt={product.images?.[currentImageIndex]?.alt || product.name}
+                className={`w-full h-full object-cover ${!prefersReducedMotion ? 'group-hover/image:scale-110 transition-transform duration-700' : ''}`}
+                containerClassName="w-full h-full"
               />
 
-              {/* Enhanced Image Navigation */}
-              {product.images.length > 1 && isHovered && !isMobileOptimized && (
-                <motion.div
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  className="absolute bottom-3 left-1/2 transform -translate-x-1/2 flex gap-1"
-                >
-                  {product.images.map((_, index) => (
-                    <button
-                      key={index}
-                      title={`Show image ${index + 1}`}
-                      onClick={(e) => {
-                        e.preventDefault()
-                        e.stopPropagation()
-                        setCurrentImageIndex(index)
-                      }}
-                      className={`w-2 h-2 rounded-full transition-all duration-300 ${
-                        index === currentImageIndex
-                          ? 'bg-white shadow-lg scale-125'
-                          : 'bg-white/50 hover:bg-white/75'
-                      }`}
-                    />
-                  ))}
-                </motion.div>
-              )}
-
               {/* Enhanced Badges */}
-              <div className="absolute top-3 left-3 flex flex-col gap-2">
+              <div className="absolute top-2 sm:top-3 left-2 sm:left-3 flex flex-col gap-1 sm:gap-2">
                 {hasDiscount && (
-                  <Badge className="bg-gradient-to-r from-red-500 to-orange-400 text-white text-xs font-bold shadow-lg">
-                    <Sparkles className="w-3 h-3 mr-1" />-{discountPercentage}%
+                  <Badge
+                    className="text-white text-xs font-bold shadow-lg px-2 py-1"
+                    style={{ background: 'linear-gradient(135deg, var(--accent-amber), #FBBF24)' }}
+                  >
+                    <Sparkles className="w-3 h-3 mr-1" />
+                    SALE
                   </Badge>
                 )}
                 {isOutOfStock && (
-                  <Badge variant="destructive" className="text-xs font-bold shadow-lg">
-                    OUT OF STOCK
+                  <Badge
+                    className="text-white text-xs font-bold shadow-lg px-2 py-1"
+                    style={{ background: 'var(--error)' }}
+                  >
+                    <X className="w-3 h-3 mr-1" />
+                    SOLD OUT
                   </Badge>
                 )}
-                {isLowStock && !isOutOfStock && (
-                  <Badge className="bg-gradient-to-r from-orange-500 to-yellow-400 text-white text-xs font-bold shadow-lg">
+                {isLowStock && !hasDiscount && (
+                  <Badge
+                    className="text-white text-xs font-bold shadow-lg px-2 py-1"
+                    style={{ background: 'var(--warning)' }}
+                  >
                     <Zap className="w-3 h-3 mr-1" />
                     LOW STOCK
                   </Badge>
                 )}
               </div>
 
-              {/* Enhanced Quick View */}
-              {!isMobileOptimized && (
-                <motion.div
-                  initial={{ opacity: 0, scale: 0.8 }}
-                  animate={{
-                    opacity: isHovered ? 1 : 0,
-                    scale: isHovered ? 1 : 0.8,
-                    y: isHovered ? 0 : 10,
-                  }}
-                  transition={{ duration: 0.3 }}
-                  className="absolute top-3 right-3"
+              {/* Quick View Button */}
+              <div
+                className={`absolute top-2 sm:top-3 right-2 sm:right-3 ${!prefersReducedMotion ? 'transform transition-all duration-300' : ''} ${isHovered ? 'scale-100 opacity-100' : 'scale-0 opacity-0'}`}
+              >
+                <Button
+                  size="sm"
+                  variant="secondary"
+                  className="w-8 h-8 p-0 rounded-full bg-white/90 shadow-lg backdrop-blur-sm"
+                  style={{ borderColor: 'var(--border-gray)' }}
                 >
-                  <Button
-                    size="sm"
-                    className="w-10 h-10 p-0 rounded-full bg-white/90 hover:bg-white text-slate-900 shadow-lg hover:shadow-xl transition-all duration-300"
-                  >
-                    <Eye className="w-4 h-4" />
-                  </Button>
-                </motion.div>
+                  <Eye className="w-4 h-4" style={{ color: 'var(--text-primary)' }} />
+                </Button>
+              </div>
+
+              {/* Image Navigation */}
+              {product.images && product.images.length > 1 && (
+                <div className="absolute bottom-2 left-1/2 transform -translate-x-1/2 flex gap-1">
+                  {product.images.slice(0, 3).map((_, index) => (
+                    <button
+                      key={index}
+                      onClick={(e) => {
+                        e.preventDefault()
+                        setCurrentImageIndex(index)
+                      }}
+                      className={`w-2 h-2 rounded-full transition-all duration-300 ${
+                        index === currentImageIndex
+                          ? 'bg-white scale-125'
+                          : 'bg-white/50 hover:bg-white/75'
+                      }`}
+                    />
+                  ))}
+                </div>
               )}
             </div>
 
-            {/* Enhanced Content Section */}
-            <div className={`space-y-3 ${isMobileOptimized ? 'p-3' : 'p-4'}`}>
-              <div className="space-y-2">
+            {/* Enhanced Content */}
+            <div className="p-3 sm:p-4 space-y-2 sm:space-y-3">
+              {/* Brand and Category */}
+              <div className="flex items-center justify-between gap-2">
                 {showBrand && product.brand && (
                   <Badge
                     variant="outline"
-                    className="text-xs border-blue-500 text-blue-600 dark:border-blue-400 dark:text-blue-400 bg-blue-50 dark:bg-blue-950/50"
+                    className="text-xs bg-blue-50"
+                    style={{ color: 'var(--secondary-blue)', borderColor: 'var(--secondary-blue)' }}
                   >
                     {product.brand.name}
                   </Badge>
                 )}
-                <h3
-                  className={`font-bold text-slate-900 dark:text-white line-clamp-2 hover:text-blue-600 dark:hover:text-blue-400 transition-colors ${
-                    isMobileOptimized ? 'text-sm sm:text-base' : 'text-lg'
-                  }`}
-                >
-                  {product.name}
-                </h3>
+                {showCategory && product.category && (
+                  <Badge
+                    variant="secondary"
+                    className="text-xs"
+                    style={{ backgroundColor: '#F3F4F6', color: 'var(--text-secondary)' }}
+                  >
+                    {product.category.name}
+                  </Badge>
+                )}
               </div>
 
-              {showCategory && product.category && (
-                <Badge
-                  variant="secondary"
-                  className="text-xs bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-300"
-                >
-                  {product.category.name}
-                </Badge>
-              )}
+              {/* Product Name */}
+              <h3
+                className={`font-bold line-clamp-2 transition-colors ${
+                  isMobileOptimized ? 'text-sm sm:text-base' : 'text-lg'
+                }`}
+                style={{ color: 'var(--text-primary)' }}
+              >
+                {product.name}
+              </h3>
 
               {/* Enhanced Rating */}
-              {product.rating && product.reviewCount && (
+              {product.rating && product.rating > 0 && (
                 <div className="flex items-center gap-2">
                   <div className="flex items-center gap-1">
-                    {Array.from({ length: 5 }).map((_, i) => (
+                    {[...Array(5)].map((_, i) => (
                       <Star
                         key={i}
-                        className={`${isMobileOptimized ? 'w-3 h-3' : 'w-4 h-4'} ${
+                        className={`w-3 h-3 ${
                           i < Math.floor(product.rating!)
                             ? 'fill-yellow-400 text-yellow-400'
-                            : 'text-slate-300'
+                            : 'text-gray-300'
                         }`}
                       />
                     ))}
-                    <span className="text-xs text-slate-600 dark:text-slate-400">
+                    <span className="text-xs" style={{ color: 'var(--text-secondary)' }}>
                       ({product.rating})
                     </span>
                   </div>
                   {!isMobileOptimized && (
-                    <span className="text-xs text-slate-500 dark:text-slate-400">
+                    <span className="text-xs" style={{ color: 'var(--text-secondary)' }}>
                       {product.reviewCount} reviews
                     </span>
                   )}
                 </div>
               )}
 
-              {/* Enhanced Features */}
-              {product.features && product.features.length > 0 && !isMobileOptimized && (
+              {/* Enhanced Features Preview */}
+              {product.features && product.features.length > 0 && (
                 <div className="flex flex-wrap gap-1">
                   {product.features.slice(0, 2).map((feature, index) => (
                     <Badge
                       key={index}
                       variant="outline"
-                      className="text-xs bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-600"
+                      className="text-xs border-gray-200"
+                      style={{ backgroundColor: 'var(--surface)' }}
                     >
+                      <Check className="w-3 h-3 mr-1" />
                       {feature}
                     </Badge>
                   ))}
                   {product.features.length > 2 && (
-                    <Badge variant="outline" className="text-xs bg-white dark:bg-slate-800">
+                    <Badge
+                      variant="outline"
+                      className="text-xs"
+                      style={{ backgroundColor: 'var(--surface)' }}
+                    >
                       +{product.features.length - 2}
                     </Badge>
                   )}
                 </div>
               )}
 
-              {/* Enhanced Sizes & Colors */}
-              {!isMobileOptimized && (
-                <div className="flex items-center gap-4 text-xs text-slate-600 dark:text-slate-400">
-                  {product.sizes.length > 0 && (
-                    <div className="flex items-center gap-1">
-                      <Package className="w-3 h-3" />
-                      <span>Sizes: {product.sizes.slice(0, 3).join(', ')}</span>
-                      {product.sizes.length > 3 && <span>+{product.sizes.length - 3}</span>}
+              {/* Enhanced Product Info */}
+              {!isMobileOptimized &&
+                (() => {
+                  // Compute unique sizes/colors from variants
+                  let sizes: string[] = []
+                  let colors: string[] = []
+                  if (Array.isArray(product.variants) && product.variants.length > 0) {
+                    sizes = Array.from(
+                      new Set(
+                        product.variants
+                          .map((v) => v.size)
+                          .filter((s): s is string => typeof s === 'string'),
+                      ),
+                    )
+                    colors = Array.from(
+                      new Set(
+                        product.variants
+                          .map((v) => v.color)
+                          .filter((c): c is string => typeof c === 'string'),
+                      ),
+                    )
+                  }
+                  return (
+                    <div
+                      className="flex items-center gap-4 text-xs"
+                      style={{ color: 'var(--text-secondary)' }}
+                    >
+                      {sizes.length > 0 && (
+                        <div className="flex items-center gap-1">
+                          <Package className="w-3 h-3" />
+                          <span>{sizes.length} sizes</span>
+                        </div>
+                      )}
+                      {colors.length > 0 && (
+                        <div className="flex items-center gap-1">
+                          <div className="w-3 h-3 rounded-full bg-gradient-to-r from-red-500 via-blue-500 to-green-500"></div>
+                          <span>{colors.length} colors</span>
+                        </div>
+                      )}
                     </div>
-                  )}
-                  {product.colors.length > 0 && (
-                    <div className="flex items-center gap-1">
-                      <div className="w-3 h-3 rounded-full bg-gradient-to-r from-slate-400 to-slate-600"></div>
-                      <span>
-                        {product.colors.length} color{product.colors.length > 1 ? 's' : ''}
-                      </span>
-                    </div>
-                  )}
-                </div>
-              )}
+                  )
+                })()}
 
-              {/* Enhanced Price */}
-              <div className="space-y-1">
-                <div className="flex items-center gap-2">
+              {/* Enhanced Price and Actions */}
+              <div className="flex items-center justify-between gap-2">
+                <div className="flex flex-col gap-1">
                   <span
-                    className={`font-bold bg-gradient-to-r from-slate-900 to-slate-700 dark:from-white dark:to-slate-300 bg-clip-text text-transparent ${
+                    className={`font-bold ${
                       isMobileOptimized ? 'text-base sm:text-lg' : 'text-xl'
                     }`}
+                    style={{ color: 'var(--primary-orange)' }}
                   >
-                    Rs.{priceInLKR}
+                    Rs. {priceInLKR}
                   </span>
-                  {originalPriceInLKR && (
-                    <span className="text-sm text-slate-500 line-through">
-                      Rs.{originalPriceInLKR}
+                  {hasDiscount && (
+                    <span
+                      className="text-xs line-through"
+                      style={{ color: 'var(--text-secondary)' }}
+                    >
+                      Rs. {product.originalPrice!.toLocaleString()}
                     </span>
                   )}
                 </div>
-              </div>
 
-              {/* Enhanced Stock Status */}
-              <div className="flex items-center justify-between">
-                <div>
+                {/* Stock Status */}
+                <div className="text-right">
                   {isOutOfStock ? (
-                    <div className="flex items-center gap-1 text-red-600">
-                      <X className="w-3 h-3" />
-                      <span className="text-xs font-medium">Out of Stock</span>
-                    </div>
+                    <Badge
+                      className="text-xs font-bold"
+                      style={{ backgroundColor: 'var(--error)', color: 'white' }}
+                    >
+                      Sold Out
+                    </Badge>
                   ) : isLowStock ? (
-                    <div className="flex items-center gap-1 text-orange-600">
-                      <Zap className="w-3 h-3" />
-                      <span className="text-xs font-medium">Only {availableStock} left</span>
-                    </div>
+                    <Badge
+                      className="text-xs font-bold"
+                      style={{ backgroundColor: 'var(--warning)', color: 'white' }}
+                    >
+                      {availableStock} left
+                    </Badge>
                   ) : (
-                    <div className="flex items-center gap-1 text-green-600">
-                      <Check className="w-3 h-3" />
-                      <span className="text-xs font-medium">Available</span>
-                    </div>
+                    <Badge
+                      className="text-xs font-bold"
+                      style={{ backgroundColor: 'var(--success)', color: 'white' }}
+                    >
+                      In Stock
+                    </Badge>
                   )}
                 </div>
-              </div>
-
-              {/* Enhanced Action Button */}
-              <div className="pt-2">
-                <Button
-                  size="sm"
-                  className={`w-full bg-gradient-to-r from-blue-600 to-cyan-500 hover:from-blue-700 hover:to-cyan-600 text-white font-bold transition-all duration-300 shadow-lg hover:shadow-xl group/btn ${
-                    isMobileOptimized ? 'text-xs px-2 py-2 min-h-[32px]' : 'text-sm'
-                  }`}
-                  asChild
-                >
-                  <Link href={`/products/${product.slug}`}>
-                    <Eye className={`${isMobileOptimized ? 'w-3 h-3 mr-1' : 'w-4 h-4 mr-2'}`} />
-                    {isMobileOptimized ? 'View' : 'View Item'}
-                  </Link>
-                </Button>
               </div>
             </div>
           </CardContent>
