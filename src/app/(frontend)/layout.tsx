@@ -49,11 +49,11 @@ export const metadata: Metadata = {
     title: 'Ralhum Sports – Premium Cricket, Rugby & Hockey Gear in Sri Lanka',
     description:
       'Official distributor of Gray‑Nicolls, Gilbert, Grays & Molten. Shop cricket, rugby, hockey & basketball equipment with fast delivery across Sri Lanka.',
-    url: 'https://ralhumsports.lk',
+    url: 'https://ralhumsports.vercel.app',
     siteName: 'Ralhum Sports',
     images: [
       {
-        url: '/ralhumbanner.png',
+        url: 'https://ralhumsports.vercel.app/ralhumbanner.png',
         width: 1200,
         height: 630,
         alt: 'Ralhum Sports – Sri Lanka Sports Gear',
@@ -67,7 +67,7 @@ export const metadata: Metadata = {
     title: 'Ralhum Sports – Sports Gear Store in Sri Lanka',
     description:
       'Official distributor of Gray‑Nicolls, Gilbert, Grays & Molten with nationwide delivery.',
-    images: ['/ralhumbanner.png'],
+    images: ['https://ralhumsports.vercel.app/ralhumbanner.png'],
   },
   robots: {
     index: true,
@@ -82,7 +82,7 @@ export const metadata: Metadata = {
     google: 'YOUR_GOOGLE_VERIFICATION_CODE',
   },
   alternates: {
-    canonical: 'https://ralhumsports.lk',
+    canonical: 'https://ralhumsports.vercel.app',
   },
   category: 'Sports Equipment Store',
 }
@@ -108,7 +108,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <meta name="color-scheme" content="light" />
         <link rel="manifest" href="/manifest.json" />
         <link rel="icon" href="/ralhumlogo.svg" type="image/svg+xml" />
-        <link rel="icon" href="/favicon.ico" sizes="any" />
+        <link rel="icon" href="/ralhumlogo.svg" sizes="any" />
         <link rel="apple-touch-icon" href="/ralhumlogo.svg" />
       </head>
       <body
