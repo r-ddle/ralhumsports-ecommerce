@@ -41,41 +41,37 @@ export function formatWhatsAppMessage(order: OrderSummary): string {
     hour12: true,
   })
 
-  // Build the message with improved formatting
-  const message = `🏏 *RALHUM SPORTS - Order Confirmation* 🏏
+  // Minimal WhatsApp order confirmation message
+  const trackingUrl = `${SITE_CONFIG.siteUrl}/orders/track?orderId=${encodeURIComponent(orderId || '')}`
+  const minimalProductList = items
+    .map(
+      (item) => `• ${item.product.title} (${formatCurrency(item.variant.price)}) x${item.quantity}`,
+    )
+    .join('\n')
 
-━━━━━━━━━━━━━━━━━━━
-📋 *ORDER DETAILS*
-━━━━━━━━━━━━━━━━━━━
-Order ID: *${orderId || 'Pending'}*
+  const message = `*RALHUM SPORTS - Order Confirmation*
+
+*Order Details*
+Order ID: ${orderId || 'Pending'}
+Order Tracking URL: ${trackingUrl}
 Date: ${currentDate}
 
-━━━━━━━━━━━━━━━━━━━
-👤 *CUSTOMER INFORMATION*
-━━━━━━━━━━━━━━━━━━━
-Name: ${customer.fullName}
+*Customer*
+Full Name: ${customer.fullName}
 Email: ${customer.email}
 Phone: ${customer.phone}
 Address: ${fullAddress}
 
-━━━━━━━━━━━━━━━━━━━
-🛒 *ORDER SUMMARY*
-━━━━━━━━━━━━━━━━━━━
-${productList}
+*Order Summary*
+${minimalProductList}
 
-━━━━━━━━━━━━━━━━━━━
-💰 *PAYMENT DETAILS*
-━━━━━━━━━━━━━━━━━━━
+*Payment Details*
 Subtotal: LKR ${formatCurrency(pricing.subtotal)}
 Shipping: LKR ${formatCurrency(pricing.shipping)}
 Tax (${SITE_CONFIG.taxRate * 100}%): LKR ${formatCurrency(pricing.tax)}
-━━━━━━━━━━━━━━━━━━━
-*TOTAL: LKR ${formatCurrency(pricing.total)}*
-━━━━━━━━━━━━━━━━━━━
-${customer.specialInstructions ? `\n📝 *Special Instructions:*\n${customer.specialInstructions}\n` : ''}━━━━━━━━━━━━━━━━━━━
-Please confirm this order and we'll provide payment instructions.
+*Total*: LKR ${formatCurrency(pricing.total)}
 
-Thank you for choosing Ralhum Sports! 🏆
+Please confirm this order and provide payment instructions.
 
 _For assistance, call: ${SITE_CONFIG.contact.phone}_`
 

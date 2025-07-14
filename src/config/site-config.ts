@@ -1,4 +1,5 @@
 export const SITE_CONFIG = {
+  siteUrl: 'http://localhost:3000', // Change this to your production domain after deployment
   taxRate: 0.15, // 15% tax
   currency: 'LKR',
   about: {
@@ -57,7 +58,7 @@ export const SITE_CONFIG = {
     email: 'sales@ralhumsports.lk',
     whatsapp: '+94772350712',
     whatsappUrl: 'https://wa.me/94772350712',
-    supportHours: 'Mon-Sat: 9AM-6PM; Sunday: Closed',
+    supportHours: 'Mon-Sat: 9AM-6PM',
     address: {
       street: '4A, Shruberry Garden',
       city: 'Colombo 04',

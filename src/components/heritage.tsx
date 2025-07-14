@@ -92,7 +92,7 @@ export default function Heritage() {
         >
           <Badge
             variant="secondary"
-            className="mb-4 px-4 py-2 text-sm font-semibold bg-gradient-to-r from-brand-accent/10 to-brand-primary/10 text-brand-primary border border-brand-primary/20"
+            className="mb-4 px-4 py-2 text-sm font-semibold bg-gradient-to-r from-brand-accent/10 to-brand-primary/10 text-white border border-brand-primary/20"
           >
             <Award className="w-4 h-4 mr-2" />
             OUR HERITAGE

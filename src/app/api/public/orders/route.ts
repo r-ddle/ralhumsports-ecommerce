@@ -161,7 +161,63 @@ export const POST = withRateLimit(rateLimitConfigs.strict, async (request: NextR
 
       console.log('[Orders API] Order created successfully:', order)
 
-      // Return success immediately - don't verify in DB as hooks handle the rest
+      // --- Post-order: Update product stock (base or variant) ---
+      for (const item of orderData.items) {
+        try {
+          const product = await payload.findByID({
+            collection: 'products',
+            id: item.productId,
+          })
+          if (!product) {
+            console.error(`[Orders API] Product not found for stock update: ${item.productId}`)
+            continue
+          }
+          // If product has variants, update only the selected variant's inventory
+          if (Array.isArray(product.variants) && product.variants.length > 0 && item.variantId) {
+            const updatedVariants = product.variants.map((variant) => {
+              if (
+                (variant.id && variant.id.toString() === item.variantId.toString()) ||
+                (variant.sku && variant.sku === item.productSku)
+              ) {
+                const newInventory = Math.max(0, (variant.inventory || 0) - item.quantity)
+                console.log(
+                  `[Orders API] Updating variant stock for product ${item.productId}, variant ${item.variantId}: ${variant.inventory} -> ${newInventory}`,
+                )
+                return { ...variant, inventory: newInventory }
+              }
+              return variant
+            })
+            await payload.update({
+              collection: 'products',
+              id: item.productId,
+              data: { variants: updatedVariants },
+            })
+          } else if (!product.variants || product.variants.length === 0) {
+            // No variants: update base stock
+            if (typeof product.stock === 'number') {
+              const newStock = Math.max(0, product.stock - item.quantity)
+              console.log(
+                `[Orders API] Updating base stock for product ${item.productId}: ${product.stock} -> ${newStock}`,
+              )
+              await payload.update({
+                collection: 'products',
+                id: item.productId,
+                data: { stock: newStock },
+              })
+            } else {
+              console.warn(`[Orders API] Product ${item.productId} has no stock field to update.`)
+            }
+          } else {
+            console.warn(
+              `[Orders API] Product ${item.productId} has variants but no matching variantId for item.`,
+            )
+          }
+        } catch (err) {
+          console.error(`[Orders API] Error updating stock for product ${item.productId}:`, err)
+        }
+      }
+
+      // Return success immediately
       const responseData = {
         orderId: order.id.toString(),
         orderNumber: order.orderNumber,

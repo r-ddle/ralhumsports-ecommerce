@@ -2,6 +2,26 @@
 
 import type React from 'react'
 import { useState, useEffect } from 'react'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
+
+// Sport options for dropdown
+const sportOptions = [
+  { value: 'cricket', label: 'Cricket' },
+  { value: 'rugby', label: 'Rugby' },
+  { value: 'basketball', label: 'Basketball' },
+  { value: 'volleyball', label: 'Volleyball' },
+  { value: 'hockey', label: 'Hockey' },
+  { value: 'tennis', label: 'Tennis' },
+  { value: 'badminton', label: 'Badminton' },
+  { value: 'football', label: 'Football' },
+  { value: 'other', label: 'Other' },
+]
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
@@ -21,8 +41,10 @@ import {
 } from 'lucide-react'
 import { motion } from 'framer-motion'
 import { SITE_CONFIG } from '@/config/site-config'
+import { useToast } from '@/hooks/use-toast'
 
 export default function ContactPage() {
+  const { toast } = useToast()
   const [formData, setFormData] = useState({
     name: '',
     email: '',
@@ -32,6 +54,14 @@ export default function ContactPage() {
     message: '',
   })
   const [prefersReducedMotion, setPrefersReducedMotion] = useState(false)
+
+  // Simple validation: all required fields must be filled
+  const isFormValid =
+    formData.name.trim() !== '' &&
+    formData.email.trim() !== '' &&
+    formData.sport.trim() !== '' &&
+    formData.message.trim() !== '' &&
+    /^\S+@\S+\.\S+$/.test(formData.email)
 
   // Performance optimization: Check for reduced motion preference
   useEffect(() => {
@@ -43,9 +73,16 @@ export default function ContactPage() {
     return () => mediaQuery.removeEventListener('change', handleChange)
   }, [])
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault()
-
+  const handleSubmit = (e?: React.FormEvent) => {
+    if (e) e.preventDefault()
+    if (!isFormValid) {
+      toast({
+        title: 'Please fill all required fields',
+        description: 'Name, Email, Sport, and Message are required. Email must be valid.',
+        variant: 'destructive',
+      })
+      return
+    }
     const message = `Hello Ralhum Sports!
 
 *Contact Details:*
@@ -59,18 +96,20 @@ Sport Category: ${formData.sport || 'Not specified'}
 ${formData.message}
 
 Thank you!`
-
     const whatsappUrl = `https://wa.me/${SITE_CONFIG.whatsapp.number}?text=${encodeURIComponent(message)}`
     window.open(whatsappUrl, '_blank')
   }
 
-  const handleChange = (
-    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>,
-  ) => {
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     setFormData({
       ...formData,
       [e.target.name]: e.target.value,
     })
+  }
+
+  // Handler for shadcn dropdown
+  const handleSportChange = (value: string) => {
+    setFormData((prev) => ({ ...prev, sport: value }))
   }
 
   const containerVariants = {
@@ -278,7 +317,7 @@ Thank you!`
 
               <Card className="bg-brand-surface border-brand-border shadow-2xl">
                 <CardContent className="p-8">
-                  <form onSubmit={handleSubmit} className="space-y-6">
+                  <form className="space-y-6">
                     <div className="grid md:grid-cols-2 gap-6">
                       <div>
                         <label className="block text-sm font-bold text-text-primary mb-3">
@@ -343,23 +382,22 @@ Thank you!`
                       <label className="block text-sm font-bold text-text-primary mb-3">
                         Sport Category
                       </label>
-                      <select
-                        name="sport"
-                        value={formData.sport}
-                        onChange={handleChange}
-                        className="w-full h-12 border-2 border-brand-border focus:border-brand-secondary rounded-xl px-4 bg-brand-background text-text-primary"
-                      >
-                        <option value="">Select a sport</option>
-                        <option value="cricket">Cricket</option>
-                        <option value="rugby">Rugby</option>
-                        <option value="basketball">Basketball</option>
-                        <option value="volleyball">Volleyball</option>
-                        <option value="hockey">Hockey</option>
-                        <option value="tennis">Tennis</option>
-                        <option value="badminton">Badminton</option>
-                        <option value="football">Football</option>
-                        <option value="other">Other</option>
-                      </select>
+                      <Select value={formData.sport} onValueChange={handleSportChange}>
+                        <SelectTrigger className="w-full h-12 border-2 border-brand-border focus:border-brand-secondary rounded-xl bg-white text-text-primary px-4">
+                          <SelectValue placeholder="Select a sport" />
+                        </SelectTrigger>
+                        <SelectContent className="bg-white border-2 border-brand-border rounded-xl">
+                          {sportOptions.map((option) => (
+                            <SelectItem
+                              key={option.value}
+                              value={option.value}
+                              className="text-text-primary px-4 py-3"
+                            >
+                              {option.label}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
                     </div>
 
                     <div>
@@ -379,22 +417,22 @@ Thank you!`
 
                     <div className="flex flex-col sm:flex-row gap-4">
                       <Button
-                        type="submit"
-                        size="lg"
-                        className="flex-1 bg-gradient-to-r from-brand-primary to-primary-600 hover:from-primary-600 hover:to-brand-primary text-white px-8 py-4 text-lg font-bold rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-[1.02]"
-                      >
-                        <Send className="w-5 h-5 mr-2" />
-                        SEND MESSAGE
-                      </Button>
-                      <Button
                         type="button"
                         size="lg"
                         onClick={handleSubmit}
                         className="flex-1 bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600 text-white px-8 py-4 text-lg font-bold rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-[1.02]"
+                        disabled={!isFormValid}
+                        aria-disabled={!isFormValid}
+                        tabIndex={!isFormValid ? -1 : 0}
                       >
                         <MessageCircle className="w-5 h-5 mr-2" />
                         WHATSAPP US
                       </Button>
+                      {!isFormValid && (
+                        <p className="text-sm text-red-600 mt-2">
+                          Please fill all fields to send a message
+                        </p>
+                      )}
                     </div>
                   </form>
                 </CardContent>
