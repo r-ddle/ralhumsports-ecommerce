@@ -33,7 +33,7 @@ import { SITE_CONFIG } from '@/config/site-config'
 
 export default function PrivacyPolicyPage() {
   return (
-    <main className="min-h-screen bg-brand-background">
+    <main className="min-h-screen mt-8 bg-brand-background">
       {/* Header Section */}
       <section className="py-12 sm:py-16 bg-white border-b border-brand-border">
         <div className="max-w-4xl mx-auto px-4 text-center">
@@ -73,7 +73,7 @@ export default function PrivacyPolicyPage() {
                   <strong>Data Controller:</strong> Ralhum Sports (Private) Limited
                 </p>
                 <p>
-                  <strong>Registration Number:</strong> PV 12345678 (Sri Lanka)
+                  <strong>Registration Number:</strong> PV 14158 (Sri Lanka)
                 </p>
                 <p>
                   <strong>Address:</strong> {SITE_CONFIG.contact.address.street},{' '}
