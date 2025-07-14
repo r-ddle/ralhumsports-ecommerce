@@ -6,7 +6,11 @@ export const SITE_CONFIG = {
     tagline: "Sri Lanka's #1 Sports Equipment Distributor & Online Store",
     description:
       "Sri Lanka's #1 sports equipment distributor for 25+ years. Exclusive distributor of world-renowned sports brands.",
-    address: '34A, Shruberry Garden, Colombo 04',
+    address: {
+      street: '34A, Shruberry Garden',
+      city: 'Colombo 04',
+      country: 'Sri Lanka',
+    },
     legacy: {
       parentCompany: 'S.M.M.Muhlar & Co',
       parentCompanyYears: '75+',
@@ -20,14 +24,14 @@ export const SITE_CONFIG = {
         description:
           'Parent company established by S.M.M.Muhlar, pioneering garment accessories and consumer products',
         icon: 'Calendar',
-        color: 'from-[#003DA5] to-[#0052CC]',
+        color: 'from-brand-secondary to-secondary-600',
       },
       {
         year: '1996',
         title: 'Ralhum Sports Established',
         description: 'Founded primarily to serve the cricket industry in Sri Lanka',
         icon: 'Trophy',
-        color: 'from-[#FF3D00] to-[#FF6B47]',
+        color: 'from-brand-primary to-primary-600',
       },
       {
         year: '2000s',
@@ -35,14 +39,14 @@ export const SITE_CONFIG = {
         description:
           'Gradually expanded to include global brands across multiple sports categories',
         icon: 'TrendingUp',
-        color: 'from-[#AEEA00] to-[#7CB342]',
+        color: 'from-brand-accent to-warning',
       },
       {
         year: 'Present',
         title: 'Market Leadership',
         description: 'Leading sports distributing company in Sri Lanka for over 25 years',
         icon: 'Award',
-        color: 'from-[#FFD700] to-[#FFA500]',
+        color: 'from-brand-accent to-brand-primary',
       },
     ],
     established: 1996,
@@ -54,7 +58,20 @@ export const SITE_CONFIG = {
     whatsapp: '+94772350712',
     whatsappUrl: 'https://wa.me/94772350712',
     supportHours: 'Mon-Sat: 9AM-6PM; Sunday: Closed',
-    address: '4A, Shruberry Garden, Colombo 04',
+    address: {
+      street: '4A, Shruberry Garden',
+      city: 'Colombo 04',
+      country: 'Sri Lanka',
+    },
+    hours: {
+      monday: '9AM-6PM',
+      tuesday: '9AM-6PM',
+      wednesday: '9AM-6PM',
+      thursday: '9AM-6PM',
+      friday: '9AM-6PM',
+      saturday: '9AM-6PM',
+      sunday: 'Closed',
+    },
   },
   social: {
     facebook: 'https://facebook.com/ralhumsports',
@@ -62,13 +79,17 @@ export const SITE_CONFIG = {
   },
   branding: {
     logoText: 'RALHUM SPORTS',
-    logoImage: '/logo.svg', // update if you have a logo image
+    logoImage: '/logo.svg',
+    companyName: 'Ralhum Sports Pvt Ltd',
     colors: {
-      primary: '#003DA5',
-      gold: '#FFD700',
-      orange: '#FF3D00',
-      lime: '#AEEA00',
-      dark: '#1A1A1A',
+      primary: '#FF6B35', // Orange - buttons, CTAs, links, active states
+      secondary: '#3B82F6', // Dark blue-gray - headers, important text
+      accent: '#F39C12', // Warm amber - highlights, badges, sale indicators
+      background: '#FAFAFA', // Soft off-white - main background
+      surface: '#FFFFFF', // Pure white for cards
+      textPrimary: '#2D3436', // Dark charcoal - main text
+      textSecondary: '#636E72', // Medium gray - secondary text
+      border: '#DDD', // Light gray - borders, cards, dividers
     },
     cta: {
       shop: 'START SHOPPING',
@@ -78,8 +99,8 @@ export const SITE_CONFIG = {
     },
   },
   shipping: {
-    freeShippingThreshold: 50000, // number, not string
-    standardShipping: 1000, // number, not string
+    freeShippingThreshold: 50000,
+    standardShipping: 1000,
   },
   brands: [
     {
@@ -89,7 +110,7 @@ export const SITE_CONFIG = {
       tagline: "The World's Finest Cricket Equipment",
       description:
         "Gray‑Nicolls has been crafting the world's finest cricket equipment for over 165 years. Our factory in Robertsbridge merges traditional craftsmanship with modern innovation, producing bats used by legends from W.G. Grace to Harry Brook and Kane Williamson.",
-      color: 'from-[#003DA5] via-[#0052CC] to-[#1A1A1A]',
+      color: 'from-brand-secondary via-secondary-600 to-text-primary',
       achievements: [
         'Official England Cricket Supplier',
         'Used in Cricket World Cups & Ashes series',
@@ -122,13 +143,13 @@ export const SITE_CONFIG = {
       heritage: 'Since 1823',
       tagline: "The World's #1 Rugby Brand",
       description:
-        'Gilbert has led rugby ball innovation for 200 years. Official ball supplier for Rugby World Cups since 1995. Now supplying URC, Women’s Rugby & PWR, with its new iNNOVO dual‑valve technology powering elite play.',
-      color: 'from-[#FF3D00] via-[#FF6B47] to-[#1A1A1A]',
+        "Gilbert has led rugby ball innovation for 200 years. Official ball supplier for Rugby World Cups since 1995. Now supplying URC, Women's Rugby & PWR, with its new iNNOVO dual‑valve technology powering elite play.",
+      color: 'from-brand-primary via-primary-600 to-text-primary',
       achievements: [
         'Official Rugby World Cup Ball since 1995',
-        'Official ball for Women’s Rugby World Cup 2025',
+        "Official ball for Women's Rugby World Cup 2025",
         'Renewed partnership with United Rugby Championship (2025)',
-        'Official Prem Women’s Rugby & Rugby Canada supplier',
+        "Official Prem Women's Rugby & Rugby Canada supplier",
         'Pioneers of dual‑valve iNNOVO tech',
       ],
       products: [
@@ -152,7 +173,7 @@ export const SITE_CONFIG = {
       tagline: 'Trusted by Olympic Athletes',
       description:
         'Grays continues delivering Olympic‑level hockey innovation. Their composite sticks and protective line remain top picks among international hockey athletes.',
-      color: 'from-[#AEEA00] via-[#7CB342] to-[#1A1A1A]',
+      color: 'from-brand-accent via-warning to-text-primary',
       achievements: [
         'Olympic Standard Equipment',
         'Used by professional & national hockey teams',
@@ -171,30 +192,13 @@ export const SITE_CONFIG = {
       featured: true,
     },
     {
-      name: 'Babolat',
-      category: 'Tennis & Badminton',
-      heritage: 'Innovation Leader',
-      tagline: 'Pure Racquet Sport',
-      description:
-        'French brand pioneering Aero racquets & smart racquet tech. Official partner of Roland‑Garros.',
-      color: 'from-[#FF3D00] via-[#FF6B47] to-[#AEEA00]',
-      achievements: ['Roland‑Garros Official', 'Creator of Aero series', 'Smart racquet pioneer'],
-      products: [
-        { name: 'Tennis Rackets', description: 'Professional tournament rackets' },
-        { name: 'Badminton Rackets', description: 'Precision‑engineered rackets' },
-      ],
-      image: '/babolat.svg',
-      slug: 'babolat',
-      icon: 'Target',
-    },
-    {
       name: 'Molten',
       category: 'Basketball & Volleyball',
       heritage: 'Innovation Leader',
       tagline: 'Official Tournament Supplier Worldwide',
       description:
         'Leader in ball tech for basketball & volleyball. Official supplier to FIBA, Olympic Games & world championships.',
-      color: 'from-[#FFD700] via-[#FFA500] to-[#1A1A1A]',
+      color: 'from-brand-accent via-warning to-text-primary',
       achievements: [
         'Official Olympic Games Supplier',
         'FIBA World Championship ball',
@@ -212,60 +216,12 @@ export const SITE_CONFIG = {
       icon: 'Target',
       featured: true,
     },
-    {
-      name: 'Pugg',
-      heritage: 'Patented in 1994, USA',
-      specialty: 'Pop‑Up Goals',
-      description:
-        'The original 1994 steel‑wire pop‑up goal, favoured by pro coaches worldwide for training drills and portability.',
-      color: 'from-[#F9D923] via-[#D4B72D] to-[#1A1A1A]',
-      achievements: ['Training Essential', 'Portable Design', 'Coach Favorite'],
-      image: '/pugg.png',
-    },
-    {
-      name: 'Aero',
-      heritage: 'Late 1990s, New Zealand',
-      specialty: 'Protective Gear',
-      description:
-        'Innovative cricket safety tech since the ’90s—100 mph impact‑tested pads trusted by professionals.',
-      color: 'from-[#00C853] to-[#1A1A1A]',
-      achievements: ['100 mph Impact Tested', 'Player Safety', 'Trusted by Pros'],
-    },
-    {
-      name: 'Leverage',
-      heritage: 'Cricket Tech Pioneer',
-      specialty: 'Bowling Machines',
-      description:
-        'Advanced & affordable bowling machines (up to 160 km/h) delivering swing, spin & pace for coaches and players.',
-      color: 'from-[#FF6F00] to-[#1A1A1A]',
-      achievements: ['Training Revolution', '160 km/h Capability', 'Coach Favorite'],
-      image: '/leverage.png',
-    },
-    {
-      name: 'Ashaway',
-      heritage: 'Founded 1824, USA',
-      specialty: 'Badminton & Squash',
-      description:
-        'Performance strings since 1824, crafted in the USA for badminton, squash & tennis.',
-      color: 'from-[#C62828] to-[#1A1A1A]',
-      achievements: ['String Innovation', 'Global Reach', 'Player Choice'],
-      image: '/ashaway.jpeg',
-    },
-    {
-      name: 'Fusion',
-      heritage: 'Multi‑Sport Focus',
-      specialty: 'Training Equipment',
-      description: 'Durable, coach‑approved gear for multi‑sport training.',
-      color: 'from-[#7B1FA2] to-[#1A1A1A]',
-      achievements: ['Multi‑Sport Use', 'Durable Build', 'Coach Approved'],
-      image: '/fusion.jpg',
-    },
   ],
   stats: [
-    { number: '30', label: 'Years of Excellence', color: '#003DA5' },
-    { number: '75+', label: 'Years Parent Company Heritage', color: '#FF3D00' },
-    { number: '1000+', label: 'Schools & Clubs Served', color: '#FFD700' },
-    { number: '#1', label: 'Sports Distributor in Sri Lanka', color: '#AEEA00' },
+    { number: '30', label: 'Years of Excellence', color: '#3B82F6' },
+    { number: '75+', label: 'Years Parent Company Heritage', color: '#FF6B35' },
+    { number: '1000+', label: 'Schools & Clubs Served', color: '#F39C12' },
+    { number: '#1', label: 'Sports Distributor in Sri Lanka', color: '#00B894' },
   ],
   whatsapp: {
     number: '94772350712',

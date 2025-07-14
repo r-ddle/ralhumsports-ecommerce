@@ -34,10 +34,10 @@ export default function ContactCTA() {
     {
       icon: MapPin,
       title: 'Visit Us',
-      content: SITE_CONFIG.contact.address,
+      content: `${SITE_CONFIG.contact.address.street}, ${SITE_CONFIG.contact.address.city}, ${SITE_CONFIG.contact.address.country}`,
       color: '#AEEA00',
-      href: `https://maps.google.com/?q=${encodeURIComponent(SITE_CONFIG.contact.address)}`,
-      ariaLabel: `Get directions to ${SITE_CONFIG.contact.address}`,
+      href: `https://maps.google.com/?q=${encodeURIComponent(`${SITE_CONFIG.contact.address.street}, ${SITE_CONFIG.contact.address.city}, ${SITE_CONFIG.contact.address.country}`)}`,
+      ariaLabel: `Get directions to ${SITE_CONFIG.contact.address.street}, ${SITE_CONFIG.contact.address.city}, ${SITE_CONFIG.contact.address.country}`,
     },
     {
       icon: Mail,

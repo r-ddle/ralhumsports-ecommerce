@@ -197,7 +197,7 @@ export default function Footer() {
                   <MapPin className="w-4 h-4 text-white" />
                 </div>
                 <div className="text-slate-300 text-sm sm:text-base group-hover:text-white transition-colors">
-                  <p>{SITE_CONFIG.contact.address}</p>
+                  <p>{`${SITE_CONFIG.contact.address.street}, ${SITE_CONFIG.contact.address.city}, ${SITE_CONFIG.contact.address.country}`}</p>
                 </div>
               </motion.div>
 

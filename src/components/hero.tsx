@@ -30,16 +30,16 @@ export default function Hero() {
   }
 
   return (
-    <section className="relative overflow-hidden bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 py-24 sm:py-32 md:py-40 lg:py-48">
+    <section className="relative overflow-hidden bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 py-24 sm:py-32 md:py-40 lg:py-48">
       {/* Enhanced Animated Background - Only on desktop and with motion preference */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute inset-0 bg-gradient-to-br from-blue-600/20 via-purple-600/20 to-cyan-600/20" />
+        <div className="absolute inset-0 bg-gradient-to-br from-brand-secondary/20 via-brand-primary/20 to-brand-accent/20" />
 
         {/* Floating Orbs - Only on desktop without reduced motion */}
         {!reducedMotion && (
           <>
             <motion.div
-              className="hidden lg:block absolute top-1/4 left-1/6 w-72 h-72 bg-gradient-to-br from-blue-500/30 to-cyan-400/30 rounded-full blur-3xl"
+              className="hidden lg:block absolute top-1/4 left-1/6 w-72 h-72 bg-gradient-to-br from-brand-secondary/30 to-brand-primary/30 rounded-full blur-3xl"
               animate={{
                 scale: [1, 1.2, 1],
                 opacity: [0.3, 0.6, 0.3],
@@ -53,7 +53,7 @@ export default function Hero() {
               }}
             />
             <motion.div
-              className="hidden lg:block absolute top-1/3 right-1/4 w-96 h-96 bg-gradient-to-br from-emerald-500/25 to-teal-400/25 rounded-full blur-3xl"
+              className="hidden lg:block absolute top-1/3 right-1/4 w-96 h-96 bg-gradient-to-br from-brand-accent/25 to-brand-primary/25 rounded-full blur-3xl"
               animate={{
                 scale: [1, 0.8, 1],
                 opacity: [0.4, 0.7, 0.4],
@@ -68,7 +68,7 @@ export default function Hero() {
               }}
             />
             <motion.div
-              className="hidden lg:block absolute bottom-1/4 left-1/3 w-80 h-80 bg-gradient-to-br from-orange-500/30 to-red-500/30 rounded-full blur-3xl"
+              className="hidden lg:block absolute bottom-1/4 left-1/3 w-80 h-80 bg-gradient-to-br from-brand-primary/30 to-brand-accent/30 rounded-full blur-3xl"
               animate={{
                 scale: [1, 1.1, 1],
                 opacity: [0.2, 0.5, 0.2],
@@ -85,9 +85,9 @@ export default function Hero() {
           </>
         )}
 
-        {/* Static geometric accents for mobile */}
-        <div className="absolute top-0 right-0 w-96 h-96 bg-gradient-to-bl from-yellow-400/10 to-transparent rounded-full blur-2xl" />
-        <div className="absolute bottom-0 left-0 w-80 h-80 bg-gradient-to-tr from-green-400/10 to-transparent rounded-full blur-2xl" />
+        {/* Static geometric accents */}
+        <div className="absolute top-0 right-0 w-96 h-96 bg-gradient-to-bl from-brand-accent/10 to-transparent rounded-full blur-2xl" />
+        <div className="absolute bottom-0 left-0 w-80 h-80 bg-gradient-to-tr from-brand-primary/10 to-transparent rounded-full blur-2xl" />
       </div>
 
       <div className="relative z-10 text-center px-4 max-w-7xl mx-auto">
@@ -96,7 +96,7 @@ export default function Hero() {
           initial={getInitial() ?? { opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: reducedMotion ? 0.1 : 0.8 }}
-          className="inline-flex items-center gap-2 px-4 sm:px-6 py-2 sm:py-3 rounded-full font-bold text-xs sm:text-sm mb-6 sm:mb-8 bg-gradient-to-r from-yellow-400 to-orange-400 text-gray-900 shadow-lg backdrop-blur-sm border border-yellow-300/30"
+          className="inline-flex items-center gap-2 px-4 sm:px-6 py-2 sm:py-3 rounded-full font-bold text-xs sm:text-sm mb-6 sm:mb-8 bg-gradient-to-r from-brand-accent to-brand-primary text-white shadow-lg backdrop-blur-sm border border-brand-accent/30"
         >
           <Sparkles className="w-3 h-3 sm:w-4 sm:h-4" />
           <span className="sr-only">Celebrating</span>
@@ -122,7 +122,7 @@ export default function Hero() {
             initial={getInitial() ?? { opacity: 0, scale: 0.8 }}
             animate={{ opacity: 1, scale: 1 }}
             transition={{ duration: reducedMotion ? 0.1 : 0.8, delay: reducedMotion ? 0 : 0.6 }}
-            className="block bg-gradient-to-r from-yellow-400 via-orange-400 to-red-400 bg-clip-text text-transparent drop-shadow-lg"
+            className="block bg-gradient-to-r from-brand-accent via-brand-primary to-brand-accent bg-clip-text text-transparent drop-shadow-lg"
           >
             #1 SPORTS EQUIPMENT
           </motion.span>
@@ -150,7 +150,7 @@ export default function Hero() {
               initial={getInitial() ?? { opacity: 0 }}
               animate={{ opacity: 1 }}
               transition={{ delay: reducedMotion ? 0 : 1 + i * 0.1 }}
-              className="font-bold bg-gradient-to-r from-orange-400 to-red-400 bg-clip-text text-transparent"
+              className="font-bold bg-gradient-to-r from-brand-primary to-brand-accent bg-clip-text text-transparent"
             >
               {' '}
               {brand.name}
@@ -169,20 +169,20 @@ export default function Hero() {
           <Link href="/products" className="w-full max-w-[280px] sm:w-auto">
             <Button
               size="lg"
-              className="w-full font-bold px-6 sm:px-8 py-3 sm:py-4 text-base sm:text-lg rounded-full transition-all duration-300 transform hover:scale-105 shadow-2xl text-white bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600 border-0 relative overflow-hidden group focus-visible:ring-2 focus-visible:ring-orange-400 focus-visible:ring-offset-2"
+              className="w-full font-bold px-6 sm:px-8 py-3 sm:py-4 text-base sm:text-lg rounded-full transition-all duration-300 transform hover:scale-105 shadow-2xl text-white bg-gradient-to-r from-brand-primary to-primary-600 hover:from-primary-600 hover:to-primary-700 border-0 relative overflow-hidden group focus-visible:ring-2 focus-visible:ring-brand-primary focus-visible:ring-offset-2"
             >
               <span className="relative z-10 flex items-center justify-center">
                 {SITE_CONFIG.branding.cta.shop}
                 <ArrowRight className="ml-2 w-4 h-4 sm:w-5 sm:h-5 transition-transform group-hover:translate-x-1" />
               </span>
-              <div className="absolute inset-0 bg-gradient-to-r from-orange-400 to-red-400 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+              <div className="absolute inset-0 bg-gradient-to-r from-primary-600 to-primary-700 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
             </Button>
           </Link>
           <Link href="/contact" className="w-full max-w-[280px] sm:w-auto">
             <Button
               size="lg"
               variant="outline"
-              className="w-full border-2 px-6 sm:px-8 py-3 sm:py-4 text-base sm:text-lg font-bold rounded-full transition-all duration-300 bg-white/5 backdrop-blur-sm border-yellow-400/50 text-yellow-400 hover:bg-yellow-400/10 hover:border-yellow-400 hover:text-white hover:scale-105 focus-visible:ring-2 focus-visible:ring-yellow-400 focus-visible:ring-offset-2"
+              className="w-full border-2 px-6 sm:px-8 py-3 sm:py-4 text-base sm:text-lg font-bold rounded-full transition-all duration-300 bg-white/5 backdrop-blur-sm border-brand-accent/50 text-brand-accent hover:bg-brand-accent/10 hover:border-brand-accent hover:text-white hover:scale-105 focus-visible:ring-2 focus-visible:ring-brand-accent focus-visible:ring-offset-2"
             >
               {SITE_CONFIG.branding.cta.contact}
             </Button>

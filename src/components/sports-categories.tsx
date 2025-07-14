@@ -1,289 +1,215 @@
 'use client'
 
-import { Card, CardContent } from '@/components/ui/card'
-import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
-import { ArrowRight, Sparkles } from 'lucide-react'
+import { Badge } from '@/components/ui/badge'
+import { ArrowRight, Zap, Trophy, Target, Users } from 'lucide-react'
+import Link from 'next/link'
 import { motion } from 'framer-motion'
+import { useInView } from 'framer-motion'
+import { useRef, useState, useEffect } from 'react'
 import Image from 'next/image'
 
-const sportsCategories = [
-  {
-    name: 'Cricket',
-    description: 'Complete cricket equipment from bats to protective gear',
-    featured: 'Gray-Nicolls Partnership',
-    image: '/placeholder.svg?height=400&width=600',
-    gradient: 'from-blue-600 via-blue-500 to-cyan-400',
-    popular: true,
-  },
-  {
-    name: 'Rugby',
-    description: 'Professional rugby equipment and training gear',
-    featured: 'Gilbert Official',
-    image: '/placeholder.svg?height=400&width=600',
-    gradient: 'from-orange-600 via-red-500 to-pink-400',
-    popular: false,
-  },
-  {
-    name: 'Basketball',
-    description: 'Court equipment and professional basketballs',
-    featured: 'Molten Official',
-    image: '/placeholder.svg?height=400&width=600',
-    gradient: 'from-yellow-500 via-orange-400 to-red-400',
-    popular: true,
-  },
-  {
-    name: 'Hockey',
-    description: 'Field hockey sticks and protective equipment',
-    featured: 'Grays Excellence',
-    image: '/placeholder.svg?height=400&width=600',
-    gradient: 'from-green-500 via-emerald-400 to-teal-400',
-    popular: false,
-  },
-  {
-    name: 'Volleyball',
-    description: 'Professional volleyballs and net systems',
-    featured: 'Molten Quality',
-    image: '/placeholder.svg?height=400&width=600',
-    gradient: 'from-purple-600 via-violet-500 to-indigo-400',
-    popular: false,
-  },
-  {
-    name: 'Tennis',
-    description: 'Rackets, balls, and court accessories',
-    featured: 'Premium Selection',
-    image: '/placeholder.svg?height=400&width=600',
-    gradient: 'from-lime-500 via-green-400 to-emerald-400',
-    popular: true,
-  },
-]
-
 export default function SportsCategories() {
+  const ref = useRef(null)
+  const isInView = useInView(ref, { once: true, margin: '-100px' })
+  const [reducedMotion, setReducedMotion] = useState(false)
+
+  useEffect(() => {
+    const mediaQuery = window.matchMedia('(prefers-reduced-motion: reduce)')
+    setReducedMotion(mediaQuery.matches)
+
+    const handleChange = () => setReducedMotion(mediaQuery.matches)
+    mediaQuery.addEventListener('change', handleChange)
+    return () => mediaQuery.removeEventListener('change', handleChange)
+  }, [])
+
+  const categories = [
+    {
+      id: 'cricket',
+      name: 'Cricket',
+      description: 'Professional cricket equipment from Gray-Nicolls, Grays & more',
+      icon: Target,
+      image: '/placeholder.svg?height=400&width=600',
+      products: ['Bats', 'Balls', 'Protective Gear', 'Accessories'],
+      featured: true,
+      color: 'from-green-500 to-emerald-600',
+      stats: '500+ Products',
+    },
+    {
+      id: 'rugby',
+      name: 'Rugby',
+      description: 'Official Gilbert rugby balls and professional equipment',
+      icon: Trophy,
+      image: '/placeholder.svg?height=400&width=600',
+      products: ['Balls', 'Training Equipment', 'Protective Gear'],
+      featured: true,
+      color: 'from-brand-secondary to-secondary-600',
+      stats: '200+ Products',
+    },
+    {
+      id: 'basketball',
+      name: 'Basketball',
+      description: 'Premium Molten basketballs and court equipment',
+      icon: Zap,
+      image: '/placeholder.svg?height=400&width=600',
+      products: ['Balls', 'Hoops', 'Training Aids', 'Accessories'],
+      featured: false,
+      color: 'from-brand-primary to-primary-600',
+      stats: '150+ Products',
+    },
+    {
+      id: 'hockey',
+      name: 'Hockey',
+      description: 'Professional hockey sticks, balls and protective equipment',
+      icon: Users,
+      image: '/placeholder.svg?height=400&width=600',
+      products: ['Sticks', 'Balls', 'Protective Gear', 'Goals'],
+      featured: false,
+      color: 'from-brand-accent to-warning',
+      stats: '100+ Products',
+    },
+  ]
+
   return (
-    <section className="relative py-16 sm:py-20 lg:py-24 overflow-hidden">
-      {/* Modern Background with Glassmorphism */}
-      <div className="absolute inset-0 bg-gradient-to-br from-slate-50 via-white to-blue-50 dark:from-slate-900 dark:via-slate-800 dark:to-slate-900" />
-
-      {/* Animated Background Elements */}
-      <div className="absolute inset-0 overflow-hidden pointer-events-none">
+    <section ref={ref} className="py-12 sm:py-16 lg:py-24 bg-brand-surface overflow-hidden">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        {/* Section Header */}
         <motion.div
-          className="absolute top-1/4 left-1/6 w-72 h-72 bg-gradient-to-br from-blue-400/20 to-cyan-300/20 rounded-full blur-3xl"
-          animate={{
-            scale: [1, 1.2, 1],
-            opacity: [0.3, 0.6, 0.3],
-            x: [0, 30, 0],
-            y: [0, -20, 0],
-          }}
-          transition={{
-            duration: 8,
-            repeat: Number.POSITIVE_INFINITY,
-            ease: 'easeInOut',
-          }}
-        />
-        <motion.div
-          className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-gradient-to-br from-orange-400/20 to-red-300/20 rounded-full blur-3xl"
-          animate={{
-            scale: [1, 0.8, 1],
-            opacity: [0.4, 0.7, 0.4],
-            x: [0, -40, 0],
-            y: [0, 30, 0],
-          }}
-          transition={{
-            duration: 10,
-            repeat: Number.POSITIVE_INFINITY,
-            ease: 'easeInOut',
-            delay: 2,
-          }}
-        />
-      </div>
-
-      <div className="relative z-10 max-w-7xl mx-auto px-4">
-        {/* Enhanced Section Header */}
-        <motion.div
-          initial={{ opacity: 0, y: 30 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.8 }}
-          viewport={{ once: true }}
+          initial={reducedMotion ? false : { opacity: 0, y: 30 }}
+          animate={isInView ? { opacity: 1, y: 0 } : {}}
+          transition={{ duration: reducedMotion ? 0.1 : 0.6 }}
           className="text-center mb-12 sm:mb-16"
         >
-          <motion.div
-            initial={{ opacity: 0, scale: 0.9 }}
-            whileInView={{ opacity: 1, scale: 1 }}
-            transition={{ duration: 0.6, delay: 0.2 }}
-            className="inline-flex items-center gap-2 px-6 py-3 rounded-full font-bold text-sm mb-6 bg-gradient-to-r from-orange-400 to-red-400 text-white shadow-lg backdrop-blur-sm border border-orange-300/30"
+          <Badge
+            variant="secondary"
+            className="mb-4 px-4 py-2 text-sm font-semibold bg-gradient-to-r from-blue-50 to-purple-50 text-brand-secondary border border-blue-200"
           >
-            <Sparkles className="w-4 h-4" />
+            <Zap className="w-4 h-4 mr-2" />
             SPORTS CATEGORIES
-          </motion.div>
-
-          <motion.h2
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8, delay: 0.3 }}
-            className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-black text-slate-900 dark:text-white mb-6 leading-tight"
-          >
-            EVERY SPORT,
-            <span className="block bg-gradient-to-r from-blue-600 to-cyan-400 bg-clip-text text-transparent">
-              EVERY LEVEL
+          </Badge>
+          <h2 className="text-3xl sm:text-4xl lg:text-5xl font-black text-text-primary mb-4 sm:mb-6">
+            Equipment for Every
+            <span className="block bg-gradient-to-r from-brand-secondary to-secondary-600 bg-clip-text text-transparent">
+              Sport & Athlete
             </span>
-          </motion.h2>
-
-          <motion.p
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8, delay: 0.4 }}
-            className="text-lg sm:text-xl text-slate-600 dark:text-slate-300 max-w-3xl mx-auto leading-relaxed"
-          >
-            From school teams to professional athletes, we supply equipment for every sport and
-            skill level
-          </motion.p>
+          </h2>
+          <p className="text-lg sm:text-xl text-text-secondary max-w-3xl mx-auto leading-relaxed">
+            From professional cricket gear to premium rugby equipment, we have everything you need
+            to excel in your sport
+          </p>
         </motion.div>
 
-        {/* Enhanced Sports Grid */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8">
-          {sportsCategories.map((sport, index) => (
-            <motion.div
-              key={sport.name}
-              initial={{ opacity: 0, y: 30 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6, delay: index * 0.1 }}
-              viewport={{ once: true }}
-              whileHover={{ y: -8, scale: 1.02 }}
-              className="group"
-            >
-              <Card className="overflow-hidden bg-white/70 dark:bg-slate-800/70 backdrop-blur-xl border border-white/20 dark:border-slate-700/50 shadow-xl hover:shadow-2xl transition-all duration-500">
-                <CardContent className="p-0">
-                  {/* Enhanced Image Section */}
-                  <div className="relative overflow-hidden">
-                    <Image
-                      width={600}
-                      height={400}
-                      src={sport.image || '/placeholder.svg'}
-                      alt={sport.name}
-                      className="w-full h-48 sm:h-56 object-cover group-hover:scale-110 transition-transform duration-700"
-                    />
+        {/* Categories Grid */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 sm:gap-8">
+          {categories.map((category, index) => {
+            const IconComponent = category.icon
+            return (
+              <motion.div
+                key={category.id}
+                initial={reducedMotion ? false : { opacity: 0, y: 40 }}
+                animate={isInView ? { opacity: 1, y: 0 } : {}}
+                transition={{
+                  duration: reducedMotion ? 0.1 : 0.6,
+                  delay: reducedMotion ? 0 : index * 0.1,
+                }}
+                className={`group relative overflow-hidden rounded-2xl sm:rounded-3xl bg-gradient-to-br ${category.color} shadow-xl hover:shadow-2xl transition-all duration-300 ${
+                  category.featured ? 'lg:col-span-1' : ''
+                }`}
+              >
+                {/* Background Image */}
+                <div className="absolute inset-0 opacity-20 group-hover:opacity-30 transition-opacity duration-300">
+                  <Image
+                    src={category.image || '/placeholder.svg'}
+                    alt={`${category.name} equipment`}
+                    fill
+                    className="object-cover"
+                  />
+                </div>
 
-                    {/* Gradient Overlay */}
-                    <div
-                      className={`absolute inset-0 bg-gradient-to-t ${sport.gradient} opacity-80 group-hover:opacity-90 transition-opacity duration-300`}
-                    />
+                {/* Gradient Overlay */}
+                <div className="absolute inset-0 bg-gradient-to-br from-gray-900/40 via-gray-900/20 to-transparent" />
 
-                    {/* Popular Badge */}
-                    {sport.popular && (
-                      <motion.div
-                        initial={{ scale: 0 }}
-                        whileInView={{ scale: 1 }}
-                        transition={{ duration: 0.5, delay: 0.3 + index * 0.1 }}
-                        className="absolute top-4 left-4"
-                      >
-                        <Badge className="bg-yellow-400 text-slate-900 font-bold text-xs shadow-lg">
-                          <Sparkles className="w-3 h-3 mr-1" />
-                          POPULAR
+                {/* Content */}
+                <div className="relative z-10 p-6 sm:p-8 lg:p-10 h-full flex flex-col justify-between min-h-[300px] sm:min-h-[350px]">
+                  {/* Header */}
+                  <div>
+                    <div className="flex items-center gap-3 mb-4">
+                      <div className="p-2 sm:p-3 bg-white/20 backdrop-blur-sm rounded-xl">
+                        <IconComponent className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
+                      </div>
+                      {category.featured && (
+                        <Badge className="bg-brand-accent text-white font-bold text-xs px-2 py-1">
+                          FEATURED
                         </Badge>
-                      </motion.div>
-                    )}
+                      )}
+                    </div>
 
-                    {/* Sport Name Overlay */}
-                    <div className="absolute bottom-4 left-4 right-4">
-                      <motion.h3
-                        initial={{ opacity: 0, x: -20 }}
-                        whileInView={{ opacity: 1, x: 0 }}
-                        transition={{ duration: 0.6, delay: 0.4 + index * 0.1 }}
-                        className="text-2xl sm:text-3xl font-black text-white mb-2 drop-shadow-lg"
-                      >
-                        {sport.name}
-                      </motion.h3>
-                      <motion.div
-                        initial={{ opacity: 0, scale: 0.8 }}
-                        whileInView={{ opacity: 1, scale: 1 }}
-                        transition={{ duration: 0.5, delay: 0.5 + index * 0.1 }}
-                      >
-                        <Badge className="bg-white/20 text-white border-white/30 text-xs backdrop-blur-sm">
-                          {sport.featured}
+                    <h3 className="text-2xl sm:text-3xl lg:text-4xl font-black text-white mb-3 sm:mb-4">
+                      {category.name}
+                    </h3>
+                    <p className="text-white/90 text-base sm:text-lg mb-4 sm:mb-6 leading-relaxed">
+                      {category.description}
+                    </p>
+
+                    {/* Product Types */}
+                    <div className="flex flex-wrap gap-2 mb-4 sm:mb-6">
+                      {category.products.slice(0, 3).map((product) => (
+                        <Badge
+                          key={product}
+                          variant="secondary"
+                          className="bg-white/20 text-white border-white/30 text-xs"
+                        >
+                          {product}
                         </Badge>
-                      </motion.div>
+                      ))}
+                      {category.products.length > 3 && (
+                        <Badge
+                          variant="secondary"
+                          className="bg-white/20 text-white border-white/30 text-xs"
+                        >
+                          +{category.products.length - 3} more
+                        </Badge>
+                      )}
                     </div>
                   </div>
 
-                  {/* Enhanced Content Section */}
-                  <div className="p-6 bg-white/80 dark:bg-slate-800/80 backdrop-blur-sm">
-                    <motion.p
-                      initial={{ opacity: 0 }}
-                      whileInView={{ opacity: 1 }}
-                      transition={{ duration: 0.6, delay: 0.6 + index * 0.1 }}
-                      className="text-slate-600 dark:text-slate-300 mb-6 leading-relaxed text-sm sm:text-base"
+                  {/* Footer */}
+                  <div className="flex items-center justify-between">
+                    <div className="text-white/80 text-sm font-medium">{category.stats}</div>
+                    <Button
+                      size="sm"
+                      className="bg-white/20 hover:bg-white/30 text-white border border-white/30 hover:border-white/50 backdrop-blur-sm transition-all duration-200 group-hover:scale-105 focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2"
+                      asChild
                     >
-                      {sport.description}
-                    </motion.p>
-
-                    <motion.div
-                      initial={{ opacity: 0, y: 20 }}
-                      whileInView={{ opacity: 1, y: 0 }}
-                      transition={{ duration: 0.6, delay: 0.7 + index * 0.1 }}
-                    >
-                      <Button className="w-full bg-gradient-to-r from-slate-900 to-slate-700 hover:from-slate-800 hover:to-slate-600 text-white font-bold transition-all duration-300 group/btn shadow-lg hover:shadow-xl">
-                        EXPLORE {sport.name.toUpperCase()}
-                        <ArrowRight className="ml-2 w-4 h-4 group-hover/btn:translate-x-1 transition-transform" />
-                      </Button>
-                    </motion.div>
+                      <Link href={`/products?category=${category.id}`}>
+                        Shop Now
+                        <ArrowRight className="w-4 h-4 ml-2 transition-transform group-hover:translate-x-1" />
+                      </Link>
+                    </Button>
                   </div>
-                </CardContent>
-              </Card>
-            </motion.div>
-          ))}
+                </div>
+              </motion.div>
+            )
+          })}
         </div>
 
-        {/* Enhanced Bottom CTA */}
+        {/* CTA Section */}
         <motion.div
-          initial={{ opacity: 0, y: 30 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.8, delay: 0.5 }}
-          viewport={{ once: true }}
-          className="mt-16 sm:mt-20"
+          initial={reducedMotion ? false : { opacity: 0, y: 30 }}
+          animate={isInView ? { opacity: 1, y: 0 } : {}}
+          transition={{ duration: reducedMotion ? 0.1 : 0.6, delay: reducedMotion ? 0 : 0.4 }}
+          className="text-center mt-12 sm:mt-16"
         >
-          <div className="relative overflow-hidden rounded-3xl bg-gradient-to-r from-blue-600 via-purple-600 to-cyan-500 p-8 sm:p-12 text-white shadow-2xl">
-            {/* Background Pattern */}
-            <div className="absolute inset-0 bg-grid-pattern opacity-10" />
-
-            <div className="relative z-10 text-center">
-              <motion.h3
-                initial={{ opacity: 0, scale: 0.9 }}
-                whileInView={{ opacity: 1, scale: 1 }}
-                transition={{ duration: 0.6 }}
-                className="text-2xl sm:text-3xl md:text-4xl font-black mb-4"
-              >
-                CAN&apos;T FIND YOUR SPORT?
-              </motion.h3>
-
-              <motion.p
-                initial={{ opacity: 0, y: 20 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.6, delay: 0.2 }}
-                className="text-lg sm:text-xl mb-8 opacity-90 max-w-2xl mx-auto"
-              >
-                We also supply equipment for Badminton, Netball, Football and more
-              </motion.p>
-
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.6, delay: 0.4 }}
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
-              >
-                <Button
-                  size="lg"
-                  className="bg-white text-slate-900 hover:bg-slate-100 font-bold px-8 py-4 rounded-full text-lg shadow-xl hover:shadow-2xl transition-all duration-300"
-                  asChild
-                >
-                  <a href="/contact">
-                    CONTACT US
-                    <ArrowRight className="ml-2 w-5 h-5" />
-                  </a>
-                </Button>
-              </motion.div>
-            </div>
-          </div>
+          <Button
+            size="lg"
+            className="bg-brand-secondary hover:bg-secondary-600 text-white font-bold px-8 py-4 text-lg rounded-full shadow-xl hover:shadow-2xl transition-all duration-300 hover:scale-105 focus-visible:ring-2 focus-visible:ring-brand-secondary focus-visible:ring-offset-2"
+            asChild
+          >
+            <Link href="/products">
+              View All Products
+              <ArrowRight className="w-5 h-5 ml-2" />
+            </Link>
+          </Button>
         </motion.div>
       </div>
     </section>

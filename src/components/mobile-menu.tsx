@@ -196,7 +196,7 @@ export default function MobileMenu({ isOpen, onToggle }: MobileMenuProps) {
                     </a>
                     <div className="flex items-center gap-3 text-sm">
                       <MapPin className="w-4 h-4 flex-shrink-0" />
-                      <span>{SITE_CONFIG.contact.address}</span>
+                      <span>{`${SITE_CONFIG.contact.address.street}, ${SITE_CONFIG.contact.address.city}, ${SITE_CONFIG.contact.address.country}`}</span>
                     </div>
                   </div>
                 </div>

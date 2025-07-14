@@ -89,8 +89,8 @@ export const metadata: Metadata = {
 // Loading component for Suspense boundaries
 function LoadingSpinner() {
   return (
-    <div className="flex items-center justify-center min-h-screen bg-gradient-to-br from-slate-900 to-slate-800">
-      <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-orange-500"></div>
+    <div className="flex items-center justify-center min-h-screen bg-brand-background">
+      <div className="animate-spin rounded-full h-8 w-8 sm:h-12 sm:w-12 border-b-2 border-brand-primary"></div>
       <span className="sr-only">Loading...</span>
     </div>
   )
@@ -103,55 +103,36 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
         <link rel="dns-prefetch" href="https://fonts.googleapis.com" />
-        <meta name="theme-color" content="#003DA5" />
-        <meta name="color-scheme" content="light dark" />
+        <meta name="theme-color" content="#FF6B35" />
+        <meta name="color-scheme" content="light" />
         <link rel="manifest" href="/manifest.json" />
         <link rel="icon" href="/favicon.ico" sizes="any" />
         <link rel="icon" href="/icon.svg" type="image/svg+xml" />
-        <link rel="apple-touch-icon" href="/apple-touch-icon.png" sizes="180x180" />
+        <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
       </head>
-      <body className={`${inter.className} antialiased`}>
+      <body
+        className={`${inter.className} antialiased bg-brand-background text-text-primary overflow-x-hidden`}
+      >
         <ErrorBoundary>
           <CartProvider>
-            <Suspense fallback={<LoadingSpinner />}>
-              <Navigation />
-            </Suspense>
+            <div className="flex flex-col min-h-screen">
+              <Suspense fallback={<LoadingSpinner />}>
+                <Navigation />
+              </Suspense>
 
-            <main id="main-content" role="main" className="min-h-screen">
-              <Suspense fallback={<LoadingSpinner />}>{children}</Suspense>
-            </main>
+              <main className="flex-1 pt-16 sm:pt-20">
+                <Suspense fallback={<LoadingSpinner />}>{children}</Suspense>
+              </main>
 
-            <Suspense fallback={null}>
-              <Footer />
-            </Suspense>
+              <Suspense fallback={null}>
+                <Footer />
+              </Suspense>
 
-            <Suspense fallback={null}>
               <CartSidebar />
-            </Suspense>
-
-            <Toaster
-              position="top-right"
-              richColors
-              closeButton
-              duration={4000}
-              toastOptions={{
-                style: {
-                  background: 'rgba(255, 255, 255, 0.95)',
-                  backdropFilter: 'blur(10px)',
-                  border: '1px solid rgba(255, 255, 255, 0.2)',
-                },
-              }}
-            />
+            </div>
+            <Toaster />
           </CartProvider>
         </ErrorBoundary>
-
-        {/* Skip to main content link for accessibility */}
-        <a
-          href="#main-content"
-          className="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 bg-blue-600 text-white px-4 py-2 rounded-md z-50 focus:z-50"
-        >
-          Skip to main content
-        </a>
       </body>
     </html>
   )
