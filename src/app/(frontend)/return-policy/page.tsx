@@ -14,373 +14,898 @@ import {
   Mail,
   FileText,
   Package,
+  CreditCard,
+  Truck,
+  Calendar,
+  Building,
+  ArrowRight,
+  DollarSign,
+  RefreshCw,
+  Ban,
+  Info,
+  ShoppingCart,
+  MapPin,
+  User,
 } from 'lucide-react'
 import Link from 'next/link'
-
-const returnConditions = [
-  {
-    icon: Clock,
-    title: '30-Day Return Window',
-    description: 'Items must be returned within 30 days of purchase date',
-    color: 'bg-[#003DA5]',
-  },
-  {
-    icon: Package,
-    title: 'Original Packaging',
-    description: 'Products must be in original, unopened packaging with all accessories',
-    color: 'bg-[#FF3D00]',
-  },
-  {
-    icon: FileText,
-    title: 'Valid Receipt',
-    description: 'Original purchase receipt or invoice must be provided',
-    color: 'bg-[#AEEA00]',
-  },
-  {
-    icon: Shield,
-    title: 'Unused Condition',
-    description: 'Items must be unused, undamaged, and in resaleable condition',
-    color: 'bg-[#FFD700]',
-  },
-]
-
-const eligibleItems = [
-  'Unopened sports equipment in original packaging',
-  'Unused apparel with original tags attached',
-  'Defective products (manufacturing defects)',
-  'Wrong items shipped by our error',
-  'Damaged items received during shipping',
-]
-
-const nonEligibleItems = [
-  'Used or worn sports equipment',
-  'Personalized or customized items',
-  'Items damaged by customer misuse',
-  'Products without original packaging',
-  'Items purchased on clearance or final sale',
-  'Hygiene-related products (mouthguards, etc.)',
-]
-
-const returnProcess = [
-  {
-    step: '1',
-    title: 'Contact Our Team',
-    description: 'Call or email us within 30 days to initiate your return request',
-    icon: Phone,
-  },
-  {
-    step: '2',
-    title: 'Return Authorization',
-    description: 'Receive return authorization number and shipping instructions',
-    icon: FileText,
-  },
-  {
-    step: '3',
-    title: 'Package & Ship',
-    description: 'Securely package item with return authorization and ship back',
-    icon: Package,
-  },
-  {
-    step: '4',
-    title: 'Processing & Refund',
-    description: 'We process your return and issue refund within 5-7 business days',
-    icon: RotateCcw,
-  },
-]
+import { SITE_CONFIG } from '@/config/site-config'
 
 export default function ReturnPolicyPage() {
   return (
-    <main className="min-h-screen pt-16">
-      {/* Hero Section */}
-      <section className="py-16 sm:py-20 bg-gradient-to-br from-[#003DA5] to-[#1A1A1A] text-white relative overflow-hidden">
-        <div className="absolute inset-0 opacity-10">
-          <div className="absolute top-20 left-20 w-32 h-32 bg-[#FFD700] rounded-full blur-3xl animate-pulse"></div>
-          <div className="absolute bottom-20 right-20 w-40 h-40 bg-[#AEEA00] rounded-full blur-3xl animate-pulse delay-1000"></div>
-        </div>
-
-        <div className="max-w-7xl mx-auto px-4 relative z-10">
-          <div className="text-center">
-            <Badge className="bg-[#FFD700] text-[#1A1A1A] px-6 py-2 text-sm font-bold mb-4">
-              CUSTOMER PROTECTION
-            </Badge>
-            <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-black mb-6 leading-tight">
-              RETURN
-              <span className="block text-[#FF3D00]">POLICY</span>
-            </h1>
-            <p className="text-lg sm:text-xl text-gray-300 max-w-4xl mx-auto mb-8 leading-relaxed">
-              Your satisfaction is our priority. We offer a comprehensive return policy to ensure
-              you&apos;re completely happy with your Ralhum sports equipment purchase.
-            </p>
-            <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              <Button
-                size="lg"
-                className="bg-[#FF3D00] hover:bg-[#FF3D00]/90 text-white font-bold rounded-full px-8 py-4"
-                asChild
-              >
-                <Link href="#return-process">
-                  <RotateCcw className="w-5 h-5 mr-2" />
-                  START RETURN
-                </Link>
-              </Button>
-              <Button
-                size="lg"
-                variant="outline"
-                className="border-2 border-white text-white hover:bg-white hover:text-[#003DA5] font-bold rounded-full px-8 py-4 bg-transparent"
-                asChild
-              >
-                <Link href="#contact">
-                  <Phone className="w-5 h-5 mr-2" />
-                  CONTACT SUPPORT
-                </Link>
-              </Button>
-            </div>
+    <main className="min-h-screen bg-brand-background">
+      {/* Header Section */}
+      <section className="py-12 sm:py-16 bg-white border-b border-brand-border">
+        <div className="max-w-4xl mx-auto px-4 text-center">
+          <Badge className="bg-brand-primary text-white px-4 py-2 text-sm font-semibold mb-4">
+            Customer Protection
+          </Badge>
+          <h1 className="text-3xl sm:text-4xl font-bold text-text-primary mb-4">Return Policy</h1>
+          <p className="text-lg text-text-secondary max-w-2xl mx-auto leading-relaxed">
+            Your satisfaction is our priority. We offer comprehensive return and exchange options to
+            ensure you&apos;re completely happy with your purchase.
+          </p>
+          <div className="flex items-center justify-center gap-2 mt-6 text-sm text-text-secondary">
+            <Calendar className="w-4 h-4" />
+            <span>Last Updated: January 15, 2025</span>
           </div>
+        </div>
+      </section>
+
+      {/* Overview */}
+      <section className="py-12 sm:py-16 bg-brand-surface">
+        <div className="max-w-4xl mx-auto px-4">
+          <Card className="border border-brand-border">
+            <CardContent className="p-8">
+              <div className="flex items-start gap-4 mb-6">
+                <div className="w-12 h-12 bg-brand-secondary rounded-lg flex items-center justify-center flex-shrink-0">
+                  <Shield className="w-6 h-6 text-white" />
+                </div>
+                <div>
+                  <h2 className="text-2xl font-bold text-text-primary mb-2">
+                    Return Policy Overview
+                  </h2>
+                  <p className="text-text-secondary">Our commitment to customer satisfaction</p>
+                </div>
+              </div>
+              <div className="space-y-4 text-text-primary leading-relaxed">
+                <p>
+                  At Ralhum Sports, we understand that purchasing sports equipment is an important
+                  decision. Our comprehensive return policy is designed to give you confidence in
+                  your purchase while ensuring fairness for all customers.
+                </p>
+                <div className="bg-success/10 p-4 rounded-lg border border-success/20">
+                  <p className="font-semibold text-success mb-2">30-Day Return Guarantee:</p>
+                  <p>
+                    We offer a 30-day return window for most products, giving you ample time to
+                    evaluate your purchase and ensure it meets your needs.
+                  </p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
         </div>
       </section>
 
       {/* Return Conditions */}
-      <section className="py-16 sm:py-20 bg-white dark:bg-gray-900">
-        <div className="max-w-7xl mx-auto px-4">
-          <div className="text-center mb-12 sm:mb-16">
-            <Badge className="bg-[#003DA5] text-white px-6 py-2 text-sm font-bold mb-4">
-              RETURN REQUIREMENTS
-            </Badge>
-            <h2 className="text-3xl sm:text-4xl md:text-5xl font-black text-[#1A1A1A] dark:text-white mb-6 leading-tight">
-              RETURN
-              <span className="block text-[#FF3D00]">CONDITIONS</span>
-            </h2>
-            <p className="text-lg sm:text-xl text-gray-600 dark:text-gray-300 max-w-3xl mx-auto leading-relaxed">
-              To ensure a smooth return process, please review our return conditions below.
-            </p>
-          </div>
+      <section className="py-12 sm:py-16 bg-brand-background">
+        <div className="max-w-4xl mx-auto px-4">
+          <Card className="border border-brand-border">
+            <CardContent className="p-8">
+              <div className="flex items-start gap-4 mb-6">
+                <div className="w-12 h-12 bg-brand-primary rounded-lg flex items-center justify-center flex-shrink-0">
+                  <CheckCircle className="w-6 h-6 text-white" />
+                </div>
+                <div>
+                  <h2 className="text-2xl font-bold text-text-primary mb-2">Return Conditions</h2>
+                  <p className="text-text-secondary">
+                    Requirements for eligible returns and exchanges
+                  </p>
+                </div>
+              </div>
+              <div className="space-y-6">
+                <div>
+                  <h3 className="text-lg font-semibold text-text-primary mb-3">
+                    Basic Requirements
+                  </h3>
+                  <ul className="space-y-3 text-text-primary">
+                    <li className="flex items-start gap-3">
+                      <Clock className="w-5 h-5 text-success mt-1 flex-shrink-0" />
+                      <div>
+                        <strong>30-Day Return Window:</strong> Items must be returned within 30
+                        calendar days of the delivery date
+                      </div>
+                    </li>
+                    <li className="flex items-start gap-3">
+                      <Package className="w-5 h-5 text-success mt-1 flex-shrink-0" />
+                      <div>
+                        <strong>Original Condition:</strong> Products must be unused, unworn, and in
+                        original condition with all tags and labels attached
+                      </div>
+                    </li>
+                    <li className="flex items-start gap-3">
+                      <FileText className="w-5 h-5 text-success mt-1 flex-shrink-0" />
+                      <div>
+                        <strong>Proof of Purchase:</strong> Original receipt, invoice, or order
+                        confirmation required
+                      </div>
+                    </li>
+                    <li className="flex items-start gap-3">
+                      <Package className="w-5 h-5 text-success mt-1 flex-shrink-0" />
+                      <div>
+                        <strong>Original Packaging:</strong> Items must be returned in original
+                        packaging with all accessories, manuals, and components
+                      </div>
+                    </li>
+                  </ul>
+                </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 sm:gap-8">
-            {returnConditions.map((condition, index) => {
-              const IconComponent = condition.icon
-              return (
-                <Card
-                  key={index}
-                  className="hover:shadow-xl transition-all duration-300 border-0 overflow-hidden"
-                >
-                  <CardContent className="p-6 text-center">
-                    <div
-                      className={`w-16 h-16 ${condition.color} rounded-full flex items-center justify-center mx-auto mb-4`}
-                    >
-                      <IconComponent className="w-8 h-8 text-white" />
-                    </div>
-                    <h3 className="text-xl font-bold text-[#1A1A1A] dark:text-white mb-3">
-                      {condition.title}
-                    </h3>
-                    <p className="text-gray-600 dark:text-gray-300 leading-relaxed">
-                      {condition.description}
-                    </p>
-                  </CardContent>
-                </Card>
-              )
-            })}
-          </div>
+                <div>
+                  <h3 className="text-lg font-semibold text-text-primary mb-3">
+                    Product Condition Standards
+                  </h3>
+                  <div className="bg-info/10 p-4 rounded-lg border border-info/20">
+                    <p className="font-semibold text-info mb-2">Acceptable Return Conditions:</p>
+                    <ul className="space-y-2 text-text-primary">
+                      <li>• No signs of wear, use, or damage</li>
+                      <li>• All original tags, labels, and protective films intact</li>
+                      <li>• No odors (particularly important for sports equipment)</li>
+                      <li>• Packaging materials undamaged and complete</li>
+                      <li>• All accessories and documentation included</li>
+                    </ul>
+                  </div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
         </div>
       </section>
 
-      {/* Eligible vs Non-Eligible Items */}
-      <section className="py-16 sm:py-20 bg-gray-50 dark:bg-gray-800">
-        <div className="max-w-7xl mx-auto px-4">
-          <div className="text-center mb-12 sm:mb-16">
-            <Badge className="bg-[#AEEA00] text-[#1A1A1A] px-6 py-2 text-sm font-bold mb-4">
-              ITEM ELIGIBILITY
-            </Badge>
-            <h2 className="text-3xl sm:text-4xl md:text-5xl font-black text-[#1A1A1A] dark:text-white mb-6 leading-tight">
-              WHAT CAN BE
-              <span className="block text-[#003DA5] dark:text-[#4A90E2]">RETURNED?</span>
-            </h2>
-          </div>
-
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12">
-            {/* Eligible Items */}
-            <Card className="bg-white dark:bg-gray-700 border-0 shadow-lg">
-              <CardContent className="p-6 sm:p-8">
-                <div className="flex items-center gap-3 mb-6">
-                  <div className="w-12 h-12 bg-green-500 rounded-full flex items-center justify-center">
-                    <CheckCircle className="w-6 h-6 text-white" />
+      {/* Eligible and Non-Eligible Items */}
+      <section className="py-12 sm:py-16 bg-brand-surface">
+        <div className="max-w-4xl mx-auto px-4 space-y-8">
+          <Card className="border border-brand-border">
+            <CardContent className="p-8">
+              <div className="flex items-start gap-4 mb-6">
+                <div className="w-12 h-12 bg-success rounded-lg flex items-center justify-center flex-shrink-0">
+                  <CheckCircle className="w-6 h-6 text-white" />
+                </div>
+                <div>
+                  <h2 className="text-2xl font-bold text-text-primary mb-2">Eligible for Return</h2>
+                  <p className="text-text-secondary">Products that can be returned or exchanged</p>
+                </div>
+              </div>
+              <div className="space-y-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div>
+                    <h3 className="font-semibold text-text-primary mb-3">Sports Equipment</h3>
+                    <ul className="space-y-2 text-text-primary">
+                      <li className="flex items-start gap-2">
+                        <CheckCircle className="w-4 h-4 text-success mt-1 flex-shrink-0" />
+                        <span>Unopened and unused bats, rackets, and sticks</span>
+                      </li>
+                      <li className="flex items-start gap-2">
+                        <CheckCircle className="w-4 h-4 text-success mt-1 flex-shrink-0" />
+                        <span>Protective gear with original tags</span>
+                      </li>
+                      <li className="flex items-start gap-2">
+                        <CheckCircle className="w-4 h-4 text-success mt-1 flex-shrink-0" />
+                        <span>Sports balls in original packaging</span>
+                      </li>
+                      <li className="flex items-start gap-2">
+                        <CheckCircle className="w-4 h-4 text-success mt-1 flex-shrink-0" />
+                        <span>Training equipment and accessories</span>
+                      </li>
+                    </ul>
                   </div>
-                  <h3 className="text-2xl font-black text-green-600 dark:text-green-400">
-                    ELIGIBLE FOR RETURN
-                  </h3>
-                </div>
-                <div className="space-y-4">
-                  {eligibleItems.map((item, index) => (
-                    <div key={index} className="flex items-start gap-3">
-                      <CheckCircle className="w-5 h-5 text-green-500 mt-0.5 flex-shrink-0" />
-                      <span className="text-gray-700 dark:text-gray-300">{item}</span>
-                    </div>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
 
-            {/* Non-Eligible Items */}
-            <Card className="bg-white dark:bg-gray-700 border-0 shadow-lg">
-              <CardContent className="p-6 sm:p-8">
-                <div className="flex items-center gap-3 mb-6">
-                  <div className="w-12 h-12 bg-red-500 rounded-full flex items-center justify-center">
-                    <XCircle className="w-6 h-6 text-white" />
+                  <div>
+                    <h3 className="font-semibold text-text-primary mb-3">Apparel & Footwear</h3>
+                    <ul className="space-y-2 text-text-primary">
+                      <li className="flex items-start gap-2">
+                        <CheckCircle className="w-4 h-4 text-success mt-1 flex-shrink-0" />
+                        <span>Unworn clothing with original tags</span>
+                      </li>
+                      <li className="flex items-start gap-2">
+                        <CheckCircle className="w-4 h-4 text-success mt-1 flex-shrink-0" />
+                        <span>Shoes without wear on soles</span>
+                      </li>
+                      <li className="flex items-start gap-2">
+                        <CheckCircle className="w-4 h-4 text-success mt-1 flex-shrink-0" />
+                        <span>Accessories and gear bags</span>
+                      </li>
+                    </ul>
                   </div>
-                  <h3 className="text-2xl font-black text-red-600 dark:text-red-400">
-                    NOT ELIGIBLE FOR RETURN
-                  </h3>
                 </div>
-                <div className="space-y-4">
-                  {nonEligibleItems.map((item, index) => (
-                    <div key={index} className="flex items-start gap-3">
-                      <XCircle className="w-5 h-5 text-red-500 mt-0.5 flex-shrink-0" />
-                      <span className="text-gray-700 dark:text-gray-300">{item}</span>
-                    </div>
-                  ))}
+
+                <div>
+                  <h3 className="font-semibold text-text-primary mb-3">Special Circumstances</h3>
+                  <div className="bg-success/10 p-4 rounded-lg border border-success/20">
+                    <ul className="space-y-2 text-text-primary">
+                      <li className="flex items-start gap-2">
+                        <CheckCircle className="w-4 h-4 text-success mt-1 flex-shrink-0" />
+                        <span>
+                          <strong>Defective Products:</strong> Manufacturing defects covered
+                          regardless of use
+                        </span>
+                      </li>
+                      <li className="flex items-start gap-2">
+                        <CheckCircle className="w-4 h-4 text-success mt-1 flex-shrink-0" />
+                        <span>
+                          <strong>Wrong Item Sent:</strong> Returns accepted with no conditions when
+                          we send incorrect items
+                        </span>
+                      </li>
+                      <li className="flex items-start gap-2">
+                        <CheckCircle className="w-4 h-4 text-success mt-1 flex-shrink-0" />
+                        <span>
+                          <strong>Shipping Damage:</strong> Items damaged during transit are fully
+                          returnable
+                        </span>
+                      </li>
+                    </ul>
+                  </div>
                 </div>
-              </CardContent>
-            </Card>
-          </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card className="border border-brand-border">
+            <CardContent className="p-8">
+              <div className="flex items-start gap-4 mb-6">
+                <div className="w-12 h-12 bg-error rounded-lg flex items-center justify-center flex-shrink-0">
+                  <XCircle className="w-6 h-6 text-white" />
+                </div>
+                <div>
+                  <h2 className="text-2xl font-bold text-text-primary mb-2">
+                    Not Eligible for Return
+                  </h2>
+                  <p className="text-text-secondary">
+                    Products that cannot be returned for hygiene and safety reasons
+                  </p>
+                </div>
+              </div>
+              <div className="space-y-4">
+                <div className="bg-error/10 p-4 rounded-lg border border-error/20">
+                  <p className="font-semibold text-error mb-3">
+                    The following items cannot be returned:
+                  </p>
+                  <ul className="space-y-2 text-text-primary">
+                    <li className="flex items-start gap-2">
+                      <XCircle className="w-4 h-4 text-error mt-1 flex-shrink-0" />
+                      <span>
+                        <strong>Hygiene Products:</strong> Mouthguards, protective cups, and
+                        personal protective equipment that comes into direct contact with the body
+                      </span>
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <XCircle className="w-4 h-4 text-error mt-1 flex-shrink-0" />
+                      <span>
+                        <strong>Used Equipment:</strong> Any sports equipment showing signs of use,
+                        wear, or damage
+                      </span>
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <XCircle className="w-4 h-4 text-error mt-1 flex-shrink-0" />
+                      <span>
+                        <strong>Personalized Items:</strong> Custom-embroidered, engraved, or
+                        personalized products
+                      </span>
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <XCircle className="w-4 h-4 text-error mt-1 flex-shrink-0" />
+                      <span>
+                        <strong>Final Sale Items:</strong> Products marked as clearance, closeout,
+                        or final sale
+                      </span>
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <XCircle className="w-4 h-4 text-error mt-1 flex-shrink-0" />
+                      <span>
+                        <strong>Incomplete Returns:</strong> Items missing components, accessories,
+                        or original packaging
+                      </span>
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <XCircle className="w-4 h-4 text-error mt-1 flex-shrink-0" />
+                      <span>
+                        <strong>Expired Returns:</strong> Items returned after the 30-day return
+                        window
+                      </span>
+                    </li>
+                  </ul>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
         </div>
       </section>
 
       {/* Return Process */}
-      <section
-        id="return-process"
-        className="py-16 sm:py-20 bg-[#1A1A1A] dark:bg-gray-900 text-white"
-      >
-        <div className="max-w-7xl mx-auto px-4">
-          <div className="text-center mb-12 sm:mb-16">
-            <Badge className="bg-[#FFD700] text-[#1A1A1A] px-6 py-2 text-sm font-bold mb-4">
-              STEP-BY-STEP GUIDE
-            </Badge>
-            <h2 className="text-3xl sm:text-4xl md:text-5xl font-black mb-6 leading-tight">
-              RETURN
-              <span className="block text-[#AEEA00]">PROCESS</span>
-            </h2>
-            <p className="text-lg sm:text-xl text-gray-300 max-w-3xl mx-auto leading-relaxed">
-              Follow these simple steps to return your item and receive your refund.
-            </p>
-          </div>
-
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 sm:gap-8">
-            {returnProcess.map((step, index) => {
-              const IconComponent = step.icon
-              return (
-                <Card
-                  key={index}
-                  className="bg-white/5 border-white/10 hover:bg-white/10 transition-all duration-300"
-                >
-                  <CardContent className="p-6 text-center">
-                    <div className="w-16 h-16 bg-gradient-to-br from-[#FFD700] to-[#AEEA00] rounded-full flex items-center justify-center mx-auto mb-4">
-                      <IconComponent className="w-8 h-8 text-[#1A1A1A]" />
+      <section className="py-12 sm:py-16 bg-brand-background">
+        <div className="max-w-4xl mx-auto px-4">
+          <Card className="border border-brand-border">
+            <CardContent className="p-8">
+              <div className="flex items-start gap-4 mb-6">
+                <div className="w-12 h-12 bg-brand-accent rounded-lg flex items-center justify-center flex-shrink-0">
+                  <RefreshCw className="w-6 h-6 text-white" />
+                </div>
+                <div>
+                  <h2 className="text-2xl font-bold text-text-primary mb-2">Return Process</h2>
+                  <p className="text-text-secondary">Step-by-step guide to returning your items</p>
+                </div>
+              </div>
+              <div className="space-y-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div className="space-y-4">
+                    <div className="flex items-start gap-4 p-4 bg-brand-surface rounded-lg border border-brand-border">
+                      <div className="w-8 h-8 bg-brand-primary rounded-full flex items-center justify-center flex-shrink-0 text-white font-bold text-sm">
+                        1
+                      </div>
+                      <div>
+                        <h4 className="font-semibold text-text-primary">Contact Us</h4>
+                        <p className="text-text-secondary text-sm">
+                          Call {SITE_CONFIG.contact.phone} or email {SITE_CONFIG.contact.email}{' '}
+                          within 30 days of delivery
+                        </p>
+                      </div>
                     </div>
-                    <div className="text-3xl font-black text-[#FFD700] mb-2">STEP {step.step}</div>
-                    <h3 className="text-xl font-bold mb-3">{step.title}</h3>
-                    <p className="text-gray-300 leading-relaxed text-sm">{step.description}</p>
-                  </CardContent>
-                </Card>
-              )
-            })}
-          </div>
+
+                    <div className="flex items-start gap-4 p-4 bg-brand-surface rounded-lg border border-brand-border">
+                      <div className="w-8 h-8 bg-brand-primary rounded-full flex items-center justify-center flex-shrink-0 text-white font-bold text-sm">
+                        2
+                      </div>
+                      <div>
+                        <h4 className="font-semibold text-text-primary">
+                          Get Return Authorization
+                        </h4>
+                        <p className="text-text-secondary text-sm">
+                          Receive your Return Merchandise Authorization (RMA) number and detailed
+                          return instructions
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="space-y-4">
+                    <div className="flex items-start gap-4 p-4 bg-brand-surface rounded-lg border border-brand-border">
+                      <div className="w-8 h-8 bg-brand-primary rounded-full flex items-center justify-center flex-shrink-0 text-white font-bold text-sm">
+                        3
+                      </div>
+                      <div>
+                        <h4 className="font-semibold text-text-primary">Package & Send</h4>
+                        <p className="text-text-secondary text-sm">
+                          Securely package the item with RMA number and ship to our returns center
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="flex items-start gap-4 p-4 bg-brand-surface rounded-lg border border-brand-border">
+                      <div className="w-8 h-8 bg-brand-primary rounded-full flex items-center justify-center flex-shrink-0 text-white font-bold text-sm">
+                        4
+                      </div>
+                      <div>
+                        <h4 className="font-semibold text-text-primary">Processing & Refund</h4>
+                        <p className="text-text-secondary text-sm">
+                          We inspect the item and process your refund within 5-7 business days
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <div>
+                  <h3 className="text-lg font-semibold text-text-primary mb-3">
+                    Important Return Guidelines
+                  </h3>
+                  <div className="bg-warning/10 p-4 rounded-lg border border-warning/20">
+                    <ul className="space-y-2 text-text-primary">
+                      <li>
+                        • <strong>Return Authorization Required:</strong> All returns must have an
+                        RMA number
+                      </li>
+                      <li>
+                        • <strong>Original Packaging:</strong> Use original box/packaging when
+                        possible
+                      </li>
+                      <li>
+                        • <strong>Tracking Recommended:</strong> Use a trackable shipping method for
+                        your protection
+                      </li>
+                      <li>
+                        • <strong>Return Address:</strong> Ship only to the address provided with
+                        your RMA
+                      </li>
+                      <li>
+                        • <strong>Inspection Process:</strong> All items are inspected upon receipt
+                      </li>
+                    </ul>
+                  </div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
         </div>
       </section>
 
-      {/* Important Notes */}
-      <section className="py-16 sm:py-20 bg-white dark:bg-gray-900">
-        <div className="max-w-7xl mx-auto px-4">
-          <div className="text-center mb-12 sm:mb-16">
-            <Badge className="bg-[#FF3D00] text-white px-6 py-2 text-sm font-bold mb-4">
-              IMPORTANT INFORMATION
-            </Badge>
-            <h2 className="text-3xl sm:text-4xl md:text-5xl font-black text-[#1A1A1A] dark:text-white mb-6 leading-tight">
-              ADDITIONAL
-              <span className="block text-[#003DA5] dark:text-[#4A90E2]">TERMS</span>
-            </h2>
-          </div>
-
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12">
-            <Card className="bg-gradient-to-br from-[#FFD700] to-[#AEEA00] text-[#1A1A1A] border-0">
-              <CardContent className="p-6 sm:p-8">
-                <div className="flex items-center gap-3 mb-6">
-                  <AlertTriangle className="w-8 h-8" />
-                  <h3 className="text-2xl font-black">REFUND PROCESSING</h3>
+      {/* Exchanges */}
+      <section className="py-12 sm:py-16 bg-brand-surface">
+        <div className="max-w-4xl mx-auto px-4">
+          <Card className="border border-brand-border">
+            <CardContent className="p-8">
+              <div className="flex items-start gap-4 mb-6">
+                <div className="w-12 h-12 bg-brand-secondary rounded-lg flex items-center justify-center flex-shrink-0">
+                  <RefreshCw className="w-6 h-6 text-white" />
                 </div>
-                <div className="space-y-4 text-sm sm:text-base">
-                  <p>
-                    • Refunds are processed within 5-7 business days after we receive your returned
-                    item
+                <div>
+                  <h2 className="text-2xl font-bold text-text-primary mb-2">Exchanges</h2>
+                  <p className="text-text-secondary">
+                    Exchange for different size, color, or model
                   </p>
-                  <p>• Refunds will be issued to the original payment method</p>
-                  <p>• Shipping costs are non-refundable unless the return is due to our error</p>
-                  <p>• Customer is responsible for return shipping costs</p>
-                  <p>• We recommend using a trackable shipping service</p>
                 </div>
-              </CardContent>
-            </Card>
+              </div>
+              <div className="space-y-6">
+                <div>
+                  <h3 className="text-lg font-semibold text-text-primary mb-3">Exchange Options</h3>
+                  <ul className="space-y-3 text-text-primary">
+                    <li className="flex items-start gap-3">
+                      <RefreshCw className="w-5 h-5 text-brand-primary mt-1 flex-shrink-0" />
+                      <div>
+                        <strong>Size Exchanges:</strong> Same product in different size (subject to
+                        availability)
+                      </div>
+                    </li>
+                    <li className="flex items-start gap-3">
+                      <RefreshCw className="w-5 h-5 text-brand-primary mt-1 flex-shrink-0" />
+                      <div>
+                        <strong>Color Exchanges:</strong> Same product in different color (subject
+                        to availability)
+                      </div>
+                    </li>
+                    <li className="flex items-start gap-3">
+                      <RefreshCw className="w-5 h-5 text-brand-primary mt-1 flex-shrink-0" />
+                      <div>
+                        <strong>Model Exchanges:</strong> Different model within same product
+                        category
+                      </div>
+                    </li>
+                  </ul>
+                </div>
 
-            <Card className="bg-gradient-to-br from-[#003DA5] to-[#FF3D00] text-white border-0">
-              <CardContent className="p-6 sm:p-8">
-                <div className="flex items-center gap-3 mb-6">
-                  <Shield className="w-8 h-8" />
-                  <h3 className="text-2xl font-black">EXCHANGES</h3>
+                <div>
+                  <h3 className="text-lg font-semibold text-text-primary mb-3">Exchange Process</h3>
+                  <div className="space-y-4">
+                    <p className="text-text-primary">
+                      Exchanges follow the same process as returns but require additional
+                      coordination:
+                    </p>
+                    <ol className="space-y-2 text-text-primary list-decimal list-inside">
+                      <li>Contact us to discuss exchange options and availability</li>
+                      <li>Reserve your preferred replacement item</li>
+                      <li>Return original item with exchange RMA number</li>
+                      <li>Replacement item ships once we receive and approve original item</li>
+                    </ol>
+                  </div>
                 </div>
-                <div className="space-y-4 text-sm sm:text-base">
-                  <p>• We offer exchanges for different sizes or colors of the same product</p>
-                  <p>• Exchange requests must be made within the 30-day return window</p>
-                  <p>• Exchanges are subject to product availability</p>
-                  <p>• Additional charges may apply for price differences</p>
-                  <p>• Contact our team to arrange an exchange</p>
+
+                <div>
+                  <h3 className="text-lg font-semibold text-text-primary mb-3">Exchange Fees</h3>
+                  <div className="bg-info/10 p-4 rounded-lg border border-info/20">
+                    <ul className="space-y-2 text-text-primary">
+                      <li>
+                        • <strong>Same Price:</strong> No additional charge for equal-value
+                        exchanges
+                      </li>
+                      <li>
+                        • <strong>Higher Price:</strong> Pay difference between original and new
+                        item
+                      </li>
+                      <li>
+                        • <strong>Lower Price:</strong> Receive refund for price difference
+                      </li>
+                      <li>
+                        • <strong>Shipping:</strong> Customer pays return shipping; we cover
+                        shipping for replacement
+                      </li>
+                    </ul>
+                  </div>
                 </div>
-              </CardContent>
-            </Card>
-          </div>
+              </div>
+            </CardContent>
+          </Card>
         </div>
       </section>
 
-      {/* Contact Section */}
-      <section
-        id="contact"
-        className="py-16 sm:py-20 bg-gradient-to-r from-[#003DA5] to-[#FF3D00] text-white"
-      >
-        <div className="max-w-4xl mx-auto px-4 text-center">
-          <Badge className="bg-white text-[#003DA5] px-6 py-2 text-sm font-bold mb-4">
-            NEED HELP?
-          </Badge>
-          <h2 className="text-3xl sm:text-4xl md:text-5xl font-black mb-6 leading-tight">
-            CONTACT OUR
-            <span className="block text-[#FFD700]">SUPPORT TEAM</span>
-          </h2>
-          <p className="text-lg sm:text-xl mb-8 opacity-90 leading-relaxed">
-            Have questions about returns? Our customer service team is here to help you through the
-            process.
-          </p>
-          <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <Button
-              size="lg"
-              className="bg-white text-[#003DA5] hover:bg-gray-100 px-8 py-4 text-lg font-bold rounded-full"
-              asChild
-            >
-              <Link href="tel:+94112345678">
-                <Phone className="w-5 h-5 mr-2" />
-                CALL US NOW
-              </Link>
-            </Button>
-            <Button
-              size="lg"
-              variant="outline"
-              className="border-2 border-white text-white hover:bg-white hover:text-[#003DA5] px-8 py-4 text-lg font-bold rounded-full bg-transparent"
-              asChild
-            >
-              <Link href="mailto:returns@ralhum.lk">
-                <Mail className="w-5 h-5 mr-2" />
-                EMAIL SUPPORT
-              </Link>
-            </Button>
-          </div>
-          <div className="mt-8 text-sm opacity-80">
-            <p>Customer Service Hours: Monday - Friday, 9:00 AM - 6:00 PM</p>
-            <p>Email: returns@ralhum.lk | Phone: +94 11 234 5678</p>
-          </div>
+      {/* Refunds and Processing */}
+      <section className="py-12 sm:py-16 bg-brand-background">
+        <div className="max-w-4xl mx-auto px-4">
+          <Card className="border border-brand-border">
+            <CardContent className="p-8">
+              <div className="flex items-start gap-4 mb-6">
+                <div className="w-12 h-12 bg-success rounded-lg flex items-center justify-center flex-shrink-0">
+                  <CreditCard className="w-6 h-6 text-white" />
+                </div>
+                <div>
+                  <h2 className="text-2xl font-bold text-text-primary mb-2">
+                    Refunds and Processing
+                  </h2>
+                  <p className="text-text-secondary">
+                    How and when you&apos;ll receive your refund
+                  </p>
+                </div>
+              </div>
+              <div className="space-y-6">
+                <div>
+                  <h3 className="text-lg font-semibold text-text-primary mb-3">Refund Methods</h3>
+                  <ul className="space-y-3 text-text-primary">
+                    <li className="flex items-start gap-3">
+                      <CreditCard className="w-5 h-5 text-success mt-1 flex-shrink-0" />
+                      <div>
+                        <strong>Original Payment Method:</strong> Refunds are processed to the
+                        original payment method used for purchase
+                      </div>
+                    </li>
+                    <li className="flex items-start gap-3">
+                      <CreditCard className="w-5 h-5 text-success mt-1 flex-shrink-0" />
+                      <div>
+                        <strong>Bank Transfer:</strong> For cash purchases or if original method is
+                        unavailable
+                      </div>
+                    </li>
+                    <li className="flex items-start gap-3">
+                      <CreditCard className="w-5 h-5 text-success mt-1 flex-shrink-0" />
+                      <div>
+                        <strong>Store Credit:</strong> Optional faster processing as account credit
+                        for future purchases
+                      </div>
+                    </li>
+                  </ul>
+                </div>
+
+                <div>
+                  <h3 className="text-lg font-semibold text-text-primary mb-3">
+                    Processing Timeframes
+                  </h3>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="p-4 bg-brand-surface rounded-lg border border-brand-border">
+                      <h4 className="font-semibold text-text-primary mb-2">
+                        Inspection & Approval
+                      </h4>
+                      <ul className="text-sm text-text-secondary space-y-1">
+                        <li>• Initial inspection: 1-2 business days</li>
+                        <li>• Quality assessment: 2-3 business days</li>
+                        <li>• Approval notification: Same day</li>
+                      </ul>
+                    </div>
+
+                    <div className="p-4 bg-brand-surface rounded-lg border border-brand-border">
+                      <h4 className="font-semibold text-text-primary mb-2">Refund Processing</h4>
+                      <ul className="text-sm text-text-secondary space-y-1">
+                        <li>• Credit/Debit cards: 3-5 business days</li>
+                        <li>• Bank transfers: 5-7 business days</li>
+                        <li>• Store credit: Immediate</li>
+                      </ul>
+                    </div>
+                  </div>
+                </div>
+
+                <div>
+                  <h3 className="text-lg font-semibold text-text-primary mb-3">Refund Amounts</h3>
+                  <div className="bg-success/10 p-4 rounded-lg border border-success/20">
+                    <ul className="space-y-2 text-text-primary">
+                      <li>
+                        • <strong>Full Purchase Price:</strong> For eligible returns in perfect
+                        condition
+                      </li>
+                      <li>
+                        • <strong>Original Shipping:</strong> Refunded only if return is due to our
+                        error
+                      </li>
+                      <li>
+                        • <strong>Return Shipping:</strong> Customer responsibility (except for our
+                        errors)
+                      </li>
+                      <li>
+                        • <strong>Taxes:</strong> Refunded in accordance with Sri Lankan tax
+                        regulations
+                      </li>
+                    </ul>
+                  </div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      </section>
+
+      {/* Shipping and Costs */}
+      <section className="py-12 sm:py-16 bg-brand-surface">
+        <div className="max-w-4xl mx-auto px-4">
+          <Card className="border border-brand-border">
+            <CardContent className="p-8">
+              <div className="flex items-start gap-4 mb-6">
+                <div className="w-12 h-12 bg-brand-accent rounded-lg flex items-center justify-center flex-shrink-0">
+                  <Truck className="w-6 h-6 text-white" />
+                </div>
+                <div>
+                  <h2 className="text-2xl font-bold text-text-primary mb-2">Return Shipping</h2>
+                  <p className="text-text-secondary">Shipping costs and responsibilities</p>
+                </div>
+              </div>
+              <div className="space-y-6">
+                <div>
+                  <h3 className="text-lg font-semibold text-text-primary mb-3">
+                    Shipping Responsibilities
+                  </h3>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                      <h4 className="font-semibold text-text-primary mb-3 text-success">
+                        Customer Pays Return Shipping:
+                      </h4>
+                      <ul className="space-y-2 text-text-primary">
+                        <li className="flex items-start gap-2">
+                          <User className="w-4 h-4 text-success mt-1 flex-shrink-0" />
+                          <span>Change of mind returns</span>
+                        </li>
+                        <li className="flex items-start gap-2">
+                          <User className="w-4 h-4 text-success mt-1 flex-shrink-0" />
+                          <span>Size or color exchanges</span>
+                        </li>
+                        <li className="flex items-start gap-2">
+                          <User className="w-4 h-4 text-success mt-1 flex-shrink-0" />
+                          <span>Product not suitable for intended use</span>
+                        </li>
+                      </ul>
+                    </div>
+
+                    <div>
+                      <h4 className="font-semibold text-text-primary mb-3 text-brand-primary">
+                        We Pay Return Shipping:
+                      </h4>
+                      <ul className="space-y-2 text-text-primary">
+                        <li className="flex items-start gap-2">
+                          <Building className="w-4 h-4 text-brand-primary mt-1 flex-shrink-0" />
+                          <span>Manufacturing defects</span>
+                        </li>
+                        <li className="flex items-start gap-2">
+                          <Building className="w-4 h-4 text-brand-primary mt-1 flex-shrink-0" />
+                          <span>Wrong item sent by us</span>
+                        </li>
+                        <li className="flex items-start gap-2">
+                          <Building className="w-4 h-4 text-brand-primary mt-1 flex-shrink-0" />
+                          <span>Items damaged during shipping</span>
+                        </li>
+                      </ul>
+                    </div>
+                  </div>
+                </div>
+
+                <div>
+                  <h3 className="text-lg font-semibold text-text-primary mb-3">
+                    Return Shipping Address
+                  </h3>
+                  <div className="bg-brand-background p-4 rounded-lg border border-brand-border">
+                    <div className="flex items-start gap-3">
+                      <MapPin className="w-5 h-5 text-brand-primary mt-1" />
+                      <div>
+                        <p className="font-semibold text-text-primary">
+                          Ralhum Sports Returns Center
+                        </p>
+                        <p className="text-text-primary">{SITE_CONFIG.contact.address.street}</p>
+                        <p className="text-text-primary">
+                          {SITE_CONFIG.contact.address.city}, {SITE_CONFIG.contact.address.country}
+                        </p>
+                        <p className="text-sm text-text-secondary mt-2">
+                          <strong>Important:</strong> Only ship to this address with a valid RMA
+                          number
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <div>
+                  <h3 className="text-lg font-semibold text-text-primary mb-3">
+                    Shipping Recommendations
+                  </h3>
+                  <div className="bg-warning/10 p-4 rounded-lg border border-warning/20">
+                    <ul className="space-y-2 text-text-primary">
+                      <li>• Use a trackable shipping method for your protection</li>
+                      <li>• Purchase shipping insurance for high-value items</li>
+                      <li>• Keep shipping receipts until refund is processed</li>
+                      <li>• Package items securely to prevent damage during transit</li>
+                      <li>• Include RMA number both inside and outside the package</li>
+                    </ul>
+                  </div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      </section>
+
+      {/* Warranty and Defects */}
+      <section className="py-12 sm:py-16 bg-brand-background">
+        <div className="max-w-4xl mx-auto px-4">
+          <Card className="border border-brand-border">
+            <CardContent className="p-8">
+              <div className="flex items-start gap-4 mb-6">
+                <div className="w-12 h-12 bg-warning rounded-lg flex items-center justify-center flex-shrink-0">
+                  <Shield className="w-6 h-6 text-white" />
+                </div>
+                <div>
+                  <h2 className="text-2xl font-bold text-text-primary mb-2">
+                    Warranty and Defects
+                  </h2>
+                  <p className="text-text-secondary">Protection beyond our return policy</p>
+                </div>
+              </div>
+              <div className="space-y-6">
+                <div>
+                  <h3 className="text-lg font-semibold text-text-primary mb-3">
+                    Manufacturer Warranties
+                  </h3>
+                  <ul className="space-y-3 text-text-primary">
+                    <li className="flex items-start gap-3">
+                      <Shield className="w-5 h-5 text-success mt-1 flex-shrink-0" />
+                      <div>
+                        <strong>Brand Warranties:</strong> All products carry manufacturer
+                        warranties as specified by each brand (Gray-Nicolls, Gilbert, Grays, etc.)
+                      </div>
+                    </li>
+                    <li className="flex items-start gap-3">
+                      <Shield className="w-5 h-5 text-success mt-1 flex-shrink-0" />
+                      <div>
+                        <strong>Warranty Claims:</strong> We facilitate warranty claims with
+                        manufacturers on your behalf
+                      </div>
+                    </li>
+                    <li className="flex items-start gap-3">
+                      <Shield className="w-5 h-5 text-success mt-1 flex-shrink-0" />
+                      <div>
+                        <strong>Extended Coverage:</strong> Warranty periods typically extend beyond
+                        our 30-day return window
+                      </div>
+                    </li>
+                  </ul>
+                </div>
+
+                <div>
+                  <h3 className="text-lg font-semibold text-text-primary mb-3">
+                    Defective Product Process
+                  </h3>
+                  <div className="bg-error/10 p-4 rounded-lg border border-error/20">
+                    <p className="font-semibold text-error mb-2">
+                      If you receive a defective product:
+                    </p>
+                    <ol className="space-y-2 text-text-primary list-decimal list-inside">
+                      <li>Contact us immediately, even if beyond 30-day return window</li>
+                      <li>Provide photos and description of the defect</li>
+                      <li>
+                        We&apos;ll determine if it&apos;s covered under warranty or our return
+                        policy
+                      </li>
+                      <li>Expedited replacement or full refund provided for confirmed defects</li>
+                      <li>All shipping costs covered by us for defective items</li>
+                    </ol>
+                  </div>
+                </div>
+
+                <div>
+                  <h3 className="text-lg font-semibold text-text-primary mb-3">
+                    Quality Guarantee
+                  </h3>
+                  <p className="text-text-primary leading-relaxed">
+                    Beyond manufacturer warranties, we stand behind the quality of every product we
+                    sell. If you experience quality issues that aren&apos;t covered by the
+                    manufacturer, contact us to discuss resolution options.
+                  </p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      </section>
+
+      {/* Related Pages and Contact */}
+      <section className="py-12 sm:py-16 bg-brand-surface">
+        <div className="max-w-4xl mx-auto px-4 space-y-8">
+          {/* Related Legal Pages */}
+          <Card className="border border-brand-border">
+            <CardContent className="p-8">
+              <div className="flex items-start gap-4 mb-6">
+                <div className="w-12 h-12 bg-brand-primary rounded-lg flex items-center justify-center flex-shrink-0">
+                  <FileText className="w-6 h-6 text-white" />
+                </div>
+                <div>
+                  <h2 className="text-2xl font-bold text-text-primary mb-2">Related Policies</h2>
+                  <p className="text-text-secondary">Additional information and legal documents</p>
+                </div>
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <Link
+                  href="/terms-conditions"
+                  className="group block p-4 bg-brand-background rounded-lg border border-brand-border hover:border-brand-primary transition-colors"
+                >
+                  <div className="flex items-center gap-3">
+                    <FileText className="w-5 h-5 text-brand-primary" />
+                    <div>
+                      <h3 className="font-semibold text-text-primary group-hover:text-brand-primary transition-colors">
+                        Terms & Conditions
+                      </h3>
+                      <p className="text-sm text-text-secondary">Full terms of service</p>
+                    </div>
+                    <ArrowRight className="w-4 h-4 text-text-secondary group-hover:text-brand-primary ml-auto transition-colors" />
+                  </div>
+                </Link>
+
+                <Link
+                  href="/privacy-policy"
+                  className="group block p-4 bg-brand-background rounded-lg border border-brand-border hover:border-brand-primary transition-colors"
+                >
+                  <div className="flex items-center gap-3">
+                    <Shield className="w-5 h-5 text-brand-primary" />
+                    <div>
+                      <h3 className="font-semibold text-text-primary group-hover:text-brand-primary transition-colors">
+                        Privacy Policy
+                      </h3>
+                      <p className="text-sm text-text-secondary">Data protection information</p>
+                    </div>
+                    <ArrowRight className="w-4 h-4 text-text-secondary group-hover:text-brand-primary ml-auto transition-colors" />
+                  </div>
+                </Link>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Contact Information */}
+          <Card className="border border-brand-border">
+            <CardContent className="p-8">
+              <div className="flex items-start gap-4 mb-6">
+                <div className="w-12 h-12 bg-brand-secondary rounded-lg flex items-center justify-center flex-shrink-0">
+                  <Phone className="w-6 h-6 text-white" />
+                </div>
+                <div>
+                  <h2 className="text-2xl font-bold text-text-primary mb-2">
+                    Need Help with Returns?
+                  </h2>
+                  <p className="text-text-secondary">
+                    Our customer service team is here to assist you
+                  </p>
+                </div>
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                <div className="space-y-3">
+                  <h3 className="font-semibold text-text-primary">Returns Department</h3>
+                  <div className="space-y-2">
+                    <div className="flex items-center gap-2">
+                      <Phone className="w-4 h-4 text-brand-primary" />
+                      <span className="text-text-primary">{SITE_CONFIG.contact.phone}</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Mail className="w-4 h-4 text-brand-primary" />
+                      <span className="text-text-primary">{SITE_CONFIG.contact.email}</span>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="space-y-3">
+                  <h3 className="font-semibold text-text-primary">Support Hours</h3>
+                  <div className="text-text-secondary text-sm">
+                    <p>{SITE_CONFIG.contact.supportHours}</p>
+                    <p className="mt-1">Returns processing: Monday-Friday</p>
+                    <p>Average response time: Within 4 hours</p>
+                  </div>
+                </div>
+              </div>
+
+              <div className="mt-6 pt-6 border-t border-brand-border">
+                <p className="text-sm text-text-secondary">
+                  For return inquiries, please include your order number and reason for return. This
+                  helps us process your request faster and provide the best possible service.
+                </p>
+              </div>
+            </CardContent>
+          </Card>
         </div>
       </section>
     </main>

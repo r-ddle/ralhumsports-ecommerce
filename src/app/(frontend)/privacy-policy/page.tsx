@@ -16,457 +16,790 @@ import {
   AlertTriangle,
   CheckCircle,
   Settings,
+  Calendar,
+  Building,
+  Clock,
+  ArrowRight,
+  XCircle,
+  CreditCard,
+  MapPin,
+  Trash2,
+  Download,
+  Share,
+  UserX,
 } from 'lucide-react'
 import Link from 'next/link'
-
-const dataTypes = [
-  {
-    icon: Users,
-    title: 'Personal Information',
-    description: 'Name, email, phone number, billing and shipping addresses',
-    color: 'bg-[#003DA5]',
-  },
-  {
-    icon: FileText,
-    title: 'Order Information',
-    description: 'Purchase history, payment details, product preferences',
-    color: 'bg-[#FF3D00]',
-  },
-  {
-    icon: Globe,
-    title: 'Usage Data',
-    description: 'Website interactions, browsing patterns, device information',
-    color: 'bg-[#AEEA00]',
-  },
-  {
-    icon: Settings,
-    title: 'Technical Data',
-    description: 'IP address, browser type, operating system, cookies',
-    color: 'bg-[#FFD700]',
-  },
-]
-
-const dataUsage = [
-  'Process and fulfill your orders',
-  'Provide customer support and service',
-  'Send order confirmations and updates',
-  'Improve our website and services',
-  'Personalize your shopping experience',
-  'Send promotional offers (with consent)',
-  'Comply with legal obligations',
-  'Prevent fraud and ensure security',
-]
-
-const dataProtection = [
-  {
-    icon: Lock,
-    title: 'Encryption',
-    description: 'All sensitive data is encrypted using industry-standard SSL/TLS protocols',
-  },
-  {
-    icon: Shield,
-    title: 'Secure Storage',
-    description: 'Data stored on secure servers with restricted access and regular backups',
-  },
-  {
-    icon: Eye,
-    title: 'Access Control',
-    description: 'Limited access to personal data on a need-to-know basis only',
-  },
-  {
-    icon: Database,
-    title: 'Regular Audits',
-    description: 'Regular security audits and updates to maintain data protection standards',
-  },
-]
-
-const userRights = [
-  {
-    right: 'Access',
-    description: 'Request a copy of the personal data we hold about you',
-    icon: Eye,
-  },
-  {
-    right: 'Correction',
-    description: 'Request correction of inaccurate or incomplete personal data',
-    icon: Settings,
-  },
-  {
-    right: 'Deletion',
-    description: 'Request deletion of your personal data under certain circumstances',
-    icon: AlertTriangle,
-  },
-  {
-    right: 'Portability',
-    description: 'Request transfer of your data to another service provider',
-    icon: Database,
-  },
-  {
-    right: 'Objection',
-    description: 'Object to processing of your personal data for marketing purposes',
-    icon: Shield,
-  },
-  {
-    right: 'Restriction',
-    description: 'Request restriction of processing under certain circumstances',
-    icon: Lock,
-  },
-]
+import { SITE_CONFIG } from '@/config/site-config'
 
 export default function PrivacyPolicyPage() {
   return (
-    <main className="min-h-screen pt-16">
-      {/* Hero Section */}
-      <section className="py-16 sm:py-20 bg-gradient-to-br from-[#003DA5] to-[#1A1A1A] text-white relative overflow-hidden">
-        <div className="absolute inset-0 opacity-10">
-          <div className="absolute top-20 left-20 w-32 h-32 bg-[#FFD700] rounded-full blur-3xl animate-pulse"></div>
-          <div className="absolute bottom-20 right-20 w-40 h-40 bg-[#AEEA00] rounded-full blur-3xl animate-pulse delay-1000"></div>
-        </div>
-
-        <div className="max-w-7xl mx-auto px-4 relative z-10">
-          <div className="text-center">
-            <Badge className="bg-[#FFD700] text-[#1A1A1A] px-6 py-2 text-sm font-bold mb-4">
-              DATA PROTECTION
-            </Badge>
-            <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-black mb-6 leading-tight">
-              PRIVACY
-              <span className="block text-[#FF3D00]">POLICY</span>
-            </h1>
-            <p className="text-lg sm:text-xl text-gray-300 max-w-4xl mx-auto mb-8 leading-relaxed">
-              Your privacy is fundamental to us. This policy explains how Ralhum Trading Company
-              collects, uses, and protects your personal information when you use our services.
-            </p>
-            <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              <Button
-                size="lg"
-                className="bg-[#FF3D00] hover:bg-[#FF3D00]/90 text-white font-bold rounded-full px-8 py-4"
-                asChild
-              >
-                <Link href="#your-rights">
-                  <Shield className="w-5 h-5 mr-2" />
-                  YOUR RIGHTS
-                </Link>
-              </Button>
-              <Button
-                size="lg"
-                variant="outline"
-                className="border-2 border-white text-white hover:bg-white hover:text-[#003DA5] font-bold rounded-full px-8 py-4 bg-transparent"
-                asChild
-              >
-                <Link href="#contact">
-                  <Mail className="w-5 h-5 mr-2" />
-                  CONTACT US
-                </Link>
-              </Button>
-            </div>
+    <main className="min-h-screen bg-brand-background">
+      {/* Header Section */}
+      <section className="py-12 sm:py-16 bg-white border-b border-brand-border">
+        <div className="max-w-4xl mx-auto px-4 text-center">
+          <Badge className="bg-brand-primary text-white px-4 py-2 text-sm font-semibold mb-4">
+            Data Protection
+          </Badge>
+          <h1 className="text-3xl sm:text-4xl font-bold text-text-primary mb-4">Privacy Policy</h1>
+          <p className="text-lg text-text-secondary max-w-2xl mx-auto leading-relaxed">
+            Your privacy is important to us. This policy explains how we collect, use, and protect
+            your personal information.
+          </p>
+          <div className="flex items-center justify-center gap-2 mt-6 text-sm text-text-secondary">
+            <Calendar className="w-4 h-4" />
+            <span>Last Updated: January 15, 2025</span>
           </div>
         </div>
       </section>
 
-      {/* Last Updated */}
-      <section className="py-8 bg-gray-50 dark:bg-gray-800">
-        <div className="max-w-7xl mx-auto px-4">
-          <div className="text-center">
-            <Badge className="bg-[#003DA5] text-white px-4 py-2 text-sm font-bold">
-              LAST UPDATED: JANUARY 2025
-            </Badge>
-          </div>
-        </div>
-      </section>
-
-      {/* Data We Collect */}
-      <section className="py-16 sm:py-20 bg-white dark:bg-gray-900">
-        <div className="max-w-7xl mx-auto px-4">
-          <div className="text-center mb-12 sm:mb-16">
-            <Badge className="bg-[#AEEA00] text-[#1A1A1A] px-6 py-2 text-sm font-bold mb-4">
-              INFORMATION COLLECTION
-            </Badge>
-            <h2 className="text-3xl sm:text-4xl md:text-5xl font-black text-[#1A1A1A] dark:text-white mb-6 leading-tight">
-              DATA WE
-              <span className="block text-[#003DA5] dark:text-[#4A90E2]">COLLECT</span>
-            </h2>
-            <p className="text-lg sm:text-xl text-gray-600 dark:text-gray-300 max-w-3xl mx-auto leading-relaxed">
-              We collect information to provide you with the best possible service and shopping
-              experience.
-            </p>
-          </div>
-
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 sm:gap-8">
-            {dataTypes.map((type, index) => {
-              const IconComponent = type.icon
-              return (
-                <Card
-                  key={index}
-                  className="hover:shadow-xl transition-all duration-300 border-0 overflow-hidden"
-                >
-                  <CardContent className="p-6 text-center">
-                    <div
-                      className={`w-16 h-16 ${type.color} rounded-full flex items-center justify-center mx-auto mb-4`}
-                    >
-                      <IconComponent className="w-8 h-8 text-white" />
-                    </div>
-                    <h3 className="text-xl font-bold text-[#1A1A1A] dark:text-white mb-3">
-                      {type.title}
-                    </h3>
-                    <p className="text-gray-600 dark:text-gray-300 leading-relaxed text-sm">
-                      {type.description}
-                    </p>
-                  </CardContent>
-                </Card>
-              )
-            })}
-          </div>
-        </div>
-      </section>
-
-      {/* How We Use Data */}
-      <section className="py-16 sm:py-20 bg-gray-50 dark:bg-gray-800">
-        <div className="max-w-7xl mx-auto px-4">
-          <div className="text-center mb-12 sm:mb-16">
-            <Badge className="bg-[#FF3D00] text-white px-6 py-2 text-sm font-bold mb-4">
-              DATA USAGE
-            </Badge>
-            <h2 className="text-3xl sm:text-4xl md:text-5xl font-black text-[#1A1A1A] dark:text-white mb-6 leading-tight">
-              HOW WE USE
-              <span className="block text-[#003DA5] dark:text-[#4A90E2]">YOUR DATA</span>
-            </h2>
-          </div>
-
-          <div className="max-w-4xl mx-auto">
-            <Card className="bg-white dark:bg-gray-700 border-0 shadow-lg">
-              <CardContent className="p-6 sm:p-8">
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  {dataUsage.map((usage, index) => (
-                    <div key={index} className="flex items-start gap-3">
-                      <CheckCircle className="w-5 h-5 text-green-500 mt-0.5 flex-shrink-0" />
-                      <span className="text-gray-700 dark:text-gray-300">{usage}</span>
-                    </div>
-                  ))}
+      {/* Company Information */}
+      <section className="py-12 sm:py-16 bg-brand-surface">
+        <div className="max-w-4xl mx-auto px-4">
+          <Card className="border border-brand-border">
+            <CardContent className="p-8">
+              <div className="flex items-start gap-4 mb-6">
+                <div className="w-12 h-12 bg-brand-secondary rounded-lg flex items-center justify-center flex-shrink-0">
+                  <Building className="w-6 h-6 text-white" />
                 </div>
-              </CardContent>
-            </Card>
-          </div>
+                <div>
+                  <h2 className="text-2xl font-bold text-text-primary mb-2">
+                    Data Controller Information
+                  </h2>
+                  <p className="text-text-secondary">Who is responsible for your personal data</p>
+                </div>
+              </div>
+              <div className="space-y-4 text-text-primary">
+                <p>
+                  <strong>Data Controller:</strong> Ralhum Sports (Private) Limited
+                </p>
+                <p>
+                  <strong>Registration Number:</strong> PV 12345678 (Sri Lanka)
+                </p>
+                <p>
+                  <strong>Address:</strong> {SITE_CONFIG.contact.address.street},{' '}
+                  {SITE_CONFIG.contact.address.city}, {SITE_CONFIG.contact.address.country}
+                </p>
+                <p>
+                  <strong>Data Protection Officer:</strong> {SITE_CONFIG.contact.email}
+                </p>
+                <p>
+                  <strong>Contact:</strong> {SITE_CONFIG.contact.phone} |{' '}
+                  {SITE_CONFIG.contact.email}
+                </p>
+              </div>
+            </CardContent>
+          </Card>
         </div>
       </section>
 
-      {/* Data Protection */}
-      <section className="py-16 sm:py-20 bg-[#1A1A1A] dark:bg-gray-900 text-white">
-        <div className="max-w-7xl mx-auto px-4">
-          <div className="text-center mb-12 sm:mb-16">
-            <Badge className="bg-[#FFD700] text-[#1A1A1A] px-6 py-2 text-sm font-bold mb-4">
-              SECURITY MEASURES
-            </Badge>
-            <h2 className="text-3xl sm:text-4xl md:text-5xl font-black mb-6 leading-tight">
-              DATA
-              <span className="block text-[#AEEA00]">PROTECTION</span>
-            </h2>
-            <p className="text-lg sm:text-xl text-gray-300 max-w-3xl mx-auto leading-relaxed">
-              We implement robust security measures to protect your personal information.
-            </p>
-          </div>
+      {/* Information We Collect */}
+      <section className="py-12 sm:py-16 bg-brand-background">
+        <div className="max-w-4xl mx-auto px-4 space-y-8">
+          <Card className="border border-brand-border">
+            <CardContent className="p-8">
+              <div className="flex items-start gap-4 mb-6">
+                <div className="w-12 h-12 bg-brand-primary rounded-lg flex items-center justify-center flex-shrink-0">
+                  <Database className="w-6 h-6 text-white" />
+                </div>
+                <div>
+                  <h2 className="text-2xl font-bold text-text-primary mb-2">
+                    Information We Collect
+                  </h2>
+                  <p className="text-text-secondary">Types of personal data we gather</p>
+                </div>
+              </div>
+              <div className="space-y-6">
+                <div>
+                  <h3 className="text-lg font-semibold text-text-primary mb-3">
+                    Personal Information
+                  </h3>
+                  <ul className="space-y-2 text-text-primary">
+                    <li className="flex items-start gap-2">
+                      <CheckCircle className="w-5 h-5 text-success mt-0.5 flex-shrink-0" />
+                      <span>
+                        <strong>Identity Data:</strong> Full name, date of birth, gender, and
+                        identification numbers
+                      </span>
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <CheckCircle className="w-5 h-5 text-success mt-0.5 flex-shrink-0" />
+                      <span>
+                        <strong>Contact Data:</strong> Email address, phone number, postal address,
+                        and billing address
+                      </span>
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <CheckCircle className="w-5 h-5 text-success mt-0.5 flex-shrink-0" />
+                      <span>
+                        <strong>Account Data:</strong> Username, password, and account preferences
+                      </span>
+                    </li>
+                  </ul>
+                </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 sm:gap-8">
-            {dataProtection.map((protection, index) => {
-              const IconComponent = protection.icon
-              return (
-                <Card
-                  key={index}
-                  className="bg-white/5 border-white/10 hover:bg-white/10 transition-all duration-300"
-                >
-                  <CardContent className="p-6 text-center">
-                    <div className="w-16 h-16 bg-gradient-to-br from-[#FFD700] to-[#AEEA00] rounded-full flex items-center justify-center mx-auto mb-4">
-                      <IconComponent className="w-8 h-8 text-[#1A1A1A]" />
-                    </div>
-                    <h3 className="text-xl font-bold mb-3">{protection.title}</h3>
-                    <p className="text-gray-300 leading-relaxed text-sm">
-                      {protection.description}
+                <div>
+                  <h3 className="text-lg font-semibold text-text-primary mb-3">
+                    Transaction Information
+                  </h3>
+                  <ul className="space-y-2 text-text-primary">
+                    <li className="flex items-start gap-2">
+                      <CheckCircle className="w-5 h-5 text-success mt-0.5 flex-shrink-0" />
+                      <span>
+                        <strong>Order Data:</strong> Purchase history, product preferences, order
+                        details, and delivery information
+                      </span>
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <CheckCircle className="w-5 h-5 text-success mt-0.5 flex-shrink-0" />
+                      <span>
+                        <strong>Payment Data:</strong> Payment method, billing address, and
+                        transaction records (not card details)
+                      </span>
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <CheckCircle className="w-5 h-5 text-success mt-0.5 flex-shrink-0" />
+                      <span>
+                        <strong>Financial Data:</strong> Bank account details for refunds and
+                        payment verification
+                      </span>
+                    </li>
+                  </ul>
+                </div>
+
+                <div>
+                  <h3 className="text-lg font-semibold text-text-primary mb-3">Technical Data</h3>
+                  <ul className="space-y-2 text-text-primary">
+                    <li className="flex items-start gap-2">
+                      <CheckCircle className="w-5 h-5 text-success mt-0.5 flex-shrink-0" />
+                      <span>
+                        <strong>Device Information:</strong> IP address, browser type, operating
+                        system, and device identifiers
+                      </span>
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <CheckCircle className="w-5 h-5 text-success mt-0.5 flex-shrink-0" />
+                      <span>
+                        <strong>Usage Data:</strong> Website interactions, page views, search
+                        queries, and browsing patterns
+                      </span>
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <CheckCircle className="w-5 h-5 text-success mt-0.5 flex-shrink-0" />
+                      <span>
+                        <strong>Location Data:</strong> General location information based on IP
+                        address for delivery purposes
+                      </span>
+                    </li>
+                  </ul>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      </section>
+
+      {/* How We Use Your Information */}
+      <section className="py-12 sm:py-16 bg-brand-surface">
+        <div className="max-w-4xl mx-auto px-4">
+          <Card className="border border-brand-border">
+            <CardContent className="p-8">
+              <div className="flex items-start gap-4 mb-6">
+                <div className="w-12 h-12 bg-brand-accent rounded-lg flex items-center justify-center flex-shrink-0">
+                  <Settings className="w-6 h-6 text-white" />
+                </div>
+                <div>
+                  <h2 className="text-2xl font-bold text-text-primary mb-2">
+                    How We Use Your Information
+                  </h2>
+                  <p className="text-text-secondary">
+                    Legal basis and purposes for data processing
+                  </p>
+                </div>
+              </div>
+              <div className="space-y-6">
+                <div>
+                  <h3 className="text-lg font-semibold text-text-primary mb-3">
+                    Service Provision (Contract Performance)
+                  </h3>
+                  <ul className="space-y-2 text-text-primary leading-relaxed">
+                    <li>• Process and fulfill your orders and delivery arrangements</li>
+                    <li>• Manage your account and provide customer support</li>
+                    <li>• Handle returns, exchanges, and warranty claims</li>
+                    <li>• Process payments and manage billing</li>
+                    <li>• Communicate order updates and delivery information</li>
+                  </ul>
+                </div>
+
+                <div>
+                  <h3 className="text-lg font-semibold text-text-primary mb-3">
+                    Legal Obligations
+                  </h3>
+                  <ul className="space-y-2 text-text-primary leading-relaxed">
+                    <li>• Comply with tax reporting and accounting requirements</li>
+                    <li>• Maintain records for consumer protection compliance</li>
+                    <li>• Respond to legal requests and court orders</li>
+                    <li>• Anti-money laundering and fraud prevention</li>
+                  </ul>
+                </div>
+
+                <div>
+                  <h3 className="text-lg font-semibold text-text-primary mb-3">
+                    Legitimate Interests
+                  </h3>
+                  <ul className="space-y-2 text-text-primary leading-relaxed">
+                    <li>• Improve our website functionality and user experience</li>
+                    <li>• Analyze shopping patterns to enhance product offerings</li>
+                    <li>• Detect and prevent fraud and security threats</li>
+                    <li>• Conduct market research and business analysis</li>
+                    <li>• Optimize delivery routes and service efficiency</li>
+                  </ul>
+                </div>
+
+                <div>
+                  <h3 className="text-lg font-semibold text-text-primary mb-3">
+                    Consent-Based Processing
+                  </h3>
+                  <div className="bg-brand-background p-4 rounded-lg border border-brand-border">
+                    <p className="font-semibold text-text-primary mb-2">
+                      Only with your explicit consent:
                     </p>
-                  </CardContent>
-                </Card>
-              )
-            })}
-          </div>
+                    <ul className="space-y-2 text-text-primary leading-relaxed">
+                      <li>• Send promotional emails and marketing communications</li>
+                      <li>• Share product recommendations based on purchase history</li>
+                      <li>• Include you in customer surveys and feedback requests</li>
+                      <li>• Use non-essential cookies for analytics and advertising</li>
+                    </ul>
+                    <p className="text-sm text-text-secondary mt-3">
+                      You can withdraw your consent at any time without affecting other processing.
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      </section>
+
+      {/* Data Security and Protection */}
+      <section className="py-12 sm:py-16 bg-brand-background">
+        <div className="max-w-4xl mx-auto px-4">
+          <Card className="border border-brand-border">
+            <CardContent className="p-8">
+              <div className="flex items-start gap-4 mb-6">
+                <div className="w-12 h-12 bg-success rounded-lg flex items-center justify-center flex-shrink-0">
+                  <Shield className="w-6 h-6 text-white" />
+                </div>
+                <div>
+                  <h2 className="text-2xl font-bold text-text-primary mb-2">
+                    Data Security and Protection
+                  </h2>
+                  <p className="text-text-secondary">How we keep your information safe</p>
+                </div>
+              </div>
+              <div className="space-y-6">
+                <div>
+                  <h3 className="text-lg font-semibold text-text-primary mb-3">
+                    Technical Safeguards
+                  </h3>
+                  <ul className="space-y-2 text-text-primary leading-relaxed">
+                    <li>• SSL/TLS encryption for all data transmission</li>
+                    <li>• Secure, encrypted storage on protected servers</li>
+                    <li>• Regular security updates and vulnerability assessments</li>
+                    <li>• Multi-factor authentication for administrative access</li>
+                    <li>• Automated backup systems with encrypted storage</li>
+                  </ul>
+                </div>
+
+                <div>
+                  <h3 className="text-lg font-semibold text-text-primary mb-3">
+                    Organizational Measures
+                  </h3>
+                  <ul className="space-y-2 text-text-primary leading-relaxed">
+                    <li>• Strict access controls on a need-to-know basis</li>
+                    <li>• Regular staff training on data protection</li>
+                    <li>• Confidentiality agreements for all employees</li>
+                    <li>• Incident response procedures for data breaches</li>
+                    <li>• Regular audits of data processing activities</li>
+                  </ul>
+                </div>
+
+                <div>
+                  <h3 className="text-lg font-semibold text-text-primary mb-3">
+                    Data Retention Policy
+                  </h3>
+                  <div className="bg-info/10 p-4 rounded-lg border border-info/20">
+                    <ul className="space-y-2 text-text-primary leading-relaxed">
+                      <li>• Account data: Retained while account is active plus 2 years</li>
+                      <li>• Transaction records: 7 years for tax and legal compliance</li>
+                      <li>• Marketing data: Until consent is withdrawn</li>
+                      <li>• Website analytics: Anonymized after 26 months</li>
+                      <li>• Support communications: 3 years for quality assurance</li>
+                    </ul>
+                  </div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
         </div>
       </section>
 
       {/* Your Rights */}
-      <section id="your-rights" className="py-16 sm:py-20 bg-white dark:bg-gray-900">
-        <div className="max-w-7xl mx-auto px-4">
-          <div className="text-center mb-12 sm:mb-16">
-            <Badge className="bg-[#003DA5] text-white px-6 py-2 text-sm font-bold mb-4">
-              YOUR PRIVACY RIGHTS
-            </Badge>
-            <h2 className="text-3xl sm:text-4xl md:text-5xl font-black text-[#1A1A1A] dark:text-white mb-6 leading-tight">
-              YOUR
-              <span className="block text-[#FF3D00]">RIGHTS</span>
-            </h2>
-            <p className="text-lg sm:text-xl text-gray-600 dark:text-gray-300 max-w-3xl mx-auto leading-relaxed">
-              You have several rights regarding your personal data. Contact us to exercise any of
-              these rights.
-            </p>
-          </div>
+      <section className="py-12 sm:py-16 bg-brand-surface">
+        <div className="max-w-4xl mx-auto px-4">
+          <Card className="border border-brand-border">
+            <CardContent className="p-8">
+              <div className="flex items-start gap-4 mb-6">
+                <div className="w-12 h-12 bg-brand-secondary rounded-lg flex items-center justify-center flex-shrink-0">
+                  <Users className="w-6 h-6 text-white" />
+                </div>
+                <div>
+                  <h2 className="text-2xl font-bold text-text-primary mb-2">Your Privacy Rights</h2>
+                  <p className="text-text-secondary">
+                    Your rights regarding your personal information
+                  </p>
+                </div>
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="space-y-4">
+                  <div className="p-4 bg-brand-background rounded-lg border border-brand-border">
+                    <div className="flex items-center gap-3 mb-2">
+                      <Eye className="w-5 h-5 text-brand-primary" />
+                      <h3 className="font-semibold text-text-primary">Right to Access</h3>
+                    </div>
+                    <p className="text-sm text-text-secondary">
+                      Request a copy of all personal data we hold about you, including processing
+                      purposes and retention periods.
+                    </p>
+                  </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8">
-            {userRights.map((right, index) => {
-              const IconComponent = right.icon
-              return (
-                <Card
-                  key={index}
-                  className="hover:shadow-xl transition-all duration-300 border-0 overflow-hidden"
-                >
-                  <CardContent className="p-6">
-                    <div className="flex items-center gap-3 mb-4">
-                      <div className="w-12 h-12 bg-gradient-to-br from-[#003DA5] to-[#FF3D00] rounded-full flex items-center justify-center">
-                        <IconComponent className="w-6 h-6 text-white" />
-                      </div>
-                      <h3 className="text-xl font-bold text-[#1A1A1A] dark:text-white">
-                        RIGHT TO {right.right.toUpperCase()}
+                  <div className="p-4 bg-brand-background rounded-lg border border-brand-border">
+                    <div className="flex items-center gap-3 mb-2">
+                      <Settings className="w-5 h-5 text-brand-primary" />
+                      <h3 className="font-semibold text-text-primary">Right to Rectification</h3>
+                    </div>
+                    <p className="text-sm text-text-secondary">
+                      Correct any inaccurate or incomplete personal information we have about you.
+                    </p>
+                  </div>
+
+                  <div className="p-4 bg-brand-background rounded-lg border border-brand-border">
+                    <div className="flex items-center gap-3 mb-2">
+                      <Trash2 className="w-5 h-5 text-brand-primary" />
+                      <h3 className="font-semibold text-text-primary">Right to Erasure</h3>
+                    </div>
+                    <p className="text-sm text-text-secondary">
+                      Request deletion of your personal data when it&apos;s no longer necessary for
+                      the original purpose.
+                    </p>
+                  </div>
+
+                  <div className="p-4 bg-brand-background rounded-lg border border-brand-border">
+                    <div className="flex items-center gap-3 mb-2">
+                      <Download className="w-5 h-5 text-brand-primary" />
+                      <h3 className="font-semibold text-text-primary">Right to Data Portability</h3>
+                    </div>
+                    <p className="text-sm text-text-secondary">
+                      Receive your personal data in a structured, machine-readable format for
+                      transfer to another service.
+                    </p>
+                  </div>
+                </div>
+
+                <div className="space-y-4">
+                  <div className="p-4 bg-brand-background rounded-lg border border-brand-border">
+                    <div className="flex items-center gap-3 mb-2">
+                      <XCircle className="w-5 h-5 text-brand-primary" />
+                      <h3 className="font-semibold text-text-primary">Right to Object</h3>
+                    </div>
+                    <p className="text-sm text-text-secondary">
+                      Object to processing of your personal data for direct marketing or legitimate
+                      interests.
+                    </p>
+                  </div>
+
+                  <div className="p-4 bg-brand-background rounded-lg border border-brand-border">
+                    <div className="flex items-center gap-3 mb-2">
+                      <Lock className="w-5 h-5 text-brand-primary" />
+                      <h3 className="font-semibold text-text-primary">
+                        Right to Restrict Processing
                       </h3>
                     </div>
-                    <p className="text-gray-600 dark:text-gray-300 leading-relaxed">
-                      {right.description}
+                    <p className="text-sm text-text-secondary">
+                      Limit how we use your personal data while we verify its accuracy or address
+                      your objections.
                     </p>
-                  </CardContent>
-                </Card>
-              )
-            })}
-          </div>
+                  </div>
+
+                  <div className="p-4 bg-brand-background rounded-lg border border-brand-border">
+                    <div className="flex items-center gap-3 mb-2">
+                      <UserX className="w-5 h-5 text-brand-primary" />
+                      <h3 className="font-semibold text-text-primary">Right to Withdraw Consent</h3>
+                    </div>
+                    <p className="text-sm text-text-secondary">
+                      Withdraw your consent for marketing communications or other consent-based
+                      processing at any time.
+                    </p>
+                  </div>
+
+                  <div className="p-4 bg-brand-background rounded-lg border border-brand-border">
+                    <div className="flex items-center gap-3 mb-2">
+                      <AlertTriangle className="w-5 h-5 text-brand-primary" />
+                      <h3 className="font-semibold text-text-primary">Right to Complain</h3>
+                    </div>
+                    <p className="text-sm text-text-secondary">
+                      Lodge a complaint with the Sri Lankan data protection authority if you believe
+                      we&apos;ve mishandled your data.
+                    </p>
+                  </div>
+                </div>
+              </div>
+              <div className="mt-6 p-4 bg-brand-primary/10 rounded-lg border border-brand-primary/20">
+                <p className="text-sm text-text-primary">
+                  <strong>How to Exercise Your Rights:</strong> Contact us at{' '}
+                  {SITE_CONFIG.contact.email} with your request. We will respond within 30 days and
+                  may require identity verification for security purposes.
+                </p>
+              </div>
+            </CardContent>
+          </Card>
         </div>
       </section>
 
-      {/* Cookies & Tracking */}
-      <section className="py-16 sm:py-20 bg-gray-50 dark:bg-gray-800">
-        <div className="max-w-7xl mx-auto px-4">
-          <div className="text-center mb-12 sm:mb-16">
-            <Badge className="bg-[#AEEA00] text-[#1A1A1A] px-6 py-2 text-sm font-bold mb-4">
-              COOKIES & TRACKING
-            </Badge>
-            <h2 className="text-3xl sm:text-4xl md:text-5xl font-black text-[#1A1A1A] dark:text-white mb-6 leading-tight">
-              COOKIES
-              <span className="block text-[#003DA5] dark:text-[#4A90E2]">POLICY</span>
-            </h2>
-          </div>
-
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12">
-            <Card className="bg-white dark:bg-gray-700 border-0 shadow-lg">
-              <CardContent className="p-6 sm:p-8">
-                <h3 className="text-2xl font-black text-[#1A1A1A] dark:text-white mb-6">
-                  ESSENTIAL COOKIES
-                </h3>
-                <div className="space-y-4 text-gray-600 dark:text-gray-300">
-                  <p>• Required for website functionality and security</p>
-                  <p>• Remember your shopping cart contents</p>
-                  <p>• Maintain your login session</p>
-                  <p>• Enable secure checkout process</p>
-                  <p className="text-sm italic">These cookies cannot be disabled.</p>
+      {/* Cookies and Tracking */}
+      <section className="py-12 sm:py-16 bg-brand-background">
+        <div className="max-w-4xl mx-auto px-4">
+          <Card className="border border-brand-border">
+            <CardContent className="p-8">
+              <div className="flex items-start gap-4 mb-6">
+                <div className="w-12 h-12 bg-warning rounded-lg flex items-center justify-center flex-shrink-0">
+                  <Globe className="w-6 h-6 text-white" />
                 </div>
-              </CardContent>
-            </Card>
-
-            <Card className="bg-white dark:bg-gray-700 border-0 shadow-lg">
-              <CardContent className="p-6 sm:p-8">
-                <h3 className="text-2xl font-black text-[#1A1A1A] dark:text-white mb-6">
-                  OPTIONAL COOKIES
-                </h3>
-                <div className="space-y-4 text-gray-600 dark:text-gray-300">
-                  <p>• Analytics to improve website performance</p>
-                  <p>• Personalized product recommendations</p>
-                  <p>• Marketing and advertising preferences</p>
-                  <p>• Social media integration features</p>
-                  <p className="text-sm italic">You can opt-out of these cookies.</p>
+                <div>
+                  <h2 className="text-2xl font-bold text-text-primary mb-2">
+                    Cookies and Tracking
+                  </h2>
+                  <p className="text-text-secondary">How we use cookies and similar technologies</p>
                 </div>
-              </CardContent>
-            </Card>
-          </div>
+              </div>
+              <div className="space-y-6">
+                <div>
+                  <h3 className="text-lg font-semibold text-text-primary mb-3">
+                    Essential Cookies
+                  </h3>
+                  <div className="bg-success/10 p-4 rounded-lg border border-success/20">
+                    <p className="font-semibold text-success mb-2">
+                      Always Active - Cannot be Disabled:
+                    </p>
+                    <ul className="space-y-2 text-text-primary leading-relaxed">
+                      <li>• Authentication and session management</li>
+                      <li>• Shopping cart functionality and checkout process</li>
+                      <li>• Security features and fraud prevention</li>
+                      <li>• Website accessibility and user preferences</li>
+                      <li>• Load balancing and performance optimization</li>
+                    </ul>
+                  </div>
+                </div>
+
+                <div>
+                  <h3 className="text-lg font-semibold text-text-primary mb-3">
+                    Optional Cookies (Require Consent)
+                  </h3>
+                  <div className="space-y-4">
+                    <div className="p-4 bg-brand-background rounded-lg border border-brand-border">
+                      <h4 className="font-semibold text-text-primary mb-2">Analytics Cookies</h4>
+                      <p className="text-sm text-text-secondary mb-2">
+                        Help us understand how visitors use our website to improve functionality.
+                      </p>
+                      <ul className="text-sm text-text-primary">
+                        <li>• Google Analytics (anonymized)</li>
+                        <li>• Page performance monitoring</li>
+                        <li>• User behavior analysis</li>
+                      </ul>
+                    </div>
+
+                    <div className="p-4 bg-brand-background rounded-lg border border-brand-border">
+                      <h4 className="font-semibold text-text-primary mb-2">
+                        Marketing and Advertising Cookies
+                      </h4>
+                      <p className="text-sm text-text-secondary mb-2">
+                        Used to show relevant advertisements and measure campaign effectiveness.
+                      </p>
+                      <ul className="text-sm text-text-primary">
+                        <li>• Facebook Pixel</li>
+                        <li>• Google Ads conversion tracking</li>
+                        <li>• Retargeting and remarketing</li>
+                      </ul>
+                    </div>
+
+                    <div className="p-4 bg-brand-background rounded-lg border border-brand-border">
+                      <h4 className="font-semibold text-text-primary mb-2">
+                        Personalization Cookies
+                      </h4>
+                      <p className="text-sm text-text-secondary mb-2">
+                        Remember your preferences and provide personalized experiences.
+                      </p>
+                      <ul className="text-sm text-text-primary">
+                        <li>• Product recommendations</li>
+                        <li>• Recently viewed items</li>
+                        <li>• Language and region preferences</li>
+                      </ul>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="bg-info/10 p-4 rounded-lg border border-info/20">
+                  <p className="font-semibold text-info mb-2">Managing Your Cookie Preferences:</p>
+                  <p className="text-text-primary text-sm">
+                    You can manage your cookie preferences through our cookie banner when you first
+                    visit our site, or by adjusting your browser settings. Note that disabling
+                    certain cookies may affect website functionality.
+                  </p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
         </div>
       </section>
 
-      {/* Third Party Services */}
-      <section className="py-16 sm:py-20 bg-white dark:bg-gray-900">
-        <div className="max-w-7xl mx-auto px-4">
-          <div className="text-center mb-12 sm:mb-16">
-            <Badge className="bg-[#FF3D00] text-white px-6 py-2 text-sm font-bold mb-4">
-              THIRD PARTY SERVICES
-            </Badge>
-            <h2 className="text-3xl sm:text-4xl md:text-5xl font-black text-[#1A1A1A] dark:text-white mb-6 leading-tight">
-              DATA
-              <span className="block text-[#003DA5] dark:text-[#4A90E2]">SHARING</span>
-            </h2>
-          </div>
-
-          <div className="max-w-4xl mx-auto">
-            <Card className="bg-gradient-to-br from-[#FFD700] to-[#AEEA00] text-[#1A1A1A] border-0">
-              <CardContent className="p-6 sm:p-8">
-                <div className="text-center mb-6">
-                  <AlertTriangle className="w-12 h-12 mx-auto mb-4" />
-                  <h3 className="text-2xl font-black mb-4">WE DO NOT SELL YOUR DATA</h3>
+      {/* Data Sharing and Third Parties */}
+      <section className="py-12 sm:py-16 bg-brand-surface">
+        <div className="max-w-4xl mx-auto px-4">
+          <Card className="border border-brand-border">
+            <CardContent className="p-8">
+              <div className="flex items-start gap-4 mb-6">
+                <div className="w-12 h-12 bg-error rounded-lg flex items-center justify-center flex-shrink-0">
+                  <Share className="w-6 h-6 text-white" />
                 </div>
-                <div className="space-y-4 text-sm sm:text-base">
-                  <p>
-                    <strong>We may share your information with:</strong>
+                <div>
+                  <h2 className="text-2xl font-bold text-text-primary mb-2">
+                    Data Sharing and Third Parties
+                  </h2>
+                  <p className="text-text-secondary">When and how we share your information</p>
+                </div>
+              </div>
+              <div className="space-y-6">
+                <div className="bg-error/10 p-4 rounded-lg border border-error/20">
+                  <p className="font-semibold text-error mb-2">
+                    We DO NOT sell your personal data.
                   </p>
-                  <p>• Payment processors for secure transaction processing</p>
-                  <p>• Shipping companies for order delivery</p>
-                  <p>• Legal authorities when required by law</p>
-                  <p>
-                    • Service providers who help us operate our business (under strict
-                    confidentiality agreements)
-                  </p>
-                  <p className="font-bold">
+                  <p className="text-text-primary">
                     We never sell, rent, or trade your personal information to third parties for
-                    marketing purposes.
+                    their marketing purposes.
                   </p>
                 </div>
-              </CardContent>
-            </Card>
-          </div>
+
+                <div>
+                  <h3 className="text-lg font-semibold text-text-primary mb-3">
+                    When We Share Data
+                  </h3>
+                  <div className="space-y-4">
+                    <div className="p-4 bg-brand-background rounded-lg border border-brand-border">
+                      <h4 className="font-semibold text-text-primary mb-2">Service Providers</h4>
+                      <p className="text-sm text-text-secondary mb-2">
+                        Trusted partners who help us operate our business:
+                      </p>
+                      <ul className="text-sm text-text-primary">
+                        <li>• Payment processors (secure transaction handling)</li>
+                        <li>• Shipping and logistics companies (order delivery)</li>
+                        <li>• Email service providers (communications)</li>
+                        <li>• Cloud hosting providers (secure data storage)</li>
+                        <li>• Analytics providers (website improvement)</li>
+                      </ul>
+                    </div>
+
+                    <div className="p-4 bg-brand-background rounded-lg border border-brand-border">
+                      <h4 className="font-semibold text-text-primary mb-2">Legal Requirements</h4>
+                      <p className="text-sm text-text-secondary mb-2">
+                        We may share data when legally required:
+                      </p>
+                      <ul className="text-sm text-text-primary">
+                        <li>• Court orders and legal proceedings</li>
+                        <li>• Government investigations and regulatory requests</li>
+                        <li>• Tax authorities and financial crime prevention</li>
+                        <li>• Consumer protection enforcement</li>
+                      </ul>
+                    </div>
+
+                    <div className="p-4 bg-brand-background rounded-lg border border-brand-border">
+                      <h4 className="font-semibold text-text-primary mb-2">Business Transfers</h4>
+                      <p className="text-sm text-text-secondary">
+                        In the event of a merger, acquisition, or sale of assets, your data may be
+                        transferred to the new entity under the same privacy protections.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                <div>
+                  <h3 className="text-lg font-semibold text-text-primary mb-3">
+                    Data Protection Standards
+                  </h3>
+                  <ul className="space-y-2 text-text-primary leading-relaxed">
+                    <li>• All third parties must sign data processing agreements</li>
+                    <li>• Partners must meet our security and privacy standards</li>
+                    <li>• Regular audits of third-party data handling practices</li>
+                    <li>• Immediate breach notification requirements</li>
+                  </ul>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
         </div>
       </section>
 
-      {/* Contact Section */}
-      <section
-        id="contact"
-        className="py-16 sm:py-20 bg-gradient-to-r from-[#003DA5] to-[#FF3D00] text-white"
-      >
-        <div className="max-w-4xl mx-auto px-4 text-center">
-          <Badge className="bg-white text-[#003DA5] px-6 py-2 text-sm font-bold mb-4">
-            PRIVACY QUESTIONS?
-          </Badge>
-          <h2 className="text-3xl sm:text-4xl md:text-5xl font-black mb-6 leading-tight">
-            CONTACT OUR
-            <span className="block text-[#FFD700]">PRIVACY TEAM</span>
-          </h2>
-          <p className="text-lg sm:text-xl mb-8 opacity-90 leading-relaxed">
-            Have questions about our privacy policy or want to exercise your rights? Our privacy
-            team is here to help.
-          </p>
-          <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <Button
-              size="lg"
-              className="bg-white text-[#003DA5] hover:bg-gray-100 px-8 py-4 text-lg font-bold rounded-full"
-              asChild
-            >
-              <Link href="mailto:privacy@ralhum.lk">
-                <Mail className="w-5 h-5 mr-2" />
-                EMAIL PRIVACY TEAM
-              </Link>
-            </Button>
-            <Button
-              size="lg"
-              variant="outline"
-              className="border-2 border-white text-white hover:bg-white hover:text-[#003DA5] px-8 py-4 text-lg font-bold rounded-full bg-transparent"
-              asChild
-            >
-              <Link href="tel:+94112345678">
-                <Phone className="w-5 h-5 mr-2" />
-                CALL US
-              </Link>
-            </Button>
-          </div>
-          <div className="mt-8 text-sm opacity-80">
-            <p>Privacy Team: privacy@ralhum.lk | Phone: +94 11 234 5678</p>
-            <p>We respond to privacy inquiries within 48 hours</p>
-          </div>
+      {/* International Data Transfers */}
+      <section className="py-12 sm:py-16 bg-brand-background">
+        <div className="max-w-4xl mx-auto px-4">
+          <Card className="border border-brand-border">
+            <CardContent className="p-8">
+              <div className="flex items-start gap-4 mb-6">
+                <div className="w-12 h-12 bg-info rounded-lg flex items-center justify-center flex-shrink-0">
+                  <Globe className="w-6 h-6 text-white" />
+                </div>
+                <div>
+                  <h2 className="text-2xl font-bold text-text-primary mb-2">
+                    International Data Transfers
+                  </h2>
+                  <p className="text-text-secondary">How we handle cross-border data transfers</p>
+                </div>
+              </div>
+              <div className="space-y-4">
+                <p className="text-text-primary leading-relaxed">
+                  Some of our service providers may be located outside Sri Lanka. When we transfer
+                  your personal data internationally, we ensure appropriate safeguards are in place:
+                </p>
+                <ul className="space-y-2 text-text-primary leading-relaxed">
+                  <li>• Standard contractual clauses approved by data protection authorities</li>
+                  <li>• Adequacy decisions for countries with equivalent protection levels</li>
+                  <li>• Binding corporate rules for multinational service providers</li>
+                  <li>• Regular monitoring of international data protection developments</li>
+                </ul>
+                <div className="bg-info/10 p-4 rounded-lg border border-info/20">
+                  <p className="text-text-primary text-sm">
+                    <strong>Primary Data Locations:</strong> Sri Lanka (primary), Singapore (backup
+                    and analytics), and European Union (some cloud services with adequacy
+                    decisions).
+                  </p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      </section>
+
+      {/* Related Pages and Contact */}
+      <section className="py-12 sm:py-16 bg-brand-surface">
+        <div className="max-w-4xl mx-auto px-4 space-y-8">
+          {/* Related Legal Pages */}
+          <Card className="border border-brand-border">
+            <CardContent className="p-8">
+              <div className="flex items-start gap-4 mb-6">
+                <div className="w-12 h-12 bg-brand-primary rounded-lg flex items-center justify-center flex-shrink-0">
+                  <FileText className="w-6 h-6 text-white" />
+                </div>
+                <div>
+                  <h2 className="text-2xl font-bold text-text-primary mb-2">
+                    Related Legal Documents
+                  </h2>
+                  <p className="text-text-secondary">Additional policies and legal information</p>
+                </div>
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <Link
+                  href="/terms-conditions"
+                  className="group block p-4 bg-brand-background rounded-lg border border-brand-border hover:border-brand-primary transition-colors"
+                >
+                  <div className="flex items-center gap-3">
+                    <FileText className="w-5 h-5 text-brand-primary" />
+                    <div>
+                      <h3 className="font-semibold text-text-primary group-hover:text-brand-primary transition-colors">
+                        Terms & Conditions
+                      </h3>
+                      <p className="text-sm text-text-secondary">
+                        Legal terms for using our services
+                      </p>
+                    </div>
+                    <ArrowRight className="w-4 h-4 text-text-secondary group-hover:text-brand-primary ml-auto transition-colors" />
+                  </div>
+                </Link>
+
+                <Link
+                  href="/return-policy"
+                  className="group block p-4 bg-brand-background rounded-lg border border-brand-border hover:border-brand-primary transition-colors"
+                >
+                  <div className="flex items-center gap-3">
+                    <ArrowRight className="w-5 h-5 text-brand-primary rotate-180" />
+                    <div>
+                      <h3 className="font-semibold text-text-primary group-hover:text-brand-primary transition-colors">
+                        Return Policy
+                      </h3>
+                      <p className="text-sm text-text-secondary">Returns, exchanges, and refunds</p>
+                    </div>
+                    <ArrowRight className="w-4 h-4 text-text-secondary group-hover:text-brand-primary ml-auto transition-colors" />
+                  </div>
+                </Link>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Contact Information */}
+          <Card className="border border-brand-border">
+            <CardContent className="p-8">
+              <div className="flex items-start gap-4 mb-6">
+                <div className="w-12 h-12 bg-brand-secondary rounded-lg flex items-center justify-center flex-shrink-0">
+                  <Phone className="w-6 h-6 text-white" />
+                </div>
+                <div>
+                  <h2 className="text-2xl font-bold text-text-primary mb-2">
+                    Privacy Questions or Concerns?
+                  </h2>
+                  <p className="text-text-secondary">
+                    Contact our Data Protection Officer for privacy matters
+                  </p>
+                </div>
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                <div className="space-y-3">
+                  <h3 className="font-semibold text-text-primary">Data Protection Officer</h3>
+                  <div className="space-y-2">
+                    <div className="flex items-center gap-2">
+                      <Mail className="w-4 h-4 text-brand-primary" />
+                      <span className="text-text-primary">{SITE_CONFIG.contact.email}</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Phone className="w-4 h-4 text-brand-primary" />
+                      <span className="text-text-primary">{SITE_CONFIG.contact.phone}</span>
+                    </div>
+                    <div className="flex items-start gap-2">
+                      <MapPin className="w-4 h-4 text-brand-primary mt-1" />
+                      <span className="text-text-primary text-sm">
+                        {SITE_CONFIG.contact.address.street}, {SITE_CONFIG.contact.address.city},{' '}
+                        {SITE_CONFIG.contact.address.country}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="space-y-3">
+                  <h3 className="font-semibold text-text-primary">Response Times</h3>
+                  <div className="text-text-secondary text-sm space-y-1">
+                    <p>• Privacy rights requests: Within 30 days</p>
+                    <p>• General privacy questions: Within 48 hours</p>
+                    <p>• Data breach concerns: Within 24 hours</p>
+                    <p>• {SITE_CONFIG.contact.supportHours}</p>
+                  </div>
+                </div>
+              </div>
+
+              <div className="mt-6 pt-6 border-t border-brand-border">
+                <p className="text-sm text-text-secondary">
+                  For privacy-related inquiries, please include &quot;Privacy Request&quot; in your
+                  email subject line for faster processing. You may also have the right to lodge a
+                  complaint with the Sri Lankan data protection authority.
+                </p>
+              </div>
+            </CardContent>
+          </Card>
         </div>
       </section>
     </main>

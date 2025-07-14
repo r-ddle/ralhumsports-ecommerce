@@ -52,7 +52,7 @@ export default function Footer() {
 
       <div className="relative z-10 max-w-7xl mx-auto px-4">
         {/* Enhanced Grid Layout */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8 lg:gap-12">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-6 lg:gap-8">
           {/* Enhanced Company Info */}
           <motion.div
             initial={{ opacity: 0, y: 30 }}
@@ -183,11 +183,47 @@ export default function Footer() {
             </ul>
           </motion.div>
 
-          {/* Enhanced Contact Info */}
+          {/* Legal Pages */}
           <motion.div
             initial={{ opacity: 0, y: 30 }}
             whileInView={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6, delay: 0.3 }}
+            viewport={{ once: true }}
+            className="text-center sm:text-left"
+          >
+            <h3 className="text-lg font-bold mb-6 bg-gradient-to-r from-yellow-400 to-orange-400 bg-clip-text text-transparent flex items-center justify-center sm:justify-start gap-2">
+              <Sparkles className="w-4 h-4 text-yellow-400" />
+              LEGAL
+            </h3>
+            <ul className="space-y-3">
+              {[
+                { name: 'Terms & Conditions', href: '/terms-conditions' },
+                { name: 'Privacy Policy', href: '/privacy-policy' },
+                { name: 'Return Policy', href: '/return-policy' },
+              ].map((link, index) => (
+                <motion.li
+                  key={link.name}
+                  initial={{ opacity: 0, x: -20 }}
+                  whileInView={{ opacity: 1, x: 0 }}
+                  transition={{ duration: 0.4, delay: 0.2 + index * 0.05 }}
+                  viewport={{ once: true }}
+                >
+                  <Link
+                    href={link.href}
+                    className="text-slate-300 hover:text-yellow-400 transition-all duration-300 text-sm sm:text-base block py-1 hover:translate-x-1 group"
+                  >
+                    <span className="group-hover:drop-shadow-lg">{link.name}</span>
+                  </Link>
+                </motion.li>
+              ))}
+            </ul>
+          </motion.div>
+
+          {/* Enhanced Contact Info */}
+          <motion.div
+            initial={{ opacity: 0, y: 30 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6, delay: 0.4 }}
             viewport={{ once: true }}
             className="text-center sm:text-left"
           >

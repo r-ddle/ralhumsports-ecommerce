@@ -13,588 +13,819 @@ import {
   Phone,
   Mail,
   Gavel,
+  Calendar,
+  Building,
   CreditCard,
+  ShoppingCart,
   Truck,
   RotateCcw,
   Globe,
   Users,
+  Lock,
+  UserCheck,
+  Clock,
+  ArrowRight,
+  ExternalLink,
 } from 'lucide-react'
 import Link from 'next/link'
-
-const termsCategories = [
-  {
-    icon: FileText,
-    title: 'General Terms',
-    description: 'Basic terms and conditions for using our services',
-    color: 'bg-[#003DA5]',
-  },
-  {
-    icon: CreditCard,
-    title: 'Payment Terms',
-    description: 'Payment methods, pricing, and billing information',
-    color: 'bg-[#FF3D00]',
-  },
-  {
-    icon: Truck,
-    title: 'Shipping & Delivery',
-    description: 'Delivery terms, shipping costs, and timeframes',
-    color: 'bg-[#AEEA00]',
-  },
-  {
-    icon: RotateCcw,
-    title: 'Returns & Refunds',
-    description: 'Return policy, refund procedures, and exchanges',
-    color: 'bg-[#FFD700]',
-  },
-]
-
-const userObligations = [
-  'Provide accurate and complete information',
-  'Use our services only for lawful purposes',
-  'Respect intellectual property rights',
-  'Not engage in fraudulent activities',
-  'Comply with all applicable laws and regulations',
-  'Maintain the security of your account',
-  'Report any unauthorized use immediately',
-  'Use products as intended by manufacturers',
-]
-
-const prohibitedActivities = [
-  'Reselling products for commercial purposes without authorization',
-  'Using our website to distribute malware or viruses',
-  'Attempting to gain unauthorized access to our systems',
-  'Posting false or misleading product reviews',
-  'Violating any applicable laws or regulations',
-  'Infringing on intellectual property rights',
-  'Engaging in any form of harassment or abuse',
-  'Using automated systems to access our website',
-]
-
-const liabilityLimitations = [
-  {
-    title: 'Product Defects',
-    description: 'Our liability is limited to repair, replacement, or refund of defective products',
-    icon: Shield,
-  },
-  {
-    title: 'Indirect Damages',
-    description: 'We are not liable for indirect, incidental, or consequential damages',
-    icon: AlertTriangle,
-  },
-  {
-    title: 'Third Party Products',
-    description: 'Manufacturer warranties apply to all products; we act as distributor only',
-    icon: Users,
-  },
-  {
-    title: 'Service Interruptions',
-    description: 'We are not liable for temporary service interruptions or website downtime',
-    icon: Globe,
-  },
-]
-
-const disputeResolution = [
-  {
-    step: '1',
-    title: 'Direct Communication',
-    description: 'Contact our customer service team to resolve the issue directly',
-    icon: Phone,
-  },
-  {
-    step: '2',
-    title: 'Formal Complaint',
-    description: 'Submit a formal written complaint if direct communication fails',
-    icon: FileText,
-  },
-  {
-    step: '3',
-    title: 'Mediation',
-    description: 'Engage in mediation through an agreed-upon neutral third party',
-    icon: Users,
-  },
-  {
-    step: '4',
-    title: 'Legal Action',
-    description: 'Pursue legal action in Sri Lankan courts as a last resort',
-    icon: Gavel,
-  },
-]
+import { SITE_CONFIG } from '@/config/site-config'
 
 export default function TermsConditionsPage() {
   return (
-    <main className="min-h-screen pt-16">
-      {/* Hero Section */}
-      <section className="py-16 sm:py-20 bg-gradient-to-br from-[#003DA5] to-[#1A1A1A] text-white relative overflow-hidden">
-        <div className="absolute inset-0 opacity-10">
-          <div className="absolute top-20 left-20 w-32 h-32 bg-[#FFD700] rounded-full blur-3xl animate-pulse"></div>
-          <div className="absolute bottom-20 right-20 w-40 h-40 bg-[#AEEA00] rounded-full blur-3xl animate-pulse delay-1000"></div>
-        </div>
-
-        <div className="max-w-7xl mx-auto px-4 relative z-10">
-          <div className="text-center">
-            <Badge className="bg-[#FFD700] text-[#1A1A1A] px-6 py-2 text-sm font-bold mb-4">
-              LEGAL AGREEMENT
-            </Badge>
-            <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-black mb-6 leading-tight">
-              TERMS &<span className="block text-[#FF3D00]">CONDITIONS</span>
-            </h1>
-            <p className="text-lg sm:text-xl text-gray-300 max-w-4xl mx-auto mb-8 leading-relaxed">
-              These terms and conditions govern your use of Ralhum Trading Company&apos;s services.
-              Please read carefully before making any purchases or using our website.
-            </p>
-            <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              <Button
-                size="lg"
-                className="bg-[#FF3D00] hover:bg-[#FF3D00]/90 text-white font-bold rounded-full px-8 py-4"
-                asChild
-              >
-                <Link href="#key-terms">
-                  <Scale className="w-5 h-5 mr-2" />
-                  KEY TERMS
-                </Link>
-              </Button>
-              <Button
-                size="lg"
-                variant="outline"
-                className="border-2 border-white text-white hover:bg-white hover:text-[#003DA5] font-bold rounded-full px-8 py-4 bg-transparent"
-                asChild
-              >
-                <Link href="#contact">
-                  <Phone className="w-5 h-5 mr-2" />
-                  LEGAL QUESTIONS
-                </Link>
-              </Button>
-            </div>
+    <main className="min-h-screen bg-brand-background">
+      {/* Header Section */}
+      <section className="py-12 sm:py-16 bg-white border-b border-brand-border">
+        <div className="max-w-4xl mx-auto px-4 text-center">
+          <Badge className="bg-brand-primary text-white px-4 py-2 text-sm font-semibold mb-4">
+            Legal Agreement
+          </Badge>
+          <h1 className="text-3xl sm:text-4xl font-bold text-text-primary mb-4">
+            Terms and Conditions
+          </h1>
+          <p className="text-lg text-text-secondary max-w-2xl mx-auto leading-relaxed">
+            Please read these terms and conditions carefully before using our services or making any
+            purchases.
+          </p>
+          <div className="flex items-center justify-center gap-2 mt-6 text-sm text-text-secondary">
+            <Calendar className="w-4 h-4" />
+            <span>Last Updated: January 15, 2025</span>
           </div>
         </div>
       </section>
 
-      {/* Last Updated */}
-      <section className="py-8 bg-gray-50 dark:bg-gray-800">
-        <div className="max-w-7xl mx-auto px-4">
-          <div className="text-center">
-            <Badge className="bg-[#003DA5] text-white px-4 py-2 text-sm font-bold">
-              EFFECTIVE DATE: JANUARY 1, 2025 | LAST UPDATED: JANUARY 2025
-            </Badge>
-          </div>
-        </div>
-      </section>
-
-      {/* Terms Categories */}
-      <section id="key-terms" className="py-16 sm:py-20 bg-white dark:bg-gray-900">
-        <div className="max-w-7xl mx-auto px-4">
-          <div className="text-center mb-12 sm:mb-16">
-            <Badge className="bg-[#AEEA00] text-[#1A1A1A] px-6 py-2 text-sm font-bold mb-4">
-              AGREEMENT OVERVIEW
-            </Badge>
-            <h2 className="text-3xl sm:text-4xl md:text-5xl font-black text-[#1A1A1A] dark:text-white mb-6 leading-tight">
-              KEY TERMS
-              <span className="block text-[#003DA5] dark:text-[#4A90E2]">CATEGORIES</span>
-            </h2>
-            <p className="text-lg sm:text-xl text-gray-600 dark:text-gray-300 max-w-3xl mx-auto leading-relaxed">
-              Our terms are organized into key categories for easy understanding and reference.
-            </p>
-          </div>
-
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 sm:gap-8">
-            {termsCategories.map((category, index) => {
-              const IconComponent = category.icon
-              return (
-                <Card
-                  key={index}
-                  className="hover:shadow-xl transition-all duration-300 border-0 overflow-hidden"
-                >
-                  <CardContent className="p-6 text-center">
-                    <div
-                      className={`w-16 h-16 ${category.color} rounded-full flex items-center justify-center mx-auto mb-4`}
-                    >
-                      <IconComponent className="w-8 h-8 text-white" />
-                    </div>
-                    <h3 className="text-xl font-bold text-[#1A1A1A] dark:text-white mb-3">
-                      {category.title}
-                    </h3>
-                    <p className="text-gray-600 dark:text-gray-300 leading-relaxed text-sm">
-                      {category.description}
-                    </p>
-                  </CardContent>
-                </Card>
-              )
-            })}
-          </div>
+      {/* Company Information */}
+      <section className="py-12 sm:py-16 bg-brand-surface">
+        <div className="max-w-4xl mx-auto px-4">
+          <Card className="border border-brand-border">
+            <CardContent className="p-8">
+              <div className="flex items-start gap-4 mb-6">
+                <div className="w-12 h-12 bg-brand-secondary rounded-lg flex items-center justify-center flex-shrink-0">
+                  <Building className="w-6 h-6 text-white" />
+                </div>
+                <div>
+                  <h2 className="text-2xl font-bold text-text-primary mb-2">Company Information</h2>
+                  <p className="text-text-secondary">Legal entity and business details</p>
+                </div>
+              </div>
+              <div className="space-y-4 text-text-primary">
+                <p>
+                  <strong>Company Name:</strong> Ralhum Sports (Private) Limited
+                </p>
+                <p>
+                  <strong>Registration Number:</strong> PV 12345678 (Sri Lanka)
+                </p>
+                <p>
+                  <strong>Address:</strong> {SITE_CONFIG.contact.address.street},{' '}
+                  {SITE_CONFIG.contact.address.city}, {SITE_CONFIG.contact.address.country}
+                </p>
+                <p>
+                  <strong>Business Type:</strong> Private Limited Company
+                </p>
+                <p>
+                  <strong>Primary Business:</strong> Sports equipment distribution and retail
+                </p>
+                <p>
+                  <strong>Contact:</strong> {SITE_CONFIG.contact.email} |{' '}
+                  {SITE_CONFIG.contact.phone}
+                </p>
+              </div>
+            </CardContent>
+          </Card>
         </div>
       </section>
 
       {/* Acceptance of Terms */}
-      <section className="py-16 sm:py-20 bg-gray-50 dark:bg-gray-800">
-        <div className="max-w-7xl mx-auto px-4">
-          <div className="text-center mb-12 sm:mb-16">
-            <Badge className="bg-[#FF3D00] text-white px-6 py-2 text-sm font-bold mb-4">
-              LEGAL AGREEMENT
-            </Badge>
-            <h2 className="text-3xl sm:text-4xl md:text-5xl font-black text-[#1A1A1A] dark:text-white mb-6 leading-tight">
-              ACCEPTANCE OF
-              <span className="block text-[#003DA5] dark:text-[#4A90E2]">TERMS</span>
-            </h2>
-          </div>
-
-          <div className="max-w-4xl mx-auto">
-            <Card className="bg-gradient-to-br from-[#003DA5] to-[#FF3D00] text-white border-0">
-              <CardContent className="p-6 sm:p-8">
-                <div className="text-center mb-6">
-                  <Scale className="w-12 h-12 mx-auto mb-4" />
-                  <h3 className="text-2xl font-black mb-4">BINDING AGREEMENT</h3>
+      <section className="py-12 sm:py-16 bg-brand-background">
+        <div className="max-w-4xl mx-auto px-4">
+          <Card className="border border-brand-border">
+            <CardContent className="p-8">
+              <div className="flex items-start gap-4 mb-6">
+                <div className="w-12 h-12 bg-brand-accent rounded-lg flex items-center justify-center flex-shrink-0">
+                  <Scale className="w-6 h-6 text-white" />
                 </div>
-                <div className="space-y-4 text-sm sm:text-base">
+                <div>
+                  <h2 className="text-2xl font-bold text-text-primary mb-2">Acceptance of Terms</h2>
+                  <p className="text-text-secondary">Agreement and legal binding conditions</p>
+                </div>
+              </div>
+              <div className="space-y-4 text-text-primary leading-relaxed">
+                <p>
+                  By accessing our website (ralhumsports.lk), placing an order, creating an account,
+                  or using any of our services, you acknowledge that you have read, understood, and
+                  agree to be legally bound by these Terms and Conditions in their entirety.
+                </p>
+                <p>
+                  These Terms constitute a legally binding agreement between you
+                  (&quot;Customer&quot;, &quot;User&quot;, or &quot;you&quot;) and Ralhum Sports
+                  (Private) Limited (&quot;Company&quot;, &quot;we&quot;, &quot;us&quot;, or
+                  &quot;our&quot;).
+                </p>
+                <div className="bg-brand-background p-4 rounded-lg border border-brand-border">
+                  <p className="font-semibold text-text-primary mb-2">Important Notice:</p>
                   <p>
-                    By accessing our website, making a purchase, or using our services, you agree to
-                    be bound by these terms and conditions.
-                  </p>
-                  <p>
-                    If you do not agree with any part of these terms, you must not use our services
-                    or make any purchases.
-                  </p>
-                  <p>
-                    These terms constitute a legally binding agreement between you and Ralhum
-                    Trading Company Pvt Ltd.
-                  </p>
-                  <p className="font-bold">
-                    We reserve the right to modify these terms at any time. Continued use of our
-                    services after changes constitutes acceptance of the new terms.
+                    If you do not agree with any part of these terms, you must immediately cease
+                    using our website and services. Continued use after any modifications
+                    constitutes acceptance of the updated terms.
                   </p>
                 </div>
-              </CardContent>
-            </Card>
-          </div>
+                <p>
+                  We reserve the right to update, modify, or replace these Terms at any time without
+                  prior notice. The updated Terms will be effective immediately upon posting on our
+                  website. It is your responsibility to review these Terms periodically.
+                </p>
+              </div>
+            </CardContent>
+          </Card>
         </div>
       </section>
 
-      {/* User Obligations */}
-      <section className="py-16 sm:py-20 bg-white dark:bg-gray-900">
-        <div className="max-w-7xl mx-auto px-4">
-          <div className="text-center mb-12 sm:mb-16">
-            <Badge className="bg-[#003DA5] text-white px-6 py-2 text-sm font-bold mb-4">
-              YOUR RESPONSIBILITIES
-            </Badge>
-            <h2 className="text-3xl sm:text-4xl md:text-5xl font-black text-[#1A1A1A] dark:text-white mb-6 leading-tight">
-              USER
-              <span className="block text-[#FF3D00]">OBLIGATIONS</span>
-            </h2>
-          </div>
+      {/* User Obligations and Account Responsibilities */}
+      <section className="py-12 sm:py-16 bg-brand-surface">
+        <div className="max-w-4xl mx-auto px-4 space-y-8">
+          <Card className="border border-brand-border">
+            <CardContent className="p-8">
+              <div className="flex items-start gap-4 mb-6">
+                <div className="w-12 h-12 bg-success rounded-lg flex items-center justify-center flex-shrink-0">
+                  <UserCheck className="w-6 h-6 text-white" />
+                </div>
+                <div>
+                  <h2 className="text-2xl font-bold text-text-primary mb-2">
+                    User Responsibilities
+                  </h2>
+                  <p className="text-text-secondary">Your obligations when using our services</p>
+                </div>
+              </div>
+              <div className="space-y-6">
+                <div>
+                  <h3 className="text-lg font-semibold text-text-primary mb-3">
+                    Account Management
+                  </h3>
+                  <ul className="space-y-2 text-text-primary">
+                    <li className="flex items-start gap-2">
+                      <CheckCircle className="w-5 h-5 text-success mt-0.5 flex-shrink-0" />
+                      <span>
+                        Provide accurate, current, and complete information during registration and
+                        checkout
+                      </span>
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <CheckCircle className="w-5 h-5 text-success mt-0.5 flex-shrink-0" />
+                      <span>
+                        Maintain the confidentiality of your account credentials and password
+                      </span>
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <CheckCircle className="w-5 h-5 text-success mt-0.5 flex-shrink-0" />
+                      <span>
+                        Notify us immediately of any unauthorized access or security breach
+                      </span>
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <CheckCircle className="w-5 h-5 text-success mt-0.5 flex-shrink-0" />
+                      <span>
+                        You are responsible for all activities that occur under your account
+                      </span>
+                    </li>
+                  </ul>
+                </div>
 
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12">
-            {/* User Obligations */}
-            <Card className="bg-white dark:bg-gray-700 border-0 shadow-lg">
-              <CardContent className="p-6 sm:p-8">
-                <div className="flex items-center gap-3 mb-6">
-                  <div className="w-12 h-12 bg-green-500 rounded-full flex items-center justify-center">
-                    <CheckCircle className="w-6 h-6 text-white" />
+                <div>
+                  <h3 className="text-lg font-semibold text-text-primary mb-3">Legal Compliance</h3>
+                  <ul className="space-y-2 text-text-primary">
+                    <li className="flex items-start gap-2">
+                      <CheckCircle className="w-5 h-5 text-success mt-0.5 flex-shrink-0" />
+                      <span>
+                        Use our services only for lawful purposes and in compliance with all
+                        applicable laws
+                      </span>
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <CheckCircle className="w-5 h-5 text-success mt-0.5 flex-shrink-0" />
+                      <span>
+                        Respect intellectual property rights of Ralhum Sports and third parties
+                      </span>
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <CheckCircle className="w-5 h-5 text-success mt-0.5 flex-shrink-0" />
+                      <span>Comply with all Sri Lankan laws and regulations</span>
+                    </li>
+                  </ul>
+                </div>
+
+                <div>
+                  <h3 className="text-lg font-semibold text-text-primary mb-3">Product Usage</h3>
+                  <ul className="space-y-2 text-text-primary">
+                    <li className="flex items-start gap-2">
+                      <CheckCircle className="w-5 h-5 text-success mt-0.5 flex-shrink-0" />
+                      <span>
+                        Use products according to manufacturer specifications and safety guidelines
+                      </span>
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <CheckCircle className="w-5 h-5 text-success mt-0.5 flex-shrink-0" />
+                      <span>
+                        Ensure products are suitable for intended use and user skill level
+                      </span>
+                    </li>
+                  </ul>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card className="border border-brand-border">
+            <CardContent className="p-8">
+              <div className="flex items-start gap-4 mb-6">
+                <div className="w-12 h-12 bg-error rounded-lg flex items-center justify-center flex-shrink-0">
+                  <XCircle className="w-6 h-6 text-white" />
+                </div>
+                <div>
+                  <h2 className="text-2xl font-bold text-text-primary mb-2">
+                    Prohibited Activities
+                  </h2>
+                  <p className="text-text-secondary">Activities that are strictly forbidden</p>
+                </div>
+              </div>
+              <div className="space-y-4">
+                <div className="bg-error/10 p-4 rounded-lg border border-error/20">
+                  <p className="font-semibold text-error mb-2">Strictly Prohibited:</p>
+                  <ul className="space-y-2 text-text-primary">
+                    <li className="flex items-start gap-2">
+                      <XCircle className="w-5 h-5 text-error mt-0.5 flex-shrink-0" />
+                      <span>Unauthorized commercial resale or distribution of our products</span>
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <XCircle className="w-5 h-5 text-error mt-0.5 flex-shrink-0" />
+                      <span>Using automated systems, bots, or scrapers to access our website</span>
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <XCircle className="w-5 h-5 text-error mt-0.5 flex-shrink-0" />
+                      <span>
+                        Attempting to gain unauthorized access to our systems or databases
+                      </span>
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <XCircle className="w-5 h-5 text-error mt-0.5 flex-shrink-0" />
+                      <span>Posting false, misleading, or defamatory product reviews</span>
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <XCircle className="w-5 h-5 text-error mt-0.5 flex-shrink-0" />
+                      <span>
+                        Engaging in fraudulent activities or payment disputes without valid reason
+                      </span>
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <XCircle className="w-5 h-5 text-error mt-0.5 flex-shrink-0" />
+                      <span>
+                        Distributing malware, viruses, or any harmful code through our platform
+                      </span>
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <XCircle className="w-5 h-5 text-error mt-0.5 flex-shrink-0" />
+                      <span>
+                        Harassment, abuse, or inappropriate conduct toward our staff or other users
+                      </span>
+                    </li>
+                  </ul>
+                </div>
+                <p className="text-text-secondary text-sm">
+                  Violation of these prohibited activities may result in immediate account
+                  suspension, order cancellation, and potential legal action.
+                </p>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      </section>
+
+      {/* Orders, Payment, and Pricing */}
+      <section className="py-12 sm:py-16 bg-brand-background">
+        <div className="max-w-4xl mx-auto px-4 space-y-8">
+          <Card className="border border-brand-border">
+            <CardContent className="p-8">
+              <div className="flex items-start gap-4 mb-6">
+                <div className="w-12 h-12 bg-brand-secondary rounded-lg flex items-center justify-center flex-shrink-0">
+                  <ShoppingCart className="w-6 h-6 text-white" />
+                </div>
+                <div>
+                  <h2 className="text-2xl font-bold text-text-primary mb-2">
+                    Orders and Purchase Process
+                  </h2>
+                  <p className="text-text-secondary">How orders are processed and fulfilled</p>
+                </div>
+              </div>
+              <div className="space-y-6">
+                <div>
+                  <h3 className="text-lg font-semibold text-text-primary mb-3">Order Placement</h3>
+                  <ul className="space-y-2 text-text-primary leading-relaxed">
+                    <li>
+                      • Orders are considered offers to purchase and are subject to our acceptance
+                    </li>
+                    <li>• We reserve the right to refuse or cancel any order for any reason</li>
+                    <li>• Order confirmation does not guarantee product availability</li>
+                    <li>• All orders are subject to verification and fraud prevention checks</li>
+                  </ul>
+                </div>
+
+                <div>
+                  <h3 className="text-lg font-semibold text-text-primary mb-3">
+                    Product Information
+                  </h3>
+                  <ul className="space-y-2 text-text-primary leading-relaxed">
+                    <li>• We strive to provide accurate product descriptions and images</li>
+                    <li>• Colors may vary due to monitor display differences</li>
+                    <li>• Product specifications are based on manufacturer information</li>
+                    <li>• We are not responsible for manufacturer specification changes</li>
+                  </ul>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card className="border border-brand-border">
+            <CardContent className="p-8">
+              <div className="flex items-start gap-4 mb-6">
+                <div className="w-12 h-12 bg-brand-primary rounded-lg flex items-center justify-center flex-shrink-0">
+                  <CreditCard className="w-6 h-6 text-white" />
+                </div>
+                <div>
+                  <h2 className="text-2xl font-bold text-text-primary mb-2">Payment Terms</h2>
+                  <p className="text-text-secondary">Payment methods and processing terms</p>
+                </div>
+              </div>
+              <div className="space-y-6">
+                <div>
+                  <h3 className="text-lg font-semibold text-text-primary mb-3">Payment Methods</h3>
+                  <ul className="space-y-2 text-text-primary leading-relaxed">
+                    <li>• All prices are displayed in Sri Lankan Rupees (LKR)</li>
+                    <li>
+                      • We accept cash on delivery, bank transfers, and approved payment cards
+                    </li>
+                    <li>• Payment is required in full before order processing</li>
+                    <li>• All transactions are processed through secure payment gateways</li>
+                    <li>• We do not store payment card information on our servers</li>
+                  </ul>
+                </div>
+
+                <div>
+                  <h3 className="text-lg font-semibold text-text-primary mb-3">
+                    Pricing and Taxes
+                  </h3>
+                  <ul className="space-y-2 text-text-primary leading-relaxed">
+                    <li>
+                      • All prices include applicable taxes and duties unless stated otherwise
+                    </li>
+                    <li>• Prices are subject to change without notice</li>
+                    <li>• Promotional prices are valid only for specified periods</li>
+                    <li>
+                      • Bulk order discounts available for educational institutions and sports clubs
+                    </li>
+                    <li>• Currency conversion rates for international orders may fluctuate</li>
+                  </ul>
+                </div>
+
+                <div>
+                  <h3 className="text-lg font-semibold text-text-primary mb-3">Payment Issues</h3>
+                  <ul className="space-y-2 text-text-primary leading-relaxed">
+                    <li>• Failed payments may result in automatic order cancellation</li>
+                    <li>• Payment disputes must be raised within 14 days of transaction</li>
+                    <li>
+                      • Chargebacks without prior communication may result in account suspension
+                    </li>
+                    <li>• Fraudulent payment attempts will be reported to authorities</li>
+                  </ul>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      </section>
+
+      {/* Shipping and Delivery */}
+      <section className="py-12 sm:py-16 bg-brand-surface">
+        <div className="max-w-4xl mx-auto px-4">
+          <Card className="border border-brand-border">
+            <CardContent className="p-8">
+              <div className="flex items-start gap-4 mb-6">
+                <div className="w-12 h-12 bg-brand-accent rounded-lg flex items-center justify-center flex-shrink-0">
+                  <Truck className="w-6 h-6 text-white" />
+                </div>
+                <div>
+                  <h2 className="text-2xl font-bold text-text-primary mb-2">
+                    Shipping and Delivery
+                  </h2>
+                  <p className="text-text-secondary">
+                    Delivery terms, timeframes, and responsibilities
+                  </p>
+                </div>
+              </div>
+              <div className="space-y-6">
+                <div>
+                  <h3 className="text-lg font-semibold text-text-primary mb-3">Delivery Terms</h3>
+                  <ul className="space-y-2 text-text-primary leading-relaxed">
+                    <li>• Standard delivery within Colombo: 1-2 business days</li>
+                    <li>• Island-wide delivery: 3-7 business days depending on location</li>
+                    <li>
+                      • Free delivery for orders above LKR{' '}
+                      {SITE_CONFIG.shipping.freeShippingThreshold.toLocaleString()}
+                    </li>
+                    <li>
+                      • Standard shipping fee: LKR{' '}
+                      {SITE_CONFIG.shipping.standardShipping.toLocaleString()}
+                    </li>
+                    <li>• Express delivery options available for additional charges</li>
+                  </ul>
+                </div>
+
+                <div>
+                  <h3 className="text-lg font-semibold text-text-primary mb-3">
+                    Delivery Responsibilities
+                  </h3>
+                  <ul className="space-y-2 text-text-primary leading-relaxed">
+                    <li>• Accurate delivery address must be provided by customer</li>
+                    <li>• Customer or authorized person must be available to receive delivery</li>
+                    <li>• Failed delivery attempts may incur additional charges</li>
+                    <li>• Risk of loss passes to customer upon delivery</li>
+                    <li>
+                      • Delivery delays due to force majeure events are not our responsibility
+                    </li>
+                  </ul>
+                </div>
+
+                <div>
+                  <h3 className="text-lg font-semibold text-text-primary mb-3">
+                    International Shipping
+                  </h3>
+                  <ul className="space-y-2 text-text-primary leading-relaxed">
+                    <li>• International shipping available on request</li>
+                    <li>• Customer responsible for customs duties and import taxes</li>
+                    <li>• International delivery times vary by destination</li>
+                    <li>• Some products may be restricted for international shipping</li>
+                  </ul>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      </section>
+
+      {/* Warranty and Liability */}
+      <section className="py-12 sm:py-16 bg-brand-background">
+        <div className="max-w-4xl mx-auto px-4 space-y-8">
+          <Card className="border border-brand-border">
+            <CardContent className="p-8">
+              <div className="flex items-start gap-4 mb-6">
+                <div className="w-12 h-12 bg-warning rounded-lg flex items-center justify-center flex-shrink-0">
+                  <Shield className="w-6 h-6 text-white" />
+                </div>
+                <div>
+                  <h2 className="text-2xl font-bold text-text-primary mb-2">
+                    Warranty and Liability
+                  </h2>
+                  <p className="text-text-secondary">
+                    Product warranties and limitation of liability
+                  </p>
+                </div>
+              </div>
+              <div className="space-y-6">
+                <div>
+                  <h3 className="text-lg font-semibold text-text-primary mb-3">
+                    Product Warranties
+                  </h3>
+                  <ul className="space-y-2 text-text-primary leading-relaxed">
+                    <li>• All products carry manufacturer warranties as specified by each brand</li>
+                    <li>• Warranty terms vary by product and manufacturer</li>
+                    <li>• We facilitate warranty claims but are not the warranty provider</li>
+                    <li>• Warranty coverage excludes normal wear and tear, misuse, or accidents</li>
+                    <li>• Original purchase receipt required for all warranty claims</li>
+                  </ul>
+                </div>
+
+                <div>
+                  <h3 className="text-lg font-semibold text-text-primary mb-3">
+                    Limitation of Liability
+                  </h3>
+                  <div className="bg-warning/10 p-4 rounded-lg border border-warning/20">
+                    <p className="font-semibold text-warning mb-2">Important Legal Notice:</p>
+                    <ul className="space-y-2 text-text-primary leading-relaxed">
+                      <li>• Our total liability is limited to the purchase price of the product</li>
+                      <li>
+                        • We are not liable for indirect, incidental, or consequential damages
+                      </li>
+                      <li>
+                        • We do not assume liability for product fitness for specific purposes
+                      </li>
+                      <li>• Customer assumes all risk for product selection and use</li>
+                      <li>• Sports activities carry inherent risks that we cannot eliminate</li>
+                    </ul>
                   </div>
-                  <h3 className="text-2xl font-black text-green-600 dark:text-green-400">
-                    YOU MUST
-                  </h3>
                 </div>
-                <div className="space-y-4">
-                  {userObligations.map((obligation, index) => (
-                    <div key={index} className="flex items-start gap-3">
-                      <CheckCircle className="w-5 h-5 text-green-500 mt-0.5 flex-shrink-0" />
-                      <span className="text-gray-700 dark:text-gray-300 text-sm">{obligation}</span>
-                    </div>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
 
-            {/* Prohibited Activities */}
-            <Card className="bg-white dark:bg-gray-700 border-0 shadow-lg">
-              <CardContent className="p-6 sm:p-8">
-                <div className="flex items-center gap-3 mb-6">
-                  <div className="w-12 h-12 bg-red-500 rounded-full flex items-center justify-center">
-                    <XCircle className="w-6 h-6 text-white" />
+                <div>
+                  <h3 className="text-lg font-semibold text-text-primary mb-3">
+                    Service Limitations
+                  </h3>
+                  <ul className="space-y-2 text-text-primary leading-relaxed">
+                    <li>• Website availability and service uptime not guaranteed</li>
+                    <li>• We reserve the right to modify or discontinue services</li>
+                    <li>• Technical issues or force majeure events may affect service delivery</li>
+                    <li>
+                      • Information accuracy on website not guaranteed, subject to verification
+                    </li>
+                  </ul>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      </section>
+
+      {/* Dispute Resolution and Governing Law */}
+      <section className="py-12 sm:py-16 bg-brand-surface">
+        <div className="max-w-4xl mx-auto px-4 space-y-8">
+          <Card className="border border-brand-border">
+            <CardContent className="p-8">
+              <div className="flex items-start gap-4 mb-6">
+                <div className="w-12 h-12 bg-info rounded-lg flex items-center justify-center flex-shrink-0">
+                  <Users className="w-6 h-6 text-white" />
+                </div>
+                <div>
+                  <h2 className="text-2xl font-bold text-text-primary mb-2">Dispute Resolution</h2>
+                  <p className="text-text-secondary">
+                    Process for resolving conflicts and disagreements
+                  </p>
+                </div>
+              </div>
+              <div className="space-y-6">
+                <div>
+                  <h3 className="text-lg font-semibold text-text-primary mb-3">
+                    Resolution Process
+                  </h3>
+                  <div className="space-y-4">
+                    <div className="flex items-start gap-4 p-4 bg-brand-background rounded-lg border border-brand-border">
+                      <div className="w-8 h-8 bg-brand-primary rounded-full flex items-center justify-center flex-shrink-0 text-white font-bold text-sm">
+                        1
+                      </div>
+                      <div>
+                        <h4 className="font-semibold text-text-primary">Direct Communication</h4>
+                        <p className="text-text-secondary text-sm">
+                          Contact our customer service team at {SITE_CONFIG.contact.email} or{' '}
+                          {SITE_CONFIG.contact.phone}
+                        </p>
+                      </div>
+                    </div>
+                    <div className="flex items-start gap-4 p-4 bg-brand-background rounded-lg border border-brand-border">
+                      <div className="w-8 h-8 bg-brand-primary rounded-full flex items-center justify-center flex-shrink-0 text-white font-bold text-sm">
+                        2
+                      </div>
+                      <div>
+                        <h4 className="font-semibold text-text-primary">Formal Complaint</h4>
+                        <p className="text-text-secondary text-sm">
+                          Submit written complaint with order details and supporting documentation
+                        </p>
+                      </div>
+                    </div>
+                    <div className="flex items-start gap-4 p-4 bg-brand-background rounded-lg border border-brand-border">
+                      <div className="w-8 h-8 bg-brand-primary rounded-full flex items-center justify-center flex-shrink-0 text-white font-bold text-sm">
+                        3
+                      </div>
+                      <div>
+                        <h4 className="font-semibold text-text-primary">Mediation</h4>
+                        <p className="text-text-secondary text-sm">
+                          Independent mediation through agreed neutral third party if required
+                        </p>
+                      </div>
+                    </div>
+                    <div className="flex items-start gap-4 p-4 bg-brand-background rounded-lg border border-brand-border">
+                      <div className="w-8 h-8 bg-brand-primary rounded-full flex items-center justify-center flex-shrink-0 text-white font-bold text-sm">
+                        4
+                      </div>
+                      <div>
+                        <h4 className="font-semibold text-text-primary">Legal Action</h4>
+                        <p className="text-text-secondary text-sm">
+                          Legal proceedings in Sri Lankan courts as final resort
+                        </p>
+                      </div>
+                    </div>
                   </div>
-                  <h3 className="text-2xl font-black text-red-600 dark:text-red-400">
-                    PROHIBITED ACTIVITIES
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card className="border border-brand-border">
+            <CardContent className="p-8">
+              <div className="flex items-start gap-4 mb-6">
+                <div className="w-12 h-12 bg-brand-secondary rounded-lg flex items-center justify-center flex-shrink-0">
+                  <Gavel className="w-6 h-6 text-white" />
+                </div>
+                <div>
+                  <h2 className="text-2xl font-bold text-text-primary mb-2">
+                    Governing Law and Jurisdiction
+                  </h2>
+                  <p className="text-text-secondary">Legal framework and court jurisdiction</p>
+                </div>
+              </div>
+              <div className="space-y-4">
+                <div className="bg-brand-secondary/10 p-4 rounded-lg border border-brand-secondary/20">
+                  <p className="font-semibold text-brand-secondary mb-2">Legal Jurisdiction:</p>
+                  <ul className="space-y-2 text-text-primary leading-relaxed">
+                    <li>
+                      • These Terms are governed by the laws of the Democratic Socialist Republic of
+                      Sri Lanka
+                    </li>
+                    <li>
+                      • Any legal proceedings shall be subject to the exclusive jurisdiction of Sri
+                      Lankan courts
+                    </li>
+                    <li>• Courts of Colombo shall have primary jurisdiction for all disputes</li>
+                    <li>
+                      • Sri Lankan Consumer Protection Act and other applicable laws shall apply
+                    </li>
+                  </ul>
+                </div>
+
+                <div>
+                  <h3 className="text-lg font-semibold text-text-primary mb-3">
+                    Severability and Enforcement
                   </h3>
+                  <ul className="space-y-2 text-text-primary leading-relaxed">
+                    <li>
+                      • If any provision is deemed invalid, the remaining terms remain enforceable
+                    </li>
+                    <li>• These Terms constitute the entire agreement between parties</li>
+                    <li>• Modifications require written agreement from both parties</li>
+                    <li>�� Waiver of any right does not constitute waiver of future rights</li>
+                  </ul>
                 </div>
-                <div className="space-y-4">
-                  {prohibitedActivities.map((activity, index) => (
-                    <div key={index} className="flex items-start gap-3">
-                      <XCircle className="w-5 h-5 text-red-500 mt-0.5 flex-shrink-0" />
-                      <span className="text-gray-700 dark:text-gray-300 text-sm">{activity}</span>
-                    </div>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
-          </div>
+              </div>
+            </CardContent>
+          </Card>
         </div>
       </section>
 
-      {/* Payment & Pricing */}
-      <section className="py-16 sm:py-20 bg-gray-50 dark:bg-gray-800">
-        <div className="max-w-7xl mx-auto px-4">
-          <div className="text-center mb-12 sm:mb-16">
-            <Badge className="bg-[#FFD700] text-[#1A1A1A] px-6 py-2 text-sm font-bold mb-4">
-              FINANCIAL TERMS
-            </Badge>
-            <h2 className="text-3xl sm:text-4xl md:text-5xl font-black text-[#1A1A1A] dark:text-white mb-6 leading-tight">
-              PAYMENT &<span className="block text-[#003DA5] dark:text-[#4A90E2]">PRICING</span>
-            </h2>
-          </div>
-
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12">
-            <Card className="bg-white dark:bg-gray-700 border-0 shadow-lg">
-              <CardContent className="p-6 sm:p-8">
-                <div className="flex items-center gap-3 mb-6">
-                  <CreditCard className="w-8 h-8 text-[#003DA5]" />
-                  <h3 className="text-2xl font-black text-[#1A1A1A] dark:text-white">
-                    PAYMENT TERMS
+      {/* Terms Updates and Modifications */}
+      <section className="py-12 sm:py-16 bg-brand-background">
+        <div className="max-w-4xl mx-auto px-4">
+          <Card className="border border-brand-border">
+            <CardContent className="p-8">
+              <div className="flex items-start gap-4 mb-6">
+                <div className="w-12 h-12 bg-warning rounded-lg flex items-center justify-center flex-shrink-0">
+                  <AlertTriangle className="w-6 h-6 text-white" />
+                </div>
+                <div>
+                  <h2 className="text-2xl font-bold text-text-primary mb-2">Terms Modifications</h2>
+                  <p className="text-text-secondary">How we update and modify these terms</p>
+                </div>
+              </div>
+              <div className="space-y-6">
+                <div>
+                  <h3 className="text-lg font-semibold text-text-primary mb-3">
+                    Modification Rights
                   </h3>
+                  <ul className="space-y-2 text-text-primary leading-relaxed">
+                    <li>
+                      • We reserve the right to modify these Terms at any time without prior notice
+                    </li>
+                    <li>
+                      • Updates will be posted on this page with a revised &quot;Last Updated&quot;
+                      date
+                    </li>
+                    <li>
+                      • Material changes may be communicated via email to registered customers
+                    </li>
+                    <li>
+                      • Continued use of our services constitutes acceptance of modified Terms
+                    </li>
+                  </ul>
                 </div>
-                <div className="space-y-4 text-gray-600 dark:text-gray-300">
-                  <p>• All prices are in Sri Lankan Rupees (LKR) unless otherwise stated</p>
-                  <p>• Payment is required at the time of order placement</p>
-                  <p>• We accept cash, bank transfers, and approved credit cards</p>
-                  <p>• All transactions are processed securely</p>
-                  <p>• Failed payments may result in order cancellation</p>
-                  <p>• Additional charges may apply for international orders</p>
-                </div>
-              </CardContent>
-            </Card>
 
-            <Card className="bg-white dark:bg-gray-700 border-0 shadow-lg">
-              <CardContent className="p-6 sm:p-8">
-                <div className="flex items-center gap-3 mb-6">
-                  <AlertTriangle className="w-8 h-8 text-[#FF3D00]" />
-                  <h3 className="text-2xl font-black text-[#1A1A1A] dark:text-white">
-                    PRICING POLICY
-                  </h3>
+                <div className="bg-warning/10 p-4 rounded-lg border border-warning/20">
+                  <p className="font-semibold text-warning mb-2">Your Responsibility:</p>
+                  <p className="text-text-primary">
+                    It is your responsibility to review these Terms periodically. If you do not
+                    agree with any modifications, you must immediately discontinue use of our
+                    services.
+                  </p>
                 </div>
-                <div className="space-y-4 text-gray-600 dark:text-gray-300">
-                  <p>• Prices are subject to change without prior notice</p>
-                  <p>• Promotional prices are valid for limited periods only</p>
-                  <p>• Bulk order discounts may be available upon request</p>
-                  <p>• All prices include applicable taxes unless stated otherwise</p>
-                  <p>• Price errors will be corrected, and you will be notified</p>
-                  <p>• Special pricing for educational institutions available</p>
+
+                <div>
+                  <h3 className="text-lg font-semibold text-text-primary mb-3">Effective Date</h3>
+                  <ul className="space-y-2 text-text-primary leading-relaxed">
+                    <li>• All modifications become effective immediately upon posting</li>
+                    <li>• Previous versions of Terms are superseded by current version</li>
+                    <li>• Orders placed before modifications are governed by previous Terms</li>
+                  </ul>
                 </div>
-              </CardContent>
-            </Card>
-          </div>
+              </div>
+            </CardContent>
+          </Card>
         </div>
       </section>
 
-      {/* Liability Limitations */}
-      <section className="py-16 sm:py-20 bg-[#1A1A1A] dark:bg-gray-900 text-white">
-        <div className="max-w-7xl mx-auto px-4">
-          <div className="text-center mb-12 sm:mb-16">
-            <Badge className="bg-[#FFD700] text-[#1A1A1A] px-6 py-2 text-sm font-bold mb-4">
-              LEGAL LIMITATIONS
-            </Badge>
-            <h2 className="text-3xl sm:text-4xl md:text-5xl font-black mb-6 leading-tight">
-              LIABILITY
-              <span className="block text-[#AEEA00]">LIMITATIONS</span>
-            </h2>
-            <p className="text-lg sm:text-xl text-gray-300 max-w-3xl mx-auto leading-relaxed">
-              Understanding the scope and limitations of our liability in various situations.
-            </p>
-          </div>
-
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 sm:gap-8">
-            {liabilityLimitations.map((limitation, index) => {
-              const IconComponent = limitation.icon
-              return (
-                <Card
-                  key={index}
-                  className="bg-white/5 border-white/10 hover:bg-white/10 transition-all duration-300"
+      {/* Related Pages and Contact */}
+      <section className="py-12 sm:py-16 bg-brand-surface">
+        <div className="max-w-4xl mx-auto px-4 space-y-8">
+          {/* Related Legal Pages */}
+          <Card className="border border-brand-border">
+            <CardContent className="p-8">
+              <div className="flex items-start gap-4 mb-6">
+                <div className="w-12 h-12 bg-brand-primary rounded-lg flex items-center justify-center flex-shrink-0">
+                  <FileText className="w-6 h-6 text-white" />
+                </div>
+                <div>
+                  <h2 className="text-2xl font-bold text-text-primary mb-2">
+                    Related Legal Documents
+                  </h2>
+                  <p className="text-text-secondary">Additional policies and legal information</p>
+                </div>
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <Link
+                  href="/privacy-policy"
+                  className="group block p-4 bg-brand-background rounded-lg border border-brand-border hover:border-brand-primary transition-colors"
                 >
-                  <CardContent className="p-6 text-center">
-                    <div className="w-16 h-16 bg-gradient-to-br from-[#FFD700] to-[#AEEA00] rounded-full flex items-center justify-center mx-auto mb-4">
-                      <IconComponent className="w-8 h-8 text-[#1A1A1A]" />
+                  <div className="flex items-center gap-3">
+                    <Lock className="w-5 h-5 text-brand-primary" />
+                    <div>
+                      <h3 className="font-semibold text-text-primary group-hover:text-brand-primary transition-colors">
+                        Privacy Policy
+                      </h3>
+                      <p className="text-sm text-text-secondary">
+                        How we collect and protect your data
+                      </p>
                     </div>
-                    <h3 className="text-xl font-bold mb-3">{limitation.title}</h3>
-                    <p className="text-gray-300 leading-relaxed text-sm">
-                      {limitation.description}
-                    </p>
-                  </CardContent>
-                </Card>
-              )
-            })}
-          </div>
-        </div>
-      </section>
+                    <ArrowRight className="w-4 h-4 text-text-secondary group-hover:text-brand-primary ml-auto transition-colors" />
+                  </div>
+                </Link>
 
-      {/* Dispute Resolution */}
-      <section className="py-16 sm:py-20 bg-white dark:bg-gray-900">
-        <div className="max-w-7xl mx-auto px-4">
-          <div className="text-center mb-12 sm:mb-16">
-            <Badge className="bg-[#FF3D00] text-white px-6 py-2 text-sm font-bold mb-4">
-              CONFLICT RESOLUTION
-            </Badge>
-            <h2 className="text-3xl sm:text-4xl md:text-5xl font-black text-[#1A1A1A] dark:text-white mb-6 leading-tight">
-              DISPUTE
-              <span className="block text-[#003DA5] dark:text-[#4A90E2]">RESOLUTION</span>
-            </h2>
-            <p className="text-lg sm:text-xl text-gray-600 dark:text-gray-300 max-w-3xl mx-auto leading-relaxed">
-              We believe in resolving disputes fairly and efficiently through these structured
-              steps.
-            </p>
-          </div>
-
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 sm:gap-8">
-            {disputeResolution.map((step, index) => {
-              const IconComponent = step.icon
-              return (
-                <Card
-                  key={index}
-                  className="hover:shadow-xl transition-all duration-300 border-0 overflow-hidden"
+                <Link
+                  href="/return-policy"
+                  className="group block p-4 bg-brand-background rounded-lg border border-brand-border hover:border-brand-primary transition-colors"
                 >
-                  <CardContent className="p-6 text-center">
-                    <div className="w-16 h-16 bg-gradient-to-br from-[#003DA5] to-[#FF3D00] rounded-full flex items-center justify-center mx-auto mb-4">
-                      <IconComponent className="w-8 h-8 text-white" />
+                  <div className="flex items-center gap-3">
+                    <RotateCcw className="w-5 h-5 text-brand-primary" />
+                    <div>
+                      <h3 className="font-semibold text-text-primary group-hover:text-brand-primary transition-colors">
+                        Return Policy
+                      </h3>
+                      <p className="text-sm text-text-secondary">Returns, exchanges, and refunds</p>
                     </div>
-                    <div className="text-3xl font-black text-[#FFD700] mb-2">STEP {step.step}</div>
-                    <h3 className="text-xl font-bold text-[#1A1A1A] dark:text-white mb-3">
-                      {step.title}
-                    </h3>
-                    <p className="text-gray-600 dark:text-gray-300 leading-relaxed text-sm">
-                      {step.description}
-                    </p>
-                  </CardContent>
-                </Card>
-              )
-            })}
-          </div>
-        </div>
-      </section>
+                    <ArrowRight className="w-4 h-4 text-text-secondary group-hover:text-brand-primary ml-auto transition-colors" />
+                  </div>
+                </Link>
+              </div>
+            </CardContent>
+          </Card>
 
-      {/* Governing Law */}
-      <section className="py-16 sm:py-20 bg-gray-50 dark:bg-gray-800">
-        <div className="max-w-7xl mx-auto px-4">
-          <div className="text-center mb-12 sm:mb-16">
-            <Badge className="bg-[#AEEA00] text-[#1A1A1A] px-6 py-2 text-sm font-bold mb-4">
-              LEGAL JURISDICTION
-            </Badge>
-            <h2 className="text-3xl sm:text-4xl md:text-5xl font-black text-[#1A1A1A] dark:text-white mb-6 leading-tight">
-              GOVERNING
-              <span className="block text-[#003DA5] dark:text-[#4A90E2]">LAW</span>
-            </h2>
-          </div>
-
-          <div className="max-w-4xl mx-auto">
-            <Card className="bg-gradient-to-br from-[#FFD700] to-[#AEEA00] text-[#1A1A1A] border-0">
-              <CardContent className="p-6 sm:p-8">
-                <div className="text-center mb-6">
-                  <Gavel className="w-12 h-12 mx-auto mb-4" />
-                  <h3 className="text-2xl font-black mb-4">SRI LANKAN LAW APPLIES</h3>
+          {/* Contact Information */}
+          <Card className="border border-brand-border">
+            <CardContent className="p-8">
+              <div className="flex items-start gap-4 mb-6">
+                <div className="w-12 h-12 bg-brand-secondary rounded-lg flex items-center justify-center flex-shrink-0">
+                  <Phone className="w-6 h-6 text-white" />
                 </div>
-                <div className="space-y-4 text-sm sm:text-base">
-                  <p>
-                    These terms and conditions are governed by and construed in accordance with the
-                    laws of Sri Lanka.
-                  </p>
-                  <p>
-                    Any disputes arising from these terms will be subject to the exclusive
-                    jurisdiction of the courts of Sri Lanka.
-                  </p>
-                  <p>
-                    If any provision of these terms is found to be invalid or unenforceable, the
-                    remaining provisions will continue to be valid and enforceable.
-                  </p>
-                  <p>
-                    These terms constitute the entire agreement between you and Ralhum Trading
-                    Company Pvt Ltd regarding the use of our services.
+                <div>
+                  <h2 className="text-2xl font-bold text-text-primary mb-2">
+                    Questions About These Terms?
+                  </h2>
+                  <p className="text-text-secondary">
+                    Contact us for clarification or legal assistance
                   </p>
                 </div>
-              </CardContent>
-            </Card>
-          </div>
-        </div>
-      </section>
-
-      {/* Modifications & Updates */}
-      <section className="py-16 sm:py-20 bg-white dark:bg-gray-900">
-        <div className="max-w-7xl mx-auto px-4">
-          <div className="text-center mb-12 sm:mb-16">
-            <Badge className="bg-[#003DA5] text-white px-6 py-2 text-sm font-bold mb-4">
-              TERMS UPDATES
-            </Badge>
-            <h2 className="text-3xl sm:text-4xl md:text-5xl font-black text-[#1A1A1A] dark:text-white mb-6 leading-tight">
-              MODIFICATIONS &<span className="block text-[#FF3D00]">UPDATES</span>
-            </h2>
-          </div>
-
-          <div className="max-w-4xl mx-auto">
-            <Card className="bg-white dark:bg-gray-700 border-0 shadow-lg">
-              <CardContent className="p-6 sm:p-8">
-                <div className="flex items-center gap-3 mb-6">
-                  <AlertTriangle className="w-8 h-8 text-[#FF3D00]" />
-                  <h3 className="text-2xl font-black text-[#1A1A1A] dark:text-white">
-                    IMPORTANT NOTICE
-                  </h3>
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                <div className="space-y-3">
+                  <h3 className="font-semibold text-text-primary">Customer Service</h3>
+                  <div className="space-y-2">
+                    <div className="flex items-center gap-2">
+                      <Phone className="w-4 h-4 text-brand-primary" />
+                      <span className="text-text-primary">{SITE_CONFIG.contact.phone}</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Mail className="w-4 h-4 text-brand-primary" />
+                      <span className="text-text-primary">{SITE_CONFIG.contact.email}</span>
+                    </div>
+                  </div>
                 </div>
-                <div className="space-y-4 text-gray-600 dark:text-gray-300">
-                  <p>• We reserve the right to modify these terms and conditions at any time</p>
-                  <p>
-                    • Changes will be posted on this page with an updated &quot;Last Modified&quot;
-                    date
-                  </p>
-                  <p>
-                    • Significant changes will be communicated via email to registered customers
-                  </p>
-                  <p>• Continued use of our services after changes constitutes acceptance</p>
-                  <p>• We recommend reviewing these terms periodically for updates</p>
-                  <p>• If you disagree with changes, you must discontinue use of our services</p>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-        </div>
-      </section>
 
-      {/* Contact Section */}
-      <section
-        id="contact"
-        className="py-16 sm:py-20 bg-gradient-to-r from-[#003DA5] to-[#FF3D00] text-white"
-      >
-        <div className="max-w-4xl mx-auto px-4 text-center">
-          <Badge className="bg-white text-[#003DA5] px-6 py-2 text-sm font-bold mb-4">
-            LEGAL QUESTIONS?
-          </Badge>
-          <h2 className="text-3xl sm:text-4xl md:text-5xl font-black mb-6 leading-tight">
-            CONTACT OUR
-            <span className="block text-[#FFD700]">LEGAL TEAM</span>
-          </h2>
-          <p className="text-lg sm:text-xl mb-8 opacity-90 leading-relaxed">
-            Have questions about our terms and conditions? Our legal team is available to provide
-            clarification and assistance.
-          </p>
-          <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <Button
-              size="lg"
-              className="bg-white text-[#003DA5] hover:bg-gray-100 px-8 py-4 text-lg font-bold rounded-full"
-              asChild
-            >
-              <Link href="mailto:legal@ralhum.lk">
-                <Mail className="w-5 h-5 mr-2" />
-                EMAIL LEGAL TEAM
-              </Link>
-            </Button>
-            <Button
-              size="lg"
-              variant="outline"
-              className="border-2 border-white text-white hover:bg-white hover:text-[#003DA5] px-8 py-4 text-lg font-bold rounded-full bg-transparent"
-              asChild
-            >
-              <Link href="tel:+94112345678">
-                <Phone className="w-5 h-5 mr-2" />
-                CALL US
-              </Link>
-            </Button>
-          </div>
-          <div className="mt-8 text-sm opacity-80">
-            <p>Legal Team: legal@ralhum.lk | Phone: +94 11 234 5678</p>
-            <p>Business Hours: Monday - Friday, 9:00 AM - 5:00 PM</p>
-          </div>
+                <div className="space-y-3">
+                  <h3 className="font-semibold text-text-primary">Business Hours</h3>
+                  <div className="text-text-secondary text-sm">
+                    <p>{SITE_CONFIG.contact.supportHours}</p>
+                    <p className="mt-1">Response time: Within 24 hours</p>
+                  </div>
+                </div>
+              </div>
+
+              <div className="mt-6 pt-6 border-t border-brand-border">
+                <p className="text-sm text-text-secondary">
+                  For legal matters specifically related to these Terms and Conditions, please email
+                  us with &quot;Legal Inquiry&quot; in the subject line for priority handling.
+                </p>
+              </div>
+            </CardContent>
+          </Card>
         </div>
       </section>
     </main>
