@@ -32,7 +32,7 @@ import { SITE_CONFIG } from '@/config/site-config'
 
 export default function ReturnPolicyPage() {
   return (
-    <main className="min-h-screen bg-brand-background">
+    <main className="min-h-screen mt-8 bg-brand-background">
       {/* Header Section */}
       <section className="py-12 sm:py-16 bg-white border-b border-brand-border">
         <div className="max-w-4xl mx-auto px-4 text-center">

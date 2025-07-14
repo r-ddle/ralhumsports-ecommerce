@@ -211,40 +211,69 @@ export default function Hero() {
           role="region"
           aria-label="Partner brands"
         >
-          <div className="overflow-x-auto w-full scrollbar-none">
-            <div
-              className={`flex gap-3 sm:gap-4 lg:gap-6 w-max ${!reducedMotion ? 'animate-infinite-scroll' : 'justify-center flex-wrap max-w-none'}`}
-            >
-              {(reducedMotion
-                ? SITE_CONFIG.brands
-                : [...SITE_CONFIG.brands, ...SITE_CONFIG.brands, ...SITE_CONFIG.brands]
-              ).map((brand, index) => (
-                <motion.div
-                  key={`${brand.name}-${index}`}
-                  initial={getInitial() ?? { opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{
-                    duration: reducedMotion ? 0.1 : 0.6,
-                    delay: reducedMotion ? 0 : 0.8 + (index % SITE_CONFIG.brands.length) * 0.1,
-                  }}
-                  whileHover={!reducedMotion ? { scale: 1.05, y: -5 } : {}}
-                  className="bg-white/15 backdrop-blur-md border border-white/30 px-3 sm:px-5 lg:px-7 py-3 sm:py-4 lg:py-5 rounded-xl sm:rounded-2xl hover:bg-white/25 hover:border-white/50 transition-all duration-300 cursor-pointer shadow-lg flex-shrink-0 group"
-                  style={{ minWidth: '140px' }}
-                >
-                  <div className="text-center">
-                    <div className="text-white font-bold text-sm sm:text-base lg:text-lg tracking-wide mb-1 group-hover:scale-105 transition-transform duration-300">
-                      {brand.name}
+          {/* Enhanced scrollable container with hidden scrollbar */}
+          <div className="relative overflow-hidden w-full rounded-2xl">
+            <div className="overflow-x-auto w-full scrollbar-hidden pb-2 cursor-grab active:cursor-grabbing">
+              <div
+                className={`flex gap-2 sm:gap-3 md:gap-4 lg:gap-6 w-max ${
+                  !reducedMotion
+                    ? 'animate-infinite-scroll hover:animation-paused'
+                    : 'justify-center flex-wrap max-w-none'
+                }`}
+                onMouseDown={(e) => {
+                  const container = e.currentTarget.parentElement
+                  if (!container) return
+                  const startX = e.pageX - container.offsetLeft
+                  const scrollLeft = container.scrollLeft
+
+                  interface MouseMoveEvent extends MouseEvent {
+                    // No additional properties needed, but interface for clarity
+                  }
+
+                  const handleMouseMove = (e: MouseMoveEvent) => {
+                    if (!container) return
+                    const x: number = e.pageX - container.offsetLeft
+                    const walk: number = (x - startX) * 2
+                    container.scrollLeft = scrollLeft - walk
+                  }
+
+                  const handleMouseUp = () => {
+                    document.removeEventListener('mousemove', handleMouseMove)
+                    document.removeEventListener('mouseup', handleMouseUp)
+                  }
+
+                  document.addEventListener('mousemove', handleMouseMove)
+                  document.addEventListener('mouseup', handleMouseUp)
+                }}
+              >
+                {(reducedMotion
+                  ? SITE_CONFIG.brands
+                  : [...SITE_CONFIG.brands, ...SITE_CONFIG.brands, ...SITE_CONFIG.brands]
+                ).map((brand, index) => (
+                  <motion.div
+                    key={`${brand.name}-${index}`}
+                    initial={getInitial() ?? { opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{
+                      duration: reducedMotion ? 0.1 : 0.6,
+                      delay: reducedMotion ? 0 : 0.8 + (index % SITE_CONFIG.brands.length) * 0.1,
+                    }}
+                    whileHover={!reducedMotion ? { scale: 1.05, y: -5 } : {}}
+                    className="bg-white/15 backdrop-blur-md border border-white/30 rounded-lg sm:rounded-xl lg:rounded-2xl hover:bg-white/25 hover:border-white/50 transition-all duration-300 cursor-pointer shadow-lg flex-shrink-0 group min-w-[110px] sm:min-w-[130px] md:min-w-[140px] lg:min-w-[150px] max-w-[130px] sm:max-w-[150px] md:max-w-[160px] lg:max-w-[180px]"
+                  >
+                    <div className="px-3 sm:px-4 md:px-5 lg:px-7 py-3 sm:py-4 lg:py-5 text-center">
+                      <div className="text-white font-bold text-xs sm:text-sm md:text-base lg:text-lg tracking-wide mb-1 group-hover:scale-105 transition-transform duration-300 truncate">
+                        {brand.name}
+                      </div>
+                      <div className="text-white/70 text-xs sm:text-xs md:text-sm font-medium truncate">
+                        {brand.category}
+                      </div>
                     </div>
-                    <div className="text-white/70 text-xs sm:text-sm font-medium">
-                      {brand.category}
-                    </div>
-                  </div>
-                </motion.div>
-              ))}
+                  </motion.div>
+                ))}
+              </div>
             </div>
           </div>
-
-          {/* Removed gradient fade edges for better visual */}
         </motion.div>
       </div>
     </section>

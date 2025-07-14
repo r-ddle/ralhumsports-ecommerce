@@ -203,38 +203,83 @@
   }
 }
 
-@keyframes infinite-scroll {
-          0% {
-            transform: translateX(0);
-          }
-          100% {
-            transform: translateX(-50%);
-          }
-        }
+/* Hide scrollbar for carousel */
+.scrollbar-hidden {
+  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none; /* IE/Edge */
+}
 
-        .animate-infinite-scroll {
-          animation: infinite-scroll 30s linear infinite;
-        }
+.scrollbar-hidden::-webkit-scrollbar {
+  display: none; /* Chrome, Safari, Opera */
+}
 
-        @media (prefers-reduced-motion: reduce) {
-          .animate-infinite-scroll {
-            animation: none;
-          }
-        }
+/* Infinite scroll animation */
+@keyframes infiniteScroll {
+  0% {
+    transform: translateX(0);
+  }
+  100% {
+    transform: translateX(-33.333%);
+  }
+}
 
-        .mask-edges {
-          mask-image: linear-gradient(
-            to right,
-            transparent,
-            black 2rem,
-            black calc(100% - 2rem),
-            transparent
-          );
-          -webkit-mask-image: linear-gradient(
-            to right,
-            transparent,
-            black 2rem,
-            black calc(100% - 2rem),
-            transparent
-          );
-        }
+.animate-infinite-scroll {
+  animation: infiniteScroll 30s linear infinite;
+}
+
+/* Pause animation on hover */
+.hover\:animation-paused:hover {
+  animation-play-state: paused;
+}
+
+/* Curved fade masks */
+.mask-fade-left {
+  mask: radial-gradient(ellipse at left, black 30%, transparent 70%);
+  -webkit-mask: radial-gradient(ellipse at left, black 30%, transparent 70%);
+}
+
+.mask-fade-right {
+  mask: radial-gradient(ellipse at right, black 30%, transparent 70%);
+  -webkit-mask: radial-gradient(ellipse at right, black 30%, transparent 70%);
+}
+
+/* Mobile responsiveness for animation */
+@media (max-width: 640px) {
+  .animate-infinite-scroll {
+    animation-duration: 25s;
+  }
+}
+
+/* Pause animation on hover for desktop */
+@media (hover: hover) {
+  .animate-infinite-scroll:hover {
+    animation-play-state: paused;
+  }
+}
+
+/* Remove hover effects on touch devices */
+@media (hover: none) {
+  .group:hover {
+    transform: none !important;
+  }
+}
+
+/* Cursor styles for dragging */
+.cursor-grab {
+  cursor: grab;
+}
+
+.cursor-grab:active {
+  cursor: grabbing;
+}
+
+/* Smooth scroll behavior */
+.scrollbar-hidden {
+  scroll-behavior: smooth;
+}
+
+/* Better drag experience */
+.scrollbar-hidden * {
+  user-select: none;
+  -webkit-user-drag: none;
+}
