@@ -9,6 +9,7 @@ import { CartSidebar } from '@/components/cart/cart-sidebar'
 import { Toaster } from '@/components/ui/sonner'
 import ErrorBoundary from '@/components/error-boundary'
 import { Suspense } from 'react'
+import { Analytics } from '@vercel/analytics/next'
 
 const inter = Inter({
   subsets: ['latin'],
@@ -134,6 +135,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             <Toaster />
           </CartProvider>
         </ErrorBoundary>
+        <Analytics />
       </body>
     </html>
   )
