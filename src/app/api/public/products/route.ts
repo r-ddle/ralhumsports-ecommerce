@@ -32,7 +32,8 @@ export async function GET(request: NextRequest) {
   const page = parseInt(searchParams.get('page') || '1')
   const limit = parseInt(searchParams.get('limit') || '12')
   const search = searchParams.get('search')
-  const categorySlug = searchParams.get('category')
+  // Support multiple category params
+  const categorySlugs = searchParams.getAll('category')
   const brand = searchParams.get('brand') // This will be a slug
   const sort = searchParams.get('sort') || 'createdAt'
   const order = searchParams.get('order') || 'desc'
@@ -47,7 +48,7 @@ export async function GET(request: NextRequest) {
     page,
     limit,
     search,
-    categorySlug,
+    categorySlugs,
     brand,
     sort,
     order,
@@ -82,8 +83,12 @@ export async function GET(request: NextRequest) {
     }
 
     // --- Category filter ---
-    if (categorySlug) {
-      whereConditions.category = { equals: categorySlug }
+    if (categorySlugs && categorySlugs.length > 0) {
+      if (categorySlugs.length === 1) {
+        whereConditions['category.slug'] = { equals: categorySlugs[0] }
+      } else {
+        whereConditions['category.slug'] = { in: categorySlugs }
+      }
     }
 
     // --- Brand filter (resolve slug to ID) ---

@@ -12,6 +12,7 @@ import Link from 'next/link'
 import type { ProductListItem } from '@/types/api'
 import { LazyImage } from '@/components/ui/lazy-image'
 import { toast } from 'sonner'
+import { RichTextRenderer } from '@/components/RichTextRenderer'
 
 interface ProductCardProps {
   product: ProductListItem
@@ -518,23 +519,20 @@ function QuickViewContent({ product }: QuickViewContentProps) {
         </div>
 
         {/* Description */}
-        {(product.description || product.description) && (
-          <div>
-            <h4 className="font-semibold mb-2 text-gray-900">Description:</h4>
-            <div className="text-sm text-gray-700 leading-relaxed">
-              {typeof product.description === 'string' ? (
-                <p>
-                  {product.description.slice(0, 300)}
-                  {product.description.length > 300 ? '...' : ''}
-                </p>
-              ) : product.description ? (
-                <p>{JSON.stringify(product.description)}</p>
-              ) : (
-                <p>No description available.</p>
-              )}
-            </div>
+        <div>
+          <h4 className="font-semibold mb-2 text-gray-900">Description:</h4>
+          <div className="text-sm text-gray-700 leading-relaxed">
+            {product.description && typeof product.description === 'object' ? (
+              <RichTextRenderer content={product.description} />
+            ) : product.description &&
+              typeof product.description === 'string' &&
+              product.description.trim() !== '' ? (
+              <p>{product.description}</p>
+            ) : (
+              <p>No description available.</p>
+            )}
           </div>
-        )}
+        </div>
 
         {/* Features */}
         {product.features && product.features.length > 0 && (

@@ -11,24 +11,16 @@ import { ProductCardSkeleton, ProductListSkeleton } from '@/components/ui/lazy-i
 import {
   Grid3X3,
   List,
-  Filter,
   Package,
-  Star,
-  TrendingUp,
-  Zap,
   AlertCircle,
-  ChevronDown,
   ChevronLeft,
   ChevronRight,
   Sparkles,
   SlidersHorizontal,
-  X,
-  Search,
 } from 'lucide-react'
 import { Separator } from '@/components/ui/separator'
 import { ProductListItem, Category, Brand } from '@/types/api'
 import { motion, AnimatePresence } from 'framer-motion'
-import { SITE_CONFIG } from '@/config/site-config'
 
 interface ProductFilters {
   categories: Category[]
@@ -40,8 +32,8 @@ interface ProductQueryParams {
   page?: number
   limit?: number
   search?: string
-  category?: string
-  brand?: string
+  categories?: string[]
+  brands?: string[]
   sort?: 'name' | 'createdAt' | 'updatedAt' | 'price'
   order?: 'asc' | 'desc'
   status?: 'active' | 'inactive' | 'draft' | 'out-of-stock' | 'discontinued'
@@ -57,14 +49,14 @@ export default function StorePage() {
   const [filterOptions, setFilterOptions] = useState<ProductFilters>({
     categories: [],
     brands: [],
-    priceRange: { min: 0, max: 0 },
+    priceRange: { min: 0, max: 100000 }, // Default range
   })
   const [loading, setLoading] = useState(true)
   const [filtersLoading, setFiltersLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [pagination, setPagination] = useState({
     page: 1,
-    limit: 24, // Optimized for e-commerce (24-48 products per page)
+    limit: 24,
     totalPages: 1,
     totalDocs: 0,
     hasNextPage: false,
@@ -78,207 +70,153 @@ export default function StorePage() {
     status: 'active',
   })
 
-  // Performance optimization: Detect reduced motion
   const [prefersReducedMotion, setPrefersReducedMotion] = useState(false)
 
   useEffect(() => {
     const mediaQuery = window.matchMedia('(prefers-reduced-motion: reduce)')
     setPrefersReducedMotion(mediaQuery.matches)
-
     const handleChange = () => setPrefersReducedMotion(mediaQuery.matches)
     mediaQuery.addEventListener('change', handleChange)
     return () => mediaQuery.removeEventListener('change', handleChange)
   }, [])
 
-  // Helper: get lowest variant price (if variants exist)
-  function getDisplayPrice(
+  const getDisplayPrice = (
     product: ProductListItem & { variants?: Array<{ price: number }> },
-  ): number {
+  ): number => {
     if (product.variants && product.variants.length > 0) {
       return Math.min(...product.variants.map((v) => v.price))
     }
     return product.price
   }
 
-  // Fetch products with performance optimization
-  const fetchProducts = useCallback(
-    async (filters: ProductQueryParams = currentFilters) => {
-      try {
-        setLoading(true)
-        setError(null)
-
-        const params = new URLSearchParams()
-        Object.entries(filters).forEach(([key, value]) => {
-          if (value !== undefined && value !== null && value !== '') {
-            params.append(key, value.toString())
-          }
-        })
-
-        console.log('Fetching products with params:', params.toString())
-        const response = await fetch(`/api/public/products?${params.toString()}`)
-
-        if (!response.ok) {
-          throw new Error(`HTTP error! status: ${response.status}`)
-        }
-
-        const data = await response.json()
-        console.log('Products API response:', data)
-
-        if (data.success && data.data) {
-          const productsWithDisplayPrice = data.data.map(
-            (product: ProductListItem & { variants?: Array<{ price: number }> }) => ({
-              ...product,
-              _displayPrice: getDisplayPrice(product),
-            }),
-          )
-          setProducts(productsWithDisplayPrice)
-          setPagination({
-            page: data.pagination.page,
-            limit: data.pagination.limit,
-            totalPages: data.pagination.totalPages,
-            totalDocs: data.pagination.totalDocs,
-            hasNextPage: data.pagination.hasNextPage,
-            hasPrevPage: data.pagination.hasPrevPage,
-          })
-        } else {
-          setError(data.error || data.details || 'Failed to load products')
-          setProducts([])
-        }
-      } catch (error) {
-        console.error('Error fetching products:', error)
-        setError('Failed to load products. Please try again.')
-      } finally {
-        setLoading(false)
-      }
-    },
-    [currentFilters],
-  )
-
-  // Fetch filter options
   const fetchFilterOptions = useCallback(async () => {
     try {
       setFiltersLoading(true)
-      console.log('Fetching filter metadata...')
       const response = await fetch('/api/public/products/filters-meta')
-
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`)
-      }
-
+      if (!response.ok) throw new Error('Failed to fetch filter options')
       const data = await response.json()
-      console.log('Filter metadata response:', data)
-
       if (data.success && data.data) {
         setFilterOptions({
           categories: data.data.categories || [],
           brands: data.data.brands || [],
           priceRange: data.data.priceRange || { min: 0, max: 100000 },
         })
-      } else {
-        setFilterOptions({
-          categories: [],
-          brands: [],
-          priceRange: { min: 0, max: 100000 },
-        })
       }
-    } catch (error) {
-      console.error('Error fetching filter options:', error)
+    } catch (err) {
+      console.error('Error fetching filter options:', err)
     } finally {
       setFiltersLoading(false)
     }
   }, [])
 
-  // Event handlers
   const handleFiltersChange = (filters: Partial<ProductQueryParams>) => {
-    const updatedFilters = { ...currentFilters, ...filters, page: 1 }
-    setCurrentFilters(updatedFilters)
-    fetchProducts(updatedFilters)
+    setCurrentFilters((prev) => ({
+      ...prev,
+      ...filters,
+      page: 1,
+    }))
   }
 
   const handleSortChange = (sort: string, order: string) => {
-    const updatedFilters = { ...currentFilters, sort: sort as any, order: order as any, page: 1 }
-    setCurrentFilters(updatedFilters)
-    fetchProducts(updatedFilters)
-  }
-
-  const handleSearchChange = (search: string) => {
-    const updatedFilters = { ...currentFilters, search, page: 1 }
-    setCurrentFilters(updatedFilters)
-    fetchProducts(updatedFilters)
+    setCurrentFilters((prev) => ({
+      ...prev,
+      sort: sort as any,
+      order: order as any,
+      page: 1,
+    }))
   }
 
   const handleResetFilters = () => {
-    const resetFilters = {
+    setCurrentFilters((prev) => ({
       page: 1,
-      limit: 24,
-      sort: 'createdAt' as const,
-      order: 'desc' as const,
-      status: 'active' as const,
-    }
-    setCurrentFilters(resetFilters)
-    fetchProducts(resetFilters)
+      limit: prev.limit,
+      sort: 'createdAt',
+      order: 'desc',
+      status: 'active',
+    }))
   }
 
   const handlePageChange = (page: number) => {
     if (page < 1 || page > pagination.totalPages) return
-
-    const updatedFilters = { ...currentFilters, page }
-    setCurrentFilters(updatedFilters)
-    fetchProducts(updatedFilters)
-
-    // Smooth scroll to top
+    setCurrentFilters((prev) => ({ ...prev, page }))
     window.scrollTo({ top: 0, behavior: 'smooth' })
   }
 
-  // Initialize
   useEffect(() => {
     fetchFilterOptions()
-    fetchProducts()
-  }, [fetchFilterOptions, fetchProducts])
+  }, [fetchFilterOptions])
 
-  // Animation variants
+  useEffect(() => {
+    const fetchProducts = async () => {
+      setLoading(true)
+      setError(null)
+      const params = new URLSearchParams()
+
+      Object.entries(currentFilters).forEach(([key, value]) => {
+        if (value === undefined || value === null || value === '') return
+        // Special handling for categories/brands arrays
+        if (key === 'categories' && Array.isArray(value)) {
+          value.forEach((v) => params.append('category', v))
+        } else if (key === 'brands' && Array.isArray(value)) {
+          value.forEach((v) => params.append('brand', v))
+        } else if (Array.isArray(value)) {
+          value.forEach((v) => params.append(key, v))
+        } else {
+          params.append(key, String(value))
+        }
+      })
+
+      try {
+        const response = await fetch(`/api/public/products?${params.toString()}`)
+        if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`)
+        const data = await response.json()
+
+        if (data.success && data.data) {
+          const productsWithDisplayPrice = data.data.map((product: any) => ({
+            ...product,
+            _displayPrice: getDisplayPrice(product),
+          }))
+          setProducts(productsWithDisplayPrice)
+          setPagination(data.pagination)
+        } else {
+          throw new Error(data.error || 'Failed to load products')
+        }
+      } catch (err: any) {
+        console.error('Error fetching products:', err)
+        setError(err.message)
+        setProducts([])
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    fetchProducts()
+  }, [currentFilters])
+
   const containerVariants = {
     hidden: { opacity: 0 },
-    visible: {
-      opacity: 1,
-      transition: {
-        staggerChildren: prefersReducedMotion ? 0 : 0.1,
-        duration: prefersReducedMotion ? 0 : 0.6,
-      },
-    },
+    visible: { opacity: 1, transition: { staggerChildren: 0.1 } },
   }
 
   const itemVariants = {
-    hidden: { opacity: 0, y: prefersReducedMotion ? 0 : 20 },
-    visible: {
-      opacity: 1,
-      y: 0,
-      transition: { duration: prefersReducedMotion ? 0 : 0.5 },
-    },
+    hidden: { opacity: 0, y: 20 },
+    visible: { opacity: 1, y: 0 },
   }
 
-  // Memoized grid classes for performance
   const gridClasses = useMemo(() => {
-    if (viewMode === 'list') return 'grid-cols-1'
-
-    // Mobile: 1, Tablet: 2, Desktop: 3, Large Desktop: 4
-    return 'grid-cols-1 sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-4'
+    return viewMode === 'list'
+      ? 'grid-cols-1'
+      : 'grid-cols-1 sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-4'
   }, [viewMode])
 
-  // Active filters count
   const activeFiltersCount = useMemo(() => {
-    let count = 0
-    if (currentFilters.search) count++
-    if (currentFilters.category) count++
-    if (currentFilters.brand) count++
-    if (currentFilters.minPrice) count++
-    if (currentFilters.maxPrice) count++
-    return count
+    const { search, categories, brands, minPrice, maxPrice, inStock } = currentFilters
+    return [search, categories?.length, brands?.length, minPrice, maxPrice, inStock].filter(Boolean)
+      .length
   }, [currentFilters])
 
   return (
     <main className="min-h-screen pt-8 mt-5 bg-brand-background">
-      {/* Clean Hero Section */}
       <section className="relative py-8 sm:py-12 overflow-hidden bg-brand-background">
         <div className="absolute inset-0 overflow-hidden pointer-events-none">
           <motion.div
@@ -286,41 +224,20 @@ export default function StorePage() {
             animate={
               prefersReducedMotion
                 ? {}
-                : {
-                    scale: [1, 1.2, 1],
-                    opacity: [0.3, 0.6, 0.3],
-                    x: [0, 30, 0],
-                    y: [0, -20, 0],
-                  }
+                : { scale: [1, 1.2, 1], opacity: [0.3, 0.6, 0.3], x: [0, 30, 0], y: [0, -20, 0] }
             }
-            transition={{
-              duration: 8,
-              repeat: Number.POSITIVE_INFINITY,
-              ease: 'easeInOut',
-            }}
+            transition={{ duration: 8, repeat: Infinity, ease: 'easeInOut' }}
           />
           <motion.div
             className="absolute top-1/3 right-1/4 w-96 h-96 bg-gradient-to-br from-brand-accent/10 to-brand-primary/10 rounded-full blur-3xl"
             animate={
               prefersReducedMotion
                 ? {}
-                : {
-                    scale: [1, 0.8, 1],
-                    opacity: [0.4, 0.7, 0.4],
-                    x: [0, -40, 0],
-                    y: [0, 30, 0],
-                  }
+                : { scale: [1, 0.8, 1], opacity: [0.4, 0.7, 0.4], x: [0, -40, 0], y: [0, 30, 0] }
             }
-            transition={{
-              duration: 10,
-              repeat: Number.POSITIVE_INFINITY,
-              ease: 'easeInOut',
-              delay: 2,
-            }}
+            transition={{ duration: 10, repeat: Infinity, ease: 'easeInOut', delay: 2 }}
           />
         </div>
-
-        {/* Wider container for better space utilization */}
         <div className="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
           <motion.div
             className="text-center"
@@ -335,7 +252,6 @@ export default function StorePage() {
               <Sparkles className="w-4 h-4" />
               PREMIUM SPORTS STORE
             </motion.div>
-
             <motion.h1
               variants={itemVariants}
               className="text-4xl sm:text-5xl md:text-6xl font-black mb-6 leading-tight"
@@ -345,7 +261,6 @@ export default function StorePage() {
                 SPORTS EQUIPMENT
               </span>
             </motion.h1>
-
             <motion.p
               variants={itemVariants}
               className="text-base sm:text-lg md:text-xl text-text-secondary max-w-3xl mx-auto mb-6 sm:mb-8 leading-relaxed"
@@ -357,30 +272,25 @@ export default function StorePage() {
         </div>
       </section>
 
-      {/* Main E-commerce Section */}
       <section className="py-12 bg-brand-background">
-        {/* Wider container for better space utilization */}
         <div className="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8">
-          {/* Error Display */}
           <AnimatePresence>
             {error && (
               <motion.div
                 initial={{ opacity: 0, scale: 0.95 }}
                 animate={{ opacity: 1, scale: 1 }}
                 exit={{ opacity: 0, scale: 0.95 }}
-                transition={{ duration: 0.3 }}
                 className="mb-6"
               >
-                <Alert className="border-red-200 bg-red-50 border">
-                  <AlertCircle className="h-4 w-4 text-red-600" />
-                  <AlertDescription className="text-red-800">{error}</AlertDescription>
+                <Alert variant="destructive">
+                  <AlertCircle className="h-4 w-4" />
+                  <AlertDescription>{error}</AlertDescription>
                 </Alert>
               </motion.div>
             )}
           </AnimatePresence>
 
           <div className="flex flex-col lg:flex-row gap-8">
-            {/* Modern Filter Sidebar */}
             <motion.aside
               className={`lg:w-80 flex-shrink-0 ${showFilters ? 'block' : 'hidden lg:block'}`}
               initial={{ opacity: 0, x: -20 }}
@@ -396,7 +306,6 @@ export default function StorePage() {
                     currentFilters={currentFilters}
                     onFiltersChange={handleFiltersChange}
                     onSortChange={handleSortChange}
-                    onSearchChange={handleSearchChange}
                     onReset={handleResetFilters}
                     isOpen={
                       showFilters || (typeof window !== 'undefined' && window.innerWidth >= 1024)
@@ -408,15 +317,12 @@ export default function StorePage() {
               </div>
             </motion.aside>
 
-            {/* Products Section */}
             <div className="flex-1">
-              {/* Professional Toolbar */}
               <Card className="mb-6 bg-brand-surface border-brand-border shadow-lg">
                 <CardContent className="p-4">
                   <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                    {/* Results & Active Filters */}
                     <div className="flex flex-col sm:flex-row sm:items-center gap-3">
-                      {pagination.totalDocs > 0 && (
+                      {!loading && pagination.totalDocs > 0 && (
                         <p className="text-sm text-text-secondary font-medium">
                           Showing {(pagination.page - 1) * pagination.limit + 1}-
                           {Math.min(pagination.page * pagination.limit, pagination.totalDocs)} of{' '}
@@ -426,8 +332,6 @@ export default function StorePage() {
                           products
                         </p>
                       )}
-
-                      {/* Active Filters Display */}
                       {activeFiltersCount > 0 && (
                         <div className="flex items-center gap-2">
                           <Badge variant="secondary" className="text-xs">
@@ -444,10 +348,7 @@ export default function StorePage() {
                         </div>
                       )}
                     </div>
-
-                    {/* View Mode & Mobile Filter Toggle */}
                     <div className="flex items-center gap-2">
-                      {/* Mobile Filter Toggle */}
                       <Button
                         variant="outline"
                         size="sm"
@@ -462,10 +363,7 @@ export default function StorePage() {
                           </Badge>
                         )}
                       </Button>
-
                       <Separator orientation="vertical" className="h-6" />
-
-                      {/* View Mode Toggle */}
                       <div className="flex items-center border border-brand-border rounded-lg p-1">
                         <Button
                           variant={viewMode === 'grid' ? 'default' : 'ghost'}
@@ -489,7 +387,6 @@ export default function StorePage() {
                 </CardContent>
               </Card>
 
-              {/* Products Grid */}
               <AnimatePresence mode="wait">
                 {loading ? (
                   <motion.div
@@ -499,7 +396,7 @@ export default function StorePage() {
                     exit={{ opacity: 0 }}
                     className={`grid gap-4 ${gridClasses}`}
                   >
-                    {Array.from({ length: 24 }).map((_, i) =>
+                    {Array.from({ length: pagination.limit }).map((_, i) =>
                       viewMode === 'grid' ? (
                         <ProductCardSkeleton key={i} />
                       ) : (
@@ -515,27 +412,22 @@ export default function StorePage() {
                     exit={{ opacity: 0 }}
                     className={`grid gap-4 sm:gap-6 ${gridClasses}`}
                   >
-                    {products.map(
-                      (product: ProductListItem & { _displayPrice?: number }, index) => (
-                        <motion.div
-                          key={product.id}
-                          initial={prefersReducedMotion ? false : { opacity: 0, y: 20 }}
-                          animate={{ opacity: 1, y: 0 }}
-                          transition={{
-                            duration: prefersReducedMotion ? 0 : 0.5,
-                            delay: prefersReducedMotion ? 0 : index * 0.05,
-                          }}
-                        >
-                          <ProductCard
-                            product={{ ...product, price: product._displayPrice ?? product.price }}
-                            variant={viewMode}
-                            showBrand={true}
-                            showCategory={true}
-                            className="h-full"
-                          />
-                        </motion.div>
-                      ),
-                    )}
+                    {products.map((product, index) => (
+                      <motion.div
+                        key={product.id}
+                        initial={prefersReducedMotion ? {} : { opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ duration: 0.5, delay: index * 0.05 }}
+                      >
+                        <ProductCard
+                          product={{ ...product, price: product.price ?? product.price }}
+                          variant={viewMode}
+                          showBrand={true}
+                          showCategory={true}
+                          className="h-full"
+                        />
+                      </motion.div>
+                    ))}
                   </motion.div>
                 ) : (
                   <motion.div
@@ -559,22 +451,17 @@ export default function StorePage() {
                 )}
               </AnimatePresence>
 
-              {/* Professional Pagination */}
-              {pagination.totalPages > 1 && !loading && (
+              {!loading && pagination.totalPages > 1 && (
                 <motion.div
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: 0.3 }}
                   className="mt-12 flex flex-col sm:flex-row items-center justify-between gap-4"
                 >
-                  {/* Page Info */}
                   <div className="text-sm text-text-secondary">
                     Page {pagination.page} of {pagination.totalPages}
                   </div>
-
-                  {/* Pagination Controls */}
                   <div className="flex items-center gap-1">
-                    {/* Previous Button */}
                     <Button
                       variant="outline"
                       size="sm"
@@ -585,24 +472,15 @@ export default function StorePage() {
                       <ChevronLeft className="w-4 h-4 mr-1" />
                       Previous
                     </Button>
-
-                    {/* Page Numbers */}
                     <div className="flex items-center gap-1 mx-2">
-                      {Array.from({ length: Math.min(7, pagination.totalPages) }).map((_, i) => {
-                        let page: number
-
-                        if (pagination.totalPages <= 7) {
-                          page = i + 1
-                        } else if (pagination.page <= 4) {
-                          page = i + 1
-                        } else if (pagination.page >= pagination.totalPages - 3) {
-                          page = pagination.totalPages - 6 + i
-                        } else {
-                          page = pagination.page - 3 + i
+                      {/* Pagination logic can be improved, but is functional */}
+                      {Array.from({ length: Math.min(5, pagination.totalPages) }).map((_, i) => {
+                        let page = i + 1
+                        // Basic logic to center current page
+                        if (pagination.page > 3 && pagination.totalPages > 5) {
+                          page = pagination.page - 2 + i
                         }
-
-                        if (page < 1 || page > pagination.totalPages) return null
-
+                        if (page > pagination.totalPages) return null
                         return (
                           <Button
                             key={page}
@@ -616,8 +494,6 @@ export default function StorePage() {
                         )
                       })}
                     </div>
-
-                    {/* Next Button */}
                     <Button
                       variant="outline"
                       size="sm"
@@ -629,19 +505,17 @@ export default function StorePage() {
                       <ChevronRight className="w-4 h-4 ml-1" />
                     </Button>
                   </div>
-
-                  {/* Jump to Page (Desktop only) */}
                   <div className="hidden sm:flex items-center gap-2 text-sm">
                     <span className="text-text-secondary">Go to page:</span>
                     <input
                       type="number"
                       min={1}
                       max={pagination.totalPages}
-                      value={pagination.page}
-                      onChange={(e) => {
-                        const page = parseInt(e.target.value)
-                        if (page >= 1 && page <= pagination.totalPages) {
-                          handlePageChange(page)
+                      defaultValue={pagination.page}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter') {
+                          const page = parseInt((e.target as HTMLInputElement).value)
+                          if (page >= 1 && page <= pagination.totalPages) handlePageChange(page)
                         }
                       }}
                       className="w-16 h-8 px-2 text-center border border-brand-border rounded bg-brand-surface"
