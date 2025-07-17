@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { getPayload } from 'payload'
 import config from '@payload-config'
+import { SITE_CONFIG } from '@/config/site-config'
 
 export async function GET() {
   try {
@@ -62,11 +63,37 @@ export async function GET() {
       max: prices.length > 0 ? Math.max(...prices) : 1000,
     }
 
+    // Create sports categories mapping for filtering
+    const sportsCategories = [
+      { name: 'Cricket', slug: 'cricket', category: 'Ball Sports' },
+      { name: 'Rugby', slug: 'rugby', category: 'Ball Sports' },
+      { name: 'Basketball', slug: 'basketball', category: 'Ball Sports' },
+      { name: 'Volleyball', slug: 'volleyball', category: 'Ball Sports' },
+      { name: 'Tennis', slug: 'tennis', category: 'Racquet Sports' },
+      { name: 'Badminton', slug: 'badminton', category: 'Racquet Sports' },
+      { name: 'Squash', slug: 'squash', category: 'Racquet Sports' },
+      { name: 'Hockey', slug: 'hockey', category: 'Field Sports' },
+      { name: 'Football', slug: 'football', category: 'Field Sports' },
+      { name: 'Training', slug: 'training', category: 'Training & Fitness' },
+    ]
+
+    // Get brand info from SITE_CONFIG with logos
+    const brandInfo = SITE_CONFIG.brands.map((brand) => ({
+      id: brand.slug,
+      name: brand.name,
+      slug: brand.slug,
+      image: brand.image,
+      category: brand.category,
+      tagline: brand.tagline,
+    }))
+
     const response = NextResponse.json({
       success: true,
       data: {
         categories: categoriesResult.docs,
         brands: brandsResult.docs,
+        sportsCategories,
+        brandInfo,
         priceRange,
       },
     })

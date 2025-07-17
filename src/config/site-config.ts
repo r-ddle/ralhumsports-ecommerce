@@ -854,6 +854,422 @@ export const SITE_CONFIG = {
     'Uva Province',
     'Sabaragamuwa Province',
   ],
+  /**
+   * Sports Categories Hierarchy
+   * Sports Category > Sports > Sports Items > Brands
+   */
+  SPORTS_CATEGORIES: {
+    'Ball Sports': {
+      icon: '⚽',
+      description: 'Equipment for ball-based sports',
+      slug: 'ball-sports',
+      sports: {
+        Cricket: {
+          description: 'Cricket bats, balls, protective gear, and accessories',
+          slug: 'cricket',
+          items: {
+            Bats: {
+              description: 'Premium cricket bats for all levels',
+              slug: 'bats',
+              brands: [
+                { name: 'Gray-Nicolls', description: 'Premium cricket equipment since 1855' },
+                { name: 'Leverage', description: 'Advanced bowling machines' },
+              ],
+              image: '/cricket.avif',
+              link: '/products?category=cricket&item=bats',
+            },
+            Balls: {
+              description: 'Match and training cricket balls',
+              slug: 'balls',
+              brands: [
+                { name: 'Gray-Nicolls', description: 'International standard cricket balls' },
+              ],
+              image: '/cricket.avif',
+              link: '/products?category=cricket&item=balls',
+            },
+            Protective: {
+              description: 'Pads, gloves, helmets, and guards',
+              slug: 'protective',
+              brands: [{ name: 'Aero', description: 'Professional protective gear' }],
+              image: '/cricket.avif',
+              link: '/products?category=cricket&item=protective',
+            },
+          },
+        },
+        Rugby: {
+          description: 'Rugby balls, protective gear, and accessories',
+          items: {
+            Balls: {
+              description: 'Official match and training rugby balls',
+              brands: [{ name: 'Gilbert', description: 'Official Rugby World Cup supplier' }],
+              image: '/rugby.avif',
+              link: '/products?category=rugby&item=balls',
+            },
+            Protective: {
+              description: 'Headguards, pads, and team accessories',
+              brands: [{ name: 'Gilbert', description: 'Advanced rugby protective gear' }],
+              image: '/rugby.avif',
+              link: '/products?category=rugby&item=protective',
+            },
+          },
+        },
+        Basketball: {
+          description: 'Basketballs and accessories',
+          items: {
+            Balls: {
+              description: 'Olympic-grade basketballs',
+              brands: [{ name: 'Molten', description: 'Official Olympic basketball supplier' }],
+              image: '/basketball.avif',
+              link: '/products?category=basketball&item=balls',
+            },
+          },
+        },
+        Volleyball: {
+          description: 'Championship volleyballs and accessories',
+          items: {
+            Balls: {
+              description: 'Professional volleyballs',
+              brands: [{ name: 'Molten', description: 'Championship quality volleyballs' }],
+              image: '/volleyball.avif',
+              link: '/products?category=volleyball&item=balls',
+            },
+          },
+        },
+      },
+    },
+    'Racquet Sports': {
+      icon: '🎾',
+      description: 'Professional racquet equipment',
+      slug: 'racquet-sports',
+      sports: {
+        Tennis: {
+          description: 'Tennis rackets, strings, and accessories',
+          slug: 'tennis',
+          items: {
+            Rackets: {
+              description: 'Tournament-grade tennis rackets',
+              slug: 'rackets',
+              brands: [
+                { name: 'Babolat', description: 'Roland-Garros official partner' },
+                { name: 'Ashaway', description: 'Premium tennis strings since 1824' },
+              ],
+              image: '/tennis.avif',
+              link: '/products?category=tennis&item=rackets',
+            },
+            Strings: {
+              description: 'High-performance tennis strings',
+              slug: 'strings',
+              brands: [{ name: 'Ashaway', description: 'Professional tennis strings' }],
+              image: '/tennis.avif',
+              link: '/products?category=tennis&item=strings',
+            },
+          },
+        },
+        Badminton: {
+          description: 'Badminton rackets, strings, and accessories',
+          slug: 'badminton',
+          items: {
+            Rackets: {
+              description: 'Professional badminton rackets',
+              slug: 'rackets',
+              brands: [
+                { name: 'Babolat', description: 'Professional badminton equipment' },
+                { name: 'Ashaway', description: 'High-performance badminton strings' },
+              ],
+              image: '/badminton.avif',
+              link: '/products?category=badminton&item=rackets',
+            },
+            Strings: {
+              description: 'Competitive badminton strings',
+              slug: 'strings',
+              brands: [{ name: 'Ashaway', description: 'High-performance badminton strings' }],
+              image: '/badminton.avif',
+              link: '/products?category=badminton&item=strings',
+            },
+          },
+        },
+        Squash: {
+          description: 'Squash rackets and strings',
+          slug: 'squash',
+          items: {
+            Rackets: {
+              description: 'Precision squash rackets',
+              slug: 'rackets',
+              brands: [
+                { name: 'Ashaway', description: 'Precision squash strings for power and control' },
+              ],
+              image: '/squash.avif',
+              link: '/products?category=squash&item=rackets',
+            },
+          },
+        },
+      },
+    },
+    'Field Sports': {
+      icon: '🏑',
+      description: 'Field and outdoor sports gear',
+      slug: 'field-sports',
+      sports: {
+        Hockey: {
+          description: 'Hockey sticks, balls, and protective gear',
+          slug: 'hockey',
+          items: {
+            Sticks: {
+              description: 'Olympic standard hockey sticks',
+              slug: 'sticks',
+              brands: [{ name: 'Grays', description: 'Olympic standard hockey equipment' }],
+              image: '/hockey.avif',
+              link: '/products?category=hockey&item=sticks',
+            },
+            Balls: {
+              description: 'Competition and training hockey balls',
+              slug: 'balls',
+              brands: [{ name: 'Grays', description: 'International standard hockey balls' }],
+              image: '/hockey.avif',
+              link: '/products?category=hockey&item=balls',
+            },
+          },
+        },
+        Football: {
+          description: 'Football training and match equipment',
+          slug: 'football',
+          items: {
+            Goals: {
+              description: 'Pop-up training goals',
+              slug: 'goals',
+              brands: [{ name: 'Pugg', description: 'Original pop-up training goals' }],
+              image: '/football.avif',
+              link: '/products?category=football&item=goals',
+            },
+          },
+        },
+      },
+    },
+    Training: {
+      icon: '🏋️',
+      description: 'Multi-sport training equipment',
+      slug: 'training',
+      sports: {
+        'Multi-Sport Training': {
+          description: 'Comprehensive training solutions',
+          slug: 'multi-sport-training',
+          items: {
+            Equipment: {
+              description: 'Agility, strength, and team training gear',
+              slug: 'equipment',
+              brands: [{ name: 'Fusion', description: 'Comprehensive training solutions' }],
+              image: '/training.avif',
+              link: '/products?category=training&item=equipment',
+            },
+          },
+        },
+      },
+    },
+  },
+  'Ball Sports': {
+    icon: '⚽',
+    description: 'Equipment for ball-based sports',
+    sports: {
+      Cricket: {
+        description: 'Cricket bats, balls, protective gear, and accessories',
+        items: {
+          Bats: {
+            description: 'Premium cricket bats for all levels',
+            brands: [
+              { name: 'Gray-Nicolls', description: 'Premium cricket equipment since 1855' },
+              { name: 'Leverage', description: 'Advanced bowling machines' },
+            ],
+            image: '/cricket.avif',
+            link: '/products?category=cricket&item=bats',
+          },
+          Balls: {
+            description: 'Match and training cricket balls',
+            brands: [{ name: 'Gray-Nicolls', description: 'International standard cricket balls' }],
+            image: '/cricket.avif',
+            link: '/products?category=cricket&item=balls',
+          },
+          Protective: {
+            description: 'Pads, gloves, helmets, and guards',
+            brands: [{ name: 'Aero', description: 'Professional protective gear' }],
+            image: '/cricket.avif',
+            link: '/products?category=cricket&item=protective',
+          },
+        },
+      },
+      Rugby: {
+        description: 'Rugby balls, protective gear, and accessories',
+        items: {
+          Balls: {
+            description: 'Official match and training rugby balls',
+            brands: [{ name: 'Gilbert', description: 'Official Rugby World Cup supplier' }],
+            image: '/rugby.avif',
+            link: '/products?category=rugby&item=balls',
+          },
+          Protective: {
+            description: 'Headguards, pads, and team accessories',
+            brands: [{ name: 'Gilbert', description: 'Advanced rugby protective gear' }],
+            image: '/rugby.avif',
+            link: '/products?category=rugby&item=protective',
+          },
+        },
+      },
+      Basketball: {
+        description: 'Basketballs and accessories',
+        items: {
+          Balls: {
+            description: 'Olympic-grade basketballs',
+            brands: [{ name: 'Molten', description: 'Official Olympic basketball supplier' }],
+            image: '/basketball.avif',
+            link: '/products?category=basketball&item=balls',
+          },
+        },
+      },
+      Volleyball: {
+        description: 'Championship volleyballs and accessories',
+        items: {
+          Balls: {
+            description: 'Professional volleyballs',
+            brands: [{ name: 'Molten', description: 'Championship quality volleyballs' }],
+            image: '/volleyball.avif',
+            link: '/products?category=volleyball&item=balls',
+          },
+        },
+      },
+    },
+  },
+  'Racquet Sports': {
+    icon: '🎾',
+    description: 'Professional racquet equipment',
+    sports: {
+      Tennis: {
+        description: 'Tennis rackets, strings, and accessories',
+        items: {
+          Rackets: {
+            description: 'Tournament-grade tennis rackets',
+            brands: [
+              { name: 'Babolat', description: 'Roland-Garros official partner' },
+              { name: 'Ashaway', description: 'Premium tennis strings since 1824' },
+            ],
+            image: '/tennis.avif',
+            link: '/products?category=tennis&item=rackets',
+          },
+          Strings: {
+            description: 'High-performance tennis strings',
+            brands: [{ name: 'Ashaway', description: 'Professional tennis strings' }],
+            image: '/tennis.avif',
+            link: '/products?category=tennis&item=strings',
+          },
+        },
+      },
+      Badminton: {
+        description: 'Badminton rackets, strings, and accessories',
+        items: {
+          Rackets: {
+            description: 'Professional badminton rackets',
+            brands: [
+              { name: 'Babolat', description: 'Professional badminton equipment' },
+              { name: 'Ashaway', description: 'High-performance badminton strings' },
+            ],
+            image: '/badminton.avif',
+            link: '/products?category=badminton&item=rackets',
+          },
+          Strings: {
+            description: 'Competitive badminton strings',
+            brands: [{ name: 'Ashaway', description: 'High-performance badminton strings' }],
+            image: '/badminton.avif',
+            link: '/products?category=badminton&item=strings',
+          },
+        },
+      },
+      Squash: {
+        description: 'Squash rackets and strings',
+        items: {
+          Rackets: {
+            description: 'Precision squash rackets',
+            brands: [
+              { name: 'Ashaway', description: 'Precision squash strings for power and control' },
+            ],
+            image: '/squash.avif',
+            link: '/products?category=squash&item=rackets',
+          },
+        },
+      },
+    },
+  },
+  'Field Sports': {
+    icon: '🏑',
+    description: 'Field and outdoor sports gear',
+    sports: {
+      Hockey: {
+        description: 'Hockey sticks, balls, and protective gear',
+        items: {
+          Sticks: {
+            description: 'Olympic standard hockey sticks',
+            brands: [{ name: 'Grays', description: 'Olympic standard hockey equipment' }],
+            image: '/hockey.avif',
+            link: '/products?category=hockey&item=sticks',
+          },
+          Balls: {
+            description: 'Competition and training hockey balls',
+            brands: [{ name: 'Grays', description: 'International standard hockey balls' }],
+            image: '/hockey.avif',
+            link: '/products?category=hockey&item=balls',
+          },
+        },
+      },
+      Football: {
+        description: 'Football training and match equipment',
+        items: {
+          Goals: {
+            description: 'Pop-up training goals',
+            brands: [{ name: 'Pugg', description: 'Original pop-up training goals' }],
+            image: '/football.avif',
+            link: '/products?category=football&item=goals',
+          },
+        },
+      },
+    },
+  },
+  Training: {
+    icon: '🏋️',
+    description: 'Multi-sport training equipment',
+    sports: {
+      'Multi-Sport Training': {
+        description: 'Comprehensive training solutions',
+        items: {
+          Equipment: {
+            description: 'Agility, strength, and team training gear',
+            brands: [{ name: 'Fusion', description: 'Comprehensive training solutions' }],
+            image: '/training.avif',
+            link: '/products?category=training&item=equipment',
+          },
+        },
+      },
+    },
+  },
+}
+
+export type SportsCategoriesType = {
+  [category: string]: {
+    icon: string
+    description: string
+    sports: {
+      [sport: string]: {
+        description: string
+        items: {
+          [item: string]: {
+            description: string
+            brands: Array<{
+              name: string
+              description: string
+            }>
+            image: string
+            link: string
+          }
+        }
+      }
+    }
+  }
 }
 
 export type SiteConfig = typeof SITE_CONFIG
