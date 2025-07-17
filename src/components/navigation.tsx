@@ -19,7 +19,10 @@ export default function Navigation() {
     return SITE_CONFIG.SPORTS_CATEGORIES[categoryName]?.sports[sportName]?.slug || sportName
   }
   const getItemSlug = (categoryName: string, sportName: string, itemName: string) => {
-    return SITE_CONFIG.SPORTS_CATEGORIES[categoryName]?.sports[sportName]?.items[itemName]?.slug || itemName
+    return (
+      SITE_CONFIG.SPORTS_CATEGORIES[categoryName]?.sports[sportName]?.items[itemName]?.slug ||
+      itemName
+    )
   }
 
   const getShopLink = () => {
@@ -468,7 +471,7 @@ export default function Navigation() {
                                           setHoveredItem(null)
                                         }}
                                         onClick={() => {
-                                          window.location.href = `/products?category=${encodeURIComponent(categoryName)}`
+                                          window.location.href = `/products?category=${getCategorySlug(categoryName)}`
                                         }}
                                       >
                                         <div className="flex items-center gap-3">
@@ -515,7 +518,7 @@ export default function Navigation() {
                                             setHoveredItem(null)
                                           }}
                                           onClick={() => {
-                                            window.location.href = `/products?category=${encodeURIComponent(hoveredCategory)}&sport=${encodeURIComponent(sportName)}`
+                                            window.location.href = `/products?category=${getCategorySlug(hoveredCategory)}&sport=${getSportSlug(hoveredCategory, sportName)}`
                                           }}
                                         >
                                           <div className="flex items-center gap-3">
@@ -561,7 +564,7 @@ export default function Navigation() {
                                         }`}
                                         onMouseEnter={() => setHoveredItem(itemName)}
                                         onClick={() => {
-                                          window.location.href = `/products?category=${encodeURIComponent(hoveredCategory)}&sport=${encodeURIComponent(hoveredSport)}&item=${encodeURIComponent(itemName)}`
+                                          window.location.href = `/products?category=${getCategorySlug(hoveredCategory)}&sport=${getSportSlug(hoveredCategory, hoveredSport)}&item=${getItemSlug(hoveredCategory, hoveredSport, itemName)}`
                                         }}
                                       >
                                         <div className="font-semibold text-sm mb-1">{itemName}</div>
