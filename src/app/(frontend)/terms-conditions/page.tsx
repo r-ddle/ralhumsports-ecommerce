@@ -421,23 +421,6 @@ export default function TermsConditionsPage() {
               </div>
               <div className="space-y-6">
                 <div>
-                  <h3 className="text-lg font-semibold text-text-primary mb-3">Delivery Terms</h3>
-                  <ul className="space-y-2 text-text-primary leading-relaxed">
-                    <li>• Standard delivery within Colombo: 1-2 business days</li>
-                    <li>• Island-wide delivery: 3-7 business days depending on location</li>
-                    <li>
-                      • Free delivery for orders above LKR{' '}
-                      {SITE_CONFIG.shipping.freeShippingThreshold.toLocaleString()}
-                    </li>
-                    <li>
-                      • Standard shipping fee: LKR{' '}
-                      {SITE_CONFIG.shipping.standardShipping.toLocaleString()}
-                    </li>
-                    <li>• Express delivery options available for additional charges</li>
-                  </ul>
-                </div>
-
-                <div>
                   <h3 className="text-lg font-semibold text-text-primary mb-3">
                     Delivery Responsibilities
                   </h3>

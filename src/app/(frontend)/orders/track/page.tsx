@@ -49,11 +49,11 @@ const ORDER_STATUS_CONFIG = {
     icon: Package,
     description: 'Your order is being packed and prepared for shipment.',
   },
-  shipped: {
-    label: 'Shipped',
-    color: 'bg-purple-100 text-purple-800 border-purple-200',
+  'sent for delivery': {
+    label: 'Sent for Delivery',
+    color: 'bg-indigo-100 text-indigo-800 border-indigo-200',
     icon: Truck,
-    description: 'Your order has been shipped and is on its way to you.',
+    description: 'Your order has been sent for delivery and will reach you soon.',
   },
   delivered: {
     label: 'Delivered',
@@ -187,12 +187,6 @@ export default function OrderTrackingPage() {
           paymentStatus: orderData.paymentStatus as Order['paymentStatus'],
           paymentMethod: undefined,
           specialInstructions: '',
-          shipping: {
-            trackingNumber: orderData.shipping?.trackingNumber || undefined,
-            courier: orderData.shipping?.courier || undefined,
-            estimatedDelivery: orderData.shipping?.estimatedDelivery || undefined,
-            actualDelivery: orderData.shipping?.actualDelivery || undefined,
-          },
           createdAt: orderData.createdAt,
           updatedAt: orderData.updatedAt,
         }
@@ -220,7 +214,7 @@ export default function OrderTrackingPage() {
       { status: 'pending', label: 'Order Placed', icon: Clock },
       { status: 'confirmed', label: 'Confirmed', icon: Check },
       { status: 'processing', label: 'Processing', icon: Package },
-      { status: 'shipped', label: 'Shipped', icon: Truck },
+      { status: 'sent for delivery', label: 'Out for Delivery', icon: Truck },
       { status: 'delivered', label: 'Delivered', icon: CheckCircle },
     ]
 
@@ -528,69 +522,9 @@ export default function OrderTrackingPage() {
                             </p>
                           </div>
                         </div>
-                        {order.shipping?.estimatedDelivery && (
-                          <div className="flex items-center gap-3 p-4 bg-brand-background rounded-xl">
-                            <Truck className="w-5 h-5 text-green-600" />
-                            <div>
-                              <p className="font-semibold text-text-primary">Expected Delivery</p>
-                              <p className="text-text-secondary">
-                                {new Date(order.shipping.estimatedDelivery).toLocaleDateString(
-                                  'en-GB',
-                                )}
-                              </p>
-                            </div>
-                          </div>
-                        )}
                       </div>
                     </CardContent>
                   </Card>
-
-                  {/* Enhanced Shipping Information */}
-                  {order.shipping && (order.shipping.trackingNumber || order.shipping.courier) && (
-                    <Card className="bg-brand-surface border-brand-border shadow-2xl">
-                      <CardHeader>
-                        <CardTitle className="flex items-center gap-3 text-xl font-bold text-text-primary">
-                          <div className="p-2 rounded-lg bg-gradient-to-br from-green-500 to-emerald-500 text-white">
-                            <Truck className="w-5 h-5" />
-                          </div>
-                          Shipping Information
-                        </CardTitle>
-                      </CardHeader>
-                      <CardContent className="space-y-6">
-                        {order.shipping.courier && (
-                          <div className="flex items-center justify-between p-4 bg-gradient-to-r from-green-50 to-emerald-50 rounded-xl border border-green-200">
-                            <span className="font-semibold text-green-900">Courier:</span>
-                            <span className="font-bold text-green-800">
-                              {order.shipping.courier}
-                            </span>
-                          </div>
-                        )}
-                        {order.shipping.trackingNumber && (
-                          <div className="p-4 bg-gradient-to-r from-blue-50 to-cyan-50 rounded-xl border border-blue-200">
-                            <div className="flex items-center justify-between mb-2">
-                              <span className="font-semibold text-blue-900">Tracking Number:</span>
-                            </div>
-                            <code className="block w-full p-3 bg-white rounded-lg text-center font-mono text-lg font-bold border-2 border-dashed border-blue-300">
-                              {order.shipping.trackingNumber}
-                            </code>
-                          </div>
-                        )}
-                        {order.shipping.actualDelivery && (
-                          <div className="flex items-center gap-3 p-4 bg-gradient-to-r from-green-100 to-emerald-100 rounded-xl border border-green-300">
-                            <CheckCircle className="w-6 h-6 text-green-600" />
-                            <div>
-                              <p className="font-bold text-green-800">Delivered!</p>
-                              <p className="text-green-700">
-                                {new Date(order.shipping.actualDelivery).toLocaleDateString(
-                                  'en-GB',
-                                )}
-                              </p>
-                            </div>
-                          </div>
-                        )}
-                      </CardContent>
-                    </Card>
-                  )}
 
                   {/* Enhanced Order Items */}
                   <Card className="bg-brand-surface border-brand-border shadow-2xl">

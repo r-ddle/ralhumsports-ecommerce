@@ -12,7 +12,6 @@ export interface Cart {
   items: CartItem[]
   subtotal: number
   tax: number
-  shipping: number
   total: number
   itemCount: number
   createdAt: string

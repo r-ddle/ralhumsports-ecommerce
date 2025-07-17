@@ -41,8 +41,8 @@ export default function ReturnPolicyPage() {
           </Badge>
           <h1 className="text-3xl sm:text-4xl font-bold text-text-primary mb-4">Return Policy</h1>
           <p className="text-lg text-text-secondary max-w-2xl mx-auto leading-relaxed">
-            Your satisfaction is our priority. We offer comprehensive return and exchange options to
-            ensure you&apos;re completely happy with your purchase.
+            Ralhum Sports is a Sri Lankan company. We only accept returns if the product is in its
+            original, undamaged, and unused condition. No general return window applies.
           </p>
           <div className="flex items-center justify-center gap-2 mt-6 text-sm text-text-secondary">
             <Calendar className="w-4 h-4" />
@@ -74,10 +74,11 @@ export default function ReturnPolicyPage() {
                   your purchase while ensuring fairness for all customers.
                 </p>
                 <div className="bg-success/10 p-4 rounded-lg border border-success/20">
-                  <p className="font-semibold text-success mb-2">30-Day Return Guarantee:</p>
+                  <p className="font-semibold text-success mb-2">Strict Return Policy:</p>
                   <p>
-                    We offer a 30-day return window for most products, giving you ample time to
-                    evaluate your purchase and ensure it meets your needs.
+                    Returns are only accepted if the product is in its original, undamaged, and
+                    unused condition. We do not accept returns for change of mind, sizing, or after
+                    use. No 30-day or other return window applies.
                   </p>
                 </div>
               </div>
@@ -109,13 +110,6 @@ export default function ReturnPolicyPage() {
                   </h3>
                   <ul className="space-y-3 text-text-primary">
                     <li className="flex items-start gap-3">
-                      <Clock className="w-5 h-5 text-success mt-1 flex-shrink-0" />
-                      <div>
-                        <strong>30-Day Return Window:</strong> Items must be returned within 30
-                        calendar days of the delivery date
-                      </div>
-                    </li>
-                    <li className="flex items-start gap-3">
                       <Package className="w-5 h-5 text-success mt-1 flex-shrink-0" />
                       <div>
                         <strong>Original Condition:</strong> Products must be unused, unworn, and in
@@ -133,7 +127,8 @@ export default function ReturnPolicyPage() {
                       <Package className="w-5 h-5 text-success mt-1 flex-shrink-0" />
                       <div>
                         <strong>Original Packaging:</strong> Items must be returned in original
-                        packaging with all accessories, manuals, and components
+                        packaging with all accessories, manuals, and components. Any sign of use,
+                        damage, or missing parts will void eligibility for return.
                       </div>
                     </li>
                   </ul>
@@ -146,11 +141,10 @@ export default function ReturnPolicyPage() {
                   <div className="bg-info/10 p-4 rounded-lg border border-info/20">
                     <p className="font-semibold text-info mb-2">Acceptable Return Conditions:</p>
                     <ul className="space-y-2 text-text-primary">
-                      <li>• No signs of wear, use, or damage</li>
-                      <li>• All original tags, labels, and protective films intact</li>
-                      <li>• No odors (particularly important for sports equipment)</li>
-                      <li>• Packaging materials undamaged and complete</li>
-                      <li>• All accessories and documentation included</li>
+                      <li>• Absolutely no signs of wear, use, or damage</li>
+                      <li>• All original tags, labels, and protective films must be intact</li>
+                      <li>• Packaging materials must be undamaged and complete</li>
+                      <li>• All accessories and documentation must be included</li>
                     </ul>
                   </div>
                 </div>
@@ -171,7 +165,9 @@ export default function ReturnPolicyPage() {
                 </div>
                 <div>
                   <h2 className="text-2xl font-bold text-text-primary mb-2">Eligible for Return</h2>
-                  <p className="text-text-secondary">Products that can be returned or exchanged</p>
+                  <p className="text-text-secondary">
+                    Products that can be returned (strictly limited)
+                  </p>
                 </div>
               </div>
               <div className="space-y-4">
@@ -181,19 +177,21 @@ export default function ReturnPolicyPage() {
                     <ul className="space-y-2 text-text-primary">
                       <li className="flex items-start gap-2">
                         <CheckCircle className="w-4 h-4 text-success mt-1 flex-shrink-0" />
-                        <span>Unopened and unused bats, rackets, and sticks</span>
+                        <span>
+                          Unopened and unused bats, rackets, and sticks (no damage or signs of use)
+                        </span>
                       </li>
                       <li className="flex items-start gap-2">
                         <CheckCircle className="w-4 h-4 text-success mt-1 flex-shrink-0" />
-                        <span>Protective gear with original tags</span>
+                        <span>Protective gear with original tags, unused and undamaged</span>
                       </li>
                       <li className="flex items-start gap-2">
                         <CheckCircle className="w-4 h-4 text-success mt-1 flex-shrink-0" />
-                        <span>Sports balls in original packaging</span>
+                        <span>Sports balls in original packaging, unused and undamaged</span>
                       </li>
                       <li className="flex items-start gap-2">
                         <CheckCircle className="w-4 h-4 text-success mt-1 flex-shrink-0" />
-                        <span>Training equipment and accessories</span>
+                        <span>Training equipment and accessories (unused, undamaged)</span>
                       </li>
                     </ul>
                   </div>
@@ -203,15 +201,15 @@ export default function ReturnPolicyPage() {
                     <ul className="space-y-2 text-text-primary">
                       <li className="flex items-start gap-2">
                         <CheckCircle className="w-4 h-4 text-success mt-1 flex-shrink-0" />
-                        <span>Unworn clothing with original tags</span>
+                        <span>Unworn clothing with original tags, no signs of wear</span>
                       </li>
                       <li className="flex items-start gap-2">
                         <CheckCircle className="w-4 h-4 text-success mt-1 flex-shrink-0" />
-                        <span>Shoes without wear on soles</span>
+                        <span>Shoes without wear on soles, unused and undamaged</span>
                       </li>
                       <li className="flex items-start gap-2">
                         <CheckCircle className="w-4 h-4 text-success mt-1 flex-shrink-0" />
-                        <span>Accessories and gear bags</span>
+                        <span>Accessories and gear bags (unused, undamaged)</span>
                       </li>
                     </ul>
                   </div>
@@ -224,22 +222,22 @@ export default function ReturnPolicyPage() {
                       <li className="flex items-start gap-2">
                         <CheckCircle className="w-4 h-4 text-success mt-1 flex-shrink-0" />
                         <span>
-                          <strong>Defective Products:</strong> Manufacturing defects covered
-                          regardless of use
+                          <strong>Defective Products:</strong> Only manufacturing defects are
+                          covered for return. Any other reason is not eligible.
                         </span>
                       </li>
                       <li className="flex items-start gap-2">
                         <CheckCircle className="w-4 h-4 text-success mt-1 flex-shrink-0" />
                         <span>
-                          <strong>Wrong Item Sent:</strong> Returns accepted with no conditions when
-                          we send incorrect items
+                          <strong>Wrong Item Sent:</strong> Returns accepted only if the item is
+                          unused and undamaged.
                         </span>
                       </li>
                       <li className="flex items-start gap-2">
                         <CheckCircle className="w-4 h-4 text-success mt-1 flex-shrink-0" />
                         <span>
-                          <strong>Shipping Damage:</strong> Items damaged during transit are fully
-                          returnable
+                          <strong>Shipping Damage:</strong> Items damaged during transit are
+                          returnable, but must be reported immediately upon delivery.
                         </span>
                       </li>
                     </ul>
@@ -260,7 +258,8 @@ export default function ReturnPolicyPage() {
                     Not Eligible for Return
                   </h2>
                   <p className="text-text-secondary">
-                    Products that cannot be returned for hygiene and safety reasons
+                    Most products are not eligible for return. Returns are strictly limited to
+                    undamaged, unused items as described above.
                   </p>
                 </div>
               </div>
@@ -273,43 +272,44 @@ export default function ReturnPolicyPage() {
                     <li className="flex items-start gap-2">
                       <XCircle className="w-4 h-4 text-error mt-1 flex-shrink-0" />
                       <span>
-                        <strong>Hygiene Products:</strong> Mouthguards, protective cups, and
-                        personal protective equipment that comes into direct contact with the body
+                        <strong>Hygiene Products:</strong> No returns accepted for mouthguards,
+                        protective cups, or any personal protective equipment that comes into direct
+                        contact with the body
                       </span>
                     </li>
                     <li className="flex items-start gap-2">
                       <XCircle className="w-4 h-4 text-error mt-1 flex-shrink-0" />
                       <span>
-                        <strong>Used Equipment:</strong> Any sports equipment showing signs of use,
-                        wear, or damage
+                        <strong>Used Equipment:</strong> No returns accepted for any sports
+                        equipment showing signs of use, wear, or damage
                       </span>
                     </li>
                     <li className="flex items-start gap-2">
                       <XCircle className="w-4 h-4 text-error mt-1 flex-shrink-0" />
                       <span>
-                        <strong>Personalized Items:</strong> Custom-embroidered, engraved, or
-                        personalized products
+                        <strong>Personalized Items:</strong> No returns accepted for
+                        custom-embroidered, engraved, or personalized products
                       </span>
                     </li>
                     <li className="flex items-start gap-2">
                       <XCircle className="w-4 h-4 text-error mt-1 flex-shrink-0" />
                       <span>
-                        <strong>Final Sale Items:</strong> Products marked as clearance, closeout,
-                        or final sale
+                        <strong>Final Sale Items:</strong> No returns accepted for products marked
+                        as clearance, closeout, or final sale
                       </span>
                     </li>
                     <li className="flex items-start gap-2">
                       <XCircle className="w-4 h-4 text-error mt-1 flex-shrink-0" />
                       <span>
-                        <strong>Incomplete Returns:</strong> Items missing components, accessories,
-                        or original packaging
+                        <strong>Incomplete Returns:</strong> No returns accepted for items missing
+                        components, accessories, or original packaging
                       </span>
                     </li>
                     <li className="flex items-start gap-2">
                       <XCircle className="w-4 h-4 text-error mt-1 flex-shrink-0" />
                       <span>
-                        <strong>Expired Returns:</strong> Items returned after the 30-day return
-                        window
+                        <strong>Expired Returns:</strong> No returns accepted after delivery unless
+                        the product is defective or damaged in transit and reported immediately
                       </span>
                     </li>
                   </ul>
@@ -373,9 +373,7 @@ export default function ReturnPolicyPage() {
                       </div>
                       <div>
                         <h4 className="font-semibold text-text-primary">Package & Send</h4>
-                        <p className="text-text-secondary text-sm">
-                          Securely package the item with RMA number and ship to our returns center
-                        </p>
+                        <p className="text-text-secondary text-sm">Securely package the item</p>
                       </div>
                     </div>
 
@@ -610,195 +608,6 @@ export default function ReturnPolicyPage() {
                       </li>
                     </ul>
                   </div>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-      </section>
-
-      {/* Shipping and Costs */}
-      <section className="py-12 sm:py-16 bg-brand-surface">
-        <div className="max-w-4xl mx-auto px-4">
-          <Card className="border border-brand-border">
-            <CardContent className="p-8">
-              <div className="flex items-start gap-4 mb-6">
-                <div className="w-12 h-12 bg-brand-accent rounded-lg flex items-center justify-center flex-shrink-0">
-                  <Truck className="w-6 h-6 text-white" />
-                </div>
-                <div>
-                  <h2 className="text-2xl font-bold text-text-primary mb-2">Return Shipping</h2>
-                  <p className="text-text-secondary">Shipping costs and responsibilities</p>
-                </div>
-              </div>
-              <div className="space-y-6">
-                <div>
-                  <h3 className="text-lg font-semibold text-text-primary mb-3">
-                    Shipping Responsibilities
-                  </h3>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div>
-                      <h4 className="font-semibold text-text-primary mb-3 text-success">
-                        Customer Pays Return Shipping:
-                      </h4>
-                      <ul className="space-y-2 text-text-primary">
-                        <li className="flex items-start gap-2">
-                          <User className="w-4 h-4 text-success mt-1 flex-shrink-0" />
-                          <span>Change of mind returns</span>
-                        </li>
-                        <li className="flex items-start gap-2">
-                          <User className="w-4 h-4 text-success mt-1 flex-shrink-0" />
-                          <span>Size or color exchanges</span>
-                        </li>
-                        <li className="flex items-start gap-2">
-                          <User className="w-4 h-4 text-success mt-1 flex-shrink-0" />
-                          <span>Product not suitable for intended use</span>
-                        </li>
-                      </ul>
-                    </div>
-
-                    <div>
-                      <h4 className="font-semibold text-text-primary mb-3 text-brand-primary">
-                        We Pay Return Shipping:
-                      </h4>
-                      <ul className="space-y-2 text-text-primary">
-                        <li className="flex items-start gap-2">
-                          <Building className="w-4 h-4 text-brand-primary mt-1 flex-shrink-0" />
-                          <span>Manufacturing defects</span>
-                        </li>
-                        <li className="flex items-start gap-2">
-                          <Building className="w-4 h-4 text-brand-primary mt-1 flex-shrink-0" />
-                          <span>Wrong item sent by us</span>
-                        </li>
-                        <li className="flex items-start gap-2">
-                          <Building className="w-4 h-4 text-brand-primary mt-1 flex-shrink-0" />
-                          <span>Items damaged during shipping</span>
-                        </li>
-                      </ul>
-                    </div>
-                  </div>
-                </div>
-
-                <div>
-                  <h3 className="text-lg font-semibold text-text-primary mb-3">
-                    Return Shipping Address
-                  </h3>
-                  <div className="bg-brand-background p-4 rounded-lg border border-brand-border">
-                    <div className="flex items-start gap-3">
-                      <MapPin className="w-5 h-5 text-brand-primary mt-1" />
-                      <div>
-                        <p className="font-semibold text-text-primary">
-                          Ralhum Sports Returns Center
-                        </p>
-                        <p className="text-text-primary">{SITE_CONFIG.contact.address.street}</p>
-                        <p className="text-text-primary">
-                          {SITE_CONFIG.contact.address.city}, {SITE_CONFIG.contact.address.country}
-                        </p>
-                        <p className="text-sm text-text-secondary mt-2">
-                          <strong>Important:</strong> Only ship to this address with a valid RMA
-                          number
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                <div>
-                  <h3 className="text-lg font-semibold text-text-primary mb-3">
-                    Shipping Recommendations
-                  </h3>
-                  <div className="bg-warning/10 p-4 rounded-lg border border-warning/20">
-                    <ul className="space-y-2 text-text-primary">
-                      <li>• Use a trackable shipping method for your protection</li>
-                      <li>• Purchase shipping insurance for high-value items</li>
-                      <li>• Keep shipping receipts until refund is processed</li>
-                      <li>• Package items securely to prevent damage during transit</li>
-                      <li>• Include RMA number both inside and outside the package</li>
-                    </ul>
-                  </div>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-      </section>
-
-      {/* Warranty and Defects */}
-      <section className="py-12 sm:py-16 bg-brand-background">
-        <div className="max-w-4xl mx-auto px-4">
-          <Card className="border border-brand-border">
-            <CardContent className="p-8">
-              <div className="flex items-start gap-4 mb-6">
-                <div className="w-12 h-12 bg-warning rounded-lg flex items-center justify-center flex-shrink-0">
-                  <Shield className="w-6 h-6 text-white" />
-                </div>
-                <div>
-                  <h2 className="text-2xl font-bold text-text-primary mb-2">
-                    Warranty and Defects
-                  </h2>
-                  <p className="text-text-secondary">Protection beyond our return policy</p>
-                </div>
-              </div>
-              <div className="space-y-6">
-                <div>
-                  <h3 className="text-lg font-semibold text-text-primary mb-3">
-                    Manufacturer Warranties
-                  </h3>
-                  <ul className="space-y-3 text-text-primary">
-                    <li className="flex items-start gap-3">
-                      <Shield className="w-5 h-5 text-success mt-1 flex-shrink-0" />
-                      <div>
-                        <strong>Brand Warranties:</strong> All products carry manufacturer
-                        warranties as specified by each brand (Gray-Nicolls, Gilbert, Grays, etc.)
-                      </div>
-                    </li>
-                    <li className="flex items-start gap-3">
-                      <Shield className="w-5 h-5 text-success mt-1 flex-shrink-0" />
-                      <div>
-                        <strong>Warranty Claims:</strong> We facilitate warranty claims with
-                        manufacturers on your behalf
-                      </div>
-                    </li>
-                    <li className="flex items-start gap-3">
-                      <Shield className="w-5 h-5 text-success mt-1 flex-shrink-0" />
-                      <div>
-                        <strong>Extended Coverage:</strong> Warranty periods typically extend beyond
-                        our 30-day return window
-                      </div>
-                    </li>
-                  </ul>
-                </div>
-
-                <div>
-                  <h3 className="text-lg font-semibold text-text-primary mb-3">
-                    Defective Product Process
-                  </h3>
-                  <div className="bg-error/10 p-4 rounded-lg border border-error/20">
-                    <p className="font-semibold text-error mb-2">
-                      If you receive a defective product:
-                    </p>
-                    <ol className="space-y-2 text-text-primary list-decimal list-inside">
-                      <li>Contact us immediately, even if beyond 30-day return window</li>
-                      <li>Provide photos and description of the defect</li>
-                      <li>
-                        We&apos;ll determine if it&apos;s covered under warranty or our return
-                        policy
-                      </li>
-                      <li>Expedited replacement or full refund provided for confirmed defects</li>
-                      <li>All shipping costs covered by us for defective items</li>
-                    </ol>
-                  </div>
-                </div>
-
-                <div>
-                  <h3 className="text-lg font-semibold text-text-primary mb-3">
-                    Quality Guarantee
-                  </h3>
-                  <p className="text-text-primary leading-relaxed">
-                    Beyond manufacturer warranties, we stand behind the quality of every product we
-                    sell. If you experience quality issues that aren&apos;t covered by the
-                    manufacturer, contact us to discuss resolution options.
-                  </p>
                 </div>
               </div>
             </CardContent>

@@ -513,10 +513,7 @@ export interface Product {
    * Product name as displayed to customers
    */
   name: string;
-  /**
-   * URL-friendly version of the product name
-   */
-  slug: string;
+  slug?: string | null;
   /**
    * Product category for organization
    */
@@ -532,7 +529,7 @@ export interface Product {
   /**
    * Stock Keeping Unit - unique product identifier
    */
-  sku: string;
+  sku?: string | null;
   /**
    * Available stock quantity (only used when no variants are defined)
    */
@@ -598,24 +595,6 @@ export interface Product {
      */
     careInstructions?: string | null;
   };
-  shipping?: {
-    /**
-     * Offer free shipping for this product
-     */
-    freeShipping?: boolean | null;
-    /**
-     * Available for island-wide delivery
-     */
-    islandWideDelivery?: boolean | null;
-    /**
-     * Eligible for easy return policy
-     */
-    easyReturn?: boolean | null;
-    /**
-     * Shipping weight in kg
-     */
-    shippingWeight?: number | null;
-  };
   pricing?: {
     /**
      * Original price (for displaying discounts)
@@ -666,7 +645,7 @@ export interface Product {
         /**
          * Auto-generated variant SKU
          */
-        sku: string;
+        sku?: string | null;
         size?: string | null;
         color?: string | null;
         price: number;
@@ -767,7 +746,7 @@ export interface Order {
     id?: string | null;
   }[];
   /**
-   * Order subtotal (before shipping and taxes)
+   * Order subtotal (before taxes)
    */
   orderSubtotal: number;
   /**
@@ -783,7 +762,7 @@ export interface Order {
    */
   discount?: number | null;
   /**
-   * Final order total (subtotal + tax + shipping - discount)
+   * Final order total (subtotal + tax - discount)
    */
   orderTotal: number;
   /**
@@ -817,24 +796,6 @@ export interface Order {
      * Customer response or feedback via WhatsApp
      */
     customerResponse?: string | null;
-  };
-  shipping?: {
-    /**
-     * Shipping tracking number
-     */
-    trackingNumber?: string | null;
-    /**
-     * Courier service used for delivery
-     */
-    courier?: ('pronto' | 'kapruka' | 'dhl' | 'fedex' | 'local' | 'pickup') | null;
-    /**
-     * Estimated delivery date
-     */
-    estimatedDelivery?: string | null;
-    /**
-     * Actual delivery date
-     */
-    actualDelivery?: string | null;
   };
   /**
    * Internal notes for team reference (not visible to customer)
@@ -1298,14 +1259,6 @@ export interface ProductsSelect<T extends boolean = true> {
         dimensions?: T;
         careInstructions?: T;
       };
-  shipping?:
-    | T
-    | {
-        freeShipping?: T;
-        islandWideDelivery?: T;
-        easyReturn?: T;
-        shippingWeight?: T;
-      };
   pricing?:
     | T
     | {
@@ -1384,14 +1337,6 @@ export interface OrdersSelect<T extends boolean = true> {
         messageTimestamp?: T;
         messageTemplate?: T;
         customerResponse?: T;
-      };
-  shipping?:
-    | T
-    | {
-        trackingNumber?: T;
-        courier?: T;
-        estimatedDelivery?: T;
-        actualDelivery?: T;
       };
   internalNotes?: T;
   orderSource?: T;

@@ -35,24 +35,23 @@ export const Products: CollectionConfig = {
     {
       name: 'slug',
       type: 'text',
-      required: true,
+      required: false,
       unique: true,
       admin: {
-        description: 'URL-friendly version of the product name',
-        placeholder: 'auto-generated from name',
-        readOnly: true,
+        condition: () => false, // Hide from admin UI
       },
       hooks: {
         beforeValidate: [
-          ({ data, operation }) => {
-            if (operation === 'create' || operation === 'update') {
-              if (data?.name) {
-                // Generate slug from name
-                return data.name
-                  .toLowerCase()
-                  .replace(/[^a-z0-9]+/g, '-')
-                  .replace(/(^-|-$)/g, '')
+          ({ data, operation, req }) => {
+            if ((operation === 'create' || operation === 'update') && data?.name) {
+              const slug = data.name
+                .toLowerCase()
+                .replace(/[^a-z0-9]+/g, '-')
+                .replace(/(^-|-$)/g, '')
+              if (req?.payload?.logger) {
+                req.payload.logger.info(`Auto-generated slug for product: ${slug}`)
               }
+              data.slug = slug
             }
           },
         ],
@@ -100,7 +99,7 @@ export const Products: CollectionConfig = {
     {
       name: 'sku',
       type: 'text',
-      required: true,
+      required: false,
       unique: true,
       admin: {
         description: 'Stock Keeping Unit - unique product identifier',
@@ -284,48 +283,6 @@ export const Products: CollectionConfig = {
       ],
     },
 
-    // Shipping Configuration
-    {
-      name: 'shipping',
-      type: 'group',
-      label: 'Shipping Configuration',
-      fields: [
-        {
-          name: 'freeShipping',
-          type: 'checkbox',
-          defaultValue: false,
-          admin: {
-            description: 'Offer free shipping for this product',
-          },
-        },
-        {
-          name: 'islandWideDelivery',
-          type: 'checkbox',
-          defaultValue: true,
-          admin: {
-            description: 'Available for island-wide delivery',
-          },
-        },
-        {
-          name: 'easyReturn',
-          type: 'checkbox',
-          defaultValue: true,
-          admin: {
-            description: 'Eligible for easy return policy',
-          },
-        },
-        {
-          name: 'shippingWeight',
-          type: 'number',
-          admin: {
-            description: 'Shipping weight in kg',
-            placeholder: '0.5',
-            step: 0.1,
-          },
-        },
-      ],
-    },
-
     // Pricing and Inventory
     {
       name: 'pricing',
@@ -451,7 +408,7 @@ export const Products: CollectionConfig = {
         {
           name: 'sku',
           type: 'text',
-          required: true,
+          required: false,
           unique: true,
           admin: {
             description: 'Auto-generated variant SKU',

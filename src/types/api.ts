@@ -84,7 +84,6 @@ export interface Product {
   description?: Record<string, unknown> | string // ✅ Fix: More specific than any
   features: string[]
   specifications?: ProductSpecifications
-  shipping?: ProductShipping
   seo?: ProductSEO
   rating?: number
   reviewCount?: number
@@ -123,7 +122,6 @@ export interface ProductListItem {
   description?: Record<string, unknown> | string // ✅ Fix: More specific than any
   features: string[]
   specifications?: ProductSpecifications
-  shipping?: ProductShipping
   seo?: ProductSEO
   rating?: number
   reviewCount?: number
@@ -211,7 +209,6 @@ export interface OrderItem {
 
 export interface OrderPricing {
   subtotal: number
-  shipping: number
   tax?: number
   discount?: number
   total: number
@@ -270,19 +267,13 @@ export interface Order {
     | 'pending'
     | 'confirmed'
     | 'processing'
-    | 'shipped'
+    | 'sent for delivery'
     | 'delivered'
     | 'cancelled'
     | 'refunded'
   paymentStatus: 'pending' | 'paid' | 'partially-paid' | 'refunded' | 'failed'
   paymentMethod?: 'cod' | 'bank-transfer' | 'online-payment' | 'card-payment'
   specialInstructions?: string
-  shipping?: {
-    trackingNumber?: string
-    courier?: string
-    estimatedDelivery?: string
-    actualDelivery?: string
-  }
   createdAt: string
   updatedAt: string
 }
@@ -404,7 +395,7 @@ export const ORDER_STATUSES = {
   pending: 'Pending',
   confirmed: 'Confirmed',
   processing: 'Processing',
-  shipped: 'Shipped',
+  shipped: 'Sent for Delivery',
   delivered: 'Delivered',
   cancelled: 'Cancelled',
   refunded: 'Refunded',
@@ -443,7 +434,7 @@ export interface OrderTrackingResponse {
       | 'pending'
       | 'confirmed'
       | 'processing'
-      | 'shipped'
+      | 'sent for delivery'
       | 'delivered'
       | 'cancelled'
       | 'refunded'
@@ -456,10 +447,6 @@ export interface OrderTrackingResponse {
     orderTotal: number
     orderDate: string
     estimatedDelivery?: string
-    shipping?: {
-      courier?: string
-      trackingNumber?: string
-    }
   }
   message?: string
 }

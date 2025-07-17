@@ -144,7 +144,6 @@ export const POST = withRateLimit(rateLimitConfigs.strict, async (request: NextR
             subtotal: item.subtotal || 0,
           })),
           orderSubtotal: orderData.pricing.subtotal,
-          shippingCost: orderData.pricing.shipping || 0,
           discount: 0,
           tax: orderData.pricing.tax || 0, // Add tax field
           orderTotal: orderData.pricing.total,

@@ -20,12 +20,6 @@ type CartAction =
   | { type: 'LOAD_CART'; payload: Cart }
   | { type: 'SET_LOADING'; payload: boolean }
 
-function calculateShipping(subtotal: number) {
-  return subtotal >= SITE_CONFIG.shipping.freeShippingThreshold
-    ? 0
-    : SITE_CONFIG.shipping.standardShipping
-}
-
 function calculateTax(amount: number) {
   return Math.round(amount * SITE_CONFIG.taxRate)
 }
@@ -33,20 +27,17 @@ function calculateTax(amount: number) {
 function calculateCartTotals(items: CartItem[]): {
   subtotal: number
   tax: number
-  shipping: number
   total: number
   itemCount: number
 } {
   const subtotalLKR = items.reduce((sum, item) => sum + item.variant.price * item.quantity, 0)
-  const shipping = calculateShipping(subtotalLKR)
   const tax = calculateTax(subtotalLKR) // Tax only on subtotal, not shipping
-  const total = subtotalLKR + shipping + tax
+  const total = subtotalLKR + tax
   const itemCount = items.reduce((sum, item) => sum + item.quantity, 0)
 
   // Debug logging
   console.log('Cart Totals Debug:', {
     subtotalLKR,
-    shipping,
     tax,
     total,
     taxRate: SITE_CONFIG.taxRate,
@@ -56,7 +47,6 @@ function calculateCartTotals(items: CartItem[]): {
   return {
     subtotal: subtotalLKR,
     tax,
-    shipping,
     total,
     itemCount,
   }
@@ -67,7 +57,6 @@ function createEmptyCart(): Cart {
     items: [],
     subtotal: 0,
     tax: 0,
-    shipping: 0,
     total: 0,
     itemCount: 0,
     createdAt: new Date().toISOString(),
@@ -305,11 +294,7 @@ export function useCartSummary() {
   return {
     subtotal: cart.subtotal,
     tax: cart.tax,
-    shipping: cart.shipping,
     total: cart.total,
     itemCount: cart.itemCount,
-    freeShippingEligible: cart.subtotal >= SITE_CONFIG.shipping.freeShippingThreshold,
-    freeShippingRemaining: Math.max(0, SITE_CONFIG.shipping.freeShippingThreshold - cart.subtotal),
-    freeShippingThreshold: SITE_CONFIG.shipping.freeShippingThreshold,
   }
 }

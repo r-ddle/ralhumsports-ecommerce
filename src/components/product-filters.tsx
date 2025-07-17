@@ -394,7 +394,7 @@ export function ProductFilters({
                 </div>
               </div>
               <div className="text-xs text-muted-foreground">
-                Range: ${priceRange.min.toLocaleString()} - ${priceRange.max.toLocaleString()}
+                Range: Rs.{priceRange.min.toLocaleString()} - Rs.{priceRange.max.toLocaleString()}
               </div>
             </div>
           </CollapsibleContent>

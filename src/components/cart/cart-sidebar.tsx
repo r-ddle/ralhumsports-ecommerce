@@ -55,35 +55,6 @@ export function CartSidebar() {
           </div>
         ) : (
           <>
-            {/* Free Shipping Progress */}
-            {!summary.freeShippingEligible ? (
-              <div className="px-4 sm:px-6 py-3 bg-gradient-to-r from-brand-accent/10 to-brand-primary/10 border-l-4 border-brand-accent">
-                <div className="flex items-center gap-2 mb-2">
-                  <Truck className="w-4 h-4 text-brand-secondary" />
-                  <span className="text-sm font-medium text-text-primary">
-                    Add {formatCurrency(summary.freeShippingRemaining)} for FREE shipping!
-                  </span>
-                </div>
-                <div className="w-full bg-gray-200 rounded-full h-2 overflow-hidden">
-                  <div
-                    className="bg-gradient-to-r from-brand-accent to-brand-primary h-2 rounded-full transition-all duration-500"
-                    style={{
-                      width: `${Math.min(100, (summary.subtotal / summary.freeShippingThreshold) * 100)}%`,
-                    }}
-                  />
-                </div>
-              </div>
-            ) : (
-              <div className="px-4 sm:px-6 py-3 bg-gradient-to-r from-brand-accent/20 to-brand-primary/20 border-l-4 border-brand-accent">
-                <div className="flex items-center gap-2">
-                  <Gift className="w-4 h-4 text-brand-secondary" />
-                  <span className="text-sm font-medium text-text-primary">
-                    🎉 You qualify for FREE shipping!
-                  </span>
-                </div>
-              </div>
-            )}
-
             {/* Cart Items */}
             <ScrollArea className="flex-1 px-4 sm:px-6">
               <div className="space-y-3 sm:space-y-4 py-4">
@@ -99,18 +70,6 @@ export function CartSidebar() {
                 <div className="flex justify-between text-sm">
                   <span className="text-text-secondary">Subtotal</span>
                   <span className="font-medium">{formatCurrency(summary.subtotal)}</span>
-                </div>
-                <div className="flex justify-between text-sm">
-                  <span className="text-text-secondary">Shipping</span>
-                  <span className="font-medium">
-                    {summary.shipping === 0 ? (
-                      <Badge variant="secondary" className="bg-brand-accent text-white text-xs">
-                        FREE
-                      </Badge>
-                    ) : (
-                      formatCurrency(summary.shipping)
-                    )}
-                  </span>
                 </div>
                 <div className="flex justify-between text-sm">
                   <span className="text-text-secondary">Tax (15%)</span>

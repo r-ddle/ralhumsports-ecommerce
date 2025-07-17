@@ -434,13 +434,13 @@ export default function ProductDetailPage({ params }: ProductDetailPageProps) {
                   )}
                 </div>
 
-                {/* Price Info */}
-                <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl p-4 border border-blue-200">
+                {/* Delivery Info */}
+                {/* <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl p-4 border border-blue-200">
                   <p className="text-xs sm:text-sm text-blue-800 font-medium">
                     Price includes tax. Free shipping on orders over LKR{' '}
                     <span className="font-bold">{SITE_CONFIG.shipping.freeShippingThreshold}</span>.
                   </p>
-                </div>
+                </div> */}
               </div>
 
               {/* Enhanced Stock Status */}
@@ -631,24 +631,6 @@ export default function ProductDetailPage({ params }: ProductDetailPageProps) {
                   {isOutOfStock ? 'Out of Stock' : 'Buy Now'}
                 </Button>
               </div>
-
-              {/* Enhanced Trust Badges */}
-              <div className="grid grid-cols-3 gap-4 pt-4 border-t border-gray-200">
-                {[
-                  { icon: Truck, title: 'Free Shipping', desc: 'On orders above 50k' },
-                  { icon: Shield, title: 'Secure Payment', desc: 'SSL Protected' },
-                  { icon: RefreshCw, title: 'Easy Returns', desc: '30-day policy' },
-                ].map((trust, index) => (
-                  <div
-                    key={trust.title}
-                    className={`text-center p-3 rounded-xl bg-gradient-to-r from-gray-50 to-blue-50 border border-gray-100 shadow-lg ${!prefersReducedMotion ? 'hover:scale-105 transition-all duration-300' : ''}`}
-                  >
-                    <trust.icon className="w-6 h-6 mx-auto text-[#003DA5] mb-2" />
-                    <div className="text-xs font-bold text-gray-900">{trust.title}</div>
-                    <div className="text-xs text-gray-600 hidden sm:block">{trust.desc}</div>
-                  </div>
-                ))}
-              </div>
             </div>
           </div>
 
@@ -658,13 +640,12 @@ export default function ProductDetailPage({ params }: ProductDetailPageProps) {
           >
             <Tabs defaultValue="description" className="w-full">
               {/* Enhanced Tabs Navigation */}
-              <TabsList className="grid w-full grid-cols-3 mb-6 sm:mb-8 h-auto bg-gradient-to-r from-gray-100 to-blue-100 rounded-2xl p-2 shadow-xl">
-                {['description', 'specifications', 'shipping'].map((tab) => (
+              <TabsList className="grid w-full grid-cols-2 mb-6 sm:mb-8 h-auto bg-gradient-to-r from-gray-100 to-blue-100 rounded-2xl p-2 shadow-xl">
+                {['description', 'specifications'].map((tab) => (
                   <TabsTrigger
                     key={tab}
                     value={tab}
                     className={`font-bold text-xs sm:text-sm py-3 rounded-xl data-[state=active]:bg-white data-[state=active]:shadow-lg transition-all duration-300 ${!prefersReducedMotion ? 'hover:scale-105' : ''}`}
-                    // style moved to CSS or handled by className
                   >
                     {tab.charAt(0).toUpperCase() + tab.slice(1)}
                   </TabsTrigger>
@@ -809,150 +790,6 @@ export default function ProductDetailPage({ params }: ProductDetailPageProps) {
                         </p>
                       </div>
                     )}
-                  </CardContent>
-                </Card>
-              </TabsContent>
-
-              {/* Enhanced Shipping Tab */}
-              <TabsContent value="shipping" className="space-y-6">
-                <Card className="bg-white/80 backdrop-blur-md shadow-2xl border border-white/20">
-                  <CardContent className="p-6">
-                    <h3 className="text-xl font-bold mb-6 text-gray-900">
-                      Shipping & Returns Information
-                    </h3>
-                    <div className="space-y-6">
-                      {/* Enhanced Shipping Information */}
-                      <div>
-                        <h4 className="font-bold mb-4 text-gray-900">Shipping Options</h4>
-                        <div className="space-y-4">
-                          {[
-                            {
-                              icon: Truck,
-                              title: product.shipping?.freeShipping
-                                ? 'Free Shipping'
-                                : 'Standard Shipping',
-                              desc: product.shipping?.freeShipping
-                                ? 'Free shipping on this item. Delivered in 3-5 business days.'
-                                : `Free shipping on orders over LKR ${SITE_CONFIG.shipping.freeShippingThreshold}. Standard rate applies for smaller orders.`,
-                              gradient: 'from-blue-50 to-indigo-50',
-                              border: 'border-blue-200',
-                            },
-                            ...(product.shipping?.islandWideDelivery
-                              ? [
-                                  {
-                                    icon: Globe,
-                                    title: 'Island-wide Delivery',
-                                    desc: 'We deliver across all provinces in Sri Lanka with secure packaging.',
-                                    gradient: 'from-green-50 to-emerald-50',
-                                    border: 'border-green-200',
-                                  },
-                                ]
-                              : []),
-                            ...(product.shipping?.shippingWeight
-                              ? [
-                                  {
-                                    icon: Package,
-                                    title: 'Package Details',
-                                    desc: `Approximate weight: ${product.shipping.shippingWeight}kg`,
-                                    gradient: 'from-gray-50 to-slate-50',
-                                    border: 'border-gray-200',
-                                  },
-                                ]
-                              : []),
-                          ].map((item, index) => (
-                            <div
-                              key={item.title}
-                              className={`flex items-start gap-3 p-4 bg-gradient-to-r ${item.gradient} rounded-xl border ${item.border} shadow-lg ${!prefersReducedMotion ? 'hover:scale-[1.02] transition-all duration-300' : ''}`}
-                            >
-                              <item.icon className="w-5 h-5 text-[#003DA5] mt-1 flex-shrink-0" />
-                              <div>
-                                <h5 className="font-semibold">{item.title}</h5>
-                                <p className="text-sm text-gray-600 mt-1">{item.desc}</p>
-                                <p className="text-xs text-gray-500 mt-2">
-                                  Delivery: 3-5 business days
-                                </p>
-                              </div>
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-
-                      <Separator />
-
-                      {/* Enhanced Returns Information */}
-                      <div>
-                        <h4 className="font-bold mb-4 text-gray-900">Returns & Exchanges</h4>
-                        <div className="space-y-4">
-                          {[
-                            {
-                              icon: RefreshCw,
-                              title: product.shipping?.easyReturn
-                                ? '30-Day Easy Returns'
-                                : '30-Day Returns',
-                              desc: 'Return unused items in original packaging within 30 days for a full refund.',
-                              gradient: 'from-green-50 to-emerald-50',
-                              border: 'border-green-200',
-                            },
-                            {
-                              icon: Shield,
-                              title: 'Quality Guarantee',
-                              desc: 'All products come with manufacturer warranty and our quality guarantee.',
-                              gradient: 'from-blue-50 to-indigo-50',
-                              border: 'border-blue-200',
-                            },
-                          ].map((item) => (
-                            <div
-                              key={item.title}
-                              className={`flex items-start gap-3 p-4 bg-gradient-to-r ${item.gradient} rounded-xl border ${item.border} shadow-lg ${!prefersReducedMotion ? 'hover:scale-[1.02] transition-all duration-300' : ''}`}
-                            >
-                              <item.icon className="w-5 h-5 text-blue-600 mt-1 flex-shrink-0" />
-                              <div>
-                                <h5 className="font-semibold">{item.title}</h5>
-                                <p className="text-sm text-gray-600 mt-1">{item.desc}</p>
-                                {item.title.includes('Returns') && (
-                                  <ul className="text-xs text-gray-500 mt-2 space-y-1">
-                                    <li>• Items must be in original condition</li>
-                                    <li>• Include all original packaging and tags</li>
-                                    <li>• Return shipping costs may apply</li>
-                                  </ul>
-                                )}
-                              </div>
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-
-                      <Separator />
-
-                      {/* Enhanced Contact Information */}
-                      <div className="bg-gradient-to-r from-[#003DA5]/5 to-[#FF3D00]/5 rounded-xl p-4 border border-[#003DA5]/20 shadow-lg">
-                        <h4 className="font-bold mb-2 text-[#003DA5]">Need Help?</h4>
-                        <p className="text-sm text-gray-600 mb-3">
-                          Contact our customer service team for shipping and returns assistance.
-                        </p>
-                        <div className="flex flex-col sm:flex-row gap-2">
-                          <Button
-                            size="sm"
-                            className={`bg-gradient-to-r from-[#25D366] to-[#128C7E] hover:from-[#128C7E] hover:to-[#25D366] text-white shadow-lg ${!prefersReducedMotion ? 'hover:scale-105 transition-all duration-300' : ''}`}
-                            onClick={() => {
-                              const message = `Hello! I need help with shipping/returns for product: ${product.name} (SKU: ${product.sku})`
-                              const whatsappUrl = `https://wa.me/94772350712?text=${encodeURIComponent(message)}`
-                              window.open(whatsappUrl, '_blank')
-                            }}
-                          >
-                            WhatsApp Support
-                          </Button>
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            asChild
-                            className={`border-2 border-[#003DA5] text-[#003DA5] hover:bg-[#003DA5] hover:text-white ${!prefersReducedMotion ? 'hover:scale-105 transition-all duration-300' : ''}`}
-                          >
-                            <Link href="/contact">Contact Us</Link>
-                          </Button>
-                        </div>
-                      </div>
-                    </div>
                   </CardContent>
                 </Card>
               </TabsContent>

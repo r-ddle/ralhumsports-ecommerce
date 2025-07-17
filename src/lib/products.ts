@@ -27,7 +27,7 @@ export function transformPayloadProduct(payloadProduct: PayloadProduct): Product
   return {
     id: String(payloadProduct.id),
     title: payloadProduct.name,
-    slug: payloadProduct.slug,
+    slug: payloadProduct.slug ?? '',
     description: typeof payloadProduct.description === 'string' ? payloadProduct.description : '',
     shortDescription: payloadProduct.seo?.description || '',
     brand: brand
@@ -65,9 +65,12 @@ export function transformPayloadProduct(payloadProduct: PayloadProduct): Product
         name: 'Default',
         price: payloadProduct.price,
         compareAtPrice: payloadProduct.pricing?.originalPrice || undefined,
-        sku: payloadProduct.sku,
+        sku: payloadProduct.sku ?? '',
         inventory: payloadProduct.stock || 0,
-        weight: payloadProduct.shipping?.shippingWeight || undefined,
+        weight:
+          payloadProduct.specifications?.weight !== undefined
+            ? Number(payloadProduct.specifications.weight)
+            : undefined,
         options: {},
       },
     ],
@@ -94,7 +97,7 @@ export function transformPayloadProduct(payloadProduct: PayloadProduct): Product
       : undefined,
     createdAt: payloadProduct.createdAt,
     updatedAt: payloadProduct.updatedAt,
-    sku: payloadProduct.sku,
+    sku: payloadProduct.sku ?? '',
     featured: !!payloadProduct.features, // Add this line to fix the error
   }
 }

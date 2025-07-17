@@ -221,7 +221,6 @@ export async function GET(request: NextRequest) {
       description: product.description,
       features: product.features?.map((f) => f.feature) || [],
       specifications: product.specifications,
-      shipping: product.shipping,
       seo: product.seo,
       analytics: product.analytics,
       relatedProducts: product.relatedProducts || [],

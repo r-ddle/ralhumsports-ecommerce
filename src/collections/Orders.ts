@@ -248,7 +248,7 @@ export const Orders: CollectionConfig = {
       type: 'number',
       required: true,
       admin: {
-        description: 'Order subtotal (before shipping and taxes)',
+        description: 'Order subtotal (before taxes)',
         step: 0.01,
         readOnly: true,
       },
@@ -286,7 +286,7 @@ export const Orders: CollectionConfig = {
       type: 'number',
       required: true,
       admin: {
-        description: 'Final order total (subtotal + tax + shipping - discount)',
+        description: 'Final order total (subtotal + tax - discount)',
         step: 0.01,
         readOnly: true,
       },
@@ -450,76 +450,6 @@ export const Orders: CollectionConfig = {
       ],
     },
 
-    // Shipping Information
-    {
-      name: 'shipping',
-      type: 'group',
-      label: 'Shipping Information',
-      fields: [
-        {
-          name: 'trackingNumber',
-          type: 'text',
-          admin: {
-            description: 'Shipping tracking number',
-            placeholder: 'Enter tracking number when shipped',
-          },
-        },
-        {
-          name: 'courier',
-          type: 'select',
-          options: [
-            {
-              label: 'Pronto Express',
-              value: 'pronto',
-            },
-            {
-              label: 'Kapruka',
-              value: 'kapruka',
-            },
-            {
-              label: 'DHL',
-              value: 'dhl',
-            },
-            {
-              label: 'FedEx',
-              value: 'fedex',
-            },
-            {
-              label: 'Local Delivery',
-              value: 'local',
-            },
-            {
-              label: 'Customer Pickup',
-              value: 'pickup',
-            },
-          ],
-          admin: {
-            description: 'Courier service used for delivery',
-          },
-        },
-        {
-          name: 'estimatedDelivery',
-          type: 'date',
-          admin: {
-            description: 'Estimated delivery date',
-            date: {
-              displayFormat: 'dd/MM/yyyy',
-            },
-          },
-        },
-        {
-          name: 'actualDelivery',
-          type: 'date',
-          admin: {
-            description: 'Actual delivery date',
-            date: {
-              displayFormat: 'dd/MM/yyyy HH:mm',
-            },
-          },
-        },
-      ],
-    },
-
     // Internal Notes
     {
       name: 'internalNotes',
@@ -633,9 +563,8 @@ export const Orders: CollectionConfig = {
           typedData.tax = tax
 
           // Calculate final total with proper null checking
-          const shipping = typedData.shippingCost ?? 0
           const discount = typedData.discount ?? 0
-          typedData.orderTotal = Math.max(0, subtotal + tax + shipping - discount)
+          typedData.orderTotal = Math.max(0, subtotal + tax - discount)
         }
 
         // Set WhatsApp message timestamp when message is marked as sent

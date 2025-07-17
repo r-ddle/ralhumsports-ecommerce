@@ -106,10 +106,10 @@ export const GET = withRateLimit(
         results.products = productsResponse.docs.map((product) => ({
           id: product.id,
           name: product.name,
-          slug: product.slug,
+          slug: typeof product.slug === 'string' ? product.slug : '',
           price: product.price,
           originalPrice: product.pricing?.originalPrice,
-          sku: product.sku,
+          sku: typeof product.sku === 'string' ? product.sku : '',
           stock: (product.stock || 0) > 0 ? 'In Stock' : 'Out of Stock', // Don't expose exact stock numbers
           status: product.status,
           sizes: Array.isArray(product.variants)

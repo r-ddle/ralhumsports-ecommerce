@@ -67,7 +67,6 @@ ${minimalProductList}
 
 *Payment Details*
 Subtotal: LKR ${formatCurrency(pricing.subtotal)}
-Shipping: LKR ${formatCurrency(pricing.shipping)}
 Tax (${SITE_CONFIG.taxRate * 100}%): LKR ${formatCurrency(pricing.tax)}
 *Total*: LKR ${formatCurrency(pricing.total)}
 

@@ -88,10 +88,10 @@ export function transformProductToListItem(payloadProduct: PayloadProduct): Prod
   return {
     id: payloadProduct.id,
     name: payloadProduct.name,
-    slug: payloadProduct.slug,
+    slug: payloadProduct.slug ?? '',
     price: payloadProduct.price,
     originalPrice: payloadProduct.pricing?.originalPrice || undefined,
-    sku: payloadProduct.sku,
+    sku: payloadProduct.sku ?? '',
     stock: effectiveStock, // Use calculated effective stock
     status: payloadProduct.status,
     sizes: (payloadProduct.variants?.map((v) => v.size).filter(Boolean) as string[]) || [],
@@ -120,26 +120,6 @@ export function transformProductToListItem(payloadProduct: PayloadProduct): Prod
           weight: payloadProduct.specifications.weight ?? undefined,
           dimensions: payloadProduct.specifications.dimensions ?? undefined,
           careInstructions: payloadProduct.specifications.careInstructions ?? undefined,
-        }
-      : undefined,
-    shipping: payloadProduct.shipping
-      ? {
-          freeShipping:
-            payloadProduct.shipping.freeShipping !== null
-              ? payloadProduct.shipping.freeShipping
-              : undefined,
-          islandWideDelivery:
-            payloadProduct.shipping.islandWideDelivery !== null
-              ? payloadProduct.shipping.islandWideDelivery
-              : undefined,
-          easyReturn:
-            payloadProduct.shipping.easyReturn !== null
-              ? payloadProduct.shipping.easyReturn
-              : undefined,
-          shippingWeight:
-            payloadProduct.shipping.shippingWeight !== null
-              ? payloadProduct.shipping.shippingWeight
-              : undefined,
         }
       : undefined,
     seo: payloadProduct.seo
