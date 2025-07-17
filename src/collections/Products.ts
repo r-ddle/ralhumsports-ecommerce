@@ -58,17 +58,45 @@ export const Products: CollectionConfig = {
       },
     },
     {
-      name: 'category',
+      name: 'sportCategory',
       type: 'relationship',
       relationTo: 'categories',
       required: true,
       admin: {
-        description: 'Product category for organization',
+        description: 'Select the Sports Category for this product',
+        condition: (data: any) => true,
       },
       filterOptions: {
-        status: {
-          equals: 'active',
-        },
+        type: { equals: 'category' },
+        status: { equals: 'active' },
+      },
+    },
+    {
+      name: 'sport',
+      type: 'relationship',
+      relationTo: 'categories',
+      required: true,
+      admin: {
+        description: 'Select the Sport for this product',
+        condition: (data: any) => !!data.sportCategory,
+      },
+      filterOptions: {
+        type: { equals: 'sport' },
+        status: { equals: 'active' },
+      },
+    },
+    {
+      name: 'sportItem',
+      type: 'relationship',
+      relationTo: 'categories',
+      required: true,
+      admin: {
+        description: 'Select the Sports Item for this product',
+        condition: (data: any) => !!data.sport,
+      },
+      filterOptions: {
+        type: { equals: 'item' },
+        status: { equals: 'active' },
       },
     },
     {

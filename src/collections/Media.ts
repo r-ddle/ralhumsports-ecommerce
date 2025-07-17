@@ -10,24 +10,14 @@ export const Media: CollectionConfig = {
     description: 'Manage all uploaded media files with organized categorization',
   },
   access: {
-    // Content editors and above can upload media
     create: isAdminOrContentEditor,
-    // All authenticated users can read media, but limit sensitive fields
     read: ({ req }) => {
       if (!req.user) {
-        // Public can only read public media
-        return {
-          isPublic: {
-            equals: true,
-          },
-        }
+        return { isPublic: { equals: true } }
       }
-      // Authenticated users can read all media
       return true
     },
-    // Only admins and product managers can update media metadata
     update: isAdminOrProductManager,
-    // Only super admins can delete media (to prevent accidental deletions)
     delete: isSuperAdmin,
   },
   upload: {
@@ -51,9 +41,7 @@ export const Media: CollectionConfig = {
         position: 'centre',
         formatOptions: {
           format: 'webp',
-          options: {
-            quality: 80,
-          },
+          options: { quality: 80 },
         },
       },
       {
@@ -63,21 +51,7 @@ export const Media: CollectionConfig = {
         position: 'centre',
         formatOptions: {
           format: 'webp',
-          options: {
-            quality: 85,
-          },
-        },
-      },
-      {
-        name: 'tablet',
-        width: 1024,
-        height: undefined,
-        position: 'centre',
-        formatOptions: {
-          format: 'webp',
-          options: {
-            quality: 90,
-          },
+          options: { quality: 85 },
         },
       },
       {
@@ -87,9 +61,7 @@ export const Media: CollectionConfig = {
         position: 'centre',
         formatOptions: {
           format: 'webp',
-          options: {
-            quality: 90,
-          },
+          options: { quality: 90 },
         },
       },
     ],

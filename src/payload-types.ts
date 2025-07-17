@@ -267,14 +267,6 @@ export interface Media {
       filesize?: number | null;
       filename?: string | null;
     };
-    tablet?: {
-      url?: string | null;
-      width?: number | null;
-      height?: number | null;
-      mimeType?: string | null;
-      filesize?: number | null;
-      filename?: string | null;
-    };
     desktop?: {
       url?: string | null;
       width?: number | null;
@@ -306,10 +298,6 @@ export interface Category {
    */
   description?: string | null;
   /**
-   * Category banner or representative image
-   */
-  image?: (number | null) | Media;
-  /**
    * Icon class or Unicode for category display (optional)
    */
   icon?: string | null;
@@ -322,9 +310,13 @@ export interface Category {
    */
   displayOrder: number;
   /**
-   * Parent category ID for hierarchical organization (optional)
+   * Type of node in hierarchy: Sports Category > Sport > Sports Item
    */
-  parentCategory?: string | null;
+  type: 'category' | 'sport' | 'item';
+  /**
+   * Parent node in hierarchy. Required for Sport (parent: category) and Sports Item (parent: sport).
+   */
+  parentCategory?: (number | null) | Category;
   /**
    * Feature this category on homepage or in navigation
    */
@@ -515,9 +507,17 @@ export interface Product {
   name: string;
   slug?: string | null;
   /**
-   * Product category for organization
+   * Select the Sports Category for this product
    */
-  category: number | Category;
+  sportCategory?: (number | null) | Category;
+  /**
+   * Select the Sport for this product
+   */
+  sport?: (number | null) | Category;
+  /**
+   * Select the Sports Item for this product
+   */
+  sportItem?: (number | null) | Category;
   /**
    * Product brand
    */
@@ -1120,16 +1120,6 @@ export interface MediaSelect<T extends boolean = true> {
               filesize?: T;
               filename?: T;
             };
-        tablet?:
-          | T
-          | {
-              url?: T;
-              width?: T;
-              height?: T;
-              mimeType?: T;
-              filesize?: T;
-              filename?: T;
-            };
         desktop?:
           | T
           | {
@@ -1150,10 +1140,10 @@ export interface CategoriesSelect<T extends boolean = true> {
   name?: T;
   slug?: T;
   description?: T;
-  image?: T;
   icon?: T;
   status?: T;
   displayOrder?: T;
+  type?: T;
   parentCategory?: T;
   isFeature?: T;
   showInNavigation?: T;
@@ -1231,7 +1221,9 @@ export interface BrandsSelect<T extends boolean = true> {
 export interface ProductsSelect<T extends boolean = true> {
   name?: T;
   slug?: T;
-  category?: T;
+  sportCategory?: T;
+  sport?: T;
+  sportItem?: T;
   brand?: T;
   price?: T;
   sku?: T;

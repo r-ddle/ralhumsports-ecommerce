@@ -65,19 +65,6 @@ export const Categories: CollectionConfig = {
       },
     },
     {
-      name: 'image',
-      type: 'upload',
-      relationTo: 'media',
-      admin: {
-        description: 'Category banner or representative image',
-      },
-      filterOptions: {
-        category: {
-          equals: 'products',
-        },
-      },
-    },
-    {
       name: 'icon',
       type: 'text',
       admin: {
@@ -119,12 +106,29 @@ export const Categories: CollectionConfig = {
       },
     },
     {
-      name: 'parentCategory',
-      type: 'text',
+      name: 'type',
+      type: 'select',
+      required: true,
+      options: [
+        { label: 'Sports Category', value: 'category' },
+        { label: 'Sport', value: 'sport' },
+        { label: 'Sports Item', value: 'item' },
+      ],
       admin: {
-        description: 'Parent category ID for hierarchical organization (optional)',
-        placeholder: 'Enter parent category ID if this is a subcategory',
+        description: 'Type of node in hierarchy: Sports Category > Sport > Sports Item',
       },
+    },
+    {
+      name: 'parentCategory',
+      type: 'relationship',
+      relationTo: 'categories',
+      admin: {
+        description:
+          'Parent node in hierarchy. Required for Sport (parent: category) and Sports Item (parent: sport).',
+        placeholder: 'Select parent category/sport',
+        condition: (data) => data.type !== 'category',
+      },
+      required: false,
     },
     {
       name: 'isFeature',
