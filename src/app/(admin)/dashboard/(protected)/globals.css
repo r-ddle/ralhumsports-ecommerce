@@ -1,0 +1,285 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    /* Ralhum Sports Brand Color System */
+    --primary-orange: #ff6b35; /* Main brand color - buttons, CTAs, links */
+    --secondary-blue: #3b82f6; /* Headers, important text, navigation */
+    --accent-amber: #f39c12; /* Badges, highlights, sale indicators */
+    --background: #fafafa; /* Main background - NEVER pure white */
+    --text-primary: #2d3436; /* Main text - NEVER pure black */
+    --text-secondary: #6b7280; /* Secondary text, descriptions */
+    --border-gray: #e5e7eb; /* Borders, cards, dividers */
+    --success: #10b981; /* Success states */
+    --error: #ef4444; /* Error states */
+    --warning: #f59e0b; /* Warning states */
+
+    /* Surface colors */
+    --surface: #ffffff;
+    --surface-hover: #f9fafb;
+    --surface-active: #f3f4f6;
+
+    /* Shadcn/UI CSS Variables mapped to brand colors */
+    --primary: var(--primary-orange);
+    --primary-foreground: #ffffff;
+    --secondary: var(--surface-active);
+    --secondary-foreground: var(--text-primary);
+    --destructive: var(--error);
+    --destructive-foreground: #ffffff;
+    --muted: #f3f4f6;
+    --muted-foreground: var(--text-secondary);
+    --accent: var(--surface-hover);
+    --accent-foreground: var(--text-primary);
+    --popover: var(--surface);
+    --popover-foreground: var(--text-primary);
+    --card: var(--surface);
+    --card-foreground: var(--text-primary);
+    --border: var(--border-gray);
+    --input: var(--border-gray);
+    --ring: var(--secondary-blue);
+    --radius: 0.5rem;
+    --foreground: var(--text-primary);
+  }
+
+  * {
+    border-color: var(--border-gray);
+  }
+
+  body {
+    background-color: var(--background);
+    color: var(--text-primary);
+    font-feature-settings:
+      'rlig' 1,
+      'calt' 1;
+  }
+
+  /* Performance optimizations for mobile */
+  @media (max-width: 768px) {
+    * {
+      -webkit-transform: translateZ(0);
+      transform: translateZ(0);
+    }
+  }
+
+  /* Respect reduced motion preferences */
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+      scroll-behavior: auto !important;
+    }
+  }
+}
+
+@layer components {
+  /* Ralhum Sports Brand Component Styles */
+  .btn-primary {
+    background: linear-gradient(135deg, var(--primary-orange), #ff8b35);
+    color: white;
+    border: none;
+    transition: all 0.2s ease;
+  }
+
+  .btn-primary:hover {
+    background: linear-gradient(135deg, #e55a2b, var(--primary-orange));
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(255, 107, 53, 0.3);
+  }
+
+  .btn-secondary {
+    background: linear-gradient(135deg, var(--secondary-blue), #60a5fa);
+    color: white;
+    border: none;
+    transition: all 0.2s ease;
+  }
+
+  .btn-secondary:hover {
+    background: linear-gradient(135deg, #2563eb, var(--secondary-blue));
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+  }
+
+  .text-brand-primary {
+    color: var(--primary-orange);
+  }
+
+  .text-brand-secondary {
+    color: var(--secondary-blue);
+  }
+
+  .text-brand-accent {
+    color: var(--accent-amber);
+  }
+
+  .bg-brand-surface {
+    background-color: var(--surface);
+  }
+
+  .bg-brand-background {
+    background-color: var(--background);
+  }
+
+  /* Card components */
+  .card-primary {
+    background: var(--surface);
+    border: 1px solid var(--border-gray);
+    border-radius: 0.75rem;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    transition: all 0.2s ease;
+  }
+
+  .card-primary:hover {
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    transform: translateY(-2px);
+  }
+}
+
+@layer utilities {
+  /* Optimized animations for mobile performance */
+  @keyframes infinite-scroll {
+    from {
+      transform: translateX(0);
+    }
+    to {
+      transform: translateX(-100%);
+    }
+  }
+
+  @keyframes fade-in {
+    from {
+      opacity: 0;
+    }
+    to {
+      opacity: 1;
+    }
+  }
+
+  @keyframes fade-in-up {
+    from {
+      opacity: 0;
+      transform: translateY(20px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  .animate-infinite-scroll {
+    animation: infinite-scroll 25s linear infinite;
+  }
+
+  .animate-fade-in {
+    animation: fade-in 0.3s ease-out;
+  }
+
+  .animate-fade-in-up {
+    animation: fade-in-up 0.5s ease-out;
+  }
+
+  /* Mobile optimized classes */
+  .mobile-optimized {
+    transition:
+      transform 0.1s ease,
+      opacity 0.1s ease;
+  }
+
+  /* Grid pattern for backgrounds */
+  .bg-grid-pattern {
+    background-image:
+      linear-gradient(rgba(0, 0, 0, 0.05) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(0, 0, 0, 0.05) 1px, transparent 1px);
+    background-size: 20px 20px;
+  }
+
+  /* Force light mode always */
+  html {
+    color-scheme: light !important;
+  }
+}
+
+/* Hide scrollbar for carousel */
+.scrollbar-hidden {
+  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none; /* IE/Edge */
+}
+
+.scrollbar-hidden::-webkit-scrollbar {
+  display: none; /* Chrome, Safari, Opera */
+}
+
+/* Infinite scroll animation */
+@keyframes infiniteScroll {
+  0% {
+    transform: translateX(0);
+  }
+  100% {
+    transform: translateX(-33.333%);
+  }
+}
+
+.animate-infinite-scroll {
+  animation: infiniteScroll 30s linear infinite;
+}
+
+/* Pause animation on hover */
+.hover\:animation-paused:hover {
+  animation-play-state: paused;
+}
+
+/* Curved fade masks */
+.mask-fade-left {
+  mask: radial-gradient(ellipse at left, black 30%, transparent 70%);
+  -webkit-mask: radial-gradient(ellipse at left, black 30%, transparent 70%);
+}
+
+.mask-fade-right {
+  mask: radial-gradient(ellipse at right, black 30%, transparent 70%);
+  -webkit-mask: radial-gradient(ellipse at right, black 30%, transparent 70%);
+}
+
+/* Mobile responsiveness for animation */
+@media (max-width: 640px) {
+  .animate-infinite-scroll {
+    animation-duration: 25s;
+  }
+}
+
+/* Pause animation on hover for desktop */
+@media (hover: hover) {
+  .animate-infinite-scroll:hover {
+    animation-play-state: paused;
+  }
+}
+
+/* Remove hover effects on touch devices */
+@media (hover: none) {
+  .group:hover {
+    transform: none !important;
+  }
+}
+
+/* Cursor styles for dragging */
+.cursor-grab {
+  cursor: grab;
+}
+
+.cursor-grab:active {
+  cursor: grabbing;
+}
+
+/* Smooth scroll behavior */
+.scrollbar-hidden {
+  scroll-behavior: smooth;
+}
+
+/* Better drag experience */
+.scrollbar-hidden * {
+  user-select: none;
+  -webkit-user-drag: none;
+}

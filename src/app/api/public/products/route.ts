@@ -1,15 +1,7 @@
-/**
- * Products API Route
- * Handles GET requests for fetching products with advanced filtering, logging, and error handling.
- *
- * @param request - Next.js API request object
- * @returns JSON response with product data or error
- */
 import { NextRequest, NextResponse } from 'next/server'
 import { getPayload } from 'payload'
 import config from '@payload-config'
 
-// Type for Payload where conditions
 type Where = {
   [key: string]:
     | { equals?: string | number | boolean }
@@ -17,34 +9,29 @@ type Where = {
     | { greater_than?: number }
     | { greater_than_equal?: number }
     | { less_than_equal?: number }
+    | { in?: string[] }
     | unknown
   or?: Array<Record<string, any>>
 }
 
-/**
- * GET /api/products
- * Fetches a paginated, filtered list of products.
- * Adds detailed logging and comments for debugging.
- */
 export async function GET(request: NextRequest) {
-  // --- Parse query parameters ---
   const { searchParams } = new URL(request.url)
   const page = parseInt(searchParams.get('page') || '1')
   const limit = parseInt(searchParams.get('limit') || '12')
   const search = searchParams.get('search')
-  // Support multiple category params
   const categorySlugs = searchParams.getAll('category')
-  const brand = searchParams.get('brand') // This will be a slug
+  const brand = searchParams.get('brand')
   const sort = searchParams.get('sort') || 'createdAt'
   const order = searchParams.get('order') || 'desc'
   const status = searchParams.get('status') || 'active'
   const minPrice = searchParams.get('minPrice')
   const maxPrice = searchParams.get('maxPrice')
   const inStock = searchParams.get('inStock')
+  const sport = searchParams.get('sport')
+  const item = searchParams.get('item')
 
-  // --- Logging input parameters ---
-  console.log(`\x1b[36m[Products API] Incoming GET request\x1b[0m`)
-  console.log(`\x1b[36m[Products API] Query Params:\x1b[0m`, {
+  console.log(`[Products API] Incoming GET request`)
+  console.log(`[Products API] Query Params:`, {
     page,
     limit,
     search,
@@ -56,24 +43,44 @@ export async function GET(request: NextRequest) {
     minPrice,
     maxPrice,
     inStock,
+    sport,
+    item,
   })
 
   try {
     const payload = await getPayload({ config })
     const whereConditions: Where = {}
 
-    // --- Status filter ---
+    // Hierarchical filters
+    if (categorySlugs && categorySlugs.length > 0) {
+      if (categorySlugs.length === 1) {
+        whereConditions['category.slug'] = { equals: categorySlugs[0] }
+        whereConditions['category.type'] = { equals: 'category' }
+      } else {
+        whereConditions['category.slug'] = { in: categorySlugs }
+        whereConditions['category.type'] = { equals: 'category' }
+      }
+    }
+    if (sport) {
+      whereConditions['sport.slug'] = { equals: sport }
+      whereConditions['sport.type'] = { equals: 'sport' }
+    }
+    if (item) {
+      whereConditions['item.slug'] = { equals: item }
+      whereConditions['item.type'] = { equals: 'item' }
+    }
+
+    // Status filter
     if (status && status !== 'active') {
       whereConditions.status = { equals: status }
     } else {
-      // Default: show active and out-of-stock products
       whereConditions.or = [
         { status: { equals: 'active' } },
         { status: { equals: 'out-of-stock' } },
       ]
     }
 
-    // --- Search filter ---
+    // Search filter
     if (search) {
       whereConditions.or = [
         { name: { contains: search } },
@@ -82,16 +89,7 @@ export async function GET(request: NextRequest) {
       ]
     }
 
-    // --- Category filter ---
-    if (categorySlugs && categorySlugs.length > 0) {
-      if (categorySlugs.length === 1) {
-        whereConditions['category.slug'] = { equals: categorySlugs[0] }
-      } else {
-        whereConditions['category.slug'] = { in: categorySlugs }
-      }
-    }
-
-    // --- Brand filter (resolve slug to ID) ---
+    // Brand filter (resolve slug to ID)
     if (brand) {
       try {
         const brandResult = await payload.find({
@@ -102,7 +100,7 @@ export async function GET(request: NextRequest) {
         if (brandResult.docs.length > 0) {
           whereConditions.brand = { equals: brandResult.docs[0].id }
         } else {
-          console.error(`\x1b[31m[Products API ERROR]\x1b[0m Brand not found for slug:`, brand)
+          console.error(`[Products API ERROR] Brand not found for slug:`, brand)
           return NextResponse.json({
             success: true,
             data: [],
@@ -117,7 +115,7 @@ export async function GET(request: NextRequest) {
           })
         }
       } catch (brandError) {
-        console.error(`\x1b[31m[Products API ERROR]\x1b[0m Error finding brand:`, brandError)
+        console.error(`[Products API ERROR] Error finding brand:`, brandError)
         return NextResponse.json({
           success: true,
           data: [],
@@ -133,7 +131,7 @@ export async function GET(request: NextRequest) {
       }
     }
 
-    // --- Price range filter ---
+    // Price range filter
     if (minPrice || maxPrice) {
       whereConditions.price = {}
       if (minPrice)
@@ -142,12 +140,12 @@ export async function GET(request: NextRequest) {
         (whereConditions.price as Record<string, number>).less_than_equal = parseFloat(maxPrice)
     }
 
-    // --- Stock filter ---
+    // Stock filter
     if (inStock === 'true') {
       whereConditions.stock = { greater_than: 0 }
     }
 
-    // --- Query the database ---
+    // Query the database
     let result
     try {
       result = await payload.find({
@@ -156,20 +154,20 @@ export async function GET(request: NextRequest) {
         page,
         limit,
         sort: `${order === 'desc' ? '-' : ''}${sort}`,
-        depth: 2, // Include related data
+        depth: 2,
       })
-      console.log(`\x1b[32m[Products API] DB Query Success\x1b[0m`, {
+      console.log(`[Products API] DB Query Success`, {
         total: result.totalDocs,
         page: result.page,
         limit: result.limit,
       })
     } catch (dbError) {
-      console.error(`\x1b[31m[Products API ERROR]\x1b[0m DB Query Failed:`, dbError)
+      console.error(`[Products API ERROR] DB Query Failed:`, dbError)
       throw dbError
     }
 
-    // --- Transform products for frontend ---
-    const transformedProducts = result.docs.map((product) => ({
+    // Transform products for frontend
+    const transformedProducts = result.docs.map((product: any) => ({
       id: product.id,
       name: product.name,
       slug: product.slug,
@@ -179,12 +177,12 @@ export async function GET(request: NextRequest) {
       stock: product.stock,
       status: product.status,
       images:
-        product.images?.map((img) => ({
+        product.images?.map((img: any) => ({
           url: typeof img.image === 'object' ? img.image.url : img.image,
           alt: img.altText || product.name,
         })) || [],
       variants:
-        product.variants?.map((variant) => ({
+        product.variants?.map((variant: any) => ({
           id: variant.id,
           name: variant.name,
           sku: variant.sku,
@@ -219,19 +217,19 @@ export async function GET(request: NextRequest) {
             }
           : null,
       description: product.description,
-      features: product.features?.map((f) => f.feature) || [],
+      features: product.features?.map((f: any) => f.feature) || [],
       specifications: product.specifications,
       seo: product.seo,
       analytics: product.analytics,
       relatedProducts: product.relatedProducts || [],
-      tags: product.tags ? product.tags.split(',').map((t) => t.trim()) : [],
+      tags: product.tags ? product.tags.split(',').map((t: string) => t.trim()) : [],
       createdBy: product.createdBy,
       lastModifiedBy: product.lastModifiedBy,
       createdAt: product.createdAt,
       updatedAt: product.updatedAt,
     }))
 
-    // --- Build and return response ---
+    // Build and return response
     const response = NextResponse.json({
       success: true,
       data: transformedProducts,
@@ -247,8 +245,7 @@ export async function GET(request: NextRequest) {
     response.headers.set('Cache-Control', 'public, s-maxage=60, stale-while-revalidate=300')
     return response
   } catch (error) {
-    // --- Error logging with color ---
-    console.error(`\x1b[41m\x1b[37m[Products API ERROR]\x1b[0m`, error)
+    console.error(`[Products API ERROR]`, error)
     return NextResponse.json(
       {
         success: false,

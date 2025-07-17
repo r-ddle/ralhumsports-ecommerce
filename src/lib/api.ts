@@ -21,6 +21,12 @@ import { useState } from 'react'
 const API_BASE_URL = process.env.NEXT_PUBLIC_SERVER_URL || 'http://localhost:3000'
 
 class ApiClient {
+  async createProduct(productData: any): Promise<ApiResponse<Product>> {
+    return this.request<ApiResponse<Product>>('/api/public/products', {
+      method: 'POST',
+      body: JSON.stringify(productData),
+    });
+  }
   private baseUrl: string
 
   constructor(baseUrl: string = API_BASE_URL) {

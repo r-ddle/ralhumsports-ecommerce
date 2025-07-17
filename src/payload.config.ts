@@ -26,7 +26,7 @@ export default buildConfig({
       titleSuffix: '- Ralhum Sports Admin',
       // ogImage: '/admin-og-image.png',
     },
-    disable: false,
+    disable: true, // Disable admin UI for this config
     components: {
       // Custom admin components can be added here
       // graphics: {

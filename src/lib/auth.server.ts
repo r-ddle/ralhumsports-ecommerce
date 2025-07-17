@@ -29,11 +29,18 @@ interface JWTPayload {
 /**
  * Extract and validate PayloadCMS JWT token from request
  */
-export async function getAuthContext(request: NextRequest): Promise<AuthContext> {
+export async function getAuthContext(
+  cookies: ReturnType<typeof import('next/headers').cookies>,
+  headers?: ReturnType<typeof import('next/headers').headers>,
+): Promise<AuthContext> {
   try {
     // Extract token from Authorization header or cookie
-    const authHeader = request.headers.get('authorization')
-    const token = authHeader?.replace('Bearer ', '') || request.cookies.get('payload-token')?.value
+    let token: string | undefined
+    let authHeader: string | undefined
+    if (headers) {
+      authHeader = headers.get('authorization') || undefined
+    }
+    token = authHeader?.replace('Bearer ', '') || cookies.get('payload-token')?.value
 
     if (!token) {
       return {
