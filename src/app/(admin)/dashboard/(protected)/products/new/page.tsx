@@ -191,9 +191,29 @@ export default function NewProductPage() {
         slug: sku || `rs-${Date.now()}`,
         description,
         sku: sku || `RS-${Date.now()}`,
-        status: (['active', 'draft', 'archived'].includes(status) ? status : 'draft') as 'active' | 'draft' | 'archived',
-        brand: { id: brand, name: brand, slug: brand, featured: false, createdAt: '', updatedAt: '' },
-        categories: sportCategory ? [{ id: sportCategory, name: sportCategory, slug: sportCategory, createdAt: '', updatedAt: '' }] : [],
+        status: (['active', 'draft', 'archived'].includes(status) ? status : 'draft') as
+          | 'active'
+          | 'draft'
+          | 'archived',
+        brand: {
+          id: brand,
+          name: brand,
+          slug: brand,
+          featured: false,
+          createdAt: '',
+          updatedAt: '',
+        },
+        categories: sportCategory
+          ? [
+              {
+                id: sportCategory,
+                name: sportCategory,
+                slug: sportCategory,
+                createdAt: '',
+                updatedAt: '',
+              },
+            ]
+          : [],
         images: images.map((img) => ({ id: '', url: img.url, alt: img.altText })),
         variants: useVariants
           ? variants.map((v) => ({
@@ -206,14 +226,16 @@ export default function NewProductPage() {
               color: v.color,
               options: {},
             }))
-          : [{
-              id: '1',
-              name,
-              price: parseFloat(price) || 0,
-              inventory: parseInt(stock) || 0,
-              sku: sku || `RS-${Date.now()}`,
-              options: {},
-            }],
+          : [
+              {
+                id: '1',
+                name,
+                price: parseFloat(price) || 0,
+                inventory: parseInt(stock) || 0,
+                sku: sku || `RS-${Date.now()}`,
+                options: {},
+              },
+            ],
         tags: tags.split(',').map((t) => t.trim()),
         featured: false,
         specifications: { material, weight, dimensions, careInstructions },

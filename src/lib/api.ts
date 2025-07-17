@@ -25,7 +25,7 @@ class ApiClient {
     return this.request<ApiResponse<Product>>('/api/public/products', {
       method: 'POST',
       body: JSON.stringify(productData),
-    });
+    })
   }
   private baseUrl: string
 

@@ -51,7 +51,6 @@ import Image from 'next/image'
 // Mock data - in a real app, this would come from your PayloadCMS API
 import type { Product } from '@/types/product'
 
-
 export default function ProductsPage() {
   const [products, setProducts] = useState<Product[]>([])
   useEffect(() => {
@@ -83,7 +82,8 @@ export default function ProductsPage() {
       (product.brand?.name?.toLowerCase().includes(searchQuery.toLowerCase()) ?? false)
 
     const matchesStatus = statusFilter === 'all' || product.status === statusFilter
-    const matchesCategory = categoryFilter === 'all' || (product.categories[0]?.name === categoryFilter)
+    const matchesCategory =
+      categoryFilter === 'all' || product.categories[0]?.name === categoryFilter
 
     return matchesSearch && matchesStatus && matchesCategory
   })
@@ -305,20 +305,26 @@ export default function ProductsPage() {
                     </div>
                   </TableCell>
                   <TableCell className="text-text-secondary">{product.brand?.name}</TableCell>
-                  <TableCell className="text-text-secondary">{product.categories[0]?.name}</TableCell>
+                  <TableCell className="text-text-secondary">
+                    {product.categories[0]?.name}
+                  </TableCell>
                   <TableCell className="font-medium">
                     LKR {(product.variants[0]?.price ?? 0).toLocaleString()}
                   </TableCell>
                   <TableCell>
                     <span
                       className={`font-medium ${
-                        (product.variants[0]?.inventory ?? 0) <= 5 ? 'text-red-600' : 'text-text-primary'
+                        (product.variants[0]?.inventory ?? 0) <= 5
+                          ? 'text-red-600'
+                          : 'text-text-primary'
                       }`}
                     >
                       {product.variants[0]?.inventory ?? 0}
                     </span>
                   </TableCell>
-                  <TableCell>{getStatusBadge(product.status, product.variants[0]?.inventory ?? 0)}</TableCell>
+                  <TableCell>
+                    {getStatusBadge(product.status, product.variants[0]?.inventory ?? 0)}
+                  </TableCell>
                   <TableCell>
                     <Badge variant="outline" className="text-xs">
                       {product.variants.length} variant{product.variants.length !== 1 ? 's' : ''}
@@ -409,7 +415,11 @@ export default function ProductsPage() {
           <CardContent className="p-4">
             <div className="text-2xl font-bold text-yellow-600">
               {/* Low stock: inventory <= 5 */}
-              {products.filter((p) => (p.variants[0]?.inventory ?? 0) <= 5 && p.status === 'active').length}
+              {
+                products.filter(
+                  (p) => (p.variants[0]?.inventory ?? 0) <= 5 && p.status === 'active',
+                ).length
+              }
             </div>
             <p className="text-xs text-text-secondary">Low Stock</p>
           </CardContent>

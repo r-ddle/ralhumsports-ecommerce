@@ -17,12 +17,12 @@ export async function createProduct(productData: Partial<Product>): Promise<Prod
     status: productData.status,
     tags: productData.tags?.join(','),
     featured: productData.featured,
-  };
-  const response = await api.createProduct(payload);
-  if (!response.success || !response.data) {
-    throw new Error('Failed to create product');
   }
-  return transformPayloadProduct(response.data);
+  const response = await api.createProduct(payload)
+  if (!response.success || !response.data) {
+    throw new Error('Failed to create product')
+  }
+  return transformPayloadProduct(response.data)
 }
 import { Product as PayloadProduct } from '@/payload-types'
 import {
@@ -58,7 +58,7 @@ export function transformPayloadProduct(payloadProduct: PayloadProduct): Product
     featured: false,
     createdAt: '',
     updatedAt: '',
-  };
+  }
   if (payloadProduct.brand) {
     if (typeof payloadProduct.brand === 'object') {
       // API ProductBrand or Payload Brand
@@ -68,24 +68,30 @@ export function transformPayloadProduct(payloadProduct: PayloadProduct): Product
         slug: (payloadProduct.brand as any).slug ?? '',
         description: (payloadProduct.brand as any).description ?? undefined,
         logo:
-          typeof (payloadProduct.brand as any).logo === 'object' && (payloadProduct.brand as any).logo !== null
-            ? (payloadProduct.brand as any).logo.url ?? undefined
+          typeof (payloadProduct.brand as any).logo === 'object' &&
+          (payloadProduct.brand as any).logo !== null
+            ? ((payloadProduct.brand as any).logo.url ?? undefined)
             : typeof (payloadProduct.brand as any).logo === 'string'
               ? (payloadProduct.brand as any).logo
               : undefined,
         website: (payloadProduct.brand as any).website ?? undefined,
-        featured: !!((payloadProduct.brand as any).isFeatured ?? (payloadProduct.brand as any).featured),
+        featured: !!(
+          (payloadProduct.brand as any).isFeatured ?? (payloadProduct.brand as any).featured
+        ),
         createdAt: (payloadProduct.brand as any).createdAt ?? '',
         updatedAt: (payloadProduct.brand as any).updatedAt ?? '',
-      };
-    } else if (typeof payloadProduct.brand === 'string' || typeof payloadProduct.brand === 'number') {
-      brand.id = String(payloadProduct.brand);
+      }
+    } else if (
+      typeof payloadProduct.brand === 'string' ||
+      typeof payloadProduct.brand === 'number'
+    ) {
+      brand.id = String(payloadProduct.brand)
     }
   }
 
   // Use categories array if available, else empty
   // Fallback: use single category if available, else empty array
-  let categories: Category[] = [];
+  let categories: Category[] = []
   if (Array.isArray((payloadProduct as any).categories)) {
     categories = (payloadProduct as any).categories.map((cat: any) => ({
       id: String(cat.id),
@@ -96,19 +102,21 @@ export function transformPayloadProduct(payloadProduct: PayloadProduct): Product
       parentCategory: cat.parentCategory || undefined,
       createdAt: cat.createdAt,
       updatedAt: cat.updatedAt,
-    }));
+    }))
   } else if ((payloadProduct as any).category) {
-    const cat = (payloadProduct as any).category;
-    categories = [{
-      id: String(cat.id),
-      name: cat.name,
-      slug: cat.slug,
-      description: cat.description || undefined,
-      image: typeof cat.image === 'object' ? (cat.image?.url ?? undefined) : undefined,
-      parentCategory: cat.parentCategory || undefined,
-      createdAt: cat.createdAt,
-      updatedAt: cat.updatedAt,
-    }];
+    const cat = (payloadProduct as any).category
+    categories = [
+      {
+        id: String(cat.id),
+        name: cat.name,
+        slug: cat.slug,
+        description: cat.description || undefined,
+        image: typeof cat.image === 'object' ? (cat.image?.url ?? undefined) : undefined,
+        parentCategory: cat.parentCategory || undefined,
+        createdAt: cat.createdAt,
+        updatedAt: cat.updatedAt,
+      },
+    ]
   }
 
   return {
