@@ -21,12 +21,15 @@ import { useState } from 'react'
 const API_BASE_URL = process.env.NEXT_PUBLIC_SERVER_URL || 'http://localhost:3000'
 
 class ApiClient {
+<<<<<<< HEAD
   async createProduct(productData: any): Promise<ApiResponse<Product>> {
     return this.request<ApiResponse<Product>>('/api/public/products', {
       method: 'POST',
       body: JSON.stringify(productData),
     })
   }
+=======
+>>>>>>> parent of eca111b (Add admin dashboard and login pages)
   private baseUrl: string
 
   constructor(baseUrl: string = API_BASE_URL) {

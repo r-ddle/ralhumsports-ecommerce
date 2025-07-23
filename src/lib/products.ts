@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 // Export createProduct as named export for static import compatibility
 // Create a new product via PayloadCMS API
 export async function createProduct(productData: Partial<Product>): Promise<Product> {
@@ -24,6 +25,8 @@ export async function createProduct(productData: Partial<Product>): Promise<Prod
   }
   return transformPayloadProduct(response.data)
 }
+=======
+>>>>>>> parent of eca111b (Add admin dashboard and login pages)
 import { Product as PayloadProduct } from '@/payload-types'
 import {
   Product,
@@ -47,6 +50,7 @@ export function transformPayloadProduct(payloadProduct: PayloadProduct): Product
       alt: img.altText || payloadProduct.name,
     })) || []
 
+<<<<<<< HEAD
   // Accept both PayloadCMS and API product shapes
   let brand: Brand = {
     id: '',
@@ -118,6 +122,10 @@ export function transformPayloadProduct(payloadProduct: PayloadProduct): Product
       },
     ]
   }
+=======
+  const brand = typeof payloadProduct.brand === 'object' ? payloadProduct.brand : null
+  const category = typeof payloadProduct.category === 'object' ? payloadProduct.category : null
+>>>>>>> parent of eca111b (Add admin dashboard and login pages)
 
   return {
     id: String(payloadProduct.id),
@@ -125,8 +133,34 @@ export function transformPayloadProduct(payloadProduct: PayloadProduct): Product
     slug: payloadProduct.slug ?? '',
     description: typeof payloadProduct.description === 'string' ? payloadProduct.description : '',
     shortDescription: payloadProduct.seo?.description || '',
-    brand,
-    categories,
+    brand: brand
+      ? {
+          id: String(brand.id),
+          name: brand.name,
+          slug: brand.slug,
+          description: brand.description || undefined,
+          logo: typeof brand.logo === 'object' ? (brand.logo.url ?? undefined) : undefined,
+          website: brand.website || undefined,
+          featured: brand.isFeatured || false,
+          createdAt: brand.createdAt,
+          updatedAt: brand.updatedAt,
+        }
+      : ({} as Brand),
+    categories: category
+      ? [
+          {
+            id: String(category.id),
+            name: category.name,
+            slug: category.slug,
+            description: category.description || undefined,
+            image:
+              typeof category.image === 'object' ? (category.image?.url ?? undefined) : undefined,
+            parentCategory: category.parentCategory || undefined,
+            createdAt: category.createdAt,
+            updatedAt: category.updatedAt,
+          },
+        ]
+      : [],
     images,
     variants: [
       {

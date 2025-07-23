@@ -4,7 +4,7 @@ import { OrderInput } from '@/types/api'
 import { NextRequest, NextResponse } from 'next/server'
 import { getPayload } from 'payload'
 import config from '@/payload.config'
-import { requireAdminOrManager } from '@/lib/auth.server'
+import { requireAdminOrManager } from '@/lib/auth'
 
 type PayloadError = Error & { status?: number }
 
