@@ -10,6 +10,7 @@ import { Toaster } from '@/components/ui/sonner'
 import ErrorBoundary from '@/components/error-boundary'
 import { Suspense } from 'react'
 import { Analytics } from '@vercel/analytics/next'
+import { NavigationProvider } from '@/components/navigation-provider'
 
 const inter = Inter({
   subsets: ['latin'],
@@ -50,11 +51,11 @@ export const metadata: Metadata = {
     title: 'Ralhum Sports – Premium Cricket, Rugby & Hockey Gear in Sri Lanka',
     description:
       'Official distributor of Gray‑Nicolls, Gilbert, Grays & Molten. Shop cricket, rugby, hockey & basketball equipment with fast delivery across Sri Lanka.',
-    url: 'https://ralhumsports.vercel.app',
+    url: 'https://ralhumsports.lk',
     siteName: 'Ralhum Sports',
     images: [
       {
-        url: 'https://ralhumsports.vercel.app/ralhumbanner.png',
+        url: 'https://ralhumsports.lk/ralhumbanner.png',
         width: 1200,
         height: 630,
         alt: 'Ralhum Sports – Sri Lanka Sports Gear',
@@ -68,7 +69,7 @@ export const metadata: Metadata = {
     title: 'Ralhum Sports – Sports Gear Store in Sri Lanka',
     description:
       'Official distributor of Gray‑Nicolls, Gilbert, Grays & Molten with nationwide delivery.',
-    images: ['https://ralhumsports.vercel.app/ralhumbanner.png'],
+    images: ['https://ralhumsports.lk/ralhumbanner.png'],
   },
   robots: {
     index: true,
@@ -80,10 +81,10 @@ export const metadata: Metadata = {
     },
   },
   verification: {
-    google: 'YOUR_GOOGLE_VERIFICATION_CODE',
+    google: 'pjZLxNs-yhkubiRfnamMtruzHA58nrlA6y4myDerRNI',
   },
   alternates: {
-    canonical: 'https://ralhumsports.vercel.app',
+    canonical: 'https://ralhumsports.lk',
   },
   category: 'Sports Equipment Store',
 }
@@ -111,28 +112,36 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <link rel="icon" href="/ralhumlogo.svg" type="image/svg+xml" />
         <link rel="icon" href="/ralhumlogo.svg" sizes="any" />
         <link rel="apple-touch-icon" href="/ralhumlogo.svg" />
+        <meta
+          name="google-site-verification"
+          content="pjZLxNs-yhkubiRfnamMtruzHA58nrlA6y4myDerRNI"
+        />
       </head>
       <body
         className={`${inter.className} antialiased bg-brand-background text-text-primary overflow-x-hidden`}
       >
         <ErrorBoundary>
           <CartProvider>
-            <div className="flex flex-col min-h-screen">
-              <Suspense fallback={<LoadingSpinner />}>
-                <Navigation />
-              </Suspense>
+            <Suspense fallback={<LoadingSpinner />}>
+              <NavigationProvider>
+                <div className="flex flex-col min-h-screen">
+                  <Suspense fallback={<LoadingSpinner />}>
+                    <Navigation />
+                  </Suspense>
 
-              <main className="flex-1">
-                <Suspense fallback={<LoadingSpinner />}>{children}</Suspense>
-              </main>
+                  <main className="flex-1">
+                    <Suspense fallback={<LoadingSpinner />}>{children}</Suspense>
+                  </main>
 
-              <Suspense fallback={null}>
-                <Footer />
-              </Suspense>
+                  <Suspense fallback={null}>
+                    <Footer />
+                  </Suspense>
 
-              <CartSidebar />
-            </div>
-            <Toaster />
+                  <CartSidebar />
+                </div>
+                <Toaster />
+              </NavigationProvider>
+            </Suspense>
           </CartProvider>
         </ErrorBoundary>
         <Analytics />

@@ -420,27 +420,22 @@ export default function ProductDetailPage({ params }: ProductDetailPageProps) {
                     className="text-3xl sm:text-4xl font-black"
                     style={{ color: 'var(--primary-orange)' }}
                   >
-                    Rs. {selectedVariant.price.toLocaleString()}
+                    Rs.{' '}
+                    {typeof selectedVariant.price === 'number'
+                      ? selectedVariant.price.toLocaleString('en-LK')
+                      : 'N/A'}
                   </span>
                   {product.originalPrice && product.originalPrice > product.price && (
                     <span className="text-lg text-gray-500 line-through">
-                      Rs. {product.originalPrice.toLocaleString()}
+                      Rs. {product.originalPrice.toLocaleString('en-LK')}
                     </span>
                   )}
                   {product.originalPrice && product.originalPrice > product.price && (
                     <Badge className="bg-gradient-to-r from-red-500 to-red-600 text-white font-bold text-sm">
-                      Save Rs. {(product.originalPrice - product.price).toLocaleString()}
+                      Save Rs. {(product.originalPrice - product.price).toLocaleString('en-LK')}
                     </Badge>
                   )}
                 </div>
-
-                {/* Delivery Info */}
-                {/* <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl p-4 border border-blue-200">
-                  <p className="text-xs sm:text-sm text-blue-800 font-medium">
-                    Price includes tax. Free shipping on orders over LKR{' '}
-                    <span className="font-bold">{SITE_CONFIG.shipping.freeShippingThreshold}</span>.
-                  </p>
-                </div> */}
               </div>
 
               {/* Enhanced Stock Status */}
@@ -554,7 +549,10 @@ export default function ProductDetailPage({ params }: ProductDetailPageProps) {
                           className="font-bold text-sm sm:text-base"
                           style={{ color: 'var(--secondary-blue)' }}
                         >
-                          Rs. {selectedVariant.price.toLocaleString()}
+                          Rs.{' '}
+                          {typeof selectedVariant.price === 'number'
+                            ? selectedVariant.price.toLocaleString('en-LK')
+                            : 'N/A'}
                         </p>
                         {selectedVariant.inventory <= 5 && selectedVariant.inventory > 0 && (
                           <p className="text-xs text-orange-600">

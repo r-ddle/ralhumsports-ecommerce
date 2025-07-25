@@ -173,10 +173,10 @@ export async function GET(request: NextRequest) {
       id: product.id,
       name: product.name,
       slug: product.slug,
-      price: product.price,
-      originalPrice: product.pricing?.originalPrice || null,
-      sku: product.sku,
-      stock: product.stock,
+      price: product.essentials.price,
+      originalPrice: product.productDetails?.originalPrice || null,
+      sku: product.productDetails?.sku,
+      stock: product.inventory?.stock,
       status: product.status,
       images:
         product.images?.map((img) => ({
@@ -191,29 +191,29 @@ export async function GET(request: NextRequest) {
           size: variant.size,
           color: variant.color,
           price: variant.price,
-          inventory: variant.inventory,
+          inventory: variant.stock,
         })) || [],
       category:
-        typeof product.category === 'object'
+        typeof product.categorySelection.sportsItem === 'object'
           ? {
-              id: product.category.id,
-              name: product.category.name,
-              slug: product.category.slug,
-              description: product.category.description,
+              id: product.categorySelection.sportsItem?.id,
+              name: product.categorySelection.sportsItem?.name,
+              slug: product.categorySelection.sportsItem?.slug,
+              description: product.categorySelection.sportsItem?.description,
             }
           : null,
       brand:
-        typeof product.brand === 'object'
+        typeof product.essentials.brand === 'object'
           ? {
-              id: product.brand.id,
-              name: product.brand.name,
-              slug: product.brand.slug,
-              description: product.brand.description,
+              id: product.essentials.brand.id,
+              name: product.essentials.brand.name,
+              slug: product.essentials.brand.slug,
+              description: product.essentials.brand.branding.description,
               logo:
-                typeof product.brand.logo === 'object'
+                typeof product.essentials.brand.branding.logo === 'object'
                   ? {
-                      url: product.brand.logo.url,
-                      alt: product.brand.logo.alt || product.brand.name,
+                      url: product.essentials.brand.branding.logo.url,
+                      alt: product.essentials.brand.name,
                     }
                   : undefined,
             }
@@ -222,9 +222,10 @@ export async function GET(request: NextRequest) {
       features: product.features?.map((f) => f.feature) || [],
       specifications: product.specifications,
       seo: product.seo,
-      analytics: product.analytics,
       relatedProducts: product.relatedProducts || [],
-      tags: product.tags ? product.tags.split(',').map((t) => t.trim()) : [],
+      tags: product.productDetails?.tags
+        ? product.productDetails.tags.split(',').map((t) => t.trim())
+        : [],
       createdBy: product.createdBy,
       lastModifiedBy: product.lastModifiedBy,
       createdAt: product.createdAt,

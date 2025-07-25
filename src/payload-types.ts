@@ -74,6 +74,7 @@ export interface Config {
     products: Product;
     orders: Order;
     customers: Customer;
+    inventory: Inventory;
     'payload-locked-documents': PayloadLockedDocument;
     'payload-preferences': PayloadPreference;
     'payload-migrations': PayloadMigration;
@@ -87,6 +88,7 @@ export interface Config {
     products: ProductsSelect<false> | ProductsSelect<true>;
     orders: OrdersSelect<false> | OrdersSelect<true>;
     customers: CustomersSelect<false> | CustomersSelect<true>;
+    inventory: InventorySelect<false> | InventorySelect<true>;
     'payload-locked-documents': PayloadLockedDocumentsSelect<false> | PayloadLockedDocumentsSelect<true>;
     'payload-preferences': PayloadPreferencesSelect<false> | PayloadPreferencesSelect<true>;
     'payload-migrations': PayloadMigrationsSelect<false> | PayloadMigrationsSelect<true>;
@@ -180,7 +182,7 @@ export interface User {
   password?: string | null;
 }
 /**
- * Manage all uploaded media files with organized categorization
+ * Manage images and media files
  *
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "media".
@@ -188,56 +190,64 @@ export interface User {
 export interface Media {
   id: number;
   /**
-   * Alt text for accessibility - describe what the image shows
+   * Media category for organization
    */
-  alt: string;
+  category: 'products' | 'brands' | 'news' | 'company' | 'profiles' | 'marketing' | 'general';
   /**
-   * Categorize media for better organization
-   */
-  category: 'products' | 'news' | 'company' | 'brands' | 'profiles' | 'general' | 'marketing';
-  /**
-   * Optional caption for the media
-   */
-  caption?: string | null;
-  /**
-   * Tags separated by commas for easier searching
-   */
-  tags?: string | null;
-  /**
-   * Make this media accessible on the public website
+   * 🌐 Public access
    */
   isPublic?: boolean | null;
   /**
-   * Mark as featured content for homepage/banners
+   * ⭐ Featured media
    */
   isFeature?: boolean | null;
   /**
-   * SEO title for this media (for images used as page headers)
+   * 🔧 Show advanced settings
    */
-  seoTitle?: string | null;
+  showAdvanced?: boolean | null;
+  details?: {
+    /**
+     * Alternative text for accessibility
+     */
+    alt?: string | null;
+    /**
+     * Media caption
+     */
+    caption?: string | null;
+    /**
+     * Tags for searching (comma separated)
+     */
+    tags?: string | null;
+  };
+  attribution?: {
+    /**
+     * Media source or photographer
+     */
+    source?: string | null;
+    /**
+     * Copyright information
+     */
+    copyright?: string | null;
+    /**
+     * Usage license
+     */
+    license?: ('all-rights-reserved' | 'creative-commons' | 'public-domain' | 'commercial-license') | null;
+  };
+  seo?: {
+    /**
+     * SEO title for this media
+     */
+    seoTitle?: string | null;
+    /**
+     * SEO description for this media
+     */
+    seoDescription?: string | null;
+  };
   /**
-   * SEO description for this media
-   */
-  seoDescription?: string | null;
-  /**
-   * Internal notes about usage rights, source, or restrictions
+   * Internal usage notes (admin only)
    */
   usageNotes?: string | null;
-  /**
-   * Source of the media (photographer, designer, stock photo, etc.)
-   */
-  source?: string | null;
-  /**
-   * Copyright information
-   */
-  copyright?: string | null;
-  /**
-   * User who uploaded this media
-   */
   uploadedBy?: (number | null) | User;
-  /**
-   * User who last modified this media
-   */
   lastModifiedBy?: (number | null) | User;
   updatedAt: string;
   createdAt: string;
@@ -267,7 +277,15 @@ export interface Media {
       filesize?: number | null;
       filename?: string | null;
     };
-    desktop?: {
+    hero?: {
+      url?: string | null;
+      width?: number | null;
+      height?: number | null;
+      mimeType?: string | null;
+      filesize?: number | null;
+      filename?: string | null;
+    };
+    tablet?: {
       url?: string | null;
       width?: number | null;
       height?: number | null;
@@ -278,7 +296,7 @@ export interface Media {
   };
 }
 /**
- * Manage product categories for organization and navigation
+ * Manage hierarchical categories: Sports Category → Sports → Sports Item
  *
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "categories".
@@ -286,94 +304,122 @@ export interface Media {
 export interface Category {
   id: number;
   /**
-   * Category name - must be unique
+   * Category name
    */
   name: string;
   /**
-   * URL-friendly version of the category name
+   * Auto-generated URL slug
    */
   slug: string;
   /**
-   * Brief description of the category
+   * Select brands related to this category (for navigation and filtering)
    */
-  description?: string | null;
+  relatedBrands?: (number | Brand)[] | null;
   /**
-   * Icon class or Unicode for category display (optional)
+   * Select the hierarchy level for this category
    */
-  icon?: string | null;
+  type: 'sports-category' | 'sports' | 'sports-item';
   /**
-   * Category visibility status
-   */
-  status: 'active' | 'inactive' | 'draft';
-  /**
-   * Order for displaying categories (lower numbers appear first)
-   */
-  displayOrder: number;
-  /**
-   * Type of node in hierarchy: Sports Category > Sport > Sports Item
-   */
-  type: 'category' | 'sport' | 'item';
-  /**
-   * Parent node in hierarchy. Required for Sport (parent: category) and Sports Item (parent: sport).
+   * Select parent category
    */
   parentCategory?: (number | null) | Category;
   /**
-   * Feature this category on homepage or in navigation
+   * Category status
+   */
+  status: 'active' | 'inactive' | 'draft';
+  /**
+   * Display order (lower numbers appear first)
+   */
+  displayOrder: number;
+  /**
+   * ⭐ Feature this category
    */
   isFeature?: boolean | null;
   /**
-   * Display this category in main navigation menu
+   * 🧭 Show in navigation
    */
   showInNavigation?: boolean | null;
-  seo?: {
+  /**
+   * Category description for customers
+   */
+  description?: string | null;
+  /**
+   * 🔧 Show advanced settings
+   */
+  showAdvanced?: boolean | null;
+  visual?: {
     /**
-     * SEO title for category page
+     * Icon class or emoji
      */
-    title?: string | null;
+    icon?: string | null;
     /**
-     * SEO meta description for category page
+     * Category banner image
      */
-    description?: string | null;
+    image?: (number | null) | Media;
     /**
-     * SEO keywords separated by commas
+     * Brand color (hex code)
      */
-    keywords?: string | null;
+    color?: string | null;
   };
   config?: {
     /**
-     * Allow products to be assigned to this category
+     * Allow products in this category
      */
     allowProducts?: boolean | null;
     /**
-     * Products in this category require size selection
+     * 📏 Requires size
      */
     requiresSize?: boolean | null;
     /**
-     * Products in this category require color selection
+     * 🎨 Requires color
      */
     requiresColor?: boolean | null;
     /**
-     * JSON configuration for category-specific product fields
+     * 👤 Requires gender
      */
-    customFields?: string | null;
+    requiresGender?: boolean | null;
+    /**
+     * Common sizes (comma separated)
+     */
+    commonSizes?: string | null;
+    /**
+     * Common colors (comma separated)
+     */
+    commonColors?: string | null;
+  };
+  seo?: {
+    /**
+     * SEO title (auto-generated if empty)
+     */
+    title?: string | null;
+    /**
+     * SEO meta description
+     */
+    description?: string | null;
+    /**
+     * SEO keywords (comma separated)
+     */
+    keywords?: string | null;
   };
   /**
-   * Number of active products in this category
+   * Full category path
+   */
+  fullPath?: string | null;
+  /**
+   * Hierarchy level
+   */
+  level?: number | null;
+  /**
+   * Active products count
    */
   productCount?: number | null;
-  /**
-   * User who created this category
-   */
   createdBy?: (number | null) | User;
-  /**
-   * User who last modified this category
-   */
   lastModifiedBy?: (number | null) | User;
   updatedAt: string;
   createdAt: string;
 }
 /**
- * Manage brand information for products
+ * Manage product brands and manufacturers
  *
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "brands".
@@ -381,56 +427,76 @@ export interface Category {
 export interface Brand {
   id: number;
   /**
-   * Brand name - must be unique
+   * Brand name
    */
   name: string;
   /**
-   * URL-friendly version of the brand name
+   * Auto-generated URL slug
    */
   slug: string;
+  branding: {
+    /**
+     * Brand logo image
+     */
+    logo: number | Media;
+    /**
+     * Brand description for customers
+     */
+    description?: string | null;
+  };
   /**
-   * Brand description and background information
-   */
-  description?: string | null;
-  /**
-   * Brand logo - preferably square format with transparent background
-   */
-  logo: number | Media;
-  /**
-   * Official brand website URL
-   */
-  website?: string | null;
-  /**
-   * Country where the brand originates
-   */
-  countryOfOrigin?: string | null;
-  /**
-   * Year the brand was founded
-   */
-  foundedYear?: number | null;
-  /**
-   * Brand availability status
+   * Brand status
    */
   status: 'active' | 'inactive' | 'discontinued';
   /**
-   * Feature this brand on homepage or in navigation
+   * ⭐ Feature on homepage
    */
   isFeatured?: boolean | null;
   /**
-   * Mark as premium/luxury brand
+   * 💎 Premium brand
    */
   isPremium?: boolean | null;
+  /**
+   * 🔧 Show advanced settings
+   */
+  showAdvanced?: boolean | null;
+  details?: {
+    /**
+     * Brand website URL
+     */
+    website?: string | null;
+    /**
+     * Country of origin
+     */
+    countryOfOrigin?: string | null;
+    /**
+     * Founded year
+     */
+    foundedYear?: number | null;
+    /**
+     * Brand specialties and focus areas
+     */
+    specialties?: string | null;
+    /**
+     * Typical price range
+     */
+    priceRange?: ('budget' | 'mid-range' | 'premium' | 'luxury') | null;
+    /**
+     * Primary target audience
+     */
+    targetAudience?: string | null;
+  };
   contact?: {
     /**
      * Brand contact email
      */
     email?: string | null;
     /**
-     * Brand contact phone number
+     * Brand contact phone
      */
     phone?: string | null;
     /**
-     * Brand headquarters address
+     * Brand address
      */
     address?: string | null;
   };
@@ -454,47 +520,29 @@ export interface Brand {
   };
   seo?: {
     /**
-     * SEO title for brand page
+     * SEO title (auto-generated if empty)
      */
     title?: string | null;
     /**
-     * SEO meta description for brand page
+     * SEO meta description
      */
     description?: string | null;
     /**
-     * SEO keywords separated by commas
+     * SEO keywords (comma separated)
      */
     keywords?: string | null;
   };
   /**
-   * What the brand specializes in
-   */
-  specialties?: string | null;
-  /**
-   * General price range for this brand
-   */
-  priceRange?: ('budget' | 'mid-range' | 'premium' | 'luxury') | null;
-  /**
-   * Primary target audience
-   */
-  targetAudience?: string | null;
-  /**
-   * Number of active products from this brand
+   * Number of active products
    */
   productCount?: number | null;
-  /**
-   * User who created this brand
-   */
   createdBy?: (number | null) | User;
-  /**
-   * User who last modified this brand
-   */
   lastModifiedBy?: (number | null) | User;
   updatedAt: string;
   createdAt: string;
 }
 /**
- * Manage product catalog with comprehensive details
+ * Manage your product catalog with three-tier categorization
  *
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "products".
@@ -502,45 +550,41 @@ export interface Brand {
 export interface Product {
   id: number;
   /**
-   * Product name as displayed to customers
+   * Product name as shown to customers
    */
   name: string;
   slug?: string | null;
+  categorySelection: {
+    /**
+     * 🏆 Select Sports Category (Level 1)
+     */
+    sportsCategory: number | Category;
+    /**
+     * ⚽ Select Sports (Level 2)
+     */
+    sports?: (number | null) | Category;
+    /**
+     * 👕 Select Sports Item (Level 3)
+     */
+    sportsItem?: (number | null) | Category;
+  };
+  essentials: {
+    /**
+     * Product brand
+     */
+    brand: number | Brand;
+    /**
+     * Product price (LKR)
+     */
+    price: number;
+  };
   /**
-   * Select the Sports Category for this product
-   */
-  sportCategory?: (number | null) | Category;
-  /**
-   * Select the Sport for this product
-   */
-  sport?: (number | null) | Category;
-  /**
-   * Select the Sports Item for this product
-   */
-  sportItem?: (number | null) | Category;
-  /**
-   * Product brand
-   */
-  brand: number | Brand;
-  /**
-   * Product price in LKR
-   */
-  price: number;
-  /**
-   * Stock Keeping Unit - unique product identifier
-   */
-  sku?: string | null;
-  /**
-   * Available stock quantity (only used when no variants are defined)
-   */
-  stock?: number | null;
-  /**
-   * Product images (first image will be the main image)
+   * 📸 Product images (first image is the main image)
    */
   images: {
     image: number | Media;
     /**
-     * Alternative text for this specific image
+     * Image description (auto-generated if empty)
      */
     altText?: string | null;
     id?: string | null;
@@ -548,9 +592,9 @@ export interface Product {
   /**
    * Product availability status
    */
-  status: 'active' | 'inactive' | 'draft' | 'out-of-stock' | 'discontinued';
+  status: 'active' | 'draft' | 'inactive' | 'out-of-stock';
   /**
-   * Detailed product description with rich formatting
+   * Detailed product description
    */
   description?: {
     root: {
@@ -567,108 +611,114 @@ export interface Product {
     };
     [k: string]: unknown;
   } | null;
-  seo?: {
+  /**
+   * 🔧 Show advanced settings
+   */
+  showAdvanced?: boolean | null;
+  /**
+   * Full category path
+   */
+  categoryPath?: string | null;
+  productDetails?: {
     /**
-     * SEO title for product page
+     * Product SKU (auto-generated if empty)
      */
-    title?: string | null;
+    sku?: string | null;
     /**
-     * SEO meta description for product page
+     * Original price (for showing discounts)
      */
-    description?: string | null;
+    originalPrice?: number | null;
+    /**
+     * Product tags (comma separated)
+     */
+    tags?: string | null;
   };
-  specifications?: {
+  inventory?: {
     /**
-     * Primary material used
+     * Enable inventory tracking
      */
+    trackInventory?: boolean | null;
+    /**
+     * Stock quantity (when not using variants)
+     */
+    stock?: number | null;
+    /**
+     * Alert when stock falls below this number
+     */
+    lowStockThreshold?: number | null;
+  };
+  /**
+   * This product has variants (sizes, colors, etc.)
+   */
+  hasVariants?: boolean | null;
+  /**
+   * Product variants with individual pricing and inventory
+   */
+  variants?:
+    | {
+        name: string;
+        size?: string | null;
+        color?: string | null;
+        material?: string | null;
+        price: number;
+        /**
+         * Stock for this variant
+         */
+        stock: number;
+        /**
+         * Variant SKU (auto-generated if empty)
+         */
+        sku?: string | null;
+        id?: string | null;
+      }[]
+    | null;
+  /**
+   * Key product features and benefits
+   */
+  features?:
+    | {
+        feature: string;
+        /**
+         * Feature description (optional)
+         */
+        description?: string | null;
+        id?: string | null;
+      }[]
+    | null;
+  specifications?: {
+    weight?: string | null;
+    dimensions?: string | null;
     material?: string | null;
     /**
-     * Product weight
+     * Target gender
      */
-    weight?: string | null;
-    /**
-     * Product dimensions
-     */
-    dimensions?: string | null;
+    gender?: ('unisex' | 'men' | 'women' | 'kids') | null;
     /**
      * Care and maintenance instructions
      */
     careInstructions?: string | null;
   };
-  pricing?: {
+  seo?: {
     /**
-     * Original price (for displaying discounts)
+     * SEO title (auto-generated if empty)
      */
-    originalPrice?: number | null;
+    title?: string | null;
     /**
-     * Cost price for profit calculations (admin only)
+     * SEO meta description
      */
-    costPrice?: number | null;
-    /**
-     * Alert when stock falls below this number
-     */
-    lowStockThreshold?: number | null;
-    /**
-     * Track inventory for this product
-     */
-    trackInventory?: boolean | null;
+    description?: string | null;
   };
   /**
-   * Key product features and selling points
-   */
-  features?:
-    | {
-        feature: string;
-        id?: string | null;
-      }[]
-    | null;
-  /**
-   * Product tags for search and filtering (comma separated)
-   */
-  tags?: string | null;
-  /**
-   * Select related products (shown as recommendations)
+   * Related products for cross-selling
    */
   relatedProducts?: (number | Product)[] | null;
-  analytics?: {
-    /**
-     * Number of times ordered
-     */
-    orderCount?: number | null;
-  };
-  /**
-   * Product variants (e.g., different sizes/colors with individual inventory tracking). Leave empty to use base stock instead.
-   */
-  variants?:
-    | {
-        name: string;
-        /**
-         * Auto-generated variant SKU
-         */
-        sku?: string | null;
-        size?: string | null;
-        color?: string | null;
-        price: number;
-        /**
-         * Stock for this variant
-         */
-        inventory: number;
-        id?: string | null;
-      }[]
-    | null;
-  /**
-   * User who created this product
-   */
   createdBy?: (number | null) | User;
-  /**
-   * User who last modified this product
-   */
   lastModifiedBy?: (number | null) | User;
   updatedAt: string;
   createdAt: string;
 }
 /**
- * Manage customer orders and WhatsApp integration tracking
+ * Manage customer orders and fulfillment
  *
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "orders".
@@ -676,148 +726,160 @@ export interface Product {
 export interface Order {
   id: number;
   /**
-   * Unique order identifier
+   * Auto-generated order identifier
    */
   orderNumber: string;
+  customer: {
+    /**
+     * Customer full name
+     */
+    customerName: string;
+    /**
+     * Primary phone number
+     */
+    customerPhone: string;
+    /**
+     * Email address (optional)
+     */
+    customerEmail?: string | null;
+    /**
+     * Complete delivery address
+     */
+    deliveryAddress: string;
+  };
   /**
-   * Customer full name
-   */
-  customerName: string;
-  /**
-   * Customer email address
-   */
-  customerEmail: string;
-  /**
-   * Customer primary phone number for WhatsApp communication
-   */
-  customerPhone: string;
-  /**
-   * Customer secondary phone number (optional)
-   */
-  customerSecondaryPhone?: string | null;
-  /**
-   * Complete delivery address
-   */
-  deliveryAddress: string;
-  /**
-   * Special delivery instructions or customer notes
-   */
-  specialInstructions?: string | null;
-  /**
-   * Products in this order
+   * 📦 Order Items
    */
   orderItems: {
     /**
-     * Product ID reference
-     */
-    productId: string;
-    /**
-     * Variant ID (if applicable)
-     */
-    variantId?: string | null;
-    /**
-     * Product name (for record keeping)
+     * Product name
      */
     productName: string;
     /**
-     * Product SKU (for record keeping)
-     */
-    productSku: string;
-    /**
-     * Price per unit in LKR
-     */
-    unitPrice: number;
-    /**
-     * Quantity ordered
+     * Qty
      */
     quantity: number;
     /**
-     * Selected size (if applicable)
+     * Unit price
      */
-    selectedSize?: string | null;
+    unitPrice: number;
     /**
-     * Selected color (if applicable)
-     */
-    selectedColor?: string | null;
-    /**
-     * Subtotal for this item (unit price × quantity)
+     * Item subtotal (auto-calculated)
      */
     subtotal: number;
+    /**
+     * Select product variant (if applicable)
+     */
+    selectedVariant?: (number | null) | Product;
+    /**
+     * SKU
+     */
+    productSku?: string | null;
+    /**
+     * Variant details copied from selected variant
+     */
+    variantDetails?: {
+      size?: string | null;
+      color?: string | null;
+      material?: string | null;
+      price?: number | null;
+      sku?: string | null;
+    };
     id?: string | null;
   }[];
+  orderSummary: {
+    /**
+     * Total order amount (LKR)
+     */
+    orderTotal: number;
+  };
+  status: {
+    /**
+     * Current order status
+     */
+    orderStatus: 'pending' | 'confirmed' | 'processing' | 'shipped' | 'delivered' | 'cancelled';
+    /**
+     * Payment status
+     */
+    paymentStatus: 'pending' | 'paid' | 'partially-paid' | 'failed' | 'refunded';
+  };
   /**
-   * Order subtotal (before taxes)
+   * 🔧 Show advanced settings
    */
-  orderSubtotal: number;
-  /**
-   * Tax amount 15%
-   */
-  tax?: number | null;
-  /**
-   * Shipping cost in LKR
-   */
-  shippingCost?: number | null;
-  /**
-   * Discount amount in LKR
-   */
-  discount?: number | null;
-  /**
-   * Final order total (subtotal + tax - discount)
-   */
-  orderTotal: number;
-  /**
-   * Current order status
-   */
-  orderStatus: 'pending' | 'confirmed' | 'processing' | 'shipped' | 'delivered' | 'cancelled' | 'refunded';
-  /**
-   * Payment status
-   */
-  paymentStatus: 'pending' | 'paid' | 'partially-paid' | 'refunded' | 'failed';
-  /**
-   * Payment method chosen by customer
-   */
-  paymentMethod?: ('cod' | 'bank-transfer' | 'online-payment' | 'card-payment') | null;
+  showAdvanced?: boolean | null;
+  orderDetails?: {
+    /**
+     * Special delivery instructions
+     */
+    specialInstructions?: string | null;
+    /**
+     * Payment method
+     */
+    paymentMethod?: ('cod' | 'bank-transfer' | 'online-payment' | 'card-payment') | null;
+    /**
+     * Order source
+     */
+    orderSource?: ('website' | 'whatsapp' | 'phone' | 'store' | 'social') | null;
+  };
+  pricing?: {
+    /**
+     * Subtotal
+     */
+    orderSubtotal?: number | null;
+    /**
+     * Tax
+     */
+    tax?: number | null;
+    /**
+     * Shipping
+     */
+    shippingCost?: number | null;
+    /**
+     * Discount
+     */
+    discount?: number | null;
+  };
+  paymentGateway?: {
+    paymentId?: string | null;
+    statusCode?: string | null;
+    /**
+     * The full JSON response from the payment gateway for debugging.
+     */
+    gatewayResponse?:
+      | {
+          [k: string]: unknown;
+        }
+      | unknown[]
+      | string
+      | number
+      | boolean
+      | null;
+  };
   whatsapp?: {
     /**
-     * WhatsApp confirmation message sent to customer
+     * Confirmation message sent
      */
     messageSent?: boolean | null;
     /**
-     * When the WhatsApp message was sent
+     * Message sent at
      */
     messageTimestamp?: string | null;
     /**
-     * WhatsApp message template used
+     * Message template used
      */
     messageTemplate?:
       | ('order-confirmation' | 'order-update' | 'shipping-notification' | 'delivery-confirmation')
       | null;
     /**
-     * Customer response or feedback via WhatsApp
+     * Customer response via WhatsApp
      */
     customerResponse?: string | null;
   };
-  /**
-   * Internal notes for team reference (not visible to customer)
-   */
-  internalNotes?: string | null;
-  /**
-   * How the customer placed this order
-   */
-  orderSource?: ('website' | 'whatsapp' | 'phone' | 'store' | 'social') | null;
-  /**
-   * User who created this order
-   */
-  createdBy?: (number | null) | User;
-  /**
-   * User who last modified this order
-   */
-  lastModifiedBy?: (number | null) | User;
   updatedAt: string;
   createdAt: string;
 }
 /**
- * Manage customer information and track order history with WhatsApp integration
+ * Manage customer information and relationships
  *
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "customers".
@@ -829,133 +891,193 @@ export interface Customer {
    */
   name: string;
   /**
-   * Customer email address
+   * Customer email
    */
   email: string;
   /**
-   * Primary phone number for WhatsApp communication
+   * Primary phone number
    */
   primaryPhone: string;
-  /**
-   * Secondary phone number (optional)
-   */
-  secondaryPhone?: string | null;
-  /**
-   * Customer delivery addresses
-   */
-  addresses?:
-    | {
-        type: 'home' | 'office' | 'other';
-        /**
-         * Complete delivery address
-         */
-        address: string;
-        /**
-         * Set as default delivery address
-         */
-        isDefault?: boolean | null;
-        id?: string | null;
-      }[]
-    | null;
-  preferences?: {
-    /**
-     * Preferred communication method
-     */
-    communicationMethod?: ('whatsapp' | 'email' | 'phone') | null;
-    /**
-     * Preferred language for communication
-     */
-    language?: ('english' | 'sinhala' | 'tamil') | null;
-    /**
-     * Customer agrees to receive marketing communications
-     */
-    marketingOptIn?: boolean | null;
-  };
-  whatsapp?: {
-    /**
-     * WhatsApp number is verified and active
-     */
-    isVerified?: boolean | null;
-    /**
-     * Date of last WhatsApp message sent
-     */
-    lastMessageSent?: string | null;
-    /**
-     * Date of last customer response
-     */
-    lastResponse?: string | null;
-    /**
-     * Brief history of WhatsApp communications
-     */
-    messageHistory?: string | null;
-  };
-  orderStats?: {
-    /**
-     * Total number of orders placed
-     */
-    totalOrders?: number | null;
-    /**
-     * Number of pending/processing orders
-     */
-    pendingOrders?: number | null;
-    /**
-     * Number of completed orders
-     */
-    completedOrders?: number | null;
-    /**
-     * Number of cancelled orders
-     */
-    cancelledOrders?: number | null;
-    /**
-     * Total amount spent (LKR)
-     */
-    totalSpent?: number | null;
-    /**
-     * Average order value (LKR)
-     */
-    averageOrderValue?: number | null;
-    /**
-     * Date of last order
-     */
-    lastOrderDate?: string | null;
-    /**
-     * Date of first order
-     */
-    firstOrderDate?: string | null;
-  };
   /**
    * Customer account status
    */
   status: 'active' | 'inactive' | 'vip' | 'blocked';
   /**
-   * Customer type for special pricing or treatment
+   * Default delivery address
    */
-  customerType?: ('regular' | 'vip' | 'wholesale' | 'corporate') | null;
+  defaultAddress?: string | null;
   /**
-   * Internal notes about this customer
+   * 🔧 Show advanced settings
+   */
+  showAdvanced?: boolean | null;
+  /**
+   * Secondary phone number
+   */
+  secondaryPhone?: string | null;
+  /**
+   * Additional delivery addresses
+   */
+  addresses?:
+    | {
+        type: 'home' | 'office' | 'other';
+        /**
+         * Address label
+         */
+        label?: string | null;
+        address: string;
+        /**
+         * Set as default address
+         */
+        isDefault?: boolean | null;
+        id?: string | null;
+      }[]
+    | null;
+  /**
+   * Preferred communication method
+   */
+  communicationMethod?: ('whatsapp' | 'email' | 'phone') | null;
+  /**
+   * 📢 Receive marketing communications
+   */
+  marketingOptIn?: boolean | null;
+  /**
+   * Total orders placed
+   */
+  totalOrders?: number | null;
+  /**
+   * Total amount spent (LKR)
+   */
+  totalSpent?: number | null;
+  /**
+   * Last order date
+   */
+  lastOrderDate?: string | null;
+  /**
+   * Internal customer notes
    */
   notes?: string | null;
+  createdBy?: (number | null) | User;
+  lastModifiedBy?: (number | null) | User;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * Track inventory levels and stock movements
+ *
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "inventory".
+ */
+export interface Inventory {
+  id: number;
   /**
-   * Customer tags (comma separated)
+   * Select the product
    */
-  tags?: string | null;
-  socialMedia?: {
+  product: number | Product;
+  /**
+   * Product name (auto-filled)
+   */
+  productName: string;
+  /**
+   * Product SKU (auto-filled)
+   */
+  sku: string;
+  productInfo?: {
     /**
-     * Facebook profile URL
+     * Variant ID if tracking variant inventory
      */
-    facebook?: string | null;
+    variantId?: string | null;
+  };
+  stockInfo: {
     /**
-     * Instagram profile URL
+     * Current stock level
      */
-    instagram?: string | null;
+    currentStock: number;
+    /**
+     * Reserved stock
+     */
+    reservedStock?: number | null;
+    /**
+     * Available stock
+     */
+    availableStock?: number | null;
+    /**
+     * Low stock alert threshold
+     */
+    lowStockThreshold?: number | null;
+    /**
+     * 🚨 Low stock alert active
+     */
+    lowStockAlert?: boolean | null;
+  };
+  storage?: {
+    /**
+     * Storage location
+     */
+    location?: ('main-warehouse' | 'store-front' | 'secondary-storage' | 'supplier' | 'in-transit') | null;
+    /**
+     * Specific bin or shelf location
+     */
+    binLocation?: string | null;
   };
   /**
-   * User who created this customer record
+   * 🔧 Show advanced settings
    */
-  createdBy?: (number | null) | User;
+  showAdvanced?: boolean | null;
+  costInfo?: {
+    /**
+     * Cost price per unit
+     */
+    costPrice?: number | null;
+    /**
+     * Total inventory value (cost × quantity)
+     */
+    totalValue?: number | null;
+  };
+  movements?: {
+    /**
+     * Last stock received
+     */
+    lastStockIn?: string | null;
+    /**
+     * Last stock sold/removed
+     */
+    lastStockOut?: string | null;
+    /**
+     * Last inventory update
+     */
+    lastUpdated?: string | null;
+  };
+  supplierInfo?: {
+    /**
+     * Primary supplier name
+     */
+    supplier?: string | null;
+    /**
+     * Supplier SKU/part number
+     */
+    supplierSku?: string | null;
+    /**
+     * Lead time (days)
+     */
+    leadTime?: number | null;
+    /**
+     * Reorder point
+     */
+    reorderPoint?: number | null;
+    /**
+     * Reorder quantity
+     */
+    reorderQuantity?: number | null;
+  };
   /**
-   * User who last modified this customer record
+   * Inventory status
    */
+  status: 'active' | 'inactive' | 'discontinued' | 'on-hold';
+  /**
+   * Internal inventory notes
+   */
+  notes?: string | null;
+  createdBy?: (number | null) | User;
   lastModifiedBy?: (number | null) | User;
   updatedAt: string;
   createdAt: string;
@@ -994,6 +1116,10 @@ export interface PayloadLockedDocument {
     | ({
         relationTo: 'customers';
         value: number | Customer;
+      } | null)
+    | ({
+        relationTo: 'inventory';
+        value: number | Inventory;
       } | null);
   globalSlug?: string | null;
   user: {
@@ -1073,17 +1199,31 @@ export interface UsersSelect<T extends boolean = true> {
  * via the `definition` "media_select".
  */
 export interface MediaSelect<T extends boolean = true> {
-  alt?: T;
   category?: T;
-  caption?: T;
-  tags?: T;
   isPublic?: T;
   isFeature?: T;
-  seoTitle?: T;
-  seoDescription?: T;
+  showAdvanced?: T;
+  details?:
+    | T
+    | {
+        alt?: T;
+        caption?: T;
+        tags?: T;
+      };
+  attribution?:
+    | T
+    | {
+        source?: T;
+        copyright?: T;
+        license?: T;
+      };
+  seo?:
+    | T
+    | {
+        seoTitle?: T;
+        seoDescription?: T;
+      };
   usageNotes?: T;
-  source?: T;
-  copyright?: T;
   uploadedBy?: T;
   lastModifiedBy?: T;
   updatedAt?: T;
@@ -1120,7 +1260,17 @@ export interface MediaSelect<T extends boolean = true> {
               filesize?: T;
               filename?: T;
             };
-        desktop?:
+        hero?:
+          | T
+          | {
+              url?: T;
+              width?: T;
+              height?: T;
+              mimeType?: T;
+              filesize?: T;
+              filename?: T;
+            };
+        tablet?:
           | T
           | {
               url?: T;
@@ -1139,20 +1289,21 @@ export interface MediaSelect<T extends boolean = true> {
 export interface CategoriesSelect<T extends boolean = true> {
   name?: T;
   slug?: T;
-  description?: T;
-  icon?: T;
-  status?: T;
-  displayOrder?: T;
+  relatedBrands?: T;
   type?: T;
   parentCategory?: T;
+  status?: T;
+  displayOrder?: T;
   isFeature?: T;
   showInNavigation?: T;
-  seo?:
+  description?: T;
+  showAdvanced?: T;
+  visual?:
     | T
     | {
-        title?: T;
-        description?: T;
-        keywords?: T;
+        icon?: T;
+        image?: T;
+        color?: T;
       };
   config?:
     | T
@@ -1160,8 +1311,19 @@ export interface CategoriesSelect<T extends boolean = true> {
         allowProducts?: T;
         requiresSize?: T;
         requiresColor?: T;
-        customFields?: T;
+        requiresGender?: T;
+        commonSizes?: T;
+        commonColors?: T;
       };
+  seo?:
+    | T
+    | {
+        title?: T;
+        description?: T;
+        keywords?: T;
+      };
+  fullPath?: T;
+  level?: T;
   productCount?: T;
   createdBy?: T;
   lastModifiedBy?: T;
@@ -1175,14 +1337,26 @@ export interface CategoriesSelect<T extends boolean = true> {
 export interface BrandsSelect<T extends boolean = true> {
   name?: T;
   slug?: T;
-  description?: T;
-  logo?: T;
-  website?: T;
-  countryOfOrigin?: T;
-  foundedYear?: T;
+  branding?:
+    | T
+    | {
+        logo?: T;
+        description?: T;
+      };
   status?: T;
   isFeatured?: T;
   isPremium?: T;
+  showAdvanced?: T;
+  details?:
+    | T
+    | {
+        website?: T;
+        countryOfOrigin?: T;
+        foundedYear?: T;
+        specialties?: T;
+        priceRange?: T;
+        targetAudience?: T;
+      };
   contact?:
     | T
     | {
@@ -1205,9 +1379,6 @@ export interface BrandsSelect<T extends boolean = true> {
         description?: T;
         keywords?: T;
       };
-  specialties?: T;
-  priceRange?: T;
-  targetAudience?: T;
   productCount?: T;
   createdBy?: T;
   lastModifiedBy?: T;
@@ -1221,13 +1392,19 @@ export interface BrandsSelect<T extends boolean = true> {
 export interface ProductsSelect<T extends boolean = true> {
   name?: T;
   slug?: T;
-  sportCategory?: T;
-  sport?: T;
-  sportItem?: T;
-  brand?: T;
-  price?: T;
-  sku?: T;
-  stock?: T;
+  categorySelection?:
+    | T
+    | {
+        sportsCategory?: T;
+        sports?: T;
+        sportsItem?: T;
+      };
+  essentials?:
+    | T
+    | {
+        brand?: T;
+        price?: T;
+      };
   images?:
     | T
     | {
@@ -1237,52 +1414,58 @@ export interface ProductsSelect<T extends boolean = true> {
       };
   status?: T;
   description?: T;
+  showAdvanced?: T;
+  categoryPath?: T;
+  productDetails?:
+    | T
+    | {
+        sku?: T;
+        originalPrice?: T;
+        tags?: T;
+      };
+  inventory?:
+    | T
+    | {
+        trackInventory?: T;
+        stock?: T;
+        lowStockThreshold?: T;
+      };
+  hasVariants?: T;
+  variants?:
+    | T
+    | {
+        name?: T;
+        size?: T;
+        color?: T;
+        material?: T;
+        price?: T;
+        stock?: T;
+        sku?: T;
+        id?: T;
+      };
+  features?:
+    | T
+    | {
+        feature?: T;
+        description?: T;
+        id?: T;
+      };
+  specifications?:
+    | T
+    | {
+        weight?: T;
+        dimensions?: T;
+        material?: T;
+        gender?: T;
+        careInstructions?: T;
+      };
   seo?:
     | T
     | {
         title?: T;
         description?: T;
       };
-  specifications?:
-    | T
-    | {
-        material?: T;
-        weight?: T;
-        dimensions?: T;
-        careInstructions?: T;
-      };
-  pricing?:
-    | T
-    | {
-        originalPrice?: T;
-        costPrice?: T;
-        lowStockThreshold?: T;
-        trackInventory?: T;
-      };
-  features?:
-    | T
-    | {
-        feature?: T;
-        id?: T;
-      };
-  tags?: T;
   relatedProducts?: T;
-  analytics?:
-    | T
-    | {
-        orderCount?: T;
-      };
-  variants?:
-    | T
-    | {
-        name?: T;
-        sku?: T;
-        size?: T;
-        color?: T;
-        price?: T;
-        inventory?: T;
-        id?: T;
-      };
   createdBy?: T;
   lastModifiedBy?: T;
   updatedAt?: T;
@@ -1294,34 +1477,68 @@ export interface ProductsSelect<T extends boolean = true> {
  */
 export interface OrdersSelect<T extends boolean = true> {
   orderNumber?: T;
-  customerName?: T;
-  customerEmail?: T;
-  customerPhone?: T;
-  customerSecondaryPhone?: T;
-  deliveryAddress?: T;
-  specialInstructions?: T;
+  customer?:
+    | T
+    | {
+        customerName?: T;
+        customerPhone?: T;
+        customerEmail?: T;
+        deliveryAddress?: T;
+      };
   orderItems?:
     | T
     | {
-        productId?: T;
-        variantId?: T;
         productName?: T;
-        productSku?: T;
-        unitPrice?: T;
         quantity?: T;
-        selectedSize?: T;
-        selectedColor?: T;
+        unitPrice?: T;
         subtotal?: T;
+        selectedVariant?: T;
+        productSku?: T;
+        variantDetails?:
+          | T
+          | {
+              size?: T;
+              color?: T;
+              material?: T;
+              price?: T;
+              sku?: T;
+            };
         id?: T;
       };
-  orderSubtotal?: T;
-  tax?: T;
-  shippingCost?: T;
-  discount?: T;
-  orderTotal?: T;
-  orderStatus?: T;
-  paymentStatus?: T;
-  paymentMethod?: T;
+  orderSummary?:
+    | T
+    | {
+        orderTotal?: T;
+      };
+  status?:
+    | T
+    | {
+        orderStatus?: T;
+        paymentStatus?: T;
+      };
+  showAdvanced?: T;
+  orderDetails?:
+    | T
+    | {
+        specialInstructions?: T;
+        paymentMethod?: T;
+        orderSource?: T;
+      };
+  pricing?:
+    | T
+    | {
+        orderSubtotal?: T;
+        tax?: T;
+        shippingCost?: T;
+        discount?: T;
+      };
+  paymentGateway?:
+    | T
+    | {
+        paymentId?: T;
+        statusCode?: T;
+        gatewayResponse?: T;
+      };
   whatsapp?:
     | T
     | {
@@ -1330,10 +1547,6 @@ export interface OrdersSelect<T extends boolean = true> {
         messageTemplate?: T;
         customerResponse?: T;
       };
-  internalNotes?: T;
-  orderSource?: T;
-  createdBy?: T;
-  lastModifiedBy?: T;
   updatedAt?: T;
   createdAt?: T;
 }
@@ -1345,52 +1558,83 @@ export interface CustomersSelect<T extends boolean = true> {
   name?: T;
   email?: T;
   primaryPhone?: T;
+  status?: T;
+  defaultAddress?: T;
+  showAdvanced?: T;
   secondaryPhone?: T;
   addresses?:
     | T
     | {
         type?: T;
+        label?: T;
         address?: T;
         isDefault?: T;
         id?: T;
       };
-  preferences?:
+  communicationMethod?: T;
+  marketingOptIn?: T;
+  totalOrders?: T;
+  totalSpent?: T;
+  lastOrderDate?: T;
+  notes?: T;
+  createdBy?: T;
+  lastModifiedBy?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "inventory_select".
+ */
+export interface InventorySelect<T extends boolean = true> {
+  product?: T;
+  productName?: T;
+  sku?: T;
+  productInfo?:
     | T
     | {
-        communicationMethod?: T;
-        language?: T;
-        marketingOptIn?: T;
+        variantId?: T;
       };
-  whatsapp?:
+  stockInfo?:
     | T
     | {
-        isVerified?: T;
-        lastMessageSent?: T;
-        lastResponse?: T;
-        messageHistory?: T;
+        currentStock?: T;
+        reservedStock?: T;
+        availableStock?: T;
+        lowStockThreshold?: T;
+        lowStockAlert?: T;
       };
-  orderStats?:
+  storage?:
     | T
     | {
-        totalOrders?: T;
-        pendingOrders?: T;
-        completedOrders?: T;
-        cancelledOrders?: T;
-        totalSpent?: T;
-        averageOrderValue?: T;
-        lastOrderDate?: T;
-        firstOrderDate?: T;
+        location?: T;
+        binLocation?: T;
+      };
+  showAdvanced?: T;
+  costInfo?:
+    | T
+    | {
+        costPrice?: T;
+        totalValue?: T;
+      };
+  movements?:
+    | T
+    | {
+        lastStockIn?: T;
+        lastStockOut?: T;
+        lastUpdated?: T;
+      };
+  supplierInfo?:
+    | T
+    | {
+        supplier?: T;
+        supplierSku?: T;
+        leadTime?: T;
+        reorderPoint?: T;
+        reorderQuantity?: T;
       };
   status?: T;
-  customerType?: T;
   notes?: T;
-  tags?: T;
-  socialMedia?:
-    | T
-    | {
-        facebook?: T;
-        instagram?: T;
-      };
   createdBy?: T;
   lastModifiedBy?: T;
   updatedAt?: T;

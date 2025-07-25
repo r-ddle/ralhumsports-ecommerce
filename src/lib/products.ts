@@ -14,91 +14,144 @@ import { api } from '@/lib/api'
  */
 export function transformPayloadProduct(payloadProduct: PayloadProduct): Product {
   // Transform the PayloadCMS product to match the frontend Product interface
-  const images =
-    payloadProduct.images?.map((img) => ({
-      id: typeof img.image === 'object' ? String(img.image.id) : String(img.image),
-      url: typeof img.image === 'object' ? img.image.url || '' : '',
-      alt: img.altText || payloadProduct.name,
-    })) || []
-
-  const brand = typeof payloadProduct.brand === 'object' ? payloadProduct.brand : null
-  const category = typeof payloadProduct.category === 'object' ? payloadProduct.category : null
-
-  return {
-    id: String(payloadProduct.id),
-    title: payloadProduct.name,
-    slug: payloadProduct.slug ?? '',
-    description: typeof payloadProduct.description === 'string' ? payloadProduct.description : '',
-    shortDescription: payloadProduct.seo?.description || '',
-    brand: brand
-      ? {
-          id: String(brand.id),
-          name: brand.name,
-          slug: brand.slug,
-          description: brand.description || undefined,
-          logo: typeof brand.logo === 'object' ? (brand.logo.url ?? undefined) : undefined,
-          website: brand.website || undefined,
-          featured: brand.isFeatured || false,
-          createdAt: brand.createdAt,
-          updatedAt: brand.updatedAt,
-        }
-      : ({} as Brand),
-    categories: category
-      ? [
-          {
-            id: String(category.id),
-            name: category.name,
-            slug: category.slug,
-            description: category.description || undefined,
-            image:
-              typeof category.image === 'object' ? (category.image?.url ?? undefined) : undefined,
-            parentCategory: category.parentCategory || undefined,
-            createdAt: category.createdAt,
-            updatedAt: category.updatedAt,
-          },
-        ]
-      : [],
-    images,
-    variants: [
-      {
-        id: '1',
-        name: 'Default',
-        price: payloadProduct.price,
-        compareAtPrice: payloadProduct.pricing?.originalPrice || undefined,
-        sku: payloadProduct.sku ?? '',
-        inventory: payloadProduct.stock || 0,
+  // Images
+  const images = Array.isArray(payloadProduct.images)
+    ? payloadProduct.images.map((img) => ({
+        id: typeof img.image === 'object' ? String(img.image.id ?? '') : String(img.image ?? ''),
+        url: typeof img.image === 'object' ? (img.image.url ?? '') : '',
+        alt: img.altText ?? payloadProduct.name ?? '',
+      }))
+    : []
+  // Brand
+  const brandObj =
+    typeof payloadProduct.essentials?.brand === 'object' ? payloadProduct.essentials.brand : null
+  const brand = brandObj
+    ? {
+        id: String(brandObj.id),
+        name: brandObj.name,
+        slug: brandObj.slug,
+        description: brandObj.branding?.description ?? undefined,
+        logo:
+          typeof brandObj.branding?.logo === 'object'
+            ? (brandObj.branding.logo.url ?? undefined)
+            : undefined,
+        website: brandObj.details?.website ?? undefined,
+        featured: brandObj.isFeatured ?? false,
+        createdAt: brandObj.createdAt,
+        updatedAt: brandObj.updatedAt,
+      }
+    : ({} as Brand)
+  // Category
+  const categoryObj =
+    typeof payloadProduct.categorySelection?.sportsCategory === 'object'
+      ? payloadProduct.categorySelection.sportsCategory
+      : null
+  const categories = categoryObj
+    ? [
+        {
+          id: String(categoryObj.id),
+          name: categoryObj.name,
+          slug: categoryObj.slug,
+          description: categoryObj.description ?? undefined,
+          image:
+            categoryObj.visual?.image && typeof categoryObj.visual.image === 'object'
+              ? (categoryObj.visual.image.url ?? undefined)
+              : undefined,
+          parentCategory:
+            typeof categoryObj.parentCategory === 'object'
+              ? categoryObj.parentCategory
+                ? String(categoryObj.parentCategory.id)
+                : undefined
+              : typeof categoryObj.parentCategory === 'number'
+                ? String(categoryObj.parentCategory)
+                : undefined,
+          createdAt: categoryObj.createdAt,
+          updatedAt: categoryObj.updatedAt,
+        },
+      ]
+    : []
+  // Variants
+  const variants = Array.isArray(payloadProduct.variants)
+    ? payloadProduct.variants.map((variant, idx) => ({
+        id: String(variant.id ?? idx + 1),
+        name: variant.name ?? 'Default',
+        price: variant.price ?? payloadProduct.essentials?.price ?? 0,
+        compareAtPrice: undefined,
+        sku: variant.sku ?? '',
+        inventory: variant.stock ?? 0,
         weight:
           payloadProduct.specifications?.weight !== undefined
             ? Number(payloadProduct.specifications.weight)
             : undefined,
-        options: {},
-      },
-    ],
-    tags: payloadProduct.tags?.split(',').map((t) => t.trim()) || [],
-    status:
-      payloadProduct.status === 'active'
-        ? 'active'
-        : payloadProduct.status === 'draft'
-          ? 'draft'
-          : 'archived',
-    seo: payloadProduct.seo
-      ? {
-          title: payloadProduct.seo.title || undefined,
-          description: payloadProduct.seo.description || undefined,
-        }
-      : undefined,
-    specifications: payloadProduct.specifications
-      ? {
-          material: payloadProduct.specifications.material ?? '',
-          weight: payloadProduct.specifications.weight ?? '',
-          dimensions: payloadProduct.specifications.dimensions ?? '',
-          careInstructions: payloadProduct.specifications.careInstructions ?? '',
-        }
-      : undefined,
+        options: {
+          ...(variant.size ? { size: variant.size } : {}),
+          ...(variant.color ? { color: variant.color } : {}),
+        },
+      }))
+    : [
+        {
+          id: '1',
+          name: 'Default',
+          price: payloadProduct.essentials?.price ?? 0,
+          compareAtPrice: payloadProduct.productDetails?.originalPrice ?? undefined,
+          sku: payloadProduct.productDetails?.sku ?? '',
+          inventory: payloadProduct.inventory?.stock ?? 0,
+          weight:
+            payloadProduct.specifications?.weight !== undefined
+              ? Number(payloadProduct.specifications.weight)
+              : undefined,
+          options: {},
+        },
+      ]
+  // Tags
+  const tags =
+    typeof payloadProduct.productDetails?.tags === 'string'
+      ? payloadProduct.productDetails.tags.split(',').map((t) => t.trim())
+      : []
+  // Description
+  const description = payloadProduct.description
+    ? typeof payloadProduct.description === 'string'
+      ? payloadProduct.description
+      : JSON.stringify(payloadProduct.description)
+    : ''
+  // Status
+  let status: Product['status'] = 'archived'
+  if (payloadProduct.status === 'active') status = 'active'
+  else if (payloadProduct.status === 'draft') status = 'draft'
+  // SEO
+  const seo = payloadProduct.seo
+    ? {
+        title: payloadProduct.seo.title ?? undefined,
+        description: payloadProduct.seo.description ?? undefined,
+      }
+    : undefined
+  // Specifications
+  const specifications = payloadProduct.specifications
+    ? {
+        material: payloadProduct.specifications.material ?? '',
+        weight: payloadProduct.specifications.weight ?? '',
+        dimensions: payloadProduct.specifications.dimensions ?? '',
+        careInstructions: payloadProduct.specifications.careInstructions ?? '',
+      }
+    : undefined
+  return {
+    id: String(payloadProduct.id),
+    title: payloadProduct.name,
+    slug: payloadProduct.slug ?? '',
+    description,
+    shortDescription: payloadProduct.seo?.description ?? '',
+    brand,
+    categories,
+    images,
+    variants,
+    tags,
+    status,
+    seo,
+    specifications,
     createdAt: payloadProduct.createdAt,
     updatedAt: payloadProduct.updatedAt,
-    sku: payloadProduct.sku ?? '',
-    featured: !!payloadProduct.features, // Add this line to fix the error
+    sku: payloadProduct.productDetails?.sku ?? '',
+    featured: Array.isArray(payloadProduct.features) && payloadProduct.features.length > 0,
   }
 }
 

@@ -43,13 +43,20 @@ export const GET = withRateLimit(
         sku: string
         stock: string
         status: 'active' | 'inactive' | 'discontinued' | 'draft' | 'out-of-stock'
-        sizes: string[]
-        colors: string[]
         images: { id: string | number; url: string; alt: string }[]
         category: { id: string | number; name: string; slug: string } | null
         brand: { id: string | number; name: string; slug: string } | null
         features: string[]
         tags: string[]
+        variants?: {
+          id: number | string
+          name: string
+          sku: string
+          color?: string
+          size?: string
+          inventory: number
+          price: number
+        }[]
       }
 
       type CategoryResult = {
@@ -57,7 +64,6 @@ export const GET = withRateLimit(
         name: string
         slug: string
         description: string
-        image: { url: string; alt: string } | null
         productCount: number
       }
 
@@ -107,29 +113,25 @@ export const GET = withRateLimit(
           id: product.id,
           name: product.name,
           slug: typeof product.slug === 'string' ? product.slug : '',
-          price: product.price,
-          originalPrice: product.pricing?.originalPrice,
-          sku: typeof product.sku === 'string' ? product.sku : '',
-          stock: (product.stock || 0) > 0 ? 'In Stock' : 'Out of Stock', // Don't expose exact stock numbers
+          price: product.essentials.price,
+          originalPrice: product.productDetails?.originalPrice,
+          sku: typeof product.productDetails?.sku === 'string' ? product.productDetails.sku : '',
+          stock: (product.inventory?.stock || 0) > 0 ? 'In Stock' : 'Out of Stock', // Don't expose exact stock numbers
           status: product.status,
-          sizes: Array.isArray(product.variants)
-            ? Array.from(
-                new Set(
-                  product.variants
-                    .map((variant) => variant.size)
-                    .filter((size) => typeof size === 'string'),
-                ),
-              )
-            : [],
-          colors: Array.isArray(product.variants)
-            ? Array.from(
-                new Set(
-                  product.variants
-                    .map((variant) => variant.color)
-                    .filter((color) => typeof color === 'string'),
-                ),
-              )
-            : [],
+          variants:
+            product.variants?.map((variant) => ({
+              id:
+                typeof variant.id === 'string' || typeof variant.id === 'number' ? variant.id : '',
+              name: typeof variant.name === 'string' ? variant.name : '',
+              sku:
+                typeof variant.sku === 'string' || typeof variant.sku === 'number'
+                  ? String(variant.sku)
+                  : '',
+              color: typeof variant.color === 'string' ? variant.color : undefined,
+              size: typeof variant.size === 'string' ? variant.size : undefined,
+              inventory: typeof variant.stock === 'number' ? variant.stock : 0, // Don't expose exact stock numbers
+              price: typeof variant.price === 'number' ? variant.price : product.essentials.price, // Fallback to product price if no variant price
+            })) || [],
           images:
             product.images?.slice(0, 2).map((img) => ({
               // Limit to 2 images
@@ -146,24 +148,27 @@ export const GET = withRateLimit(
               alt:
                 typeof img.altText === 'string'
                   ? img.altText
-                  : typeof img.image === 'object' && typeof img.image.alt === 'string'
-                    ? img.image.alt
+                  : typeof img.image === 'object' && typeof img.image.attribution === 'string'
+                    ? img.image.attribution
                     : product.name,
             })) || [],
           category:
-            typeof product.category === 'object'
+            typeof product.categorySelection.sportsItem === 'object' &&
+            product.categorySelection.sportsItem?.id != null &&
+            product.categorySelection.sportsItem?.name != null &&
+            product.categorySelection.sportsItem?.slug != null
               ? {
-                  id: product.category.id,
-                  name: product.category.name,
-                  slug: product.category.slug,
+                  id: product.categorySelection.sportsItem.id as string | number,
+                  name: product.categorySelection.sportsItem.name as string,
+                  slug: product.categorySelection.sportsItem.slug as string,
                 }
               : null,
           brand:
-            typeof product.brand === 'object'
+            typeof product.essentials.brand === 'object'
               ? {
-                  id: product.brand.id,
-                  name: product.brand.name,
-                  slug: product.brand.slug,
+                  id: product.essentials.brand.id,
+                  name: product.essentials.brand.name,
+                  slug: product.essentials.brand.slug,
                 }
               : null,
           features: Array.isArray(product.features)
@@ -175,8 +180,8 @@ export const GET = withRateLimit(
                 .filter(Boolean)
             : [],
           tags:
-            typeof product.tags === 'string'
-              ? product.tags
+            typeof product.productDetails?.tags === 'string'
+              ? product.productDetails.tags
                   .split(',')
                   .map((t) => t.trim())
                   .slice(0, 5)
@@ -210,13 +215,6 @@ export const GET = withRateLimit(
           name: category.name,
           slug: category.slug,
           description: typeof category.description === 'string' ? category.description : '',
-          image:
-            category.image && typeof category.image === 'object'
-              ? {
-                  url: typeof category.image.url === 'string' ? category.image.url : '',
-                  alt: typeof category.image.alt === 'string' ? category.image.alt : category.name,
-                }
-              : null,
           productCount: typeof category.productCount === 'number' ? category.productCount : 0,
         }))
 
@@ -245,12 +243,16 @@ export const GET = withRateLimit(
           id: brand.id,
           name: brand.name,
           slug: brand.slug,
-          description: typeof brand.description === 'string' ? brand.description : '',
+          description:
+            typeof brand.branding.description === 'string' ? brand.branding.description : '',
           logo:
-            brand.logo && typeof brand.logo === 'object'
+            brand.branding.logo && typeof brand.branding.logo === 'object'
               ? {
-                  url: typeof brand.logo.url === 'string' ? brand.logo.url : '',
-                  alt: typeof brand.logo.alt === 'string' ? brand.logo.alt : brand.name,
+                  url: typeof brand.branding.logo.url === 'string' ? brand.branding.logo.url : '',
+                  alt:
+                    typeof brand.branding.logo.attribution === 'string'
+                      ? brand.branding.logo.attribution
+                      : brand.name,
                 }
               : null,
           productCount: typeof brand.productCount === 'number' ? brand.productCount : 0,

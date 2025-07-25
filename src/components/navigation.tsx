@@ -2,304 +2,182 @@
 
 import React, { useState, useEffect, useRef } from 'react'
 import { Button } from '@/components/ui/button'
-import { Menu, X, Phone, ChevronRight } from 'lucide-react'
+import { Menu, X, Phone, ChevronRight, ShoppingBag, StoreIcon } from 'lucide-react'
 import { CartButton } from '@/components/cart/cart-button'
 import Link from 'next/link'
 import { SITE_CONFIG } from '@/config/site-config'
 import { motion, AnimatePresence } from 'framer-motion'
 import Image from 'next/image'
 
-export default function Navigation() {
-  // Compute dynamic shop link based on hover state
-  // Helper to get slug for category, sport, item
-  const getCategorySlug = (categoryName: string) => {
-    return SITE_CONFIG.SPORTS_CATEGORIES[categoryName]?.slug || categoryName
-  }
-  const getSportSlug = (categoryName: string, sportName: string) => {
-    return SITE_CONFIG.SPORTS_CATEGORIES[categoryName]?.sports[sportName]?.slug || sportName
-  }
-  const getItemSlug = (categoryName: string, sportName: string, itemName: string) => {
-    return (
-      SITE_CONFIG.SPORTS_CATEGORIES[categoryName]?.sports[sportName]?.items[itemName]?.slug ||
-      itemName
-    )
+// Updated types for the 4-layer hierarchy
+type CategoryItem = {
+  id: string | number
+  slug: string
+  name: string
+  description?: string | null
+  icon?: string
+  image?: { url: string; alt: string } | null
+  displayOrder: number
+  isFeature: boolean
+  showInNavigation: boolean
+  productCount: number
+  type: 'sports-category' | 'sports' | 'sports-item'
+  relatedBrands?: Brand[]
+}
+
+type Brand = {
+  id: string | number
+  slug: string
+  name: string
+  description?: string | null
+  logo?: { url: string; alt: string } | null
+  website?: string
+  isFeature: boolean
+  country?: string
+  foundedYear?: number
+  productCount: number
+}
+
+type FilterMetadata = {
+  categories: CategoryItem[]
+  brands: Brand[]
+  priceRange: { min: number; max: number }
+  totalProducts: number
+  totalCategories: number
+  totalBrands: number
+}
+
+// Hierarchical structure for navigation
+type NavigationHierarchy = {
+  sportsCategories: CategoryItem[]
+  sports: { [categorySlug: string]: CategoryItem[] }
+  sportsItems: { [sportSlug: string]: CategoryItem[] }
+}
+
+export default function EnhancedNavigation() {
+  // Cache duration: 5 minutes
+  const CACHE_DURATION = 5 * 60 * 1000
+
+  function getCached<T>(key: string): T | null {
+    if (typeof window === 'undefined') return null
+    try {
+      const cached = localStorage.getItem(key)
+      if (!cached) return null
+      const { data, timestamp } = JSON.parse(cached)
+      if (Date.now() - timestamp > CACHE_DURATION) {
+        localStorage.removeItem(key)
+        return null
+      }
+      return data as T
+    } catch {
+      return null
+    }
   }
 
-  const getShopLink = () => {
-    if (hoveredCategory && hoveredSport && hoveredItem) {
-      return `/products?category=${getCategorySlug(hoveredCategory)}&sport=${getSportSlug(hoveredCategory, hoveredSport)}&item=${getItemSlug(hoveredCategory, hoveredSport, hoveredItem)}`
+  function setCached<T>(key: string, data: T): void {
+    if (typeof window === 'undefined') return
+    try {
+      localStorage.setItem(key, JSON.stringify({ data, timestamp: Date.now() }))
+    } catch (error) {
+      console.warn('Failed to cache data:', error)
     }
-    if (hoveredCategory && hoveredSport) {
-      return `/products?category=${getCategorySlug(hoveredCategory)}&sport=${getSportSlug(hoveredCategory, hoveredSport)}`
-    }
-    if (hoveredCategory) {
-      return `/products?category=${getCategorySlug(hoveredCategory)}`
-    }
-    return '/products'
   }
+
+  // State for real API data
+  const [filterMetadata, setFilterMetadata] = useState<FilterMetadata | null>(null)
+  const [navigationHierarchy, setNavigationHierarchy] = useState<NavigationHierarchy | null>(null)
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+
+  // Navigation state
   const [isOpen, setIsOpen] = useState(false)
   const [hoveredIdx, setHoveredIdx] = useState<number | null>(null)
   const [megaMenuOpen, setMegaMenuOpen] = useState(false)
-  const [hoveredCategory, setHoveredCategory] = useState<string | null>(null)
+  const [hoveredSportsCategory, setHoveredSportsCategory] = useState<string | null>(null)
   const [hoveredSport, setHoveredSport] = useState<string | null>(null)
-  const [hoveredItem, setHoveredItem] = useState<string | null>(null)
+  const [hoveredSportsItem, setHoveredSportsItem] = useState<string | null>(null)
   const [squircle, setSquircle] = useState({ left: 0, top: 0, width: 0, height: 0, visible: false })
   const [isMobile, setIsMobile] = useState(false)
   const [squircleAnimated, setSquircleAnimated] = useState(false)
   const [reducedMotion, setReducedMotion] = useState(false)
+
   const lastSquircle = useRef({ left: 0, top: 0, width: 0, height: 0 })
 
-  // Organize sports hierarchy with 4 levels: Category > Sport > Items > Brands
-  type BrandItem = {
-    brands: string[]
-    link: string
-  }
-  type SportItems = {
-    [itemName: string]: BrandItem
-  }
-  type Sport = {
-    icon: string
-    description: string
-    items: SportItems
-  }
-  type Sports = {
-    [sportName: string]: Sport
-  }
-  type Category = {
-    icon: string
-    description: string
-    sports: Sports
-  }
-  type SportsHierarchy = {
-    [categoryName: string]: Category
+  // Process API data into hierarchical structure
+  const processHierarchicalData = (data: FilterMetadata): NavigationHierarchy => {
+    const sportsCategories = data.categories.filter(
+      (cat) => cat.type === 'sports-category' && cat.showInNavigation,
+    )
+    const sports: { [categorySlug: string]: CategoryItem[] } = {}
+    const sportsItems: { [sportSlug: string]: CategoryItem[] } = {}
+
+    // Group sports by category (you might need to add parent relationships in your API)
+    data.categories
+      .filter((cat) => cat.type === 'sports' && cat.showInNavigation)
+      .forEach((sport) => {
+        // For now, we'll show all sports under each category
+        // Ideally, you'd have parent-child relationships in your API
+        sportsCategories.forEach((category) => {
+          if (!sports[category.slug]) sports[category.slug] = []
+          sports[category.slug].push(sport)
+        })
+      })
+
+    // Group sports items by sport
+    data.categories
+      .filter((cat) => cat.type === 'sports-item' && cat.showInNavigation)
+      .forEach((item) => {
+        // For now, we'll show all items under each sport
+        // Ideally, you'd have parent-child relationships in your API
+        Object.values(sports)
+          .flat()
+          .forEach((sport) => {
+            if (!sportsItems[sport.slug]) sportsItems[sport.slug] = []
+            sportsItems[sport.slug].push(item)
+          })
+      })
+
+    return { sportsCategories, sports, sportsItems }
   }
 
-  const sportsHierarchy: SportsHierarchy = {
-    'Ball Sports': {
-      icon: '⚽',
-      description: 'Equipment for ball-based sports',
-      sports: {
-        Cricket: {
-          icon: '🏏',
-          description: 'Professional cricket equipment',
-          items: {
-            'Cricket Bats': {
-              brands: ['Gray-Nicolls', 'Leverage'],
-              link: '/products?categories=cricket',
-            },
-            'Protective Gear': {
-              brands: ['Gray-Nicolls', 'Aero'],
-              link: '/products?categories=cricket',
-            },
-            'Cricket Balls': {
-              brands: ['Gray-Nicolls'],
-              link: '/products?categories=cricket',
-            },
-            'Bowling Machines': {
-              brands: ['Leverage'],
-              link: '/products?categories=cricket',
-            },
-            Accessories: {
-              brands: ['Gray-Nicolls', 'Aero'],
-              link: '/products?categories=cricket',
-            },
-          },
-        },
-        Rugby: {
-          icon: '🏉',
-          description: 'Professional rugby equipment',
-          items: {
-            'Rugby Balls': {
-              brands: ['Gilbert'],
-              link: '/products?categories=rugby',
-            },
-            'Training Equipment': {
-              brands: ['Gilbert'],
-              link: '/products?categories=rugby',
-            },
-            'Protective Gear': {
-              brands: ['Gilbert'],
-              link: '/products?categories=rugby',
-            },
-            'Team Accessories': {
-              brands: ['Gilbert'],
-              link: '/products?categories=rugby',
-            },
-          },
-        },
-        Basketball: {
-          icon: '🏀',
-          description: 'Professional basketball equipment',
-          items: {
-            Basketballs: {
-              brands: ['Molten'],
-              link: '/products?categories=basketball',
-            },
-            'Training Equipment': {
-              brands: ['Molten'],
-              link: '/products?categories=basketball',
-            },
-            'Court Accessories': {
-              brands: ['Molten'],
-              link: '/products?categories=basketball',
-            },
-          },
-        },
-        Volleyball: {
-          icon: '🏐',
-          description: 'Professional volleyball equipment',
-          items: {
-            Volleyballs: {
-              brands: ['Molten'],
-              link: '/products?categories=volleyball',
-            },
-            'Training Equipment': {
-              brands: ['Molten'],
-              link: '/products?categories=volleyball',
-            },
-            'Court Accessories': {
-              brands: ['Molten'],
-              link: '/products?categories=volleyball',
-            },
-          },
-        },
-      },
-    },
-    'Racquet Sports': {
-      icon: '🎾',
-      description: 'Professional racquet equipment',
-      sports: {
-        Tennis: {
-          icon: '🎾',
-          description: 'Professional tennis equipment',
-          items: {
-            'Tennis Rackets': {
-              brands: ['Babolat'],
-              link: '/products?categories=tennis',
-            },
-            'Tennis Strings': {
-              brands: ['Ashaway', 'Babolat'],
-              link: '/products?categories=tennis',
-            },
-            'Court Equipment': {
-              brands: ['Babolat'],
-              link: '/products?categories=tennis',
-            },
-            Accessories: {
-              brands: ['Babolat', 'Ashaway'],
-              link: '/products?categories=tennis',
-            },
-          },
-        },
-        Badminton: {
-          icon: '🏸',
-          description: 'Professional badminton equipment',
-          items: {
-            'Badminton Rackets': {
-              brands: ['Babolat'],
-              link: '/products?categories=badminton',
-            },
-            'Badminton Strings': {
-              brands: ['Ashaway'],
-              link: '/products?categories=badminton',
-            },
-            'String Accessories': {
-              brands: ['Ashaway'],
-              link: '/products?categories=badminton',
-            },
-          },
-        },
-        Squash: {
-          icon: '🎯',
-          description: 'Professional squash equipment',
-          items: {
-            'Squash Strings': {
-              brands: ['Ashaway'],
-              link: '/products?categories=squash',
-            },
-            'String Accessories': {
-              brands: ['Ashaway'],
-              link: '/products?categories=squash',
-            },
-          },
-        },
-      },
-    },
-    'Field Sports': {
-      icon: '🏑',
-      description: 'Field and outdoor sports gear',
-      sports: {
-        Hockey: {
-          icon: '🏑',
-          description: 'Professional hockey equipment',
-          items: {
-            'Hockey Sticks': {
-              brands: ['Grays'],
-              link: '/products?categories=hockey',
-            },
-            'Protective Equipment': {
-              brands: ['Grays'],
-              link: '/products?categories=hockey',
-            },
-            'Hockey Balls': {
-              brands: ['Grays'],
-              link: '/products?categories=hockey',
-            },
-            'Training Gear': {
-              brands: ['Grays'],
-              link: '/products?categories=hockey',
-            },
-          },
-        },
-        Football: {
-          icon: '⚽',
-          description: 'Football training equipment',
-          items: {
-            'Pop-Up Goals': {
-              brands: ['Pugg'],
-              link: '/products?categories=football',
-            },
-            'Training Sets': {
-              brands: ['Pugg'],
-              link: '/products?categories=football',
-            },
-            'Replacement Parts': {
-              brands: ['Pugg'],
-              link: '/products?categories=football',
-            },
-          },
-        },
-      },
-    },
-    'Training & Fitness': {
-      icon: '🏋️',
-      description: 'Multi-sport training equipment',
-      sports: {
-        'Multi-Sport Training': {
-          icon: '🔄',
-          description: 'Comprehensive training solutions',
-          items: {
-            'Training Equipment': {
-              brands: ['Fusion'],
-              link: '/products?categories=training',
-            },
-            'Agility Tools': {
-              brands: ['Fusion'],
-              link: '/products?categories=training',
-            },
-            'Strength Training': {
-              brands: ['Fusion'],
-              link: '/products?categories=training',
-            },
-            'Team Accessories': {
-              brands: ['Fusion'],
-              link: '/products?categories=training',
-            },
-          },
-        },
-      },
-    },
-  }
+  // Fetch real filter metadata from API
+  useEffect(() => {
+    async function fetchFilterMetadata() {
+      try {
+        // Check cache first
+        const cachedData = getCached<FilterMetadata>('nav_filter_metadata')
+        if (cachedData) {
+          setFilterMetadata(cachedData)
+          setNavigationHierarchy(processHierarchicalData(cachedData))
+          setLoading(false)
+          return
+        }
+
+        // Fetch from API
+        const response = await fetch('/api/public/filters-meta')
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`)
+        }
+
+        const result = await response.json()
+        if (result.success && result.data) {
+          setFilterMetadata(result.data)
+          setNavigationHierarchy(processHierarchicalData(result.data))
+          setCached('nav_filter_metadata', result.data)
+          setError(null)
+        } else {
+          throw new Error(result.error || 'Failed to fetch filter metadata')
+        }
+      } catch (error) {
+        console.error('Failed to fetch filter metadata:', error)
+        setError(error instanceof Error ? error.message : 'Unknown error')
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    fetchFilterMetadata()
+  }, [])
 
   const navItems = [
     { name: 'Brands', href: '/brands' },
@@ -316,9 +194,64 @@ export default function Navigation() {
     ) as React.RefObject<HTMLAnchorElement>[]
   }
 
-  // Get brand info from SITE_CONFIG
-  const getBrandInfo = (brandName: string) => {
-    return SITE_CONFIG.brands.find((brand) => brand.name === brandName)
+  // Build filter URL based on current selection
+  const buildFilterUrl = (params: {
+    category?: string
+    sport?: string
+    item?: string
+    brand?: string
+  }) => {
+    const searchParams = new URLSearchParams()
+
+    if (params.category) searchParams.append('category', params.category)
+    if (params.sport) searchParams.append('sport', params.sport)
+    if (params.item) searchParams.append('item', params.item)
+    if (params.brand) searchParams.append('brand', params.brand)
+
+    const queryString = searchParams.toString()
+    return `/products${queryString ? `?${queryString}` : ''}`
+  }
+
+  // Handle navigation clicks with proper filtering
+  const handleCategoryClick = (categorySlug: string) => {
+    window.location.href = buildFilterUrl({ category: categorySlug })
+    setMegaMenuOpen(false)
+  }
+
+  const handleSportClick = (categorySlug: string, sportSlug: string) => {
+    window.location.href = buildFilterUrl({ category: categorySlug, sport: sportSlug })
+    setMegaMenuOpen(false)
+  }
+
+  const handleSportsItemClick = (categorySlug: string, sportSlug: string, itemSlug: string) => {
+    window.location.href = buildFilterUrl({
+      category: categorySlug,
+      sport: sportSlug,
+      item: itemSlug,
+    })
+    setMegaMenuOpen(false)
+  }
+
+  const handleBrandClick = (brandSlug: string) => {
+    window.location.href = buildFilterUrl({ brand: brandSlug })
+    setMegaMenuOpen(false)
+  }
+
+  const getCurrentShopLink = () => {
+    if (hoveredSportsItem && hoveredSport && hoveredSportsCategory) {
+      return buildFilterUrl({
+        category: hoveredSportsCategory,
+        sport: hoveredSport,
+        item: hoveredSportsItem,
+      })
+    }
+    if (hoveredSport && hoveredSportsCategory) {
+      return buildFilterUrl({ category: hoveredSportsCategory, sport: hoveredSport })
+    }
+    if (hoveredSportsCategory) {
+      return buildFilterUrl({ category: hoveredSportsCategory })
+    }
+    return '/products'
   }
 
   // Detect mobile and reduced motion
@@ -412,18 +345,18 @@ export default function Navigation() {
                       className="relative"
                       onMouseEnter={() => {
                         setMegaMenuOpen(true)
-                        setHoveredIdx(null) // Clear squircle for dropdown
+                        setHoveredIdx(null)
                       }}
                       onMouseLeave={() => {
                         setMegaMenuOpen(false)
-                        setHoveredCategory(null)
+                        setHoveredSportsCategory(null)
                         setHoveredSport(null)
-                        setHoveredItem(null)
+                        setHoveredSportsItem(null)
                         setHoveredIdx(null)
                       }}
                     >
                       <Link
-                        href={getShopLink()}
+                        href={getCurrentShopLink()}
                         className={`relative px-3 lg:px-4 py-2 text-sm lg:text-base font-semibold rounded-xl transition-all duration-150 group overflow-hidden focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-primary focus-visible:ring-offset-2 flex items-center gap-1
                           ${megaMenuOpen ? 'text-white bg-brand-primary font-bold' : 'text-text-primary hover:text-brand-primary hover:bg-brand-background'}`}
                         aria-label="Shop filtered products"
@@ -434,7 +367,7 @@ export default function Navigation() {
                         />
                       </Link>
 
-                      {/* Mega Menu - Fixed Centering */}
+                      {/* Hierarchical Mega Menu */}
                       <AnimatePresence>
                         {megaMenuOpen && (
                           <motion.div
@@ -444,134 +377,199 @@ export default function Navigation() {
                             transition={{ duration: 0.2 }}
                             className="absolute top-full mt-4 bg-brand-surface border border-brand-border shadow-2xl rounded-2xl overflow-hidden z-50"
                             style={{
-                              width: '1000px',
+                              width: '1200px',
                               maxWidth: '95vw',
-                              left: 'calc(-500px + 210%)',
+                              left: 'calc(-500px + 50%)',
                             }}
                           >
-                            <div className="flex h-fit">
-                              {/* Level 1: Sports Categories - Fixed left rounding */}
-                              <div className="w-56 bg-gray-50 border-r border-brand-border p-4 rounded-l-2xl">
-                                <h3 className="text-lg font-bold text-text-primary mb-4 px-2">
-                                  Sports Categories
-                                </h3>
-                                <div className="space-y-1">
-                                  {Object.entries(sportsHierarchy).map(
-                                    ([categoryName, category]) => (
+                            <div className="flex h-fit min-h-[420px]">
+                              {/* Level 1: Sports Categories */}
+                              <div className="w-64 bg-gradient-to-b from-gray-50 to-gray-100 border-r border-brand-border p-5">
+                                <div className="flex items-center gap-2 mb-5">
+                                  <div className="w-2 h-2 bg-brand-primary rounded-full"></div>
+                                  <h3 className="text-lg font-bold text-text-primary">
+                                    Sports Categories
+                                  </h3>
+                                </div>
+                                <div className="space-y-2 max-h-80 overflow-hidden">
+                                  {loading ? (
+                                    <div className="space-y-3">
+                                      {[1, 2, 3, 4, 5].map((i) => (
+                                        <div key={i} className="animate-pulse">
+                                          <div className="h-14 bg-gray-200 rounded-xl"></div>
+                                        </div>
+                                      ))}
+                                    </div>
+                                  ) : error ? (
+                                    <div className="text-red-500 text-sm p-3 bg-red-50 rounded-xl border border-red-200">
+                                      <div className="font-semibold">Failed to load categories</div>
+                                      <div className="text-xs mt-1">
+                                        Please try refreshing the page
+                                      </div>
+                                    </div>
+                                  ) : (
+                                    navigationHierarchy?.sportsCategories.map((category) => (
                                       <div
-                                        key={categoryName}
-                                        className={`p-3 rounded-lg cursor-pointer transition-all duration-200 ${
-                                          hoveredCategory === categoryName
-                                            ? 'bg-brand-primary text-white shadow-lg'
-                                            : 'hover:bg-white hover:shadow-md'
+                                        key={category.id}
+                                        className={`group p-4 rounded-xl cursor-pointer transition-all duration-300 relative overflow-hidden ${
+                                          hoveredSportsCategory === category.slug
+                                            ? 'bg-brand-primary text-white shadow-lg transform scale-[1.02]'
+                                            : 'hover:bg-white hover:shadow-md border border-transparent hover:border-gray-200'
                                         }`}
                                         onMouseEnter={() => {
-                                          setHoveredCategory(categoryName)
+                                          setHoveredSportsCategory(category.slug)
                                           setHoveredSport(null)
-                                          setHoveredItem(null)
+                                          setHoveredSportsItem(null)
                                         }}
-                                        onClick={() => {
-                                          window.location.href = `/products?category=${getCategorySlug(categoryName)}`
-                                        }}
+                                        onClick={() => handleCategoryClick(category.slug)}
                                       >
-                                        <div className="flex items-center gap-3">
-                                          <span className="text-lg">{category.icon}</span>
-                                          <div>
-                                            <div className="font-semibold text-sm">
-                                              {categoryName}
+                                        {/* Hover gradient background */}
+                                        <div
+                                          className={`absolute inset-0 bg-gradient-to-r from-brand-primary/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 ${hoveredSportsCategory === category.slug ? 'opacity-100' : ''}`}
+                                        ></div>
+
+                                        <div className="flex items-center gap-4 relative z-10">
+                                          <div className="flex-shrink-0"></div>
+                                          <div className="flex-1 min-w-0">
+                                            <div className="font-semibold text-sm truncate">
+                                              {category.name}
                                             </div>
-                                            <span
-                                              className={`text-xs ${hoveredCategory === categoryName ? 'text-gray-200' : 'text-text-secondary'}`}
+                                            <div
+                                              className={`text-xs mt-1 ${
+                                                hoveredSportsCategory === category.slug
+                                                  ? 'text-white/80'
+                                                  : 'text-text-secondary'
+                                              }`}
                                             >
-                                              {category.description}
-                                            </span>
+                                              {category.productCount} products
+                                            </div>
                                           </div>
+                                          <ChevronRight
+                                            className={`w-4 h-4 transition-transform duration-200 ${
+                                              hoveredSportsCategory === category.slug
+                                                ? 'transform translate-x-1'
+                                                : ''
+                                            }`}
+                                          />
                                         </div>
                                       </div>
-                                    ),
+                                    ))
                                   )}
                                 </div>
                               </div>
 
                               {/* Level 2: Sports */}
-                              {hoveredCategory && (
-                                <motion.div
-                                  initial={{ opacity: 0, x: -20 }}
-                                  animate={{ opacity: 1, x: 0 }}
-                                  className="w-56 p-4 border-r border-brand-border"
-                                >
-                                  <h4 className="text-lg font-bold text-text-primary mb-4">
-                                    Sports
-                                  </h4>
-                                  <div className="space-y-2">
-                                    {Object.entries(sportsHierarchy[hoveredCategory].sports).map(
-                                      ([sportName, sport]) => (
-                                        <div
-                                          key={sportName}
-                                          className={`p-3 rounded-lg cursor-pointer transition-all duration-200 ${
-                                            hoveredSport === sportName
-                                              ? 'bg-brand-primary text-white shadow-lg'
-                                              : 'hover:bg-brand-background'
-                                          }`}
-                                          onMouseEnter={() => {
-                                            setHoveredSport(sportName)
-                                            setHoveredItem(null)
-                                          }}
-                                          onClick={() => {
-                                            window.location.href = `/products?category=${getCategorySlug(hoveredCategory)}&sport=${getSportSlug(hoveredCategory, sportName)}`
-                                          }}
-                                        >
-                                          <div className="flex items-center gap-3">
-                                            <span className="text-lg">{sport.icon}</span>
-                                            <div>
-                                              <div className="font-semibold text-sm">
-                                                {sportName}
+                              {hoveredSportsCategory &&
+                                navigationHierarchy?.sports[hoveredSportsCategory] && (
+                                  <motion.div
+                                    initial={{ opacity: 0, x: -20 }}
+                                    animate={{ opacity: 1, x: 0 }}
+                                    transition={{ duration: 0.2 }}
+                                    className="w-60 bg-gradient-to-b from-white to-gray-50 border-r border-brand-border p-5"
+                                  >
+                                    <div className="flex items-center gap-2 mb-5">
+                                      <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
+                                      <h4 className="text-lg font-bold text-text-primary">
+                                        Sports
+                                      </h4>
+                                    </div>
+                                    <div className="space-y-2 max-h-80 overflow-hidden">
+                                      {navigationHierarchy.sports[hoveredSportsCategory].map(
+                                        (sport) => (
+                                          <div
+                                            key={sport.id}
+                                            className={`group p-3 rounded-lg cursor-pointer transition-all duration-200 relative ${
+                                              hoveredSport === sport.slug
+                                                ? 'bg-blue-500 text-white shadow-md transform scale-[1.02]'
+                                                : 'hover:bg-gray-100 hover:shadow-sm'
+                                            }`}
+                                            onMouseEnter={() => {
+                                              setHoveredSport(sport.slug)
+                                              setHoveredSportsItem(null)
+                                            }}
+                                            onClick={() =>
+                                              handleSportClick(hoveredSportsCategory, sport.slug)
+                                            }
+                                          >
+                                            <div className="flex items-center gap-3">
+                                              <div className="flex-shrink-0"></div>
+                                              <div className="flex-1 min-w-0">
+                                                <div className="font-medium text-sm truncate">
+                                                  {sport.name}
+                                                </div>
+                                                <div
+                                                  className={`text-xs ${
+                                                    hoveredSport === sport.slug
+                                                      ? 'text-white/80'
+                                                      : 'text-text-secondary'
+                                                  }`}
+                                                >
+                                                  {sport.productCount} items
+                                                </div>
                                               </div>
-                                              <div
-                                                className={`text-xs ${hoveredSport === sportName ? 'text-gray-200' : 'text-text-secondary'}`}
-                                              >
-                                                {Object.keys(sport.items).length} items
-                                              </div>
+                                              <ChevronRight
+                                                className={`w-3 h-3 transition-transform duration-200 ${
+                                                  hoveredSport === sport.slug
+                                                    ? 'transform translate-x-1'
+                                                    : ''
+                                                }`}
+                                              />
                                             </div>
                                           </div>
-                                        </div>
-                                      ),
-                                    )}
-                                  </div>
-                                </motion.div>
-                              )}
+                                        ),
+                                      )}
+                                    </div>
+                                  </motion.div>
+                                )}
 
                               {/* Level 3: Sports Items */}
-                              {hoveredCategory && hoveredSport && (
+                              {hoveredSport && navigationHierarchy?.sportsItems[hoveredSport] && (
                                 <motion.div
                                   initial={{ opacity: 0, x: -20 }}
                                   animate={{ opacity: 1, x: 0 }}
-                                  className="w-56 p-4 border-r border-brand-border"
+                                  transition={{ duration: 0.2 }}
+                                  className="w-56 bg-white border-r border-brand-border p-5"
                                 >
-                                  <h4 className="text-lg font-bold text-text-primary mb-4">
-                                    {hoveredSport} Items
-                                  </h4>
-                                  <div className="space-y-2">
-                                    {Object.entries(
-                                      sportsHierarchy[hoveredCategory].sports[hoveredSport].items,
-                                    ).map(([itemName, item]) => (
+                                  <div className="flex items-center gap-2 mb-5">
+                                    <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                                    <h4 className="text-lg font-bold text-text-primary">
+                                      Equipment
+                                    </h4>
+                                  </div>
+                                  <div className="space-y-2 max-h-80 overflow-hidden">
+                                    {navigationHierarchy.sportsItems[hoveredSport].map((item) => (
                                       <div
-                                        key={itemName}
-                                        className={`p-3 rounded-lg cursor-pointer transition-all duration-200 ${
-                                          hoveredItem === itemName
-                                            ? 'bg-brand-primary text-white shadow-lg'
-                                            : 'hover:bg-brand-background'
+                                        key={item.id}
+                                        className={`group p-3 rounded-lg cursor-pointer transition-all duration-200 ${
+                                          hoveredSportsItem === item.slug
+                                            ? 'bg-green-500 text-white shadow-md transform scale-[1.02]'
+                                            : 'hover:bg-gray-50 hover:shadow-sm border border-transparent hover:border-gray-200'
                                         }`}
-                                        onMouseEnter={() => setHoveredItem(itemName)}
-                                        onClick={() => {
-                                          window.location.href = `/products?category=${getCategorySlug(hoveredCategory)}&sport=${getSportSlug(hoveredCategory, hoveredSport)}&item=${getItemSlug(hoveredCategory, hoveredSport, itemName)}`
-                                        }}
+                                        onMouseEnter={() => setHoveredSportsItem(item.slug)}
+                                        onClick={() =>
+                                          handleSportsItemClick(
+                                            hoveredSportsCategory!,
+                                            hoveredSport,
+                                            item.slug,
+                                          )
+                                        }
                                       >
-                                        <div className="font-semibold text-sm mb-1">{itemName}</div>
-                                        <div
-                                          className={`text-xs ${hoveredItem === itemName ? 'text-gray-200' : 'text-text-secondary'}`}
-                                        >
-                                          {item.brands.length} brands
+                                        <div className="flex items-center gap-3">
+                                          <div className="flex-shrink-0"></div>
+                                          <div className="flex-1 min-w-0">
+                                            <div className="font-medium text-sm truncate">
+                                              {item.name}
+                                            </div>
+                                            <div
+                                              className={`text-xs ${
+                                                hoveredSportsItem === item.slug
+                                                  ? 'text-white/80'
+                                                  : 'text-text-secondary'
+                                              }`}
+                                            >
+                                              {item.productCount} products
+                                            </div>
+                                          </div>
                                         </div>
                                       </div>
                                     ))}
@@ -579,133 +577,225 @@ export default function Navigation() {
                                 </motion.div>
                               )}
 
-                              {/* Level 4: Brands - Now with images */}
-                              {hoveredCategory && hoveredSport && hoveredItem && (
-                                <motion.div
-                                  initial={{ opacity: 0, x: -20 }}
-                                  animate={{ opacity: 1, x: 0 }}
-                                  className="flex-1 p-4"
-                                >
-                                  <h4 className="text-lg font-bold text-text-primary mb-4">
-                                    {hoveredItem} Brands
-                                  </h4>
-                                  <div className="space-y-3">
-                                    {sportsHierarchy[hoveredCategory].sports[hoveredSport].items[
-                                      hoveredItem
-                                    ].brands.map((brandName) => {
-                                      const brandInfo = getBrandInfo(brandName)
-                                      return (
-                                        <Link
-                                          key={brandName}
-                                          href={`/products?brand=${brandInfo?.slug || brandName.toLowerCase().replace(/[^a-z0-9]/g, '-')}`}
-                                          className="block p-3 rounded-lg hover:bg-brand-background transition-colors group"
-                                        >
-                                          <div className="flex items-center gap-3">
-                                            {brandInfo?.image && (
-                                              <div className="w-8 h-8 flex-shrink-0">
-                                                <Image
-                                                  src={brandInfo.image}
-                                                  alt={brandName}
-                                                  width={32}
-                                                  height={32}
-                                                  className="w-full h-full object-contain"
-                                                />
-                                              </div>
-                                            )}
-                                            <div className="flex-1">
-                                              <div className="font-semibold text-sm text-text-primary group-hover:text-brand-primary">
-                                                {brandName}
-                                              </div>
-                                              {brandInfo && (
-                                                <div className="text-xs text-text-secondary mt-1">
-                                                  {brandInfo.tagline}
-                                                </div>
-                                              )}
+                              {/* Level 4: Brands & Actions */}
+                              <div className="flex-1 p-6 bg-gradient-to-br from-gray-50 to-white relative">
+                                {loading ? (
+                                  <div className="flex items-center justify-center h-full">
+                                    <div className="text-center">
+                                      <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-brand-primary mx-auto mb-4"></div>
+                                      <p className="text-text-secondary font-medium">
+                                        Loading navigation...
+                                      </p>
+                                    </div>
+                                  </div>
+                                ) : error ? (
+                                  <div className="flex items-center justify-center h-full">
+                                    <div className="text-center max-w-sm">
+                                      <div className="text-5xl mb-4">⚠️</div>
+                                      <h4 className="text-xl font-bold text-text-primary mb-2">
+                                        Navigation Unavailable
+                                      </h4>
+                                      <p className="text-text-secondary mb-6 text-sm leading-relaxed">
+                                        {error}
+                                      </p>
+                                      <Link
+                                        href="/products"
+                                        className="inline-flex items-center px-6 py-3 bg-brand-primary text-white rounded-xl font-semibold hover:bg-primary-600 transition-colors shadow-lg"
+                                        onClick={() => setMegaMenuOpen(false)}
+                                      >
+                                        <ShoppingBag className="w-4 h-4 mr-2" />
+                                        Browse Products
+                                      </Link>
+                                    </div>
+                                  </div>
+                                ) : (
+                                  <div className="h-full flex flex-col">
+                                    {/* Featured Brands Section */}
+                                    <div className="flex-1">
+                                      {filterMetadata?.brands &&
+                                        filterMetadata.brands.filter((b) => b.isFeature).length >
+                                          0 && (
+                                          <div className="mb-6">
+                                            <div className="flex items-center gap-2 mb-4">
+                                              <div className="w-2 h-2 bg-purple-500 rounded-full"></div>
+                                              <h4 className="text-lg font-bold text-text-primary">
+                                                Featured Brands
+                                              </h4>
+                                            </div>
+                                            <div className="grid grid-cols-2 gap-3">
+                                              {filterMetadata.brands
+                                                .filter((b) => b.isFeature)
+                                                .slice(0, 6)
+                                                .map((brand) => (
+                                                  <div
+                                                    key={brand.id}
+                                                    className="group p-3 rounded-xl cursor-pointer transition-all duration-200 hover:bg-white hover:shadow-md border border-transparent hover:border-gray-200 relative overflow-hidden"
+                                                    onClick={() => handleBrandClick(brand.slug)}
+                                                  >
+                                                    {/* Subtle hover effect */}
+                                                    <div className="absolute inset-0 bg-gradient-to-r from-purple-50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+
+                                                    <div className="flex items-center gap-3 relative z-10">
+                                                      {brand.logo?.url && (
+                                                        <div className="w-8 h-8 flex-shrink-0 rounded-lg overflow-hidden bg-white p-1 shadow-sm">
+                                                          <Image
+                                                            src={
+                                                              brand.logo.url || '/placeholder.svg'
+                                                            }
+                                                            alt={brand.logo.alt}
+                                                            width={32}
+                                                            height={32}
+                                                            className="w-full h-full object-contain"
+                                                          />
+                                                        </div>
+                                                      )}
+                                                      <div className="flex-1 min-w-0">
+                                                        <div className="font-semibold text-sm text-text-primary truncate">
+                                                          {brand.name}
+                                                        </div>
+                                                        <div className="text-xs text-text-secondary">
+                                                          {brand.productCount} products
+                                                        </div>
+                                                      </div>
+                                                    </div>
+                                                  </div>
+                                                ))}
                                             </div>
                                           </div>
+                                        )}
+
+                                      {/* Welcome Message for No Selection */}
+                                      {!hoveredSportsCategory && (
+                                        <div className="text-center py-8">
+                                          <div className="text-6xl mb-4">🏆</div>
+                                          <h4 className="text-2xl font-bold text-text-primary mb-3">
+                                            Discover Sports Equipment
+                                          </h4>
+                                          <p className="text-text-secondary mb-2 text-lg">
+                                            Explore {filterMetadata?.totalCategories} categories
+                                          </p>
+                                          <p className="text-text-secondary text-sm">
+                                            From {filterMetadata?.totalBrands} trusted brands
+                                          </p>
+                                        </div>
+                                      )}
+
+                                      {/* Current Selection Info */}
+                                      {hoveredSportsCategory && (
+                                        <div className="bg-white/60 rounded-xl p-4 mb-4 border border-gray-200">
+                                          <div className="text-sm text-text-secondary mb-1">
+                                            Currently browsing:
+                                          </div>
+                                          <div className="flex items-center gap-2 text-text-primary">
+                                            <span className="font-semibold">
+                                              {
+                                                navigationHierarchy?.sportsCategories.find(
+                                                  (c) => c.slug === hoveredSportsCategory,
+                                                )?.name
+                                              }
+                                            </span>
+                                            {hoveredSport && (
+                                              <>
+                                                <ChevronRight className="w-3 h-3 text-text-secondary" />
+                                                <span className="font-medium">
+                                                  {
+                                                    navigationHierarchy?.sports[
+                                                      hoveredSportsCategory
+                                                    ]?.find((s) => s.slug === hoveredSport)?.name
+                                                  }
+                                                </span>
+                                              </>
+                                            )}
+                                            {hoveredSportsItem && hoveredSport && (
+                                              <>
+                                                <ChevronRight className="w-3 h-3 text-text-secondary" />
+                                                <span className="text-text-secondary">
+                                                  {
+                                                    navigationHierarchy?.sportsItems[
+                                                      hoveredSport
+                                                    ]?.find(
+                                                      (i: CategoryItem) =>
+                                                        i.slug === hoveredSportsItem,
+                                                    )?.name
+                                                  }
+                                                </span>
+                                              </>
+                                            )}
+                                          </div>
+
+                                          {/* Related Brands for the selected category */}
+                                          {(() => {
+                                            const selectedCategory =
+                                              filterMetadata?.categories.find(
+                                                (cat) => cat.slug === hoveredSportsCategory,
+                                              )
+                                            if (
+                                              selectedCategory &&
+                                              Array.isArray(selectedCategory.relatedBrands) &&
+                                              selectedCategory.relatedBrands.length > 0
+                                            ) {
+                                              return (
+                                                <div className="mt-4">
+                                                  <div className="text-xs text-text-secondary mb-2 font-semibold">
+                                                    Related Brands:
+                                                  </div>
+                                                  <div className="flex flex-wrap gap-2">
+                                                    {selectedCategory.relatedBrands.map(
+                                                      (brand: any) => (
+                                                        <button
+                                                          key={brand.id}
+                                                          className="flex items-center gap-2 px-3 py-1 rounded-lg bg-brand-surface border border-brand-border hover:bg-brand-primary hover:text-white transition-colors text-xs font-medium shadow-sm"
+                                                          onClick={() =>
+                                                            handleBrandClick(brand.slug)
+                                                          }
+                                                        >
+                                                          {brand.logo?.url && (
+                                                            <Image
+                                                              src={brand.logo.url}
+                                                              alt={brand.logo.alt || brand.name}
+                                                              width={20}
+                                                              height={20}
+                                                              className="rounded-full w-5 h-5 object-contain"
+                                                            />
+                                                          )}
+                                                          <span>{brand.name}</span>
+                                                        </button>
+                                                      ),
+                                                    )}
+                                                  </div>
+                                                </div>
+                                              )
+                                            }
+                                            return null
+                                          })()}
+                                        </div>
+                                      )}
+                                    </div>
+
+                                    {/* Bottom Action Buttons */}
+                                    <div className="pt-4 border-t border-gray-200">
+                                      <div className="flex gap-3 justify-end">
+                                        <Link
+                                          href="/products"
+                                          className="inline-flex items-center px-5 py-3 border-2 border-brand-primary text-brand-primary rounded-xl font-bold hover:bg-brand-primary hover:text-white transition-all duration-200 shadow-sm hover:shadow-md"
+                                          onClick={() => setMegaMenuOpen(false)}
+                                        >
+                                          <StoreIcon className="w-4 h-4 mr-2" />
+                                          Shop All
                                         </Link>
-                                      )
-                                    })}
-                                  </div>
-
-                                  {/* CTA Section */}
-                                  <div className="mt-6 pt-4 border-t border-brand-border">
-                                    <Link
-                                      href={
-                                        sportsHierarchy[hoveredCategory].sports[hoveredSport].items[
-                                          hoveredItem
-                                        ].link
-                                      }
-                                      className="inline-flex items-center px-4 py-2 bg-brand-primary text-white rounded-xl font-semibold hover:bg-primary-600 transition-colors"
-                                    >
-                                      Shop All {hoveredItem}
-                                      <ChevronRight className="w-4 h-4 ml-2" />
-                                    </Link>
-                                  </div>
-                                </motion.div>
-                              )}
-
-                              {/* Default Content */}
-                              {!hoveredCategory && (
-                                <div className="flex-1 p-6 flex items-center justify-center">
-                                  <div className="text-center">
-                                    <div className="text-4xl mb-4">🏆</div>
-                                    <h4 className="text-xl font-bold text-text-primary mb-2">
-                                      Explore Our Sports Equipment
-                                    </h4>
-                                    <p className="text-text-secondary mb-4">
-                                      Navigate through Categories → Sports → Items → Brands
-                                    </p>
-                                    <Link
-                                      href="/products"
-                                      className="inline-flex items-center px-4 py-2 bg-brand-primary text-white rounded-xl font-semibold hover:bg-primary-600 transition-colors"
-                                    >
-                                      View All Products
-                                    </Link>
-                                  </div>
-                                </div>
-                              )}
-
-                              {hoveredCategory && !hoveredSport && (
-                                <div className="flex-1 p-6 flex items-center justify-center">
-                                  <div className="text-center">
-                                    <div className="text-4xl mb-4">
-                                      {sportsHierarchy[hoveredCategory].icon}
+                                        <Link
+                                          href={getCurrentShopLink()}
+                                          className="inline-flex items-center px-6 py-3 bg-brand-primary text-white rounded-xl font-bold hover:bg-primary-600 transition-all duration-200 shadow-lg hover:shadow-xl transform hover:scale-[1.02]"
+                                          onClick={() => setMegaMenuOpen(false)}
+                                        >
+                                          <ShoppingBag className="w-4 h-4 mr-2" />
+                                          Shop Category
+                                        </Link>
+                                      </div>
                                     </div>
-                                    <h4 className="text-xl font-bold text-text-primary mb-2">
-                                      {hoveredCategory}
-                                    </h4>
-                                    <p className="text-text-secondary mb-4">
-                                      {sportsHierarchy[hoveredCategory].description}
-                                    </p>
-                                    <p className="text-sm text-text-secondary">
-                                      Hover over a sport to see available items
-                                    </p>
                                   </div>
-                                </div>
-                              )}
-
-                              {hoveredCategory && hoveredSport && !hoveredItem && (
-                                <div className="flex-1 p-6 flex items-center justify-center">
-                                  <div className="text-center">
-                                    <div className="text-4xl mb-4">
-                                      {sportsHierarchy[hoveredCategory].sports[hoveredSport].icon}
-                                    </div>
-                                    <h4 className="text-xl font-bold text-text-primary mb-2">
-                                      {hoveredSport}
-                                    </h4>
-                                    <p className="text-text-secondary mb-4">
-                                      {
-                                        sportsHierarchy[hoveredCategory].sports[hoveredSport]
-                                          .description
-                                      }
-                                    </p>
-                                    <p className="text-sm text-text-secondary">
-                                      Hover over an item to see available brands
-                                    </p>
-                                  </div>
-                                </div>
-                              )}
+                                )}
+                              </div>
                             </div>
                           </motion.div>
                         )}
@@ -883,7 +973,36 @@ export default function Navigation() {
             >
               <div className="p-4 sm:p-6">
                 <div className="space-y-1">
-                  {navItems.map((item, index) => (
+                  {/* Mobile Categories */}
+                  {!loading && !error && navigationHierarchy?.sportsCategories && (
+                    <div className="mb-4">
+                      <h4 className="text-sm font-bold text-text-secondary uppercase tracking-wide mb-2 px-3">
+                        Categories
+                      </h4>
+                      {navigationHierarchy.sportsCategories.slice(0, 3).map((category) => (
+                        <Link
+                          key={category.id}
+                          href={buildFilterUrl({ category: category.slug })}
+                          onClick={() => setIsOpen(false)}
+                          className="block w-full text-left px-3 sm:px-4 py-2 sm:py-3 text-text-primary hover:text-brand-primary hover:bg-gray-50 font-medium rounded-xl sm:rounded-2xl transition-all duration-200 text-base focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-primary focus-visible:ring-offset-2"
+                          role="menuitem"
+                        >
+                          <div className="flex items-center gap-3">
+                            <span className="text-lg">{category.icon || '🏆'}</span>
+                            <div>
+                              <div>{category.name}</div>
+                              <div className="text-xs text-text-secondary">
+                                {category.productCount} products
+                              </div>
+                            </div>
+                          </div>
+                        </Link>
+                      ))}
+                    </div>
+                  )}
+
+                  {/* Regular Nav Items */}
+                  {navItems.map((item) => (
                     <div key={item.name}>
                       <Link
                         href={item.href}

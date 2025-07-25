@@ -2,6 +2,43 @@ import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
 
 export function middleware(request: NextRequest) {
+  const { headers, nextUrl } = request
+  const host = headers.get('host')
+
+  // --- NEW: Subdomain routing for the admin panel ---
+  // If the request is for the admin subdomain, rewrite to the /admin path.
+  if (host === process.env.NEXT_PUBLIC_ADMIN_DOMAIN) {
+    // Prevent redirect loops for assets and API calls from the admin panel
+    if (
+      !nextUrl.pathname.startsWith('/admin') &&
+      !nextUrl.pathname.startsWith('/api') &&
+      !nextUrl.pathname.startsWith('/_next')
+    ) {
+      const adminUrl = new URL('/admin', request.url)
+      return NextResponse.rewrite(adminUrl)
+    }
+  }
+
+  // Restrict /admin route access to admin.ralhumsports.lk in production, localhost:3000 in development
+  if (request.nextUrl.pathname.startsWith('/admin')) {
+    const origin = request.headers.get('origin') || ''
+    const isDev = process.env.NODE_ENV === 'development'
+    const isProd = process.env.NODE_ENV === 'production'
+    const allowedDev = host === 'localhost:3000' || origin === 'http://localhost:3000'
+    const allowedProd =
+      host === process.env.NEXT_PUBLIC_ADMIN_DOMAIN ||
+      origin === `https://${process.env.NEXT_PUBLIC_ADMIN_DOMAIN}`
+
+    if ((isProd && !allowedProd) || (isDev && !allowedDev)) {
+      return new Response(
+        JSON.stringify({ success: false, error: 'Admin dashboard access denied' }),
+        {
+          status: 403,
+          headers: { 'Content-Type': 'application/json' },
+        },
+      )
+    }
+  }
   const response = NextResponse.next()
 
   // Add security headers to all responses
@@ -15,7 +52,7 @@ export function middleware(request: NextRequest) {
     // Define allowed origins
     const allowedOrigins = [
       process.env.NEXT_PUBLIC_SERVER_URL || 'http://localhost:3000',
-      'https://ralhum-sports.vercel.app', // Replace with your production domain
+      'https://ralhumsports.lk', // Replace with your production domain
       'https://ralhumsports.lk', // Replace with your actual domain
     ].filter(Boolean)
 

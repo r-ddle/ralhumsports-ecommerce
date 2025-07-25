@@ -12,6 +12,7 @@ import { Brands } from './collections/Brands'
 import { Products } from './collections/Products'
 import { Orders } from './collections/Orders'
 import { Customers } from './collections/Customers'
+import { Inventory } from './collections/Inventory'
 
 const filename = fileURLToPath(import.meta.url)
 const dirname = path.dirname(filename)
@@ -33,6 +34,16 @@ export default buildConfig({
       //   Logo: './components/Logo',
       //   Icon: './components/Icon',
       // },
+      graphics: {
+        Logo: './components/admin/customlogo',
+        Icon: './components/admin/customicon',
+      },
+      views: {
+        login: {
+          Component: './components/admin/customlogin',
+          path: '/admin/login',
+        },
+      },
     },
     livePreview: {
       // Enable live preview for content
@@ -69,6 +80,7 @@ export default buildConfig({
     // Business Operations
     Orders,
     Customers,
+    Inventory,
   ],
   editor: lexicalEditor({
     features: ({ defaultFeatures }) => [

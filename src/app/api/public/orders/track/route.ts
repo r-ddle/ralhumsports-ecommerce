@@ -51,10 +51,10 @@ export const GET = withRateLimit(
               order: {
                 id: order.id,
                 orderNumber: order.orderNumber,
-                customerName: order.customerName,
-                orderStatus: order.orderStatus,
-                paymentStatus: order.paymentStatus,
-                orderTotal: order.orderTotal,
+                customerName: order.customer.customerName,
+                orderStatus: order.status.orderStatus,
+                paymentStatus: order.status.paymentStatus,
+                orderTotal: order.orderSummary.orderTotal,
                 createdAt: order.createdAt,
                 updatedAt: order.updatedAt,
                 orderItems:
@@ -63,8 +63,17 @@ export const GET = withRateLimit(
                     quantity: item.quantity,
                     unitPrice: item.unitPrice,
                     subtotal: item.subtotal,
-                    selectedSize: item.selectedSize,
-                    selectedColor: item.selectedColor,
+                    variants: Array.isArray(item.selectedVariant)
+                      ? item.selectedVariant.map((variant) => ({
+                          id: variant.id,
+                          name: variant.name,
+                          sku: variant.sku,
+                          price: variant.price,
+                          stock: variant.stock,
+                          image: variant.image?.url || '',
+                          alt: variant.image?.alt || item.productName,
+                        }))
+                      : [],
                   })) || [],
               },
             },
@@ -156,10 +165,10 @@ export const POST = withRateLimit(
               order: {
                 id: order.id,
                 orderNumber: order.orderNumber,
-                customerName: order.customerName,
-                orderStatus: order.orderStatus,
-                paymentStatus: order.paymentStatus,
-                orderTotal: order.orderTotal,
+                customerName: order.customer.customerName,
+                orderStatus: order.status.orderStatus,
+                paymentStatus: order.status.paymentStatus,
+                orderTotal: order.orderSummary.orderTotal,
                 createdAt: order.createdAt,
                 updatedAt: order.updatedAt,
                 orderItems:
@@ -168,8 +177,6 @@ export const POST = withRateLimit(
                     quantity: item.quantity,
                     unitPrice: item.unitPrice,
                     subtotal: item.subtotal,
-                    selectedSize: item.selectedSize,
-                    selectedColor: item.selectedColor,
                   })) || [],
               },
             },

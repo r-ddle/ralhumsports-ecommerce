@@ -184,3 +184,86 @@ export function restoreProductStockAfterCancellation(
 
   return updatedProduct
 }
+
+// Enhanced utility functions for product operations
+
+export const calculateTotalStock = (product: any): number => {
+  if (!product) return 0
+
+  // If product has variants, sum variant inventory
+  if (
+    product.hasVariants &&
+    product.variants &&
+    Array.isArray(product.variants) &&
+    product.variants.length > 0
+  ) {
+    return product.variants.reduce((total: number, variant: any) => {
+      return total + (variant.stock || 0)
+    }, 0)
+  }
+
+  // Otherwise return base stock
+  return product.stock || 0
+}
+
+export const getAvailableStock = (product: any): number => {
+  if (!product) return 0
+
+  // If product has variants, sum available variant inventory
+  if (
+    product.hasVariants &&
+    product.variants &&
+    Array.isArray(product.variants) &&
+    product.variants.length > 0
+  ) {
+    return product.variants.reduce((total: number, variant: any) => {
+      const stock = variant.stock || 0
+      const reserved = variant.reserved || 0
+      return total + Math.max(0, stock - reserved)
+    }, 0)
+  }
+
+  // Otherwise return available base stock
+  const stock = product.stock || 0
+  const reserved = product.reserved || 0
+  return Math.max(0, stock - reserved)
+}
+
+export const generateCategoryPath = (sportsCategory: any, sports: any, sportsItem: any): string => {
+  let path = ''
+
+  if (sportsCategory) {
+    path += typeof sportsCategory === 'object' ? sportsCategory.name : sportsCategory
+  }
+
+  if (sports) {
+    const sportsName = typeof sports === 'object' ? sports.name : sports
+    path += path ? ` > ${sportsName}` : sportsName
+  }
+
+  if (sportsItem) {
+    const itemName = typeof sportsItem === 'object' ? sportsItem.name : sportsItem
+    path += path ? ` > ${itemName}` : itemName
+  }
+
+  return path
+}
+
+export const validateCategoryHierarchy = (data: any): string[] => {
+  const errors = []
+
+  // Check if all three categories are selected
+  if (!data.sportsCategory) {
+    errors.push('Sports Category is required')
+  }
+
+  if (!data.sports) {
+    errors.push('Sports is required')
+  }
+
+  if (!data.sportsItem) {
+    errors.push('Sports Item is required')
+  }
+
+  return errors
+}

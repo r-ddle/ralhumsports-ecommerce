@@ -138,7 +138,7 @@ export default function BrandPartners() {
                 </div>
                 <Badge
                   variant="secondary"
-                  className="bg-gradient-to-r from-brand-secondary/10 to-secondary-600/10 text-brand-secondary border border-brand-secondary/20 text-xs"
+                  className="bg-gradient-to-r from-brand-secondary/10 to-secondary-600/10 text-white border border-brand-secondary/20 text-xs"
                 >
                   {brand.stats}
                 </Badge>

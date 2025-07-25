@@ -49,7 +49,9 @@ export async function GET() {
       },
       limit: 1000,
       select: {
-        price: true,
+        essentials: {
+          price: true,
+        },
       },
     })
 

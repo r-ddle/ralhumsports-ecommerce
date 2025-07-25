@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getPayload } from 'payload'
 import config from '@payload-config'
+import { Product } from '@/payload-types'
 
 export async function GET(
   _request: NextRequest,
@@ -10,7 +11,7 @@ export async function GET(
     const payload = await getPayload({ config })
     const { slug } = await params
 
-    // Find product by slug
+    // Find product by slug, ensuring deep population of related fields
     const result = await payload.find({
       collection: 'products',
       where: {
@@ -19,30 +20,32 @@ export async function GET(
         },
       },
       limit: 1,
-      depth: 3, // Include related data
+      depth: 3, // Depth 3 is good to get brand and category details
     })
 
     if (!result.docs.length) {
       return NextResponse.json({ success: false, error: 'Product not found' }, { status: 404 })
     }
 
-    const product = result.docs[0] as any
+    const product = result.docs[0] as Product
 
-    // Transform product data to frontend format
+    // --- FIX: Transform product data correctly from the new nested schema ---
     const transformedProduct = {
       id: product.id,
       name: product.name,
       slug: product.slug,
-      sku: product.sku,
+      sku: product.productDetails?.sku,
       description: product.description,
-      price: product.price,
+      price: product.essentials.price, // Correctly access price from the 'essentials' group
+      originalPrice: product.productDetails?.originalPrice,
       stock:
-        product.variants?.length > 0
-          ? product.variants.reduce((total: number, v: any) => total + (v.inventory || 0), 0)
-          : product.stock || 0,
+        product.variants && product.variants.length > 0
+          ? product.variants.reduce((total: number, v: any) => total + (v.stock || 0), 0)
+          : product.inventory?.stock || 0, // Correctly access stock from the 'inventory' group
       status: product.status,
       images:
         product.images?.map((img: any) => ({
+          id: img.id,
           url: typeof img.image === 'object' ? img.image.url : img.image,
           alt: img.altText || product.name,
         })) || [],
@@ -53,39 +56,45 @@ export async function GET(
           sku: variant.sku,
           color: variant.color,
           size: variant.size,
-          inventory: variant.inventory || 0,
-          price: variant.price || product.price,
+          inventory: variant.stock || 0, // Variants use 'stock' not 'inventory'
+          price: variant.price || product.essentials.price,
         })) || [],
-      category: product.category
-        ? {
-            id: product.category.id,
-            name: product.category.name,
-            slug: product.category.slug,
+      // Correctly extract the most specific category from the 'categorySelection' group
+      category: (() => {
+        const selection = product.categorySelection
+        if (!selection) return null
+
+        // Use the most specific category available (Level 3 > Level 2 > Level 1)
+        const categoryData = selection.sportsItem || selection.sports || selection.sportsCategory
+
+        if (categoryData && typeof categoryData === 'object') {
+          return {
+            id: categoryData.id,
+            name: categoryData.name,
+            slug: categoryData.slug,
           }
-        : null,
-      brand: product.brand
-        ? {
-            id: product.brand.id,
-            name: product.brand.name,
-            slug: product.brand.slug,
-            logo:
-              typeof product.brand.logo === 'object'
-                ? {
-                    url: product.brand.logo.url,
-                    alt: product.brand.logo.alt || product.brand.name,
-                  }
-                : undefined,
-          }
-        : null,
+        }
+        return null
+      })(),
+      brand:
+        product.essentials.brand && typeof product.essentials.brand === 'object'
+          ? {
+              id: product.essentials.brand.id,
+              name: product.essentials.brand.name,
+              slug: product.essentials.brand.slug,
+              logo:
+                product.essentials.brand.branding.logo &&
+                typeof product.essentials.brand.branding.logo === 'object'
+                  ? product.essentials.brand.branding.logo.url
+                  : undefined,
+            }
+          : null,
       features: product.features?.map((f: any) => f.feature) || [],
       specifications: product.specifications,
-      shipping: product.shipping,
-      seo: product.seo,
-      analytics: product.analytics,
       relatedProducts: product.relatedProducts || [],
-      tags: product.tags ? product.tags.split(',').map((t: string) => t.trim()) : [],
-      createdBy: product.createdBy,
-      lastModifiedBy: product.lastModifiedBy,
+      tags: product.productDetails?.tags
+        ? product.productDetails.tags.split(',').map((t: string) => t.trim())
+        : [],
       createdAt: product.createdAt,
       updatedAt: product.updatedAt,
     }
