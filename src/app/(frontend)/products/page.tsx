@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback, useMemo } from 'react'
 import { ProductCard } from '@/components/product-card'
-import { ProductFilters as FiltersComponent } from '@/components/product-filters'
+import { EnhancedProductFilters as FiltersComponent } from '@/components/product-filters'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
@@ -303,15 +303,6 @@ export default function StorePage() {
                     categories={filterOptions.categories}
                     brands={filterOptions.brands}
                     priceRange={filterOptions.priceRange}
-                    currentFilters={currentFilters}
-                    onFiltersChange={handleFiltersChange}
-                    onSortChange={handleSortChange}
-                    onReset={handleResetFilters}
-                    isOpen={
-                      showFilters || (typeof window !== 'undefined' && window.innerWidth >= 1024)
-                    }
-                    onToggle={() => setShowFilters(!showFilters)}
-                    loading={filtersLoading}
                   />
                 </Card>
               </div>

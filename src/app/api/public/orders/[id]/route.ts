@@ -4,14 +4,7 @@ import config from '@/payload.config'
 
 // ✅ Add proper type for order update data
 type OrderUpdateData = {
-  orderStatus?:
-    | 'pending'
-    | 'confirmed'
-    | 'processing'
-    | 'shipped'
-    | 'delivered'
-    | 'cancelled'
-    | 'refunded'
+  orderStatus?: 'pending' | 'confirmed' | 'processing' | 'shipped' | 'delivered' | 'cancelled'
   paymentStatus?: 'pending' | 'refunded' | 'paid' | 'partially-paid' | 'failed' | undefined
   paymentMethod?: 'cod' | 'bank-transfer' | 'online-payment' | 'card-payment' | null | undefined
   shippingCost?: number

@@ -5,29 +5,44 @@ export const Categories: CollectionConfig = {
   slug: 'categories',
   admin: {
     useAsTitle: 'name',
-    defaultColumns: ['name', 'status', 'displayOrder', 'productCount'],
-    group: 'Products',
-    description: 'Manage product categories for organization and navigation',
+    defaultColumns: ['name', 'type', 'parentCategory', 'status', 'productCount', 'displayOrder'],
+    group: 'Catalog',
+    description: 'Manage hierarchical categories: Sports Category → Sports → Sports Item',
+    listSearchableFields: ['name', 'description'],
+    pagination: {
+      defaultLimit: 50,
+    },
   },
   access: {
-    // Product managers and above can create categories
     create: isAdminOrProductManager,
-    // All authenticated users can read categories
-    read: ({ req }) => Boolean(req.user),
-    // Product managers and above can update categories
+    read: () => true,
     update: isAdminOrProductManager,
-    // Only admins can delete categories
     delete: isAdmin,
   },
   fields: [
+    // Essential Fields
     {
       name: 'name',
       type: 'text',
       required: true,
-      unique: true,
       admin: {
-        description: 'Category name - must be unique',
-        placeholder: 'Enter category name (e.g., Running Shoes, Cricket Equipment)',
+        description: 'Category name',
+        placeholder: 'e.g., Team Sports, Football, Football Boots',
+      },
+      validate: (value: string | string[] | null | undefined) => {
+        if (typeof value === 'string') {
+          if (!value || value.length < 2) {
+            return 'Category name must be at least 2 characters long'
+          }
+          return true
+        }
+        if (Array.isArray(value)) {
+          if (value.length === 0 || value.some((v) => !v || v.length < 2)) {
+            return 'Each category name must be at least 2 characters long'
+          }
+          return true
+        }
+        return 'Category name is required'
       },
     },
     {
@@ -36,63 +51,113 @@ export const Categories: CollectionConfig = {
       required: true,
       unique: true,
       admin: {
-        description: 'URL-friendly version of the category name',
-        placeholder: 'auto-generated from name',
         readOnly: true,
+        description: 'Auto-generated URL slug',
+        position: 'sidebar',
       },
       hooks: {
         beforeValidate: [
           ({ data, operation }) => {
-            if (operation === 'create' || operation === 'update') {
-              if (data?.name) {
-                // Generate slug from name
-                return data.name
-                  .toLowerCase()
-                  .replace(/[^a-z0-9]+/g, '-')
-                  .replace(/(^-|-$)/g, '')
-              }
+            if ((operation === 'create' || operation === 'update') && data?.name) {
+              return data.name
+                .toLowerCase()
+                .replace(/[^a-z0-9]+/g, '-')
+                .replace(/(^-|-$)/g, '')
             }
           },
         ],
       },
     },
+    // Related Brands (multi-select relationship)
     {
-      name: 'description',
-      type: 'textarea',
+      name: 'relatedBrands',
+      type: 'relationship',
+      relationTo: 'brands',
+      hasMany: true,
       admin: {
-        description: 'Brief description of the category',
-        placeholder: 'Describe what products belong in this category',
+        description: 'Select brands related to this category (for navigation and filtering)',
+        width: '100%',
+      },
+      filterOptions: {
+        status: { equals: 'active' },
+      },
+      index: true,
+    },
+
+    // Hierarchy Type
+    {
+      name: 'type',
+      type: 'select',
+      required: true,
+      options: [
+        {
+          label: '🏆 Sports Category (Level 1)',
+          value: 'sports-category',
+        },
+        {
+          label: '⚽ Sports (Level 2)',
+          value: 'sports',
+        },
+        {
+          label: '👕 Sports Item (Level 3)',
+          value: 'sports-item',
+        },
+      ],
+      admin: {
+        description: 'Select the hierarchy level for this category',
+        isClearable: false,
       },
     },
+
+    // Parent Category with Smart Filtering
     {
-      name: 'icon',
-      type: 'text',
+      name: 'parentCategory',
+      type: 'relationship',
+      relationTo: 'categories',
       admin: {
-        description: 'Icon class or Unicode for category display (optional)',
-        placeholder: 'fa-running, 🏃, etc.',
+        description: 'Select parent category',
+        condition: (data) => data?.type !== 'sports-category',
+        allowCreate: false,
+      },
+      filterOptions: ({ data }) => {
+        if (data?.type === 'sports') {
+          return {
+            type: { equals: 'sports-category' },
+            status: { equals: 'active' },
+          }
+        }
+        if (data?.type === 'sports-item') {
+          return {
+            type: { equals: 'sports' },
+            status: { equals: 'active' },
+          }
+        }
+        return true
+      },
+      validate: (value: unknown, { data }: { data: any }) => {
+        if (data?.type === 'sports-category' && value) {
+          return 'Sports Category (Level 1) cannot have a parent'
+        }
+        if ((data?.type === 'sports' || data?.type === 'sports-item') && !value) {
+          return 'This category type requires a parent category'
+        }
+        return true
       },
     },
+
+    // Status and Display
     {
       name: 'status',
       type: 'select',
       required: true,
       defaultValue: 'active',
       options: [
-        {
-          label: 'Active',
-          value: 'active',
-        },
-        {
-          label: 'Inactive',
-          value: 'inactive',
-        },
-        {
-          label: 'Draft',
-          value: 'draft',
-        },
+        { label: '✅ Active', value: 'active' },
+        { label: '⏸️ Inactive', value: 'inactive' },
+        { label: '📝 Draft', value: 'draft' },
       ],
       admin: {
-        description: 'Category visibility status',
+        description: 'Category status',
       },
     },
     {
@@ -101,80 +166,91 @@ export const Categories: CollectionConfig = {
       required: true,
       defaultValue: 0,
       admin: {
-        description: 'Order for displaying categories (lower numbers appear first)',
+        description: 'Display order (lower numbers appear first)',
         step: 1,
       },
     },
+
+    // Quick Settings Row
     {
-      name: 'type',
-      type: 'select',
-      required: true,
-      options: [
-        { label: 'Sports Category', value: 'category' },
-        { label: 'Sport', value: 'sport' },
-        { label: 'Sports Item', value: 'item' },
+      type: 'row',
+      fields: [
+        {
+          name: 'isFeature',
+          type: 'checkbox',
+          defaultValue: false,
+          admin: {
+            description: '⭐ Feature this category',
+            width: '50%',
+          },
+        },
+        {
+          name: 'showInNavigation',
+          type: 'checkbox',
+          defaultValue: true,
+          admin: {
+            description: '🧭 Show in navigation',
+            width: '50%',
+          },
+        },
       ],
-      admin: {
-        description: 'Type of node in hierarchy: Sports Category > Sport > Sports Item',
-      },
     },
+
+    // Description (Always visible)
     {
-      name: 'parentCategory',
-      type: 'relationship',
-      relationTo: 'categories',
+      name: 'description',
+      type: 'textarea',
       admin: {
-        description:
-          'Parent node in hierarchy. Required for Sport (parent: category) and Sports Item (parent: sport).',
-        placeholder: 'Select parent category/sport',
-        condition: (data) => data.type !== 'category',
-      },
-      required: false,
-    },
-    {
-      name: 'isFeature',
-      type: 'checkbox',
-      defaultValue: false,
-      admin: {
-        description: 'Feature this category on homepage or in navigation',
-      },
-    },
-    {
-      name: 'showInNavigation',
-      type: 'checkbox',
-      defaultValue: true,
-      admin: {
-        description: 'Display this category in main navigation menu',
+        description: 'Category description for customers',
+        rows: 3,
       },
     },
 
-    // SEO Fields
+    // Advanced Settings Toggle
     {
-      name: 'seo',
+      name: 'showAdvanced',
+      type: 'checkbox',
+      defaultValue: false,
+      admin: {
+        description: '🔧 Show advanced settings',
+        position: 'sidebar',
+      },
+    },
+
+    // Advanced Visual Settings
+    {
+      name: 'visual',
       type: 'group',
-      label: 'SEO Settings',
+      label: 'Visual Settings',
+      admin: {
+        condition: (_, siblingData) => siblingData?.showAdvanced,
+      },
       fields: [
         {
-          name: 'title',
+          name: 'icon',
           type: 'text',
           admin: {
-            description: 'SEO title for category page',
-            placeholder: 'Category Name - Ralhum Sports',
+            description: 'Icon class or emoji',
+            placeholder: '⚽ or fa-football',
           },
         },
         {
-          name: 'description',
-          type: 'textarea',
+          name: 'image',
+          type: 'upload',
+          relationTo: 'media',
           admin: {
-            description: 'SEO meta description for category page',
-            placeholder: 'Browse our selection of category products at Ralhum Sports...',
+            description: 'Category banner image',
+          },
+          filterOptions: {
+            category: { equals: 'general' },
           },
         },
         {
-          name: 'keywords',
+          name: 'color',
           type: 'text',
           admin: {
-            description: 'SEO keywords separated by commas',
-            placeholder: 'sports, equipment, category name, Sri Lanka',
+            description: 'Brand color (hex code)',
+            placeholder: '#FF5733',
           },
         },
       ],
@@ -185,59 +261,152 @@ export const Categories: CollectionConfig = {
       name: 'config',
       type: 'group',
       label: 'Category Configuration',
+      admin: {
+        condition: (_, siblingData) => siblingData?.showAdvanced,
+      },
       fields: [
         {
           name: 'allowProducts',
           type: 'checkbox',
           defaultValue: true,
           admin: {
-            description: 'Allow products to be assigned to this category',
+            description: 'Allow products in this category',
           },
         },
         {
-          name: 'requiresSize',
-          type: 'checkbox',
-          defaultValue: false,
+          type: 'row',
+          fields: [
+            {
+              name: 'requiresSize',
+              type: 'checkbox',
+              defaultValue: false,
+              admin: {
+                description: '📏 Requires size',
+                width: '33%',
+              },
+            },
+            {
+              name: 'requiresColor',
+              type: 'checkbox',
+              defaultValue: false,
+              admin: {
+                description: '🎨 Requires color',
+                width: '33%',
+              },
+            },
+            {
+              name: 'requiresGender',
+              type: 'checkbox',
+              defaultValue: false,
+              admin: {
+                description: '👤 Requires gender',
+                width: '34%',
+              },
+            },
+          ],
+        },
+        {
+          name: 'commonSizes',
+          type: 'text',
           admin: {
-            description: 'Products in this category require size selection',
+            description: 'Common sizes (comma separated)',
+            placeholder: 'XS, S, M, L, XL or 6, 7, 8, 9, 10, 11, 12',
+            condition: (_, siblingData) => siblingData?.requiresSize,
           },
         },
         {
-          name: 'requiresColor',
-          type: 'checkbox',
-          defaultValue: false,
+          name: 'commonColors',
+          type: 'text',
           admin: {
-            description: 'Products in this category require color selection',
-          },
-        },
-        {
-          name: 'customFields',
-          type: 'textarea',
-          admin: {
-            description: 'JSON configuration for category-specific product fields',
-            placeholder: '{"material": "required", "warranty": "optional"}',
+            description: 'Common colors (comma separated)',
+            placeholder: 'Black, White, Red, Blue, Green',
+            condition: (_, siblingData) => siblingData?.requiresColor,
           },
         },
       ],
     },
 
-    // Auto-generated fields
+    // SEO Settings
     {
-      name: 'productCount',
+      name: 'seo',
+      type: 'group',
+      label: 'SEO Settings',
+      admin: {
+        condition: (_, siblingData) => siblingData?.showAdvanced,
+      },
+      fields: [
+        {
+          name: 'title',
+          type: 'text',
+          admin: {
+            description: 'SEO title (auto-generated if empty)',
+          },
+          hooks: {
+            beforeValidate: [
+              ({ data, siblingData }) => {
+                if (!data && siblingData?.name) {
+                  return `${siblingData.name} | Ralhum Sports`
+                }
+              },
+            ],
+          },
+        },
+        {
+          name: 'description',
+          type: 'textarea',
+          admin: {
+            description: 'SEO meta description',
+            rows: 2,
+          },
+        },
+        {
+          name: 'keywords',
+          type: 'text',
+          admin: {
+            description: 'SEO keywords (comma separated)',
+          },
+        },
+      ],
+    },
+
+    // Auto-calculated Display Fields
+    {
+      name: 'fullPath',
+      type: 'text',
+      admin: {
+        readOnly: true,
+        description: 'Full category path',
+        position: 'sidebar',
+      },
+    },
+    {
+      name: 'level',
       type: 'number',
       admin: {
         readOnly: true,
-        description: 'Number of active products in this category',
+        description: 'Hierarchy level',
+        position: 'sidebar',
       },
-      defaultValue: 0,
     },
+    {
+      name: 'productCount',
+      type: 'number',
+      defaultValue: 0,
+      admin: {
+        readOnly: true,
+        description: 'Active products count',
+        position: 'sidebar',
+      },
+    },
+
+    // Audit Fields
     {
       name: 'createdBy',
       type: 'relationship',
       relationTo: 'users',
       admin: {
         readOnly: true,
-        description: 'User who created this category',
+        position: 'sidebar',
       },
       hooks: {
         beforeChange: [
@@ -255,7 +424,7 @@ export const Categories: CollectionConfig = {
       relationTo: 'users',
       admin: {
         readOnly: true,
-        description: 'User who last modified this category',
+        position: 'sidebar',
       },
       hooks: {
         beforeChange: [
@@ -271,15 +440,6 @@ export const Categories: CollectionConfig = {
   hooks: {
     beforeChange: [
       async ({ req, operation, data }) => {
-        // Validate parent category (prevent circular references)
-        if (data.parentCategory && operation === 'update') {
-          // This would need more complex logic to prevent deep circular references
-          // For now, just prevent direct self-reference
-          // Prevent self-reference validation would go here
-          // More complex validation needed for deep circular references
-        }
-
-        // Set created/modified by
         if (operation === 'create') {
           data.createdBy = req.user?.id
         }
@@ -287,34 +447,93 @@ export const Categories: CollectionConfig = {
           data.lastModifiedBy = req.user?.id
         }
 
+        // Set level based on type
+        switch (data.type) {
+          case 'sports-category':
+            data.level = 1
+            break
+          case 'sports':
+            data.level = 2
+            break
+          case 'sports-item':
+            data.level = 3
+            break
+        }
+
+        // Generate full path
+        if (data.parentCategory && typeof data.parentCategory === 'object') {
+          const parentPath = data.parentCategory.fullPath || data.parentCategory.name
+          data.fullPath = `${parentPath} > ${data.name}`
+        } else if (data.parentCategory) {
+          data.fullPath = `[Parent] > ${data.name}`
+        } else {
+          data.fullPath = data.name
+        }
+
         return data
       },
     ],
     afterChange: [
       async ({ req, operation, doc }) => {
-        // Update product count after category changes
-        if (operation === 'update' && doc.status === 'inactive') {
-          // Log when categories are deactivated as it affects products
+        if (operation === 'create') {
           req.payload.logger.info(
-            `Category deactivated: ${doc.name} - this may affect product visibility`,
+            `Category created: ${doc.name} (${doc.type}) by ${req.user?.email}`,
+          )
+        } else if (operation === 'update') {
+          req.payload.logger.info(
+            `Category updated: ${doc.name} (${doc.type}) by ${req.user?.email}`,
           )
         }
 
-        // Log category operations
-        if (operation === 'create') {
-          req.payload.logger.info(`Category created: ${doc.name} by ${req.user?.email}`)
-        } else if (operation === 'update') {
-          req.payload.logger.info(`Category updated: ${doc.name} by ${req.user?.email}`)
-        }
-      },
-    ],
-    afterDelete: [
-      async ({ req, doc }) => {
-        // Log category deletion
-        req.payload.logger.warn(`Category deleted: ${doc.name} by ${req.user?.email}`)
+        // Update full path if parent was just an ID
+        if (doc.parentCategory && typeof doc.parentCategory === 'string') {
+          try {
+            const parent = await req.payload.findByID({
+              collection: 'categories',
+              id: doc.parentCategory,
+            })
 
-        // Note: In a production system, you'd want to handle reassigning products
-        // from deleted categories or prevent deletion of categories with products
+            if (parent) {
+              const parentPath = parent.fullPath || parent.name
+              const newFullPath = `${parentPath} > ${doc.name}`
+
+              if (doc.fullPath !== newFullPath) {
+                await req.payload.update({
+                  collection: 'categories',
+                  id: doc.id,
+                  data: { fullPath: newFullPath },
+                })
+              }
+            }
+          } catch (error) {
+            req.payload.logger.error(`Failed to update category path: ${error}`)
+          }
+        }
+
+        // Update child categories' paths
+        if (operation === 'update') {
+          try {
+            const children = await req.payload.find({
+              collection: 'categories',
+              where: {
+                parentCategory: { equals: doc.id },
+              },
+            })
+
+            for (const child of children.docs) {
+              const newChildPath = `${doc.fullPath} > ${child.name}`
+              if (child.fullPath !== newChildPath) {
+                await req.payload.update({
+                  collection: 'categories',
+                  id: child.id,
+                  data: { fullPath: newChildPath },
+                })
+              }
+            }
+          } catch (error) {
+            req.payload.logger.error(`Failed to update child category paths: ${error}`)
+          }
+        }
       },
     ],
   },

@@ -1,35 +1,46 @@
 import type { CollectionConfig } from 'payload'
 import { isAdmin, isAdminOrProductManager } from './Users'
-import { hasAvailableStock, getProductStatus } from '@/lib/product-utils'
+import { hasAvailableStock } from '@/lib/product-utils'
 
 export const Products: CollectionConfig = {
   slug: 'products',
   admin: {
     useAsTitle: 'name',
-    defaultColumns: ['name', 'category', 'brand', 'price', 'stock', 'status'],
-    group: 'Products',
-    description: 'Manage product catalog with comprehensive details',
+    defaultColumns: ['name', 'brand', 'sportsCategory', 'sports', 'sportsItem', 'price', 'status'],
+    group: 'Catalog',
+    description: 'Manage your product catalog with three-tier categorization',
     listSearchableFields: ['name', 'sku', 'description'],
+    pagination: {
+      defaultLimit: 25,
+    },
   },
   access: {
-    // Product managers and above can create products
     create: isAdminOrProductManager,
-    // Public read access for e-commerce - anyone can view products
     read: () => true,
-    // Product managers and above can update products
     update: isAdminOrProductManager,
-    // Only admins can delete products
     delete: isAdmin,
   },
   fields: [
-    // Required Core Fields
+    // Essential Product Information
     {
       name: 'name',
       type: 'text',
       required: true,
       admin: {
-        description: 'Product name as displayed to customers',
-        placeholder: 'Enter product name (e.g., Nike Air Max Running Shoes)',
+        description: 'Product name as shown to customers',
+        placeholder: 'Enter descriptive product name',
+      },
+      validate: (value: string | string[] | null | undefined) => {
+        if (Array.isArray(value)) {
+          if (value.length === 0 || value.some((v) => !v || v.length < 3)) {
+            return 'Product name must be at least 3 characters long'
+          }
+        } else {
+          if (!value || value.length < 3) {
+            return 'Product name must be at least 3 characters long'
+          }
+        }
+        return true
       },
     },
     {
@@ -42,136 +53,125 @@ export const Products: CollectionConfig = {
       },
       hooks: {
         beforeValidate: [
-          ({ data, operation, req }) => {
+          ({ data, operation }) => {
             if ((operation === 'create' || operation === 'update') && data?.name) {
-              const slug = data.name
+              return data.name
                 .toLowerCase()
                 .replace(/[^a-z0-9]+/g, '-')
                 .replace(/(^-|-$)/g, '')
-              if (req?.payload?.logger) {
-                req.payload.logger.info(`Auto-generated slug for product: ${slug}`)
+            }
+          },
+        ],
+      },
+    },
+
+    // Three-Tier Category System
+    {
+      name: 'categorySelection',
+      type: 'group',
+      label: '🏷️ Product Categories',
+      fields: [
+        {
+          name: 'sportsCategory',
+          type: 'relationship',
+          relationTo: 'categories',
+          required: true,
+          admin: {
+            description: '🏆 Select Sports Category (Level 1)',
+            allowCreate: false,
+          },
+          filterOptions: {
+            type: { equals: 'sports-category' },
+            status: { equals: 'active' },
+          },
+        },
+        {
+          name: 'sports',
+          type: 'relationship',
+          relationTo: 'categories',
+          required: true,
+          admin: {
+            description: '⚽ Select Sports (Level 2)',
+            // FIX: Access the field via the group name 'categorySelection'
+            condition: (data) => !!data.categorySelection?.sportsCategory,
+            allowCreate: false,
+          },
+          // FIX: Access the field via the group name 'categorySelection'
+          filterOptions: ({ data }) => ({
+            type: { equals: 'sports' },
+            status: { equals: 'active' },
+            parentCategory: { equals: data.categorySelection?.sportsCategory },
+          }),
+        },
+        {
+          name: 'sportsItem',
+          type: 'relationship',
+          relationTo: 'categories',
+          required: true,
+          admin: {
+            description: '👕 Select Sports Item (Level 3)',
+            // FIX: Access the field via the group name 'categorySelection'
+            condition: (data) => !!data.categorySelection?.sports,
+            allowCreate: false,
+          },
+          // FIX: Access the field via the group name 'categorySelection'
+          filterOptions: ({ data }) => ({
+            type: { equals: 'sports-item' },
+            status: { equals: 'active' },
+            parentCategory: { equals: data.categorySelection?.sports },
+          }),
+        },
+      ],
+    },
+
+    // Brand and Pricing
+    {
+      name: 'essentials',
+      type: 'group',
+      label: '💰 Essential Details',
+      fields: [
+        {
+          name: 'brand',
+          type: 'relationship',
+          relationTo: 'brands',
+          required: true,
+          admin: {
+            description: 'Product brand',
+            allowCreate: false,
+          },
+          filterOptions: {
+            status: { equals: 'active' },
+          },
+        },
+        {
+          name: 'price',
+          type: 'number',
+          required: true,
+          admin: {
+            description: 'Product price (LKR)',
+            step: 0.01,
+          },
+          min: 0,
+          validate: (value: number | number[] | null | undefined) => {
+            if (Array.isArray(value)) {
+              if (
+                value.length === 0 ||
+                value.some((v) => v === undefined || v === null || v <= 0)
+              ) {
+                return 'Price must be greater than 0'
               }
-              data.slug = slug
+            } else {
+              if (value === undefined || value === null || value <= 0) {
+                return 'Price must be greater than 0'
+              }
             }
+            return true
           },
-        ],
-      },
-    },
-    {
-      name: 'sportCategory',
-      type: 'relationship',
-      relationTo: 'categories',
-      required: true,
-      admin: {
-        description: 'Select the Sports Category for this product',
-        condition: (data: any) => true,
-      },
-      filterOptions: {
-        type: { equals: 'category' },
-        status: { equals: 'active' },
-      },
-    },
-    {
-      name: 'sport',
-      type: 'relationship',
-      relationTo: 'categories',
-      required: true,
-      admin: {
-        description: 'Select the Sport for this product',
-        condition: (data: any) => !!data.sportCategory,
-      },
-      filterOptions: {
-        type: { equals: 'sport' },
-        status: { equals: 'active' },
-      },
-    },
-    {
-      name: 'sportItem',
-      type: 'relationship',
-      relationTo: 'categories',
-      required: true,
-      admin: {
-        description: 'Select the Sports Item for this product',
-        condition: (data: any) => !!data.sport,
-      },
-      filterOptions: {
-        type: { equals: 'item' },
-        status: { equals: 'active' },
-      },
-    },
-    {
-      name: 'brand',
-      type: 'relationship',
-      relationTo: 'brands',
-      required: true,
-      admin: {
-        description: 'Product brand',
-      },
-      filterOptions: {
-        status: {
-          equals: 'active',
         },
-      },
+      ],
     },
-    {
-      name: 'price',
-      type: 'number',
-      required: true,
-      admin: {
-        description: 'Product price in LKR',
-        placeholder: '5000.00',
-        step: 0.01,
-      },
-      min: 0,
-    },
-    {
-      name: 'sku',
-      type: 'text',
-      required: false,
-      unique: true,
-      admin: {
-        description: 'Stock Keeping Unit - unique product identifier',
-        placeholder: 'auto-generated if empty',
-      },
-      hooks: {
-        beforeValidate: [
-          ({ data, operation }) => {
-            if (operation === 'create' && !data?.sku) {
-              // Generate SKU if not provided
-              const timestamp = Date.now().toString().slice(-6)
-              const random = Math.random().toString(36).substring(2, 5).toUpperCase()
-              return `RS-${timestamp}-${random}`
-            }
-          },
-        ],
-      },
-    },
-    {
-      name: 'stock',
-      type: 'number',
-      required: false,
-      defaultValue: 0,
-      admin: {
-        description: 'Available stock quantity (only used when no variants are defined)',
-        step: 1,
-        condition: (data: any) => {
-          // Only show base stock field when there are no variants
-          return !data.variants || data.variants.length === 0
-        },
-      },
-      min: 0,
-      validate: (value: any, { data }: any) => {
-        // If variants exist, base stock is not required
-        if (data.variants && data.variants.length > 0) {
-          return true
-        }
-        // If no variants, base stock is required
-        if (value === undefined || value === null || value < 0) {
-          return 'Stock is required when no variants are defined'
-        }
-        return true
-      },
-    },
+
+    // Product Images
     {
       name: 'images',
       type: 'array',
@@ -179,7 +179,7 @@ export const Products: CollectionConfig = {
       minRows: 1,
       maxRows: 10,
       admin: {
-        description: 'Product images (first image will be the main image)',
+        description: '📸 Product images (first image is the main image)',
       },
       fields: [
         {
@@ -188,158 +188,147 @@ export const Products: CollectionConfig = {
           relationTo: 'media',
           required: true,
           filterOptions: {
-            category: {
-              equals: 'products',
-            },
+            category: { equals: 'products' },
           },
         },
         {
           name: 'altText',
           type: 'text',
           admin: {
-            description: 'Alternative text for this specific image',
-            placeholder: 'Describe this product image',
+            description: 'Image description (auto-generated if empty)',
+          },
+          hooks: {
+            beforeValidate: [
+              ({ data, siblingData }) => {
+                if (!data && siblingData?.image && typeof siblingData.image === 'object') {
+                  return `${siblingData.image.filename || 'Product image'}`
+                }
+              },
+            ],
           },
         },
       ],
     },
+
+    // Status and Description
     {
       name: 'status',
       type: 'select',
       required: true,
       defaultValue: 'draft',
       options: [
-        {
-          label: 'Active',
-          value: 'active',
-        },
-        {
-          label: 'Inactive',
-          value: 'inactive',
-        },
-        {
-          label: 'Draft',
-          value: 'draft',
-        },
-        {
-          label: 'Out of Stock',
-          value: 'out-of-stock',
-        },
-        {
-          label: 'Discontinued',
-          value: 'discontinued',
-        },
+        { label: '✅ Active', value: 'active' },
+        { label: '📝 Draft', value: 'draft' },
+        { label: '⏸️ Inactive', value: 'inactive' },
+        { label: '📦 Out of Stock', value: 'out-of-stock' },
       ],
       admin: {
         description: 'Product availability status',
       },
     },
-
-    // Optional Product Information
-    // Removed 'sizes' and 'colors' fields; use variants array instead.,
     {
       name: 'description',
       type: 'richText',
       admin: {
-        description: 'Detailed product description with rich formatting',
+        description: 'Detailed product description',
       },
     },
 
-    // SEO Fields
+    // Advanced Settings Toggle
     {
-      name: 'seo',
-      type: 'group',
-      label: 'SEO Settings',
-      fields: [
-        {
-          name: 'title',
-          type: 'text',
-          admin: {
-            description: 'SEO title for product page',
-            placeholder: 'Product Name - Brand | Ralhum Sports',
-          },
-        },
-        {
-          name: 'description',
-          type: 'textarea',
-          admin: {
-            description: 'SEO meta description for product page',
-            placeholder: 'Shop product name at Ralhum Sports. High-quality sports equipment...',
-          },
-        },
-      ],
+      name: 'showAdvanced',
+      type: 'checkbox',
+      defaultValue: false,
+      admin: {
+        description: '🔧 Show advanced settings',
+        position: 'sidebar',
+      },
     },
 
-    // Product Specifications Group
+    // Auto-generated Category Path
     {
-      name: 'specifications',
-      type: 'group',
-      label: 'Product Specifications',
-      fields: [
-        {
-          name: 'material',
-          type: 'text',
-          admin: {
-            description: 'Primary material used',
-            placeholder: 'Cotton, Polyester, Leather, etc.',
-          },
-        },
-        {
-          name: 'weight',
-          type: 'text',
-          admin: {
-            description: 'Product weight',
-            placeholder: '250g, 1.2kg, etc.',
-          },
-        },
-        {
-          name: 'dimensions',
-          type: 'text',
-          admin: {
-            description: 'Product dimensions',
-            placeholder: '30cm x 20cm x 10cm',
-          },
-        },
-        {
-          name: 'careInstructions',
-          type: 'textarea',
-          admin: {
-            description: 'Care and maintenance instructions',
-            placeholder: 'Machine wash cold, air dry...',
-          },
-        },
-      ],
+      name: 'categoryPath',
+      type: 'text',
+      admin: {
+        readOnly: true,
+        description: 'Full category path',
+        position: 'sidebar',
+      },
     },
 
-    // Pricing and Inventory
+    // Advanced Product Details
     {
-      name: 'pricing',
+      name: 'productDetails',
       type: 'group',
-      label: 'Pricing & Inventory',
+      label: '📋 Product Details',
+      admin: {
+        condition: (_, siblingData) => siblingData?.showAdvanced,
+      },
       fields: [
+        {
+          name: 'sku',
+          type: 'text',
+          unique: true,
+          admin: {
+            description: 'Product SKU (auto-generated if empty)',
+          },
+          hooks: {
+            beforeValidate: [
+              ({ data, operation }) => {
+                if (operation === 'create' && !data?.sku) {
+                  const timestamp = Date.now().toString().slice(-6)
+                  const random = Math.random().toString(36).substring(2, 5).toUpperCase()
+                  return `RS-${timestamp}-${random}`
+                }
+              },
+            ],
+          },
+        },
         {
           name: 'originalPrice',
           type: 'number',
           admin: {
-            description: 'Original price (for displaying discounts)',
-            placeholder: '6000.00',
+            description: 'Original price (for showing discounts)',
             step: 0.01,
           },
         },
         {
-          name: 'costPrice',
-          type: 'number',
+          name: 'tags',
+          type: 'text',
           admin: {
-            description: 'Cost price for profit calculations (admin only)',
-            step: 0.01,
-            condition: (_, { user }) => {
-              return user && ['super-admin', 'admin'].includes(user.role)
-            },
+            description: 'Product tags (comma separated)',
+            placeholder: 'waterproof, lightweight, breathable',
           },
-          access: {
-            read: isAdmin,
-            update: isAdmin,
+        },
+      ],
+    },
+
+    // Inventory Management
+    {
+      name: 'inventory',
+      type: 'group',
+      label: '📦 Inventory Management',
+      admin: {
+        condition: (_, siblingData) => siblingData?.showAdvanced,
+      },
+      fields: [
+        {
+          name: 'trackInventory',
+          type: 'checkbox',
+          defaultValue: true,
+          admin: {
+            description: 'Enable inventory tracking',
           },
+        },
+        {
+          name: 'stock',
+          type: 'number',
+          defaultValue: 0,
+          admin: {
+            description: 'Stock quantity (when not using variants)',
+            condition: (_, siblingData) => siblingData?.trackInventory && !siblingData?.hasVariants,
+          },
+          min: 0,
         },
         {
           name: 'lowStockThreshold',
@@ -347,106 +336,102 @@ export const Products: CollectionConfig = {
           defaultValue: 5,
           admin: {
             description: 'Alert when stock falls below this number',
-            step: 1,
-          },
-        },
-        {
-          name: 'trackInventory',
-          type: 'checkbox',
-          defaultValue: true,
-          admin: {
-            description: 'Track inventory for this product',
+            condition: (_, siblingData) => siblingData?.trackInventory,
           },
         },
       ],
     },
 
-    // Product Features and Tags
+    // Product Variants
     {
-      name: 'features',
-      type: 'array',
+      name: 'hasVariants',
+      type: 'checkbox',
+      defaultValue: false,
       admin: {
-        description: 'Key product features and selling points',
-      },
-      fields: [
-        {
-          name: 'feature',
-          type: 'text',
-          required: true,
-          admin: {
-            placeholder: 'e.g., Breathable fabric, Waterproof, Lightweight',
-          },
-        },
-      ],
-    },
-    {
-      name: 'tags',
-      type: 'text',
-      admin: {
-        description: 'Product tags for search and filtering (comma separated)',
-        placeholder: 'running, outdoor, breathable, comfortable',
+        description: 'This product has variants (sizes, colors, etc.)',
+        condition: (_, siblingData) => siblingData?.showAdvanced,
       },
     },
-
-    // Related Products and Variants
-    {
-      name: 'relatedProducts',
-      type: 'relationship',
-      relationTo: 'products',
-      hasMany: true,
-      admin: {
-        description: 'Select related products (shown as recommendations)',
-        placeholder: 'Choose related products',
-      },
-      filterOptions: {
-        status: {
-          equals: 'active',
-        },
-      },
-    },
-
-    // Product Analytics and Metrics
-    {
-      name: 'analytics',
-      type: 'group',
-      label: 'Analytics',
-      fields: [
-        {
-          name: 'orderCount',
-          type: 'number',
-          defaultValue: 0,
-          admin: {
-            readOnly: true,
-            description: 'Number of times ordered',
-          },
-        },
-      ],
-    },
-
     {
       name: 'variants',
       type: 'array',
-      required: false,
       admin: {
-        description:
-          'Product variants (e.g., different sizes/colors with individual inventory tracking). Leave empty to use base stock instead.',
+        description: 'Product variants with individual pricing and inventory',
+        condition: (_, siblingData) => siblingData?.showAdvanced && siblingData?.hasVariants,
       },
       fields: [
-        { name: 'name', type: 'text', required: true, admin: { placeholder: 'e.g. Large / Red' } },
+        {
+          name: 'name',
+          type: 'text',
+          required: true,
+          admin: {
+            placeholder: 'e.g., Large Red, Size 42',
+          },
+        },
+        {
+          type: 'row',
+          fields: [
+            {
+              name: 'size',
+              type: 'text',
+              admin: {
+                placeholder: 'L, XL, 42',
+                width: '33%',
+              },
+            },
+            {
+              name: 'color',
+              type: 'text',
+              admin: {
+                placeholder: 'Red, Blue',
+                width: '33%',
+              },
+            },
+            {
+              name: 'material',
+              type: 'text',
+              admin: {
+                placeholder: 'Cotton, Leather',
+                width: '34%',
+              },
+            },
+          ],
+        },
+        {
+          type: 'row',
+          fields: [
+            {
+              name: 'price',
+              type: 'number',
+              required: true,
+              min: 0,
+              admin: {
+                step: 0.01,
+                width: '50%',
+              },
+            },
+            {
+              name: 'stock',
+              type: 'number',
+              required: true,
+              min: 0,
+              admin: {
+                description: 'Stock for this variant',
+                width: '50%',
+              },
+            },
+          ],
+        },
         {
           name: 'sku',
           type: 'text',
-          required: false,
-          unique: true,
           admin: {
-            description: 'Auto-generated variant SKU',
-            placeholder: 'auto-generated if empty',
+            description: 'Variant SKU (auto-generated if empty)',
           },
           hooks: {
             beforeValidate: [
               ({ value, siblingData, operation }) => {
                 if ((operation === 'create' || operation === 'update') && !value) {
-                  // Generate variant SKU if not provided
                   const timestamp = Date.now().toString().slice(-6)
                   const random = Math.random().toString(36).substring(2, 5).toUpperCase()
                   const size = siblingData?.size ? `-${siblingData.size}` : ''
@@ -458,42 +443,150 @@ export const Products: CollectionConfig = {
             ],
           },
         },
-        { name: 'size', type: 'text', admin: { placeholder: 'e.g. L, XL, 42' } },
-        { name: 'color', type: 'text', admin: { placeholder: 'e.g. Red, Blue' } },
-        { name: 'price', type: 'number', required: true, min: 0 },
+      ],
+    },
+
+    // Product Features
+    {
+      name: 'features',
+      type: 'array',
+      admin: {
+        description: 'Key product features and benefits',
+        condition: (_, siblingData) => siblingData?.showAdvanced,
+      },
+      fields: [
         {
-          name: 'inventory',
-          type: 'number',
+          name: 'feature',
+          type: 'text',
           required: true,
-          min: 0,
-          admin: { description: 'Stock for this variant' },
+          admin: {
+            placeholder: 'e.g., Waterproof, Lightweight, Breathable',
+          },
+        },
+        {
+          name: 'description',
+          type: 'textarea',
+          admin: {
+            description: 'Feature description (optional)',
+            rows: 2,
+          },
         },
       ],
-      validate: (value: any, { data }: any) => {
-        const hasVariants = value && Array.isArray(value) && value.length > 0
-        const hasBaseStock = data.stock !== undefined && data.stock !== null && data.stock >= 0
+    },
 
-        // Must have either variants OR base stock, but not both
-        if (!hasVariants && !hasBaseStock) {
-          return 'Product must have either variants with inventory OR base stock'
-        }
+    // Specifications
+    {
+      name: 'specifications',
+      type: 'group',
+      label: '📏 Specifications',
+      admin: {
+        condition: (_, siblingData) => siblingData?.showAdvanced,
+      },
+      fields: [
+        {
+          type: 'row',
+          fields: [
+            {
+              name: 'weight',
+              type: 'text',
+              admin: {
+                placeholder: '250g, 1.2kg',
+                width: '33%',
+              },
+            },
+            {
+              name: 'dimensions',
+              type: 'text',
+              admin: {
+                placeholder: '30x20x10 cm',
+                width: '33%',
+              },
+            },
+            {
+              name: 'material',
+              type: 'text',
+              admin: {
+                placeholder: 'Cotton, Polyester',
+                width: '34%',
+              },
+            },
+          ],
+        },
+        {
+          name: 'gender',
+          type: 'select',
+          options: [
+            { label: 'Unisex', value: 'unisex' },
+            { label: 'Men', value: 'men' },
+            { label: 'Women', value: 'women' },
+            { label: 'Kids', value: 'kids' },
+          ],
+          admin: {
+            description: 'Target gender',
+          },
+        },
+        {
+          name: 'careInstructions',
+          type: 'textarea',
+          admin: {
+            description: 'Care and maintenance instructions',
+            rows: 2,
+          },
+        },
+      ],
+    },
 
-        if (hasVariants && hasBaseStock && data.stock > 0) {
-          return 'Product cannot have both variants and base stock. Use variants for inventory tracking or base stock for simple products.'
-        }
+    // SEO Settings
+    {
+      name: 'seo',
+      type: 'group',
+      label: '🔍 SEO Settings',
+      admin: {
+        condition: (_, siblingData) => siblingData?.showAdvanced,
+      },
+      fields: [
+        {
+          name: 'title',
+          type: 'text',
+          admin: {
+            description: 'SEO title (auto-generated if empty)',
+          },
+        },
+        {
+          name: 'description',
+          type: 'textarea',
+          admin: {
+            description: 'SEO meta description',
+            rows: 2,
+          },
+        },
+      ],
+    },
 
-        return true
+    // Related Products
+    {
+      name: 'relatedProducts',
+      type: 'relationship',
+      relationTo: 'products',
+      hasMany: true,
+      admin: {
+        description: 'Related products for cross-selling',
+        condition: (_, siblingData) => siblingData?.showAdvanced,
+        allowCreate: false,
+      },
+      filterOptions: {
+        status: { equals: 'active' },
       },
     },
 
-    // Automatic Fields
+    // Audit Fields
     {
       name: 'createdBy',
       type: 'relationship',
       relationTo: 'users',
       admin: {
         readOnly: true,
-        description: 'User who created this product',
+        position: 'sidebar',
       },
       hooks: {
         beforeChange: [
@@ -511,7 +604,7 @@ export const Products: CollectionConfig = {
       relationTo: 'users',
       admin: {
         readOnly: true,
-        description: 'User who last modified this product',
+        position: 'sidebar',
       },
       hooks: {
         beforeChange: [
@@ -527,7 +620,6 @@ export const Products: CollectionConfig = {
   hooks: {
     beforeChange: [
       async ({ req, operation, data }) => {
-        // Set created/modified by
         if (operation === 'create') {
           data.createdBy = req.user?.id
         }
@@ -535,21 +627,56 @@ export const Products: CollectionConfig = {
           data.lastModifiedBy = req.user?.id
         }
 
-        // Helper function to check if product has available stock
-        const hasStock = hasAvailableStock(data)
-
-        // Auto-set out of stock status based on actual availability
-        if (data.status === 'active' && !hasStock) {
-          data.status = 'out-of-stock'
-        }
-        // Auto-set active status if stock becomes available and status was out-of-stock
-        else if (data.status === 'out-of-stock' && hasStock) {
-          data.status = 'active'
+        // Auto-set out of stock status
+        if (data.trackInventory) {
+          const hasStock = hasAvailableStock(data)
+          if (data.status === 'active' && !hasStock) {
+            data.status = 'out-of-stock'
+          } else if (data.status === 'out-of-stock' && hasStock) {
+            data.status = 'active'
+          }
         }
 
-        // Validate pricing
-        if (data.originalPrice && data.price && data.originalPrice < data.price) {
-          throw new Error('Original price cannot be less than current price')
+        // Generate category path
+        try {
+          let categoryPath = ''
+
+          if (data.sportsCategory) {
+            const sportsCategory =
+              typeof data.sportsCategory === 'object'
+                ? data.sportsCategory
+                : await req.payload.findByID({ collection: 'categories', id: data.sportsCategory })
+            categoryPath += sportsCategory.name
+          }
+
+          if (data.sports) {
+            const sports =
+              typeof data.sports === 'object'
+                ? data.sports
+                : await req.payload.findByID({ collection: 'categories', id: data.sports })
+            categoryPath += ` > ${sports.name}`
+          }
+
+          if (data.sportsItem) {
+            const sportsItem =
+              typeof data.sportsItem === 'object'
+                ? data.sportsItem
+                : await req.payload.findByID({ collection: 'categories', id: data.sportsItem })
+            categoryPath += ` > ${sportsItem.name}`
+          }
+
+          data.categoryPath = categoryPath
+        } catch (error) {
+          req.payload.logger.error(`Failed to generate category path: ${error}`)
+        }
+
+        // Auto-generate SEO title if empty
+        if (!data.seo?.title && data.name && data.brand) {
+          const brandName = typeof data.brand === 'object' ? data.brand.name : 'Brand'
+          data.seo = {
+            ...data.seo,
+            title: `${data.name} - ${brandName} | Ralhum Sports`,
+          }
         }
 
         return data
@@ -557,259 +684,73 @@ export const Products: CollectionConfig = {
     ],
     afterChange: [
       async ({ req, operation, doc, previousDoc }) => {
-        // Log product operations
         if (operation === 'create') {
-          req.payload.logger.info(`Product created: ${doc.name} (${doc.sku}) by ${req.user?.email}`)
+          req.payload.logger.info(`Product created: ${doc.name} by ${req.user?.email}`)
         } else if (operation === 'update') {
-          req.payload.logger.info(`Product updated: ${doc.name} (${doc.sku}) by ${req.user?.email}`)
-
-          // Log stock changes (base stock or variants)
-          if (previousDoc && previousDoc.stock !== doc.stock) {
-            req.payload.logger.info(
-              `Base stock updated for ${doc.name}: ${previousDoc.stock} → ${doc.stock}`,
-            )
-          }
-
-          // Check for variant stock changes
-          if (previousDoc && previousDoc.variants && doc.variants) {
-            const prevVariants = previousDoc.variants || []
-            const currVariants = doc.variants || []
-
-            currVariants.forEach((variant: any, index: number) => {
-              const prevVariant = prevVariants[index]
-              if (prevVariant && prevVariant.inventory !== variant.inventory) {
-                req.payload.logger.info(
-                  `Variant stock updated for ${doc.name} (${variant.name}): ${prevVariant.inventory || 0} → ${variant.inventory || 0}`,
-                )
-              }
-            })
-          }
-
-          // Alert on low stock (check both base stock and variants)
-          const currentAvailability = hasAvailableStock(doc)
-          const lowStockThreshold = doc.pricing?.lowStockThreshold || 5
-
-          if (doc.variants && Array.isArray(doc.variants) && doc.variants.length > 0) {
-            // Check each variant for low stock
-            doc.variants.forEach((variant: any) => {
-              if (variant.inventory <= lowStockThreshold && variant.inventory > 0) {
-                req.payload.logger.warn(
-                  `Low variant stock alert: ${doc.name} (${variant.name}) - ${variant.inventory} remaining`,
-                )
-              }
-            })
-          } else if (doc.stock <= lowStockThreshold && doc.stock > 0) {
-            // Check base stock for low stock
-            req.payload.logger.warn(
-              `Low stock alert: ${doc.name} (${doc.sku}) - ${doc.stock} remaining`,
-            )
-          }
-
-          // Status change based on actual availability
-          const previousAvailability = previousDoc ? hasAvailableStock(previousDoc) : true
-          if (previousAvailability && !currentAvailability && doc.status === 'active') {
-            // Product went out of stock
-            await req.payload.update({
-              collection: 'products',
-              id: doc.id,
-              data: { status: 'out-of-stock' },
-            })
-            req.payload.logger.info(
-              `Product status changed to out-of-stock: ${doc.name} (${doc.sku}) - no available inventory`,
-            )
-          } else if (
-            !previousAvailability &&
-            currentAvailability &&
-            doc.status === 'out-of-stock'
-          ) {
-            // Product came back in stock
-            await req.payload.update({
-              collection: 'products',
-              id: doc.id,
-              data: { status: 'active' },
-            })
-            req.payload.logger.info(
-              `Product status changed to active: ${doc.name} (${doc.sku}) - inventory available`,
-            )
-          }
+          req.payload.logger.info(`Product updated: ${doc.name} by ${req.user?.email}`)
         }
 
-        // Update category product count
-        const updateCategoryCount = async (categoryId: number | string) => {
+        // Update category product counts
+        const updateCategoryCount = async (categoryId: string) => {
           try {
-            // Count active products in this category
             const productCount = await req.payload.count({
               collection: 'products',
               where: {
-                and: [{ category: { equals: categoryId } }, { status: { equals: 'active' } }],
+                and: [
+                  {
+                    or: [
+                      { sportsCategory: { equals: categoryId } },
+                      { sports: { equals: categoryId } },
+                      { sportsItem: { equals: categoryId } },
+                    ],
+                  },
+                  { status: { equals: 'active' } },
+                ],
               },
             })
 
-            // Update the category with the new count
             await req.payload.update({
               collection: 'categories',
               id: categoryId,
-              data: {
-                productCount: productCount.totalDocs,
-              },
+              data: { productCount: productCount.totalDocs },
             })
-
-            req.payload.logger.info(
-              `Updated category ${categoryId} product count: ${productCount.totalDocs}`,
-            )
           } catch (error) {
             req.payload.logger.error(`Failed to update category product count: ${error}`)
           }
         }
 
-        // Update brand product count
-        const updateBrandCount = async (brandId: number | string) => {
-          try {
-            // Count active products for this brand
-            const productCount = await req.payload.count({
-              collection: 'products',
-              where: {
-                and: [{ brand: { equals: brandId } }, { status: { equals: 'active' } }],
-              },
-            })
+        // Update counts for all related categories
+        const categoriesToUpdate = new Set()
 
-            // Update the brand with the new count
-            await req.payload.update({
-              collection: 'brands',
-              id: brandId,
-              data: {
-                productCount: productCount.totalDocs,
-              },
-            })
-
-            req.payload.logger.info(
-              `Updated brand ${brandId} product count: ${productCount.totalDocs}`,
-            )
-          } catch (error) {
-            req.payload.logger.error(`Failed to update brand product count: ${error}`)
-          }
+        if (doc.sportsCategory) {
+          const categoryId =
+            typeof doc.sportsCategory === 'object' ? doc.sportsCategory.id : doc.sportsCategory
+          categoriesToUpdate.add(categoryId)
+        }
+        if (doc.sports) {
+          const categoryId = typeof doc.sports === 'object' ? doc.sports.id : doc.sports
+          categoriesToUpdate.add(categoryId)
+        }
+        if (doc.sportsItem) {
+          const categoryId = typeof doc.sportsItem === 'object' ? doc.sportsItem.id : doc.sportsItem
+          categoriesToUpdate.add(categoryId)
         }
 
-        // Handle product count updates based on operation
-        if (operation === 'create' && doc.status === 'active') {
-          // New active product - update counts
-          if (doc.category) {
-            const categoryId = typeof doc.category === 'object' ? doc.category.id : doc.category
-            await updateCategoryCount(categoryId)
-          }
-          if (doc.brand) {
-            const brandId = typeof doc.brand === 'object' ? doc.brand.id : doc.brand
-            await updateBrandCount(brandId)
-          }
-        } else if (operation === 'update') {
-          // Handle category changes
-          const prevCategoryId = previousDoc?.category
-            ? typeof previousDoc.category === 'object'
-              ? previousDoc.category.id
-              : previousDoc.category
-            : null
-          const currCategoryId = doc.category
-            ? typeof doc.category === 'object'
-              ? doc.category.id
-              : doc.category
-            : null
-
-          // If category changed, update both old and new
-          if (prevCategoryId !== currCategoryId) {
-            if (prevCategoryId) {
-              await updateCategoryCount(prevCategoryId)
+        // Also update previous categories if they changed
+        if (previousDoc) {
+          ;['sportsCategory', 'sports', 'sportsItem'].forEach((field) => {
+            if (previousDoc[field]) {
+              const categoryId =
+                typeof previousDoc[field] === 'object' ? previousDoc[field].id : previousDoc[field]
+              categoriesToUpdate.add(categoryId)
             }
-            if (currCategoryId) {
-              await updateCategoryCount(currCategoryId)
-            }
-          } else if (currCategoryId && previousDoc?.status !== doc.status) {
-            // Status changed but category didn't - update count
-            await updateCategoryCount(currCategoryId)
-          }
-
-          // Handle brand changes
-          const prevBrandId = previousDoc?.brand
-            ? typeof previousDoc.brand === 'object'
-              ? previousDoc.brand.id
-              : previousDoc.brand
-            : null
-          const currBrandId = doc.brand
-            ? typeof doc.brand === 'object'
-              ? doc.brand.id
-              : doc.brand
-            : null
-
-          // If brand changed, update both old and new
-          if (prevBrandId !== currBrandId) {
-            if (prevBrandId) {
-              await updateBrandCount(prevBrandId)
-            }
-            if (currBrandId) {
-              await updateBrandCount(currBrandId)
-            }
-          } else if (currBrandId && previousDoc?.status !== doc.status) {
-            // Status changed but brand didn't - update count
-            await updateBrandCount(currBrandId)
-          }
-        }
-      },
-
-      // Also add to afterDelete hook to update counts when products are deleted
-      async ({ req, doc }) => {
-        // Log product deletion
-        req.payload.logger.warn(`Product deleted: ${doc.name} (${doc.sku}) by ${req.user?.email}`)
-
-        // Update category count after deletion
-        if (doc.category && doc.status === 'active') {
-          const categoryId = typeof doc.category === 'object' ? doc.category.id : doc.category
-          try {
-            const productCount = await req.payload.count({
-              collection: 'products',
-              where: {
-                and: [{ category: { equals: categoryId } }, { status: { equals: 'active' } }],
-              },
-            })
-
-            await req.payload.update({
-              collection: 'categories',
-              id: categoryId,
-              data: {
-                productCount: productCount.totalDocs,
-              },
-            })
-          } catch (error) {
-            req.payload.logger.error(`Failed to update category count after deletion: ${error}`)
-          }
+          })
         }
 
-        // Update brand count after deletion
-        if (doc.brand && doc.status === 'active') {
-          const brandId = typeof doc.brand === 'object' ? doc.brand.id : doc.brand
-          try {
-            const productCount = await req.payload.count({
-              collection: 'products',
-              where: {
-                and: [{ brand: { equals: brandId } }, { status: { equals: 'active' } }],
-              },
-            })
-
-            await req.payload.update({
-              collection: 'brands',
-              id: brandId,
-              data: {
-                productCount: productCount.totalDocs,
-              },
-            })
-          } catch (error) {
-            req.payload.logger.error(`Failed to update brand count after deletion: ${error}`)
-          }
+        // Update all affected categories
+        for (const categoryId of categoriesToUpdate) {
+          await updateCategoryCount(categoryId as string)
         }
-      },
-    ],
-    afterDelete: [
-      async ({ req, doc }) => {
-        // Log product deletion
-        req.payload.logger.warn(`Product deleted: ${doc.name} (${doc.sku}) by ${req.user?.email}`)
       },
     ],
   },

@@ -142,7 +142,7 @@ export interface Category {
   }
   icon?: string
   displayOrder: number
-  productCount?: number
+  productCount: number
   isFeature?: boolean
   showInNavigation?: boolean
 }
@@ -162,7 +162,7 @@ export interface Brand {
   isFeatured?: boolean
   isPremium?: boolean
   priceRange?: 'budget' | 'mid-range' | 'premium' | 'luxury'
-  productCount?: number
+  productCount: number
 }
 
 // Customer Types

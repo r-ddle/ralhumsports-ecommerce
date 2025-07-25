@@ -28,13 +28,13 @@ export async function GET() {
       slug: category.slug,
       description: category.description,
       image:
-        typeof category.image === 'object'
+        typeof category.visual?.image === 'object'
           ? {
-              url: category.image?.url || '',
-              alt: category.image?.alt || category.name,
+              url: category.visual.image?.url || '',
+              alt: category.name,
             }
           : undefined,
-      icon: category.icon,
+      icon: category.visual?.icon,
       displayOrder: category.displayOrder,
       productCount: category.productCount,
       isFeature: category.isFeature,

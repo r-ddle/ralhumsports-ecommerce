@@ -16,6 +16,7 @@ export const metadata: Metadata = {
       'Shop the best sports equipment from trusted global brands. Fast delivery across Sri Lanka.',
     images: ['/og-image.jpg'],
   },
+  metadataBase: new URL('https://ralhumsports.lk'),
 }
 
 // Loading components for each section

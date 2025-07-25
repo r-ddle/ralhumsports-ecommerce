@@ -5,29 +5,36 @@ export const Brands: CollectionConfig = {
   slug: 'brands',
   admin: {
     useAsTitle: 'name',
-    defaultColumns: ['name', 'status', 'website', 'productCount'],
-    group: 'Products',
-    description: 'Manage brand information for products',
+    defaultColumns: ['name', 'status', 'productCount', 'isFeatured', 'isPremium'],
+    group: 'Catalog',
+    description: 'Manage product brands and manufacturers',
+    listSearchableFields: ['name', 'description'],
+    pagination: {
+      defaultLimit: 50,
+    },
   },
   access: {
-    // Product managers and above can create brands
     create: isAdminOrProductManager,
-    // All authenticated users can read brands
-    read: ({ req }) => Boolean(req.user),
-    // Product managers and above can update brands
+    read: () => true,
     update: isAdminOrProductManager,
-    // Only admins can delete brands
     delete: isAdmin,
   },
   fields: [
+    // Essential Brand Information
     {
       name: 'name',
       type: 'text',
       required: true,
       unique: true,
       admin: {
-        description: 'Brand name - must be unique',
-        placeholder: 'Enter brand name (e.g., Nike, Adidas, Under Armour)',
+        description: 'Brand name',
+        placeholder: 'Enter brand name (e.g., Nike, Adidas)',
+      },
+      validate: (value: string | null | undefined) => {
+        if (!value || value.length < 2) {
+          return 'Brand name must be at least 2 characters long'
+        }
+        return true
       },
     },
     {
@@ -36,157 +43,223 @@ export const Brands: CollectionConfig = {
       required: true,
       unique: true,
       admin: {
-        description: 'URL-friendly version of the brand name',
-        placeholder: 'auto-generated from name',
         readOnly: true,
+        description: 'Auto-generated URL slug',
+        position: 'sidebar',
       },
       hooks: {
         beforeValidate: [
           ({ data, operation }) => {
-            if (operation === 'create' || operation === 'update') {
-              if (data?.name) {
-                // Generate slug from name
-                return data.name
-                  .toLowerCase()
-                  .replace(/[^a-z0-9]+/g, '-')
-                  .replace(/(^-|-$)/g, '')
-              }
+            if ((operation === 'create' || operation === 'update') && data?.name) {
+              return data.name
+                .toLowerCase()
+                .replace(/[^a-z0-9]+/g, '-')
+                .replace(/(^-|-$)/g, '')
             }
           },
         ],
       },
     },
+
+    // Brand Visual Identity
     {
-      name: 'description',
-      type: 'textarea',
-      admin: {
-        description: 'Brand description and background information',
-        placeholder: 'Tell customers about this brand...',
-      },
-    },
-    {
-      name: 'logo',
-      type: 'upload',
-      relationTo: 'media',
-      required: true,
-      admin: {
-        description: 'Brand logo - preferably square format with transparent background',
-      },
-      filterOptions: {
-        category: {
-          equals: 'brands',
+      name: 'branding',
+      type: 'group',
+      label: '🎨 Brand Identity',
+      fields: [
+        {
+          name: 'logo',
+          type: 'upload',
+          relationTo: 'media',
+          required: true,
+          admin: {
+            description: 'Brand logo image',
+          },
+          filterOptions: {
+            category: { equals: 'brands' },
+          },
         },
-      },
+        {
+          name: 'description',
+          type: 'textarea',
+          admin: {
+            description: 'Brand description for customers',
+            rows: 3,
+          },
+        },
+      ],
     },
-    {
-      name: 'website',
-      type: 'text',
-      admin: {
-        description: 'Official brand website URL',
-        placeholder: 'https://www.brandname.com',
-      },
-    },
-    {
-      name: 'countryOfOrigin',
-      type: 'text',
-      admin: {
-        description: 'Country where the brand originates',
-        placeholder: 'USA, Germany, Japan, etc.',
-      },
-    },
-    {
-      name: 'foundedYear',
-      type: 'number',
-      admin: {
-        description: 'Year the brand was founded',
-        placeholder: '1972',
-      },
-    },
+
+    // Status and Quick Settings
     {
       name: 'status',
       type: 'select',
       required: true,
       defaultValue: 'active',
       options: [
-        {
-          label: 'Active',
-          value: 'active',
-        },
-        {
-          label: 'Inactive',
-          value: 'inactive',
-        },
-        {
-          label: 'Discontinued',
-          value: 'discontinued',
-        },
+        { label: '✅ Active', value: 'active' },
+        { label: '⏸️ Inactive', value: 'inactive' },
+        { label: '🚫 Discontinued', value: 'discontinued' },
       ],
       admin: {
-        description: 'Brand availability status',
+        description: 'Brand status',
       },
     },
     {
-      name: 'isFeatured',
-      type: 'checkbox',
-      defaultValue: false,
-      admin: {
-        description: 'Feature this brand on homepage or in navigation',
-      },
+      type: 'row',
+      fields: [
+        {
+          name: 'isFeatured',
+          type: 'checkbox',
+          defaultValue: false,
+          admin: {
+            description: '⭐ Feature on homepage',
+            width: '50%',
+          },
+        },
+        {
+          name: 'isPremium',
+          type: 'checkbox',
+          defaultValue: false,
+          admin: {
+            description: '💎 Premium brand',
+            width: '50%',
+          },
+        },
+      ],
     },
+
+    // Advanced Settings Toggle
     {
-      name: 'isPremium',
+      name: 'showAdvanced',
       type: 'checkbox',
       defaultValue: false,
       admin: {
-        description: 'Mark as premium/luxury brand',
+        description: '🔧 Show advanced settings',
+        position: 'sidebar',
       },
     },
 
-    // Contact and Social Information
+    // Brand Details (Advanced)
+    {
+      name: 'details',
+      type: 'group',
+      label: '📋 Brand Details',
+      admin: {
+        condition: (_, siblingData) => siblingData?.showAdvanced,
+      },
+      fields: [
+        {
+          name: 'website',
+          type: 'text',
+          admin: {
+            description: 'Brand website URL',
+            placeholder: 'https://brand-website.com',
+          },
+        },
+        {
+          type: 'row',
+          fields: [
+            {
+              name: 'countryOfOrigin',
+              type: 'text',
+              admin: {
+                description: 'Country of origin',
+                placeholder: 'USA, Germany, Japan',
+                width: '50%',
+              },
+            },
+            {
+              name: 'foundedYear',
+              type: 'number',
+              admin: {
+                description: 'Founded year',
+                placeholder: '1971',
+                width: '50%',
+              },
+            },
+          ],
+        },
+        {
+          name: 'specialties',
+          type: 'textarea',
+          admin: {
+            description: 'Brand specialties and focus areas',
+            rows: 2,
+          },
+        },
+        {
+          name: 'priceRange',
+          type: 'select',
+          options: [
+            { label: '💰 Budget', value: 'budget' },
+            { label: '💰💰 Mid-range', value: 'mid-range' },
+            { label: '💰💰💰 Premium', value: 'premium' },
+            { label: '💰💰💰💰 Luxury', value: 'luxury' },
+          ],
+          admin: {
+            description: 'Typical price range',
+          },
+        },
+        {
+          name: 'targetAudience',
+          type: 'text',
+          admin: {
+            description: 'Primary target audience',
+            placeholder: 'Athletes, Casual users, Professionals',
+          },
+        },
+      ],
+    },
+
+    // Contact Information (Advanced)
     {
       name: 'contact',
       type: 'group',
-      label: 'Contact Information',
+      label: '📞 Contact Information',
+      admin: {
+        condition: (_, siblingData) => siblingData?.showAdvanced,
+      },
       fields: [
         {
           name: 'email',
           type: 'email',
           admin: {
             description: 'Brand contact email',
-            placeholder: 'contact@brandname.com',
           },
         },
         {
           name: 'phone',
           type: 'text',
           admin: {
-            description: 'Brand contact phone number',
-            placeholder: '+1 (555) 123-4567',
+            description: 'Brand contact phone',
           },
         },
         {
           name: 'address',
           type: 'textarea',
           admin: {
-            description: 'Brand headquarters address',
-            placeholder: 'Street, City, Country',
+            description: 'Brand address',
+            rows: 2,
           },
         },
       ],
     },
 
-    // Social Media Links
+    // Social Media (Advanced)
     {
       name: 'social',
       type: 'group',
-      label: 'Social Media',
+      label: '📱 Social Media',
+      admin: {
+        condition: (_, siblingData) => siblingData?.showAdvanced,
+      },
       fields: [
         {
           name: 'facebook',
           type: 'text',
           admin: {
             description: 'Facebook page URL',
-            placeholder: 'https://facebook.com/brandname',
           },
         },
         {
@@ -194,7 +267,6 @@ export const Brands: CollectionConfig = {
           type: 'text',
           admin: {
             description: 'Instagram profile URL',
-            placeholder: 'https://instagram.com/brandname',
           },
         },
         {
@@ -202,7 +274,6 @@ export const Brands: CollectionConfig = {
           type: 'text',
           admin: {
             description: 'Twitter profile URL',
-            placeholder: 'https://twitter.com/brandname',
           },
         },
         {
@@ -210,85 +281,64 @@ export const Brands: CollectionConfig = {
           type: 'text',
           admin: {
             description: 'YouTube channel URL',
-            placeholder: 'https://youtube.com/brandname',
           },
         },
       ],
     },
 
-    // SEO Fields
+    // SEO (Advanced)
     {
       name: 'seo',
       type: 'group',
-      label: 'SEO Settings',
+      label: '🔍 SEO Settings',
+      admin: {
+        condition: (_, siblingData) => siblingData?.showAdvanced,
+      },
       fields: [
         {
           name: 'title',
           type: 'text',
           admin: {
-            description: 'SEO title for brand page',
-            placeholder: 'Brand Name Products - Ralhum Sports',
+            description: 'SEO title (auto-generated if empty)',
+          },
+          hooks: {
+            beforeValidate: [
+              ({ data, siblingData }) => {
+                if (!data && siblingData?.name) {
+                  return `${siblingData.name} Sports Equipment | Ralhum Sports`
+                }
+              },
+            ],
           },
         },
         {
           name: 'description',
           type: 'textarea',
           admin: {
-            description: 'SEO meta description for brand page',
-            placeholder: 'Shop brand name products at Ralhum Sports...',
+            description: 'SEO meta description',
+            rows: 2,
           },
         },
         {
           name: 'keywords',
           type: 'text',
           admin: {
-            description: 'SEO keywords separated by commas',
-            placeholder: 'brand name, sports, equipment, Sri Lanka',
+            description: 'SEO keywords (comma separated)',
           },
         },
       ],
     },
 
-    // Brand Specifications
-    {
-      name: 'specialties',
-      type: 'textarea',
-      admin: {
-        description: 'What the brand specializes in',
-        placeholder: 'Running shoes, athletic wear, sports equipment...',
-      },
-    },
-    {
-      name: 'priceRange',
-      type: 'select',
-      options: [
-        { label: 'Budget', value: 'budget' },
-        { label: 'Mid-Range', value: 'mid-range' },
-        { label: 'Premium', value: 'premium' },
-        { label: 'Luxury', value: 'luxury' },
-      ],
-      admin: {
-        description: 'General price range for this brand',
-      },
-    },
-    {
-      name: 'targetAudience',
-      type: 'text',
-      admin: {
-        description: 'Primary target audience',
-        placeholder: 'Professional athletes, fitness enthusiasts, casual users...',
-      },
-    },
-
-    // Auto-generated fields
+    // Auto-calculated fields
     {
       name: 'productCount',
       type: 'number',
+      defaultValue: 0,
       admin: {
         readOnly: true,
-        description: 'Number of active products from this brand',
+        description: 'Number of active products',
+        position: 'sidebar',
       },
-      defaultValue: 0,
     },
     {
       name: 'createdBy',
@@ -296,7 +346,7 @@ export const Brands: CollectionConfig = {
       relationTo: 'users',
       admin: {
         readOnly: true,
-        description: 'User who created this brand',
+        position: 'sidebar',
       },
       hooks: {
         beforeChange: [
@@ -314,7 +364,7 @@ export const Brands: CollectionConfig = {
       relationTo: 'users',
       admin: {
         readOnly: true,
-        description: 'User who last modified this brand',
+        position: 'sidebar',
       },
       hooks: {
         beforeChange: [
@@ -330,41 +380,22 @@ export const Brands: CollectionConfig = {
   hooks: {
     beforeChange: [
       async ({ req, operation, data }) => {
-        // Set created/modified by
         if (operation === 'create') {
           data.createdBy = req.user?.id
         }
         if (operation === 'update') {
           data.lastModifiedBy = req.user?.id
         }
-
         return data
       },
     ],
     afterChange: [
       async ({ req, operation, doc }) => {
-        // Log brand operations
         if (operation === 'create') {
           req.payload.logger.info(`Brand created: ${doc.name} by ${req.user?.email}`)
         } else if (operation === 'update') {
           req.payload.logger.info(`Brand updated: ${doc.name} by ${req.user?.email}`)
         }
-
-        // Update product count if status changes
-        if (operation === 'update' && doc.status === 'inactive') {
-          req.payload.logger.info(
-            `Brand deactivated: ${doc.name} - this may affect product visibility`,
-          )
-        }
-      },
-    ],
-    afterDelete: [
-      async ({ req, doc }) => {
-        // Log brand deletion
-        req.payload.logger.warn(`Brand deleted: ${doc.name} by ${req.user?.email}`)
-
-        // Note: In production, you'd want to handle reassigning products
-        // from deleted brands or prevent deletion of brands with products
       },
     ],
   },

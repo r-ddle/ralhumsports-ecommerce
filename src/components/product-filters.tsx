@@ -18,42 +18,40 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible'
-import { Search, X, ChevronDown, RotateCcw, Check, SlidersHorizontal } from 'lucide-react'
+import { Search, X, ChevronDown, RotateCcw, SlidersHorizontal } from 'lucide-react'
+import { useProductFilters } from '@/hooks/useProductFilters'
 
-// Define a more specific type for filters, mirroring ProductQueryParams from the parent
-interface FilterState {
-  search?: string
-  categories?: string[]
-  brands?: string[]
-  minPrice?: number
-  maxPrice?: number
-  inStock?: boolean
+// Types for real API data
+interface Category {
+  id: string | number
+  name: string
+  slug: string
+  productCount: number
+}
+
+interface Brand {
+  id: string | number
+  name: string
+  slug: string
+  productCount: number
 }
 
 interface ProductFiltersProps {
-  categories: Array<{ id: number; name: string; slug: string }>
-  brands: Array<{ id: number; name: string; slug: string }>
+  categories: Category[]
+  brands: Brand[]
   priceRange: { min: number; max: number }
-  currentFilters: FilterState
-  onFiltersChange: (filters: FilterState) => void
-  onSortChange: (sort: string, order: string) => void
-  onReset: () => void
-  isOpen: boolean
-  onToggle: () => void
   loading?: boolean
 }
 
-export function ProductFilters({
+export function EnhancedProductFilters({
   categories,
   brands,
   priceRange,
-  currentFilters,
-  onFiltersChange,
-  onSortChange,
-  onReset,
   loading = false,
 }: ProductFiltersProps) {
-  // Local state for filter inputs
+  const { filters, addFilter, removeFilter, clearFilters, setMultipleFilters } = useProductFilters()
+
+  // Local state for form inputs
   const [searchTerm, setSearchTerm] = useState('')
   const [selectedCategories, setSelectedCategories] = useState<string[]>([])
   const [selectedBrands, setSelectedBrands] = useState<string[]>([])
@@ -68,100 +66,128 @@ export function ProductFilters({
     stock: true,
   })
 
-  // Effect to synchronize local state when parent filters change (e.g., on reset)
+  // Sync local state with URL filters
   useEffect(() => {
-    // Guard against undefined props during initial renders
-    if (!loading && currentFilters) {
-      setSearchTerm(currentFilters.search || '')
-      setSelectedCategories(currentFilters.categories || [])
-      setSelectedBrands(currentFilters.brands || [])
-      // Ensure priceRange is valid before setting state
-      if (priceRange.min !== undefined && priceRange.max !== undefined) {
-        setPriceFilter([
-          currentFilters.minPrice || priceRange.min,
-          currentFilters.maxPrice || priceRange.max,
-        ])
-      }
-      setStockFilter(currentFilters.inStock || false)
-    }
-  }, [currentFilters, priceRange, loading])
+    setSearchTerm(filters.search || '')
+    setSelectedCategories(filters.categories || [])
+    setSelectedBrands(filters.brands || [])
+    setPriceFilter([filters.minPrice || priceRange.min, filters.maxPrice || priceRange.max])
+    setStockFilter(filters.inStock || false)
+  }, [filters, priceRange])
 
   const handleCategoryChange = (categorySlug: string, checked: boolean) => {
-    setSelectedCategories((prev) =>
-      checked ? [...prev, categorySlug] : prev.filter((c) => c !== categorySlug),
-    )
+    const newCategories = checked
+      ? [...selectedCategories, categorySlug]
+      : selectedCategories.filter((c) => c !== categorySlug)
+
+    setSelectedCategories(newCategories)
+
+    if (newCategories.length > 0) {
+      addFilter('categories', newCategories)
+    } else {
+      removeFilter('categories')
+    }
   }
 
   const handleBrandChange = (brandSlug: string, checked: boolean) => {
-    setSelectedBrands((prev) =>
-      checked ? [...prev, brandSlug] : prev.filter((b) => b !== brandSlug),
-    )
+    const newBrands = checked
+      ? [...selectedBrands, brandSlug]
+      : selectedBrands.filter((b) => b !== brandSlug)
+
+    setSelectedBrands(newBrands)
+
+    if (newBrands.length > 0) {
+      addFilter('brands', newBrands)
+    } else {
+      removeFilter('brands')
+    }
   }
 
   const handlePriceChange = (value: [number, number]) => {
     setPriceFilter(value)
+
+    const newFilters: any = {}
+    if (value[0] > priceRange.min) newFilters.minPrice = value[0]
+    if (value[1] < priceRange.max) newFilters.maxPrice = value[1]
+
+    if (Object.keys(newFilters).length > 0) {
+      Object.entries(newFilters).forEach(([key, val]) => {
+        addFilter(key as any, val)
+      })
+    } else {
+      removeFilter('minPrice')
+      removeFilter('maxPrice')
+    }
   }
 
   const handleStockChange = (checked: boolean) => {
     setStockFilter(checked)
+
+    if (checked) {
+      addFilter('inStock', true)
+    } else {
+      removeFilter('inStock')
+    }
   }
 
-  // Combine all local filter states and send them to the parent
-  const handleApplyFilters = () => {
-    onFiltersChange({
-      search: searchTerm || undefined,
-      categories: selectedCategories.length > 0 ? selectedCategories : undefined,
-      brands: selectedBrands.length > 0 ? selectedBrands : undefined,
-      minPrice: priceFilter[0] > priceRange.min ? priceFilter[0] : undefined,
-      maxPrice: priceFilter[1] < priceRange.max ? priceFilter[1] : undefined,
-      inStock: stockFilter || undefined,
-    })
+  const handleSearchSubmit = (e: React.FormEvent) => {
+    e.preventDefault()
+
+    if (searchTerm.trim()) {
+      addFilter('search', searchTerm.trim())
+    } else {
+      removeFilter('search')
+    }
+  }
+
+  const handleSortChange = (value: string) => {
+    const [sortBy, sortOrder] = value.split('-')
+    addFilter('sortBy', sortBy)
+    addFilter('sortOrder', sortOrder)
   }
 
   const handleReset = () => {
-    // Reset local state and then call parent's reset function
     setSearchTerm('')
     setSelectedCategories([])
     setSelectedBrands([])
     setPriceFilter([priceRange.min, priceRange.max])
     setStockFilter(false)
-    onReset()
+    clearFilters()
   }
 
   const handleSectionToggle = (section: string) => {
     setExpandedSections((prev) => ({ ...prev, [section]: !prev[section] }))
   }
 
-  // Memoize active filters count for performance
+  // Calculate active filters count
   const activeFiltersCount = useMemo(() => {
     return [
-      searchTerm,
-      selectedCategories.length > 0,
-      selectedBrands.length > 0,
-      priceFilter[0] > priceRange.min || priceFilter[1] < priceRange.max,
-      stockFilter,
+      filters.search,
+      filters.categories?.length,
+      filters.brands?.length,
+      filters.minPrice || filters.maxPrice,
+      filters.inStock,
     ].filter(Boolean).length
-  }, [searchTerm, selectedCategories, selectedBrands, priceFilter, priceRange, stockFilter])
+  }, [filters])
 
   if (loading) {
     return (
-      <div className="space-y-4 p-6">
-        <Skeleton className="h-8 w-full" />
-        <Skeleton className="h-32 w-full" />
-        <Skeleton className="h-24 w-full" />
-        <Skeleton className="h-24 w-full" />
-      </div>
+      <Card className="w-full">
+        <CardHeader>
+          <Skeleton className="h-8 w-32" />
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <Skeleton className="h-10 w-full" />
+          <Skeleton className="h-32 w-full" />
+          <Skeleton className="h-24 w-full" />
+          <Skeleton className="h-24 w-full" />
+        </CardContent>
+      </Card>
     )
   }
 
   return (
-    <form
-      onSubmit={(e) => {
-        e.preventDefault()
-        handleApplyFilters()
-      }}
-      className="w-full"
-    >
+    <Card className="w-full">
       <CardHeader className="pb-4">
         <div className="flex items-center justify-between">
           <CardTitle className="text-lg font-bold flex items-center gap-2">
@@ -202,27 +228,32 @@ export function ProductFilters({
             />
           </CollapsibleTrigger>
           <CollapsibleContent className="mt-3">
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-              <Input
-                type="text"
-                placeholder="Search products..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-10 pr-10"
-              />
-              {searchTerm && (
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => setSearchTerm('')}
-                  className="absolute right-1 top-1/2 transform -translate-y-1/2 h-6 w-6 p-0"
-                >
-                  <X className="w-3 h-3" />
-                </Button>
-              )}
-            </div>
+            <form onSubmit={handleSearchSubmit}>
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                <Input
+                  type="text"
+                  placeholder="Search products..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="pl-10 pr-10"
+                />
+                {searchTerm && (
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => {
+                      setSearchTerm('')
+                      removeFilter('search')
+                    }}
+                    className="absolute right-1 top-1/2 transform -translate-y-1/2 h-6 w-6 p-0"
+                  >
+                    <X className="w-3 h-3" />
+                  </Button>
+                )}
+              </div>
+            </form>
           </CollapsibleContent>
         </Collapsible>
 
@@ -237,26 +268,19 @@ export function ProductFilters({
             />
           </CollapsibleTrigger>
           <CollapsibleContent className="mt-3">
-            <div className="space-y-2">
-              <Select
-                onValueChange={(value) => {
-                  const [sort, order] = value.split('-')
-                  onSortChange(sort, order)
-                }}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Select sorting" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="createdAt-desc">Newest First</SelectItem>
-                  <SelectItem value="createdAt-asc">Oldest First</SelectItem>
-                  <SelectItem value="name-asc">Name: A to Z</SelectItem>
-                  <SelectItem value="name-desc">Name: Z to A</SelectItem>
-                  <SelectItem value="price-asc">Price: Low to High</SelectItem>
-                  <SelectItem value="price-desc">Price: High to Low</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
+            <Select onValueChange={handleSortChange}>
+              <SelectTrigger>
+                <SelectValue placeholder="Select sorting" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="createdAt-desc">Newest First</SelectItem>
+                <SelectItem value="createdAt-asc">Oldest First</SelectItem>
+                <SelectItem value="name-asc">Name: A to Z</SelectItem>
+                <SelectItem value="name-desc">Name: Z to A</SelectItem>
+                <SelectItem value="price-asc">Price: Low to High</SelectItem>
+                <SelectItem value="price-desc">Price: High to Low</SelectItem>
+              </SelectContent>
+            </Select>
           </CollapsibleContent>
         </Collapsible>
 
@@ -295,7 +319,10 @@ export function ProductFilters({
                     htmlFor={`category-${category.id}`}
                     className="text-sm font-medium cursor-pointer flex-1 hover:text-primary transition-colors"
                   >
-                    {category.name}
+                    <div className="flex items-center justify-between">
+                      <span>{category.name}</span>
+                      <span className="text-xs text-muted-foreground">{category.productCount}</span>
+                    </div>
                   </Label>
                 </div>
               ))}
@@ -336,7 +363,10 @@ export function ProductFilters({
                     htmlFor={`brand-${brand.id}`}
                     className="text-sm font-medium cursor-pointer flex-1 hover:text-primary transition-colors"
                   >
-                    {brand.name}
+                    <div className="flex items-center justify-between">
+                      <span>{brand.name}</span>
+                      <span className="text-xs text-muted-foreground">{brand.productCount}</span>
+                    </div>
                   </Label>
                 </div>
               ))}
@@ -370,7 +400,7 @@ export function ProductFilters({
                     placeholder="Min"
                     value={priceFilter[0]}
                     onChange={(e) => {
-                      const value = parseInt(e.target.value) || priceRange.min
+                      const value = Number.parseInt(e.target.value) || priceRange.min
                       handlePriceChange([value, priceFilter[1]])
                     }}
                     className="text-sm"
@@ -386,7 +416,7 @@ export function ProductFilters({
                     placeholder="Max"
                     value={priceFilter[1]}
                     onChange={(e) => {
-                      const value = parseInt(e.target.value) || priceRange.max
+                      const value = Number.parseInt(e.target.value) || priceRange.max
                       handlePriceChange([priceFilter[0], value])
                     }}
                     className="text-sm"
@@ -425,15 +455,7 @@ export function ProductFilters({
             </div>
           </CollapsibleContent>
         </Collapsible>
-
-        {/* Apply Filters Button */}
-        <div className="pt-4">
-          <Button type="submit" className="w-full">
-            <Check className="w-4 h-4 mr-2" />
-            Apply Filters {activeFiltersCount > 0 && `(${activeFiltersCount})`}
-          </Button>
-        </div>
       </CardContent>
-    </form>
+    </Card>
   )
 }

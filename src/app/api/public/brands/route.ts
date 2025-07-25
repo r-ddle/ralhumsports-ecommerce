@@ -25,20 +25,19 @@ export async function GET() {
     const transformedBrands = result.docs.map((brand) => ({
       id: brand.id,
       name: brand.name,
+      description: brand.branding.description,
       slug: brand.slug,
-      description: brand.description,
       logo:
-        typeof brand.logo === 'object'
+        typeof brand.branding.logo === 'object'
           ? {
-              url: brand.logo.url,
-              alt: brand.logo.alt || brand.name,
+              url: brand.branding.logo,
+              alt: brand.name,
             }
           : undefined,
-      website: brand.website,
-      countryOfOrigin: brand.countryOfOrigin,
+      website: brand.details?.website,
+      countryOfOrigin: brand.details?.countryOfOrigin,
       isFeatured: brand.isFeatured,
       isPremium: brand.isPremium,
-      priceRange: brand.priceRange,
       productCount: brand.productCount,
     }))
     // --- Log result count ---
