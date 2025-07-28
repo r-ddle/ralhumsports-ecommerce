@@ -70,7 +70,7 @@ export default function PrivacyPolicyPage() {
               </div>
               <div className="space-y-4 text-text-primary">
                 <p>
-                  <strong>Data Controller:</strong> Ralhum Trading Company (Private) Limited
+                  <strong>Data Controller:</strong> Ralhum Sports (Private) Limited
                 </p>
                 <p>
                   <strong>Registration Number:</strong> PV 14158 (Sri Lanka)

@@ -17,16 +17,17 @@ export function middleware(request: NextRequest) {
   const { headers, nextUrl } = request
   const host = headers.get('host')
 
-  // --- Subdomain routing for the admin panel ---
-  // If the request is for the admin subdomain, rewrite to the /admin path unless already on /admin, /api, or /_next
+  // --- NEW: Subdomain routing for the admin panel ---
+  // If the request is for the admin subdomain, rewrite to the /admin path.
   if (host === process.env.NEXT_PUBLIC_ADMIN_DOMAIN) {
+    // Prevent redirect loops for assets and API calls from the admin panel
     if (
       !nextUrl.pathname.startsWith('/admin') &&
       !nextUrl.pathname.startsWith('/api') &&
       !nextUrl.pathname.startsWith('/_next')
     ) {
-      nextUrl.pathname = '/admin'
-      return NextResponse.rewrite(nextUrl)
+      const adminUrl = new URL('/admin', request.url)
+      return NextResponse.rewrite(adminUrl)
     }
   }
 

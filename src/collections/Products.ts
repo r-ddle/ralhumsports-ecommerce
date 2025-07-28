@@ -262,7 +262,7 @@ export const Products: CollectionConfig = {
       type: 'group',
       label: '📋 Product Details',
       admin: {
-        condition: (_, siblingData) => Boolean(siblingData?.showAdvanced),
+        condition: (_, siblingData) => siblingData?.showAdvanced,
       },
       fields: [
         {
