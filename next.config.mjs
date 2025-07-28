@@ -9,7 +9,7 @@ const nextConfig = {
       style-src 'self' 'unsafe-inline';
       img-src 'self' blob: data: https://*.blob.vercel-storage.com https://placehold.co;
       font-src 'self';
-      connect-src 'self' https://www.payhere.lk https://sandbox.payhere.lk https://vitals.vercel-insights.com https://ralhumsports.lk;
+      connect-src 'self' https://www.payhere.lk https://sandbox.payhere.lk https://vitals.vercel-insights.com https://ralhumsports.lk http://ralhumsports.lk;
       frame-src 'self' https://www.payhere.lk https://sandbox.payhere.lk;
       object-src 'none';
       base-uri 'self';
