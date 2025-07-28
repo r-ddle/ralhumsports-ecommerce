@@ -69,7 +69,7 @@ export default function TermsConditionsPage() {
               </div>
               <div className="space-y-4 text-text-primary">
                 <p>
-                  <strong>Company Name:</strong> Ralhum Sports (Private) Limited
+                  <strong>Company Name:</strong> Ralhum Company (Private) Limited
                 </p>
                 <p>
                   <strong>Registration Number:</strong> PV 14158 (Sri Lanka)

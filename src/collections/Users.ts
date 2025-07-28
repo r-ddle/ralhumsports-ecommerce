@@ -140,7 +140,7 @@ export const Users: CollectionConfig = {
       ],
       admin: {
         description: 'User role determines access permissions',
-        condition: (_, { user }) => {
+        condition: (_, { user, siblingData }) => {
           // Only super admins can change roles
           return Boolean(user && user.role === 'super-admin')
         },

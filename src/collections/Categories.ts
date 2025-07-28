@@ -223,7 +223,7 @@ export const Categories: CollectionConfig = {
       type: 'group',
       label: 'Visual Settings',
       admin: {
-        condition: (_, siblingData) => siblingData?.showAdvanced,
+        condition: (_, siblingData) => Boolean(siblingData?.showAdvanced),
       },
       fields: [
         {
