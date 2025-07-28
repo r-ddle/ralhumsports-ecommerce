@@ -93,7 +93,7 @@ export const Customers: CollectionConfig = {
       type: 'text',
       admin: {
         description: 'Secondary phone number',
-        condition: (_, siblingData) => Boolean(siblingData?.showAdvanced),
+        condition: (_, siblingData) => siblingData?.showAdvanced,
       },
     },
 

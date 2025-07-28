@@ -271,7 +271,7 @@ export const Orders: CollectionConfig = {
       type: 'group',
       label: '📋 Order Details',
       admin: {
-        condition: (_, siblingData) => Boolean(siblingData?.showAdvanced),
+        condition: (_, siblingData) => siblingData?.showAdvanced,
       },
       fields: [
         {

@@ -112,7 +112,7 @@ export const Media: CollectionConfig = {
       type: 'group',
       label: '📋 Media Details',
       admin: {
-        condition: (_, siblingData) => Boolean(siblingData?.showAdvanced),
+        condition: (_, siblingData) => siblingData?.showAdvanced,
       },
       fields: [
         {
