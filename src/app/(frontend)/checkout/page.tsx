@@ -33,6 +33,7 @@ import {
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { type OrderSummary, type CheckoutState, type FormErrors } from '@/types/checkout'
+import { usePayHere } from '@/hooks/use-payhere'
 import {
   generateWhatsAppURL,
   validateSriLankanPhone,
@@ -218,6 +219,103 @@ function CitySearchComponent({
 }
 
 export default function CheckoutPage() {
+  const {
+    isLoading: isPayHereLoading,
+    isScriptLoaded,
+    error: payHereError,
+    initiatePayment,
+  } = usePayHere()
+
+  // PayHere payment handler (must be defined before render)
+  const handlePayHerePayment = async () => {
+    if (checkoutState.isSubmitting || isPayHereLoading) return
+    if (!validateForm()) {
+      toast.error('Please fill in all required fields correctly')
+      return
+    }
+    try {
+      setCheckoutState((prev) => ({ ...prev, isSubmitting: true }))
+      setApiError(null)
+      // Create order first (reuse handleSubmitOrder logic, but only up to order creation)
+      const orderData: OrderInput = {
+        customer: {
+          fullName: checkoutState.customerInfo.fullName!,
+          email: checkoutState.customerInfo.email!,
+          phone: formatSriLankanPhone(checkoutState.customerInfo.phone!),
+          secondaryPhone: checkoutState.customerInfo.secondaryPhone,
+          address: {
+            street: checkoutState.customerInfo.address?.street ?? '',
+            city: checkoutState.customerInfo.address?.city ?? '',
+            postalCode: checkoutState.customerInfo.address?.postalCode ?? '',
+            province: checkoutState.customerInfo.address?.province ?? '',
+          },
+          specialInstructions: checkoutState.customerInfo.specialInstructions,
+          preferredLanguage: 'english',
+          marketingOptIn: true,
+        },
+        items: cart.items.map((item) => ({
+          id: item.id,
+          productId: item.product.id,
+          productName: item.product.title,
+          productSku: item.product.sku,
+          variantId: item.variant.id,
+          unitPrice: item.variant.price,
+          quantity: item.quantity,
+          selectedSize: item.variant.size,
+          selectedColor: item.variant.color,
+          subtotal: item.variant.price * item.quantity,
+        })),
+        pricing: checkoutState.pricing,
+        specialInstructions: checkoutState.customerInfo.specialInstructions,
+        orderSource: 'website',
+      }
+      const apiResponse = await api.createOrder(orderData)
+      if (!apiResponse.success) {
+        throw new Error(apiResponse.error || 'Failed to create order')
+      }
+      const orderId = apiResponse.data?.orderId || apiResponse.data?.orderId
+      const orderNumber = apiResponse.data?.orderNumber
+      if (!orderId) {
+        throw new Error('Order ID not received from API')
+      }
+      // Prepare PayHere payment initiation request
+      const addressString = [
+        checkoutState.customerInfo.address?.street,
+        checkoutState.customerInfo.address?.city,
+        checkoutState.customerInfo.address?.province,
+        checkoutState.customerInfo.address?.postalCode,
+      ]
+        .filter(Boolean)
+        .join(', ')
+      const paymentRequest = {
+        orderId: orderId,
+        customerInfo: {
+          firstName: checkoutState.customerInfo.fullName?.split(' ')[0] || '',
+          lastName: checkoutState.customerInfo.fullName?.split(' ').slice(1).join(' ') || '',
+          email: checkoutState.customerInfo.email!,
+          phone: formatSriLankanPhone(checkoutState.customerInfo.phone!),
+          address: addressString,
+          city: checkoutState.customerInfo.address?.city ?? '',
+          country: 'Sri Lanka',
+        },
+        items: cart.items.map((item) => ({
+          name: item.product.title,
+          quantity: item.quantity,
+          price: item.variant.price,
+        })),
+        amount: checkoutState.pricing.total,
+        currency: checkoutState.pricing.currency || 'LKR',
+      }
+      await initiatePayment(paymentRequest)
+      // The PayHere modal will handle redirect on success
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : 'Payment failed'
+      setApiError(errorMessage)
+      toast.error(errorMessage)
+    } finally {
+      setCheckoutState((prev) => ({ ...prev, isSubmitting: false }))
+    }
+  }
   const router = useRouter()
   const { cart, clearCart } = useCart()
   const [prefersReducedMotion, setPrefersReducedMotion] = useState(false)
@@ -796,17 +894,47 @@ export default function CheckoutPage() {
                   <CardTitle className="text-text-primary">Payment Options</CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-6">
-                  {/* Disabled Online Payment */}
+                  {/* PayHere Online Payment */}
                   <div className="relative">
                     <Button
-                      disabled
-                      className="w-full h-16 bg-gray-100 text-gray-400 cursor-not-allowed rounded-xl"
+                      onClick={handlePayHerePayment}
+                      disabled={
+                        !isScriptLoaded ||
+                        isPayHereLoading ||
+                        checkoutState.isSubmitting ||
+                        !cart.items.length
+                      }
+                      className="w-full h-16 bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-700 hover:to-cyan-700 text-white font-bold text-lg rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-[1.02]"
                       variant="outline"
                     >
-                      <CreditCard className="w-6 h-6 mr-3" />
-                      Pay Online
-                      <Badge className="ml-auto bg-orange-100 text-orange-800">Coming Soon</Badge>
+                      {isPayHereLoading ? (
+                        <>
+                          <motion.div
+                            className="w-6 h-6 mr-3 border-2 border-white border-t-transparent rounded-full"
+                            animate={{ rotate: 360 }}
+                            transition={{
+                              duration: 1,
+                              repeat: Number.POSITIVE_INFINITY,
+                              ease: 'linear',
+                            }}
+                          />
+                          Processing Payment...
+                        </>
+                      ) : (
+                        <>
+                          <CreditCard className="w-6 h-6 mr-3" />
+                          Pay Online (Card/Bank)
+                        </>
+                      )}
                     </Button>
+                    {payHereError && (
+                      <Alert className="mt-4 border-red-200 bg-red-50">
+                        <AlertCircle className="h-4 w-4 text-red-600" />
+                        <AlertDescription className="text-red-800 text-sm">
+                          {payHereError}
+                        </AlertDescription>
+                      </Alert>
+                    )}
                   </div>
 
                   <div className="text-center text-sm text-text-secondary">OR</div>
