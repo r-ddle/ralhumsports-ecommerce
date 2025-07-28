@@ -1,5 +1,5 @@
 export const SITE_CONFIG = {
-  siteUrl: 'http://ralhumsports.vercel.app', // Change this to your production domain after deployment
+  siteUrl: 'https://ralhumsports.vercel.app', // Change this to your production domain after deployment
   taxRate: 0.15, // 15% tax
   currency: 'LKR',
   about: {
