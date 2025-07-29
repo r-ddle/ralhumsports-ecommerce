@@ -2,10 +2,23 @@ import { withPayload } from '@payloadcms/next/withPayload'
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  // FIXED: Force HTTPS redirects in production (exclude API routes to prevent CORS issues)
+  // FIXED: Handle domain redirects properly to avoid CORS issues
   async redirects() {
     if (process.env.NODE_ENV === 'production') {
       return [
+        // Redirect non-www to www for consistency (exclude API routes)
+        {
+          source: '/((?!api|_next|favicon.ico).*)',
+          has: [
+            {
+              type: 'host',
+              value: 'ralhumsports.lk',
+            },
+          ],
+          destination: 'https://www.ralhumsports.lk/$1',
+          permanent: true,
+        },
+        // Force HTTPS for non-www domain (exclude API routes)
         {
           source: '/((?!api|_next|favicon.ico).*)',
           has: [
@@ -14,8 +27,29 @@ const nextConfig = {
               key: 'x-forwarded-proto',
               value: 'http',
             },
+            {
+              type: 'host',
+              value: 'ralhumsports.lk',
+            },
           ],
-          destination: 'https://ralhumsports.lk/$1',
+          destination: 'https://www.ralhumsports.lk/$1',
+          permanent: true,
+        },
+        // Force HTTPS for www domain (exclude API routes)
+        {
+          source: '/((?!api|_next|favicon.ico).*)',
+          has: [
+            {
+              type: 'header',
+              key: 'x-forwarded-proto',
+              value: 'http',
+            },
+            {
+              type: 'host',
+              value: 'www.ralhumsports.lk',
+            },
+          ],
+          destination: 'https://www.ralhumsports.lk/$1',
           permanent: true,
         },
       ]

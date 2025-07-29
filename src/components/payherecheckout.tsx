@@ -20,14 +20,16 @@ interface PayHereCheckoutProps {
   onDismiss?: () => void
 }
 
-// Fixed base URL detection for HTTPS
+// FIXED: Use same origin to avoid cross-domain issues
 const getApiBaseUrl = (): string => {
-  if (process.env.NODE_ENV === 'production') {
-    return process.env.NEXT_PUBLIC_SERVER_URL || 'https://ralhumsports.lk'
-  }
-
+  // Always prefer same-origin requests in browser
   if (typeof window !== 'undefined') {
     return window.location.origin
+  }
+
+  // Server-side fallback
+  if (process.env.NODE_ENV === 'production') {
+    return process.env.NEXT_PUBLIC_SERVER_URL || 'https://ralhumsports.lk'
   }
 
   return 'http://localhost:3000'
