@@ -9,10 +9,10 @@ export const PAYHERE_CONFIG = {
   scriptUrl: 'https://www.payhere.lk/lib/payhere.js',
   notifyUrl: process.env.NEXT_PUBLIC_SERVER_URL
     ? `${process.env.NEXT_PUBLIC_SERVER_URL}/api/payhere/notify`
-    : 'http://localhost:3000/api/payhere/notify',
+    : 'https://ralhumsports.lk/api/payhere/notify',
 }
 
-// Generate hash for payment - FIXED to match PayHere documentation exactly
+// FIXED: Generate hash for payment - Updated to match PayHere documentation exactly
 export function generatePaymentHash(
   orderId: string,
   amount: number,
@@ -28,15 +28,18 @@ export function generatePaymentHash(
     .toLocaleString('en-us', { minimumFractionDigits: 2 })
     .replace(/,/g, '')
 
-  // Generate merchant secret hash
+  console.log(
+    `[PayHere Hash] Generating hash for: ${merchantId} + ${orderId} + ${formattedAmount} + ${currency}`,
+  )
+
+  // Generate merchant secret hash (uppercase MD5)
   const hashedSecret = crypto.createHash('md5').update(merchantSecret).digest('hex').toUpperCase()
 
-  // Generate payment hash
-  const hash = crypto
-    .createHash('md5')
-    .update(merchantId + orderId + formattedAmount + currency + hashedSecret)
-    .digest('hex')
-    .toUpperCase()
+  // Generate payment hash (uppercase MD5)
+  const hashString = merchantId + orderId + formattedAmount + currency + hashedSecret
+  const hash = crypto.createHash('md5').update(hashString).digest('hex').toUpperCase()
+
+  console.log(`[PayHere Hash] Generated hash: ${hash}`)
 
   return hash
 }
@@ -62,7 +65,7 @@ export function verifyPaymentNotification(notification: PayHereNotification): bo
   return localHash === md5sig
 }
 
-// Format amount for PayHere - FIXED
+// FIXED: Format amount for PayHere
 export function formatAmount(amount: number): string {
   return parseFloat(amount.toString())
     .toLocaleString('en-us', { minimumFractionDigits: 2 })

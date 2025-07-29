@@ -18,7 +18,28 @@ import {
 } from '@/types/api'
 import { useState } from 'react'
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_SERVER_URL || 'http://localhost:3000'
+// FIXED: Proper base URL detection for HTTPS
+const getBaseUrl = (): string => {
+  // In production, always use HTTPS
+  if (process.env.NODE_ENV === 'production') {
+    return process.env.NEXT_PUBLIC_SERVER_URL || 'https://ralhumsports.lk'
+  }
+
+  // In development, use the environment variable or default to localhost
+  if (process.env.NEXT_PUBLIC_SERVER_URL) {
+    return process.env.NEXT_PUBLIC_SERVER_URL
+  }
+
+  // Development fallback
+  if (typeof window !== 'undefined') {
+    return window.location.origin
+  }
+
+  return 'http://localhost:3000'
+}
+
+// Use the function to get base URL
+const API_BASE_URL = getBaseUrl()
 
 class ApiClient {
   private baseUrl: string
@@ -28,7 +49,12 @@ class ApiClient {
   }
 
   private async request<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
+    // FIXED: Always use the current baseUrl which includes HTTPS detection
     const url = `${this.baseUrl}${endpoint}`
+
+    console.log('[API Client] Request URL:', url)
+    console.log('[API Client] Environment:', process.env.NODE_ENV)
+    console.log('[API Client] Base URL:', this.baseUrl)
 
     // Add Next.js caching options
     const cacheOptions: RequestInit = {
@@ -67,13 +93,29 @@ class ApiClient {
       const response = await fetch(url, config)
 
       if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}))
+        const errorData = await response.json().catch(() => ({
+          error: `Network error: ${response.status} ${response.statusText}`,
+        }))
         throw new Error(errorData.error || `HTTP error! status: ${response.status}`)
       }
 
-      return await response.json()
+      const data = await response.json()
+      console.log('[API Client] Request successful for:', endpoint)
+      return data
     } catch (error) {
-      console.error(`API request failed: ${endpoint}`, error)
+      console.error(`[API Client] Request failed: ${endpoint}`, error)
+
+      // Provide better error messages for common issues
+      if (error instanceof TypeError && error.message.includes('NetworkError')) {
+        throw new Error(
+          'Network connection failed. Please check your internet connection and try again.',
+        )
+      }
+
+      if (error instanceof TypeError && error.message.includes('Failed to fetch')) {
+        throw new Error('Unable to connect to server. Please try again later.')
+      }
+
       throw error
     }
   }
@@ -171,8 +213,9 @@ class ApiClient {
     })
   }
 
-  // Order API methods
+  // FIXED: Order API methods with proper HTTPS handling
   async createOrder(orderData: OrderInput): Promise<ApiResponse<OrderResponse>> {
+    console.log('[API Client] Creating order with data:', orderData)
     return this.request<ApiResponse<OrderResponse>>('/api/public/orders', {
       method: 'POST',
       body: JSON.stringify(orderData),
@@ -311,6 +354,11 @@ class ApiClient {
 
     return this.request<ApiResponse<OrderTrackingResponse>>(`/api/public/orders/track?${params}`)
   }
+
+  // Get base URL for other components to use
+  getBaseUrl(): string {
+    return this.baseUrl
+  }
 }
 
 // Create singleton instance
@@ -346,7 +394,7 @@ export class ApiError extends Error {
   constructor(
     message: string,
     public statusCode?: number,
-    public details?: Record<string, unknown>, // ✅ Fix: Line 345
+    public details?: Record<string, unknown>,
   ) {
     super(message)
     this.name = 'ApiError'
@@ -354,7 +402,6 @@ export class ApiError extends Error {
 }
 
 export function isApiError(error: unknown): error is ApiError {
-  // ✅ Fix: Line 357
   return error instanceof ApiError
 }
 
@@ -431,6 +478,9 @@ export function handlePaginatedResponse<T>(response: PaginatedResponse<T>): {
     pagination: response.pagination,
   }
 }
+
+// Export the getBaseUrl function for components
+export { getBaseUrl }
 
 // Export default api client
 export default api
