@@ -261,15 +261,22 @@ export function getSecurityHeaders(requestOrigin?: string): Record<string, strin
     'https://admin.ralhumsports.lk',
     'http://localhost:3000',
     'https://localhost:3000',
+    // Add Vercel preview URLs
+    ...(process.env.VERCEL_URL ? [`https://${process.env.VERCEL_URL}`] : []),
   ].filter(Boolean)
 
   // Determine CORS origin based on request
   let corsOrigin = '*'
   if (requestOrigin && allowedOrigins.includes(requestOrigin)) {
     corsOrigin = requestOrigin
+  } else if (requestOrigin && requestOrigin.includes('ralhumsports.lk')) {
+    // Allow any subdomain of ralhumsports.lk
+    corsOrigin = requestOrigin
   } else if (allowedOrigins.includes('https://ralhumsports.lk')) {
     corsOrigin = 'https://ralhumsports.lk'
   }
+
+  console.log('[Security Headers] Origin:', requestOrigin, '-> CORS Origin:', corsOrigin)
 
   return {
     'X-Content-Type-Options': 'nosniff',
@@ -277,10 +284,13 @@ export function getSecurityHeaders(requestOrigin?: string): Record<string, strin
     'X-XSS-Protection': '1; mode=block',
     'Referrer-Policy': 'strict-origin-when-cross-origin',
     'Content-Security-Policy': "default-src 'self'",
-    // CORS headers
+    // Enhanced CORS headers
     'Access-Control-Allow-Origin': corsOrigin,
-    'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
-    'Access-Control-Allow-Headers': 'Content-Type, Authorization, X-Requested-With',
-    'Access-Control-Allow-Credentials': 'true',
+    'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS, PATCH',
+    'Access-Control-Allow-Headers': 'Content-Type, Authorization, X-Requested-With, Origin, Accept, Cache-Control',
+    'Access-Control-Allow-Credentials': corsOrigin !== '*' ? 'true' : 'false',
+    'Access-Control-Max-Age': '86400', // 24 hours preflight cache
+    // Additional headers for better compatibility
+    'Vary': 'Origin, Access-Control-Request-Method, Access-Control-Request-Headers',
   }
 }

@@ -2,12 +2,12 @@ import { withPayload } from '@payloadcms/next/withPayload'
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  // ADDED: Force HTTPS redirects in production
+  // FIXED: Force HTTPS redirects in production (exclude API routes to prevent CORS issues)
   async redirects() {
     if (process.env.NODE_ENV === 'production') {
       return [
         {
-          source: '/(.*)',
+          source: '/((?!api|_next|favicon.ico).*)',
           has: [
             {
               type: 'header',

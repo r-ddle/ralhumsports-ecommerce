@@ -9,6 +9,7 @@ interface HashGenerationRequest {
 }
 
 export async function POST(request: NextRequest) {
+  const origin = request.headers.get('origin')
   try {
     const body: HashGenerationRequest = await request.json()
 
@@ -21,7 +22,7 @@ export async function POST(request: NextRequest) {
     ) {
       return NextResponse.json(
         { success: false, error: 'Order ID and amount are required' },
-        { status: 400, headers: getSecurityHeaders() },
+        { status: 400, headers: getSecurityHeaders(origin || undefined) },
       )
     }
 
@@ -37,13 +38,22 @@ export async function POST(request: NextRequest) {
           amount: body.amount,
         },
       },
-      { headers: getSecurityHeaders() },
+      { headers: getSecurityHeaders(origin || undefined) },
     )
   } catch (error) {
     console.error('[PayHere Hash Generation] Error:', error)
     return NextResponse.json(
       { success: false, error: 'Failed to generate hash' },
-      { status: 500, headers: getSecurityHeaders() },
+      { status: 500, headers: getSecurityHeaders(origin || undefined) },
     )
   }
+}
+
+// OPTIONS /api/payhere/generate-hash - Handle CORS preflight
+export async function OPTIONS(request: NextRequest) {
+  const origin = request.headers.get('origin')
+  return new NextResponse(null, {
+    status: 200,
+    headers: getSecurityHeaders(origin || undefined),
+  })
 }
