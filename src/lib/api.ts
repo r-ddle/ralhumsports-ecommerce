@@ -18,23 +18,31 @@ import {
 } from '@/types/api'
 import { useState } from 'react'
 
-// FIXED: Proper base URL detection for HTTPS
+// FIXED: Client-side safe base URL detection
 const getBaseUrl = (): string => {
-  // In production, always use HTTPS
-  if (process.env.NODE_ENV === 'production') {
-    return process.env.NEXT_PUBLIC_SERVER_URL || 'https://ralhumsports.lk'
-  }
-
-  // In development, use the environment variable or default to localhost
+  // First priority: Use the explicit environment variable if set
   if (process.env.NEXT_PUBLIC_SERVER_URL) {
+    console.log('[API] Using NEXT_PUBLIC_SERVER_URL:', process.env.NEXT_PUBLIC_SERVER_URL)
     return process.env.NEXT_PUBLIC_SERVER_URL
   }
 
-  // Development fallback
+  // Second priority: Detect from browser location (client-side)
   if (typeof window !== 'undefined') {
-    return window.location.origin
+    const origin = window.location.origin
+    console.log('[API] Using window.location.origin:', origin)
+
+    // Force HTTPS in production domains
+    if (origin.includes('ralhumsports.lk') && origin.startsWith('http:')) {
+      const httpsUrl = origin.replace('http:', 'https:')
+      console.log('[API] Converting HTTP to HTTPS:', httpsUrl)
+      return httpsUrl
+    }
+
+    return origin
   }
 
+  // Fallback for server-side rendering
+  console.log('[API] Using fallback localhost')
   return 'http://localhost:3000'
 }
 
@@ -44,17 +52,30 @@ const API_BASE_URL = getBaseUrl()
 class ApiClient {
   private baseUrl: string
 
-  constructor(baseUrl: string = API_BASE_URL) {
-    this.baseUrl = baseUrl
+  constructor() {
+    // Always get fresh baseUrl on instantiation
+    this.baseUrl = getBaseUrl()
+  }
+
+  private getRequestUrl(endpoint: string): string {
+    // Always use fresh base URL detection for each request
+    const currentBaseUrl = getBaseUrl()
+    const url = `${currentBaseUrl}${endpoint}`
+
+    console.log('[API Client] Request URL generation:')
+    console.log('  - Endpoint:', endpoint)
+    console.log('  - Base URL:', currentBaseUrl)
+    console.log('  - Final URL:', url)
+    console.log('  - Environment variables:', {
+      NEXT_PUBLIC_SERVER_URL: process.env.NEXT_PUBLIC_SERVER_URL,
+      NODE_ENV: process.env.NODE_ENV,
+    })
+
+    return url
   }
 
   private async request<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
-    // FIXED: Always use the current baseUrl which includes HTTPS detection
-    const url = `${this.baseUrl}${endpoint}`
-
-    console.log('[API Client] Request URL:', url)
-    console.log('[API Client] Environment:', process.env.NODE_ENV)
-    console.log('[API Client] Base URL:', this.baseUrl)
+    const url = this.getRequestUrl(endpoint)
 
     // Add Next.js caching options
     const cacheOptions: RequestInit = {
@@ -90,6 +111,7 @@ class ApiClient {
     }
 
     try {
+      console.log('[API Client] Making request to:', url)
       const response = await fetch(url, config)
 
       if (!response.ok) {
@@ -104,6 +126,7 @@ class ApiClient {
       return data
     } catch (error) {
       console.error(`[API Client] Request failed: ${endpoint}`, error)
+      console.error('[API Client] Failed URL was:', url)
 
       // Provide better error messages for common issues
       if (error instanceof TypeError && error.message.includes('NetworkError')) {
@@ -357,7 +380,7 @@ class ApiClient {
 
   // Get base URL for other components to use
   getBaseUrl(): string {
-    return this.baseUrl
+    return getBaseUrl()
   }
 }
 
