@@ -11,6 +11,7 @@ type PayloadError = Error & { status?: number }
 // POST /api/public/orders - Create new order (public with rate limiting)
 export const POST = withRateLimit(rateLimitConfigs.strict, async (request: NextRequest) => {
   console.log('\x1b[35m[Orders API] Processing order creation request\x1b[0m')
+  const origin = request.headers.get('origin')
   try {
     const orderData: OrderInput = await request.json()
     console.log(
@@ -22,14 +23,14 @@ export const POST = withRateLimit(rateLimitConfigs.strict, async (request: NextR
     if (!orderData.customer?.fullName || !orderData.customer?.email || !orderData.customer?.phone) {
       return NextResponse.json(
         { success: false, error: 'Customer information is required' },
-        { status: 400, headers: getSecurityHeaders() },
+        { status: 400, headers: getSecurityHeaders(origin || undefined) },
       )
     }
 
     if (!orderData.items || orderData.items.length === 0) {
       return NextResponse.json(
         { success: false, error: 'Order items are required' },
-        { status: 400, headers: getSecurityHeaders() },
+        { status: 400, headers: getSecurityHeaders(origin || undefined) },
       )
     }
 
@@ -101,7 +102,7 @@ export const POST = withRateLimit(rateLimitConfigs.strict, async (request: NextR
           error: 'Failed to create customer',
           details: customerError instanceof Error ? customerError.message : String(customerError),
         },
-        { status: 500, headers: getSecurityHeaders() },
+        { status: 500, headers: getSecurityHeaders(origin || undefined) },
       )
     }
 
@@ -219,7 +220,7 @@ export const POST = withRateLimit(rateLimitConfigs.strict, async (request: NextR
 
       return NextResponse.json(
         { success: true, data: responseData },
-        { headers: getSecurityHeaders() },
+        { headers: getSecurityHeaders(origin || undefined) },
       )
     } catch (orderError) {
       console.error('\x1b[41m[Orders API] Error creating order:\x1b[0m', orderError)
@@ -260,6 +261,7 @@ export const POST = withRateLimit(rateLimitConfigs.strict, async (request: NextR
 export const GET = withRateLimit(
   rateLimitConfigs.moderate,
   requireAdminOrManager(async (request: NextRequest, auth) => {
+    const origin = request.headers.get('origin')
     try {
       const { searchParams } = new URL(request.url)
       const page = parseInt(searchParams.get('page') || '1')
@@ -324,7 +326,7 @@ export const GET = withRateLimit(
             hasPrevPage: result.hasPrevPage,
           },
         },
-        { headers: getSecurityHeaders() },
+        { headers: getSecurityHeaders(origin || undefined) },
       )
     } catch (error) {
       console.error('\x1b[41m\x1b[37m[Orders API ERROR]\x1b[0m', error)
@@ -334,8 +336,17 @@ export const GET = withRateLimit(
           error: 'Failed to fetch orders',
           details: error instanceof Error ? error.message : String(error),
         },
-        { status: 500, headers: getSecurityHeaders() },
+        { status: 500, headers: getSecurityHeaders(origin || undefined) },
       )
     }
   }),
 )
+
+// OPTIONS /api/public/orders - Handle CORS preflight
+export async function OPTIONS(request: NextRequest) {
+  const origin = request.headers.get('origin')
+  return new NextResponse(null, {
+    status: 200,
+    headers: getSecurityHeaders(origin || undefined),
+  })
+}

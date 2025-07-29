@@ -249,14 +249,38 @@ export function createFilteredResponse(
 }
 
 /**
- * Security headers for API responses
+ * Security headers for API responses with CORS support
  */
-export function getSecurityHeaders(): Record<string, string> {
+export function getSecurityHeaders(requestOrigin?: string): Record<string, string> {
+  // Get allowed origins from environment variables
+  const allowedOrigins = [
+    process.env.PAYLOAD_PUBLIC_SERVER_URL,
+    process.env.NEXT_PUBLIC_SERVER_URL,
+    'https://ralhumsports.lk',
+    'https://www.ralhumsports.lk',
+    'https://admin.ralhumsports.lk',
+    'http://localhost:3000',
+    'https://localhost:3000',
+  ].filter(Boolean)
+
+  // Determine CORS origin based on request
+  let corsOrigin = '*'
+  if (requestOrigin && allowedOrigins.includes(requestOrigin)) {
+    corsOrigin = requestOrigin
+  } else if (allowedOrigins.includes('https://ralhumsports.lk')) {
+    corsOrigin = 'https://ralhumsports.lk'
+  }
+
   return {
     'X-Content-Type-Options': 'nosniff',
     'X-Frame-Options': 'DENY',
     'X-XSS-Protection': '1; mode=block',
     'Referrer-Policy': 'strict-origin-when-cross-origin',
     'Content-Security-Policy': "default-src 'self'",
+    // CORS headers
+    'Access-Control-Allow-Origin': corsOrigin,
+    'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
+    'Access-Control-Allow-Headers': 'Content-Type, Authorization, X-Requested-With',
+    'Access-Control-Allow-Credentials': 'true',
   }
 }
