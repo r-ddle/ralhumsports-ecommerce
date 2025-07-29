@@ -20,6 +20,19 @@ interface PayHereCheckoutProps {
   onDismiss?: () => void
 }
 
+// Fixed base URL detection for HTTPS
+const getApiBaseUrl = (): string => {
+  if (process.env.NODE_ENV === 'production') {
+    return process.env.NEXT_PUBLIC_SERVER_URL || 'https://ralhumsports.lk'
+  }
+
+  if (typeof window !== 'undefined') {
+    return window.location.origin
+  }
+
+  return 'http://localhost:3000'
+}
+
 export function PayHereCheckout({
   orderData,
   orderId,
@@ -59,7 +72,12 @@ export function PayHereCheckout({
 
       // Provide user-friendly error messages
       let userMessage = 'Payment failed. Please try again.'
-      if (error.toLowerCase().includes('network')) {
+      if (
+        error.toLowerCase().includes('unauthorized') ||
+        error.toLowerCase().includes('merchant')
+      ) {
+        userMessage = 'Payment system configuration error. Please contact support.'
+      } else if (error.toLowerCase().includes('network')) {
         userMessage = 'Network error. Please check your connection and try again.'
       } else if (error.toLowerCase().includes('timeout')) {
         userMessage = 'Payment timed out. Please try again.'
@@ -77,15 +95,23 @@ export function PayHereCheckout({
     setError(null)
 
     try {
-      console.log('Generating hash for order:', orderId, 'amount:', totalAmount)
+      console.log('[PayHere Checkout] Generating hash for order:', orderId, 'amount:', totalAmount)
 
-      // Generate hash from server
-      const hashResponse = await fetch('/api/payhere/generate-hash', {
+      // FIXED: Use absolute HTTPS URL in production
+      const baseUrl = getApiBaseUrl()
+      const hashUrl = `${baseUrl}/api/payhere/generate-hash`
+
+      console.log('[PayHere Checkout] API Base URL:', baseUrl)
+      console.log('[PayHere Checkout] Hash URL:', hashUrl)
+      console.log('[PayHere Checkout] Environment:', process.env.NODE_ENV)
+
+      // Generate hash from server with proper headers
+      const hashResponse = await fetch(hashUrl, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          // Ensure Referer header is present
-          Referer: window.location.origin,
+          // Ensure Referer header is present for PayHere domain validation
+          Referer: typeof window !== 'undefined' ? window.location.origin : baseUrl,
         },
         body: JSON.stringify({
           orderId,
@@ -94,20 +120,25 @@ export function PayHereCheckout({
         }),
       })
 
+      console.log('[PayHere Checkout] Hash response status:', hashResponse.status)
+
       if (!hashResponse.ok) {
-        const errorData = await hashResponse.json()
+        const errorData = await hashResponse.json().catch(() => ({
+          error: `Network error: ${hashResponse.status}`,
+        }))
+        console.error('[PayHere Checkout] Hash generation failed:', errorData)
         throw new Error(errorData.error || 'Failed to generate payment hash')
       }
 
       const { data } = await hashResponse.json()
-      console.log('Hash generated successfully:', data.hash)
+      console.log('[PayHere Checkout] Hash generated successfully')
 
       // Use provided URLs or create sensible defaults
-      const currentDomain = window.location.origin
+      const currentDomain = typeof window !== 'undefined' ? window.location.origin : baseUrl
       const _returnUrl = returnUrl || `${currentDomain}/checkout/success?orderId=${orderId}`
       const _cancelUrl = cancelUrl || `${currentDomain}/checkout/cancel?orderId=${orderId}`
 
-      console.log('Payment URLs:', { return: _returnUrl, cancel: _cancelUrl })
+      console.log('[PayHere Checkout] Payment URLs:', { return: _returnUrl, cancel: _cancelUrl })
 
       // Build payment object
       const payment = buildPaymentObject(
@@ -138,26 +169,26 @@ export function PayHereCheckout({
 
       // Debug: log payment object (but hide sensitive data in production)
       if (process.env.NODE_ENV === 'development') {
-        console.log('PayHere payment object:', {
+        console.log('[PayHere Checkout] Payment object:', {
           ...payment,
-          hash: '***HIDDEN***',
-          merchant_id: '***HIDDEN***',
+          hash: payment.hash.substring(0, 8) + '...',
+          merchant_id: payment.merchant_id?.substring(0, 4) + '...',
         })
       }
 
       // Validate required fields before starting payment
-      if (!payment.merchant_id || !payment.hash || !payment.order_id) {
+      if (!payment.merchant_id || !payment.hash || !payment.order_id || !payment.amount) {
         throw new Error('Missing required payment parameters')
       }
 
       // Start payment
-      console.log('Starting PayHere payment...')
+      console.log('[PayHere Checkout] Starting payment...')
       startPayment(payment)
 
       // Show processing message
       toast.loading('Opening payment gateway...', { duration: 2000 })
     } catch (err) {
-      console.error('Payment initiation error:', err)
+      console.error('[PayHere Checkout] Payment initiation error:', err)
       const errorMessage = err instanceof Error ? err.message : 'Failed to initiate payment'
       setError(errorMessage)
       setIsProcessing(false)
@@ -166,8 +197,11 @@ export function PayHereCheckout({
       let userMessage = errorMessage
       if (errorMessage.includes('hash')) {
         userMessage = 'Payment security verification failed. Please try again or contact support.'
-      } else if (errorMessage.includes('credentials')) {
+      } else if (errorMessage.includes('credentials') || errorMessage.includes('merchant')) {
         userMessage = 'Payment system configuration error. Please contact support.'
+      } else if (errorMessage.includes('Network')) {
+        userMessage =
+          'Network connection failed. Please check your internet connection and try again.'
       }
 
       toast.error(`Payment Error: ${userMessage}`)
@@ -225,8 +259,11 @@ export function PayHereCheckout({
             <strong>Debug Info:</strong>
           </p>
           <p>Merchant ID: {process.env.NEXT_PUBLIC_PAYHERE_MERCHANT_ID}</p>
-          <p>Sandbox Mode: {process.env.NODE_ENV === 'development' ? 'Yes' : 'No'}</p>
+          <p>Order ID: {orderId}</p>
           <p>Amount: LKR {totalAmount.toFixed(2)}</p>
+          <p>Environment: {process.env.NODE_ENV}</p>
+          <p>API Base URL: {getApiBaseUrl()}</p>
+          <p>Sandbox Mode: {(process.env.NODE_ENV as string) !== 'production' ? 'Yes' : 'No'}</p>
         </div>
       )}
     </div>
