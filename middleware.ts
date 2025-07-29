@@ -53,10 +53,11 @@ export function middleware(request: NextRequest) {
   }
   const response = NextResponse.next()
 
-  // Add security headers to all responses
+  // Add security headers to all responses BUT preserve Referer header for PayHere
   response.headers.set('X-Content-Type-Options', 'nosniff')
   response.headers.set('X-Frame-Options', 'DENY')
   response.headers.set('X-XSS-Protection', '1; mode=block')
+  // Updated: Use strict-origin-when-cross-origin instead of no-referrer to preserve Referer header
   response.headers.set('Referrer-Policy', 'strict-origin-when-cross-origin')
 
   // CORS headers for API routes
@@ -64,31 +65,48 @@ export function middleware(request: NextRequest) {
     // Define allowed origins
     const allowedOrigins = [
       process.env.NEXT_PUBLIC_SERVER_URL || 'http://localhost:3000',
-      'https://ralhumsports.lk', // Replace with your production domain
-      'https://ralhumsports.lk', // Replace with your actual domain
+      'https://ralhumsports.lk',
+      'https://www.ralhumsports.lk',
+      'https://admin.ralhumsports.lk',
+      // Add PayHere domains for webhook callbacks
+      'https://www.payhere.lk',
+      'https://sandbox.payhere.lk',
     ].filter(Boolean)
 
     const origin = request.headers.get('origin') || ''
 
-    // Check if the origin is allowed
-    if (allowedOrigins.includes(origin)) {
-      response.headers.set('Access-Control-Allow-Origin', origin)
-    } else if (process.env.NODE_ENV === 'development') {
-      // Allow localhost in development
-      response.headers.set('Access-Control-Allow-Origin', 'http://localhost:3000')
-    }
+    // Special handling for PayHere notification endpoint
+    if (request.nextUrl.pathname === '/api/payhere/notify') {
+      // Allow PayHere to send notifications without CORS restrictions
+      response.headers.set('Access-Control-Allow-Origin', '*')
+      response.headers.set('Access-Control-Allow-Methods', 'POST, GET, OPTIONS')
+      response.headers.set('Access-Control-Allow-Headers', 'Content-Type, Referer')
 
-    response.headers.set('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS, PATCH')
-    response.headers.set(
-      'Access-Control-Allow-Headers',
-      'Content-Type, Authorization, X-Requested-With',
-    )
-    response.headers.set('Access-Control-Allow-Credentials', 'true')
-    response.headers.set('Access-Control-Max-Age', '86400') // 24 hours
+      // Handle preflight requests
+      if (request.method === 'OPTIONS') {
+        return new Response(null, { status: 204, headers: response.headers })
+      }
+    } else {
+      // Regular CORS handling for other API routes
+      if (allowedOrigins.includes(origin)) {
+        response.headers.set('Access-Control-Allow-Origin', origin)
+      } else if (process.env.NODE_ENV === 'development') {
+        // Allow localhost in development
+        response.headers.set('Access-Control-Allow-Origin', 'http://localhost:3000')
+      }
 
-    // Handle preflight requests
-    if (request.method === 'OPTIONS') {
-      return new Response(null, { status: 204, headers: response.headers })
+      response.headers.set('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS, PATCH')
+      response.headers.set(
+        'Access-Control-Allow-Headers',
+        'Content-Type, Authorization, X-Requested-With, Referer',
+      )
+      response.headers.set('Access-Control-Allow-Credentials', 'true')
+      response.headers.set('Access-Control-Max-Age', '86400') // 24 hours
+
+      // Handle preflight requests
+      if (request.method === 'OPTIONS') {
+        return new Response(null, { status: 204, headers: response.headers })
+      }
     }
   }
 
@@ -101,15 +119,19 @@ export function middleware(request: NextRequest) {
     })
   }
 
-  // Block suspicious user agents
+  // Block suspicious user agents BUT allow PayHere's user agent
   const userAgent = request.headers.get('user-agent')
+  const isPayHereRequest = request.nextUrl.pathname === '/api/payhere/notify'
+
   if (!userAgent || userAgent.length < 10) {
-    // Allow empty user agents for legitimate tools, but log it
-    console.log('Request with suspicious user agent:', userAgent)
+    if (!isPayHereRequest) {
+      // Allow empty user agents for legitimate tools, but log it
+      console.log('Request with suspicious user agent:', userAgent)
+    }
   }
 
-  // Basic bot protection for API routes
-  if (request.nextUrl.pathname.startsWith('/api/')) {
+  // Basic bot protection for API routes (but allow PayHere)
+  if (request.nextUrl.pathname.startsWith('/api/') && !isPayHereRequest) {
     const suspiciousBots = ['curl', 'wget', 'python-requests', 'scrapy']
     if (userAgent && suspiciousBots.some((bot) => userAgent.toLowerCase().includes(bot))) {
       return new Response(JSON.stringify({ success: false, error: 'Access denied' }), {

@@ -29,6 +29,7 @@ import {
   Mail,
   MapPin,
   Package,
+  Loader2,
 } from 'lucide-react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
@@ -47,6 +48,7 @@ import Image from 'next/image'
 import { motion, AnimatePresence, easeOut } from 'framer-motion'
 import { SITE_CONFIG } from '@/config/site-config'
 import { useRef } from 'react'
+import { PayHereCheckout } from '@/components/payherecheckout'
 // CitySearchComponent for city, postal code, and province selection
 function CitySearchComponent({
   value,
@@ -238,6 +240,29 @@ export default function CheckoutPage() {
   const [showConfirmation, setShowConfirmation] = useState(false)
   const [confirmationOrderId, setConfirmationOrderId] = useState('')
   const [apiError, setApiError] = useState<string | null>(null)
+  const [isProcessing, setIsProcessing] = useState(false)
+
+  // Memoized form validation state
+  const [isFormValid, setIsFormValid] = useState(false)
+
+  // Check form validity on state changes
+  useEffect(() => {
+    const { customerInfo } = checkoutState
+
+    const isValid = !!(
+      customerInfo.fullName?.trim() &&
+      customerInfo.email?.trim() &&
+      /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(customerInfo.email || '') &&
+      customerInfo.phone?.trim() &&
+      validateSriLankanPhone(customerInfo.phone || '') &&
+      customerInfo.address?.street?.trim() &&
+      customerInfo.address?.city?.trim() &&
+      customerInfo.address?.postalCode?.trim() &&
+      customerInfo.address?.province?.trim()
+    )
+
+    setIsFormValid(isValid)
+  }, [checkoutState.customerInfo])
 
   // Performance optimization: Check for reduced motion preference
   useEffect(() => {
@@ -313,6 +338,81 @@ export default function CheckoutPage() {
 
     setCheckoutState((prev) => ({ ...prev, errors }))
     return Object.keys(errors).length === 0
+  }
+
+  const handleWhatsAppOrder = async () => {
+    if (!validateForm()) return
+
+    setIsProcessing(true)
+    setApiError(null)
+
+    try {
+      // Create order first
+      const orderResponse = await api.createOrder({
+        customer: {
+          fullName: checkoutState.customerInfo.fullName!,
+          email: checkoutState.customerInfo.email!,
+          phone: checkoutState.customerInfo.phone!,
+          secondaryPhone: checkoutState.customerInfo.secondaryPhone,
+          address: {
+            street: checkoutState.customerInfo.address?.street ?? '',
+            city: checkoutState.customerInfo.address?.city ?? '',
+            postalCode: checkoutState.customerInfo.address?.postalCode ?? '',
+            province: checkoutState.customerInfo.address?.province ?? '',
+          },
+        },
+        items: cart.items.map((item) => ({
+          id: item.id,
+          productId: item.product.id.toString(),
+          productName: item.product.title,
+          productSku: item.variant?.sku || item.product.sku,
+          variantId: item.variant?.id,
+          unitPrice: item.variant?.price,
+          quantity: item.quantity,
+          selectedSize: item.variant?.size,
+          selectedColor: item.variant?.color,
+          subtotal: item.variant?.price * item.quantity,
+        })),
+        pricing: checkoutState.pricing,
+      })
+
+      if (!orderResponse.success || !orderResponse.data) {
+        throw new Error(orderResponse.error || 'Failed to create order')
+      }
+
+      // Build order summary from API response only
+      const orderSummary: OrderSummary = {
+        orderId: orderResponse.data.orderNumber,
+        items: cart.items,
+        customer: {
+          fullName: checkoutState.customerInfo.fullName!,
+          email: checkoutState.customerInfo.email!,
+          phone: checkoutState.customerInfo.phone!,
+          address: {
+            street: checkoutState.customerInfo.address?.street ?? '',
+            city: checkoutState.customerInfo.address?.city ?? '',
+            postalCode: checkoutState.customerInfo.address?.postalCode ?? '',
+            province: checkoutState.customerInfo.address?.province ?? '',
+          },
+          specialInstructions: checkoutState.customerInfo.specialInstructions,
+        },
+        pricing: checkoutState.pricing,
+        createdAt: new Date().toISOString(),
+        status: 'pending',
+      }
+
+      // Only call openWhatsAppOrder after order is created and orderId is present
+      openWhatsAppOrder(orderSummary)
+
+      // Clear cart and redirect
+      clearCart()
+      router.push(`/checkout/success?orderId=${orderResponse.data.orderNumber}`)
+    } catch (error) {
+      console.error('Order creation error:', error)
+      setApiError(error instanceof Error ? error.message : 'Failed to create order')
+    } finally {
+      setIsProcessing(false)
+    }
   }
 
   const handleInputChange = (field: string, value: string) => {
@@ -796,45 +896,162 @@ export default function CheckoutPage() {
                   <CardTitle className="text-text-primary">Payment Options</CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-6">
-                  {/* PayHere Online Payment */}
-                  <div className="relative"></div>
+                  {/* Enhanced Payment Options */}
+                  <div className="space-y-6">
+                    <div className="flex items-center gap-3 mb-4">
+                      <div className="p-2 rounded-lg bg-gradient-to-br from-green-500 to-green-600 text-white">
+                        <CreditCard className="w-5 h-5" />
+                      </div>
+                      <h3 className="text-lg font-bold text-text-primary">Payment Options</h3>
+                    </div>
 
-                  <div className="text-center text-sm text-text-secondary">OR</div>
-
-                  {/* Enhanced WhatsApp Payment */}
-                  <Button
-                    onClick={handleSubmitOrder}
-                    disabled={checkoutState.isSubmitting}
-                    className="w-full h-16 bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white font-bold text-lg rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-[1.02]"
-                  >
-                    {checkoutState.isSubmitting ? (
-                      <>
-                        <motion.div
-                          className="w-6 h-6 mr-3 border-2 border-white border-t-transparent rounded-full"
-                          animate={{ rotate: 360 }}
-                          transition={{
-                            duration: 1,
-                            repeat: Number.POSITIVE_INFINITY,
-                            ease: 'linear',
+                    {/* Payment UX: Only show 'Create Order' button, then show PayHereCheckout after order is created */}
+                    <div className="space-y-3">
+                      {!checkoutState.orderId ? (
+                        <Button
+                          variant="default"
+                          size="lg"
+                          disabled={isProcessing || !isFormValid}
+                          className="w-full font-bold border-2 border-white text-white hover:bg-brand-secondary/10 py-4 text-lg rounded-xl flex items-center justify-center"
+                          onClick={async () => {
+                            if (isProcessing || !isFormValid) return
+                            setIsProcessing(true)
+                            setApiError(null)
+                            try {
+                              const orderResponse = await api.createOrder({
+                                customer: {
+                                  fullName: checkoutState.customerInfo.fullName!,
+                                  email: checkoutState.customerInfo.email!,
+                                  phone: checkoutState.customerInfo.phone!,
+                                  secondaryPhone: checkoutState.customerInfo.secondaryPhone,
+                                  address: {
+                                    street: checkoutState.customerInfo.address?.street ?? '',
+                                    city: checkoutState.customerInfo.address?.city ?? '',
+                                    postalCode:
+                                      checkoutState.customerInfo.address?.postalCode ?? '',
+                                    province: checkoutState.customerInfo.address?.province ?? '',
+                                  },
+                                },
+                                items: cart.items.map((item) => ({
+                                  id: item.id,
+                                  productId: item.product.id.toString(),
+                                  productName: item.product.title,
+                                  productSku: item.variant?.sku || item.product.sku,
+                                  variantId: item.variant?.id,
+                                  unitPrice: item.variant?.price,
+                                  quantity: item.quantity,
+                                  selectedSize: item.variant?.size,
+                                  selectedColor: item.variant?.color,
+                                  subtotal: item.variant?.price * item.quantity,
+                                })),
+                                pricing: checkoutState.pricing,
+                              })
+                              if (!orderResponse.success || !orderResponse.data) {
+                                throw new Error(orderResponse.error || 'Failed to create order')
+                              }
+                              setCheckoutState((prev) => ({
+                                ...prev,
+                                orderId: orderResponse.data?.orderNumber ?? '',
+                              }))
+                            } catch (error) {
+                              setApiError(
+                                error instanceof Error ? error.message : 'Failed to create order',
+                              )
+                            } finally {
+                              setIsProcessing(false)
+                            }
+                          }}
+                        >
+                          {isProcessing ? (
+                            <>
+                              <Loader2 className="w-5 h-5 mr-2 animate-spin" />
+                              Creating Order...
+                            </>
+                          ) : (
+                            <>
+                              <CreditCard className="w-5 h-5 mr-2" />
+                              Create Order
+                            </>
+                          )}
+                        </Button>
+                      ) : (
+                        <PayHereCheckout
+                          orderData={{
+                            customer: {
+                              fullName: checkoutState.customerInfo.fullName || '',
+                              email: checkoutState.customerInfo.email || '',
+                              phone: checkoutState.customerInfo.phone || '',
+                              secondaryPhone: checkoutState.customerInfo.secondaryPhone,
+                              address: {
+                                street: checkoutState.customerInfo.address?.street || '',
+                                city: checkoutState.customerInfo.address?.city || '',
+                                postalCode: checkoutState.customerInfo.address?.postalCode || '',
+                                province: checkoutState.customerInfo.address?.province || '',
+                              },
+                            },
+                            items: cart.items.map((item) => ({
+                              id: item.id,
+                              productId: item.product.id.toString(),
+                              productName: item.product.title,
+                              productSku: item.variant?.sku || item.product.sku,
+                              variantId: item.variant?.id,
+                              unitPrice: item.variant?.price,
+                              quantity: item.quantity,
+                              selectedSize: item.variant?.size,
+                              selectedColor: item.variant?.color,
+                              subtotal: item.variant?.price * item.quantity,
+                            })),
+                            pricing: checkoutState.pricing,
+                          }}
+                          orderId={checkoutState.orderId}
+                          totalAmount={checkoutState.pricing.total}
+                          onSuccess={(orderId) => {
+                            clearCart()
+                            router.push(`/checkout/success?orderId=${orderId}`)
+                          }}
+                          onError={(error) => {
+                            setApiError(error)
                           }}
                         />
-                        Processing...
-                      </>
-                    ) : (
-                      <>
-                        <MessageCircle className="w-6 h-6 mr-3" />
-                        {getWhatsAppButtonText()}
-                      </>
-                    )}
-                  </Button>
+                      )}
 
-                  <Alert className="bg-blue-50 border-blue-200">
-                    <AlertCircle className="h-4 w-4 text-blue-600" />
-                    <AlertDescription className="text-blue-800 text-sm">
-                      Your order will be sent to WhatsApp for confirmation. Our team will provide
-                      payment instructions and process your order.
-                    </AlertDescription>
-                  </Alert>
+                      <div className="relative">
+                        <div className="absolute inset-0 flex items-center">
+                          <span className="w-full border-t border-brand-border" />
+                        </div>
+                        <div className="relative flex justify-center text-xs uppercase">
+                          <span className="bg-brand-surface px-2 text-text-secondary">Or</span>
+                        </div>
+                      </div>
+
+                      {/* WhatsApp Order Option */}
+                      <Button
+                        variant="outline"
+                        size="lg"
+                        onClick={handleWhatsAppOrder}
+                        disabled={isProcessing || !isFormValid}
+                        className="w-full font-bold border-2 border-green-600 text-green-600 hover:bg-green-50 py-4 text-lg rounded-xl"
+                      >
+                        {isProcessing ? (
+                          <>
+                            <Loader2 className="w-5 h-5 mr-2 animate-spin" />
+                            Processing...
+                          </>
+                        ) : (
+                          <>
+                            <MessageCircle className="w-5 h-5 mr-2" />
+                            Order via WhatsApp
+                          </>
+                        )}
+                      </Button>
+                    </div>
+
+                    {/* Security Badge */}
+                    <div className="flex items-center justify-center gap-2 text-sm text-text-secondary">
+                      <Shield className="w-4 h-4 text-green-600" />
+                      <span>Secure payment powered by PayHere</span>
+                    </div>
+                  </div>
                 </CardContent>
               </Card>
 

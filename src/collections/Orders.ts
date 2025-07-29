@@ -461,6 +461,84 @@ export const Orders: CollectionConfig = {
         },
       ],
     },
+
+    // Payment Information
+    {
+      name: 'paymentInfo',
+      type: 'group',
+      label: '💳 Payment Information',
+      admin: {
+        condition: (data) => data?.status?.paymentStatus === 'paid',
+      },
+      fields: [
+        {
+          name: 'paymentMethod',
+          type: 'text',
+          admin: {
+            description: 'Payment method used',
+          },
+        },
+        {
+          name: 'paymentId',
+          type: 'text',
+          admin: {
+            description: 'PayHere Payment ID',
+          },
+        },
+        {
+          name: 'paymentStatus',
+          type: 'text',
+          admin: {
+            description: 'Payment gateway status message',
+          },
+        },
+        {
+          name: 'paymentDate',
+          type: 'date',
+          admin: {
+            description: 'Payment completion date',
+            date: {
+              pickerAppearance: 'dayAndTime',
+            },
+          },
+        },
+        {
+          name: 'cardInfo',
+          type: 'group',
+          admin: {
+            description: 'Card payment details',
+            condition: (_, siblingData) =>
+              siblingData?.paymentMethod === 'VISA' || siblingData?.paymentMethod === 'MASTER',
+          },
+          fields: [
+            {
+              name: 'maskedNumber',
+              type: 'text',
+              admin: {
+                description: 'Masked card number',
+                readOnly: true,
+              },
+            },
+            {
+              name: 'cardHolderName',
+              type: 'text',
+              admin: {
+                description: 'Card holder name',
+                readOnly: true,
+              },
+            },
+            {
+              name: 'expiryDate',
+              type: 'text',
+              admin: {
+                description: 'Card expiry (MMYY)',
+                readOnly: true,
+              },
+            },
+          ],
+        },
+      ],
+    },
   ],
   hooks: {
     beforeChange: [

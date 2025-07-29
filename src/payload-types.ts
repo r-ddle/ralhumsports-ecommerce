@@ -875,6 +875,41 @@ export interface Order {
      */
     customerResponse?: string | null;
   };
+  paymentInfo?: {
+    /**
+     * Payment method used
+     */
+    paymentMethod?: string | null;
+    /**
+     * PayHere Payment ID
+     */
+    paymentId?: string | null;
+    /**
+     * Payment gateway status message
+     */
+    paymentStatus?: string | null;
+    /**
+     * Payment completion date
+     */
+    paymentDate?: string | null;
+    /**
+     * Card payment details
+     */
+    cardInfo?: {
+      /**
+       * Masked card number
+       */
+      maskedNumber?: string | null;
+      /**
+       * Card holder name
+       */
+      cardHolderName?: string | null;
+      /**
+       * Card expiry (MMYY)
+       */
+      expiryDate?: string | null;
+    };
+  };
   updatedAt: string;
   createdAt: string;
 }
@@ -1546,6 +1581,21 @@ export interface OrdersSelect<T extends boolean = true> {
         messageTimestamp?: T;
         messageTemplate?: T;
         customerResponse?: T;
+      };
+  paymentInfo?:
+    | T
+    | {
+        paymentMethod?: T;
+        paymentId?: T;
+        paymentStatus?: T;
+        paymentDate?: T;
+        cardInfo?:
+          | T
+          | {
+              maskedNumber?: T;
+              cardHolderName?: T;
+              expiryDate?: T;
+            };
       };
   updatedAt?: T;
   createdAt?: T;
