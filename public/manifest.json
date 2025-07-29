@@ -1,0 +1,31 @@
+{
+  "name": "Ralhum Sports - Sri Lanka Sports Equipment Store",
+  "short_name": "Ralhum Sports",
+  "description": "Shop top-quality cricket, rugby, hockey, basketball & tennis gear in Sri Lanka. Official distributor of Gray-Nicolls, Gilbert, Molten & Grays.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#FF6B35",
+  "orientation": "portrait-primary",
+  "categories": ["sports", "shopping", "business"],
+  "lang": "en",
+  "scope": "/",
+  "icons": [
+    {
+      "src": "/ralhumlogo.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/ralhumlogo.svg",
+      "sizes": "192x192",
+      "type": "image/svg+xml"
+    },
+    {
+      "src": "/ralhumlogo.svg",
+      "sizes": "512x512",
+      "type": "image/svg+xml"
+    }
+  ]
+}

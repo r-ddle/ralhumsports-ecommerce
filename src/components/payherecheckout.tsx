@@ -8,6 +8,8 @@ import { buildPaymentObject } from '@/lib/payhere'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { toast } from 'sonner'
 import type { OrderInput } from '@/types/api'
+import { paymentLogger } from '@/lib/logger'
+import { LoadingSpinner } from '@/components/ui/loading-spinner'
 
 interface PayHereCheckoutProps {
   orderData: OrderInput
@@ -54,21 +56,32 @@ export function PayHereCheckout({
 
     // Set up PayHere callbacks
     window.payhere.onCompleted = (orderId: string) => {
-      console.log('Payment completed for order:', orderId)
+      paymentLogger.success(orderId)
       setIsProcessing(false)
-      toast.success('Payment completed successfully! You will be redirected shortly.')
-      onSuccess?.(orderId)
+
+      // Show success toast with shorter duration
+      const successToast = toast.success('Payment completed successfully!', {
+        duration: 2000,
+      })
+
+      // Clear the toast and redirect after a short delay
+      setTimeout(() => {
+        toast.dismiss(successToast)
+        onSuccess?.(orderId)
+      }, 1500)
     }
 
     window.payhere.onDismissed = () => {
-      console.log('Payment dismissed')
+      paymentLogger.error(orderId, 'Payment dismissed by user')
       setIsProcessing(false)
-      toast.info('Payment was cancelled. You can try again when ready.')
+      toast.info('Payment was cancelled. You can try again when ready.', {
+        duration: 4000,
+      })
       onDismiss?.()
     }
 
     window.payhere.onError = (error: string) => {
-      console.error('Payment error:', error)
+      paymentLogger.error(orderId, error)
       setIsProcessing(false)
       setError(error)
 
@@ -87,7 +100,7 @@ export function PayHereCheckout({
         userMessage = 'Card error. Please check your card details and try again.'
       }
 
-      toast.error(userMessage)
+      toast.error(userMessage, { duration: 6000 })
       onError?.(error)
     }
   }, [isLoaded, onSuccess, onError, onDismiss])
@@ -187,13 +200,22 @@ export function PayHereCheckout({
       console.log('[PayHere Checkout] Starting payment...')
       startPayment(payment)
 
-      // Show processing message
-      toast.loading('Opening payment gateway...', { duration: 2000 })
+      // Clear any existing toasts and show processing message
+      toast.dismiss()
+      const loadingToast = toast.loading('Opening payment gateway...', { duration: 3000 })
+
+      // Clear loading toast after payment popup opens
+      setTimeout(() => {
+        toast.dismiss(loadingToast)
+      }, 2500)
     } catch (err) {
       console.error('[PayHere Checkout] Payment initiation error:', err)
       const errorMessage = err instanceof Error ? err.message : 'Failed to initiate payment'
       setError(errorMessage)
       setIsProcessing(false)
+
+      // Clear any existing toasts first
+      toast.dismiss()
 
       // Provide helpful error messages
       let userMessage = errorMessage
@@ -206,7 +228,16 @@ export function PayHereCheckout({
           'Network connection failed. Please check your internet connection and try again.'
       }
 
-      toast.error(`Payment Error: ${userMessage}`)
+      toast.error(`Payment Error: ${userMessage}`, {
+        duration: 8000,
+        action: {
+          label: 'Retry',
+          onClick: () => {
+            setError(null)
+            handlePayment()
+          },
+        },
+      })
     }
   }
 
@@ -234,7 +265,7 @@ export function PayHereCheckout({
       >
         {isLoading || isProcessing ? (
           <>
-            <Loader2 className="w-5 h-5 mr-2 animate-spin" />
+            <LoadingSpinner size="sm" className="mr-2" />
             {isLoading ? 'Loading Payment Gateway...' : 'Processing Payment...'}
           </>
         ) : (

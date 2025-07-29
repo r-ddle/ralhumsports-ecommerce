@@ -47,177 +47,7 @@ import { toast } from 'sonner'
 import Image from 'next/image'
 import { motion, AnimatePresence, easeOut } from 'framer-motion'
 import { SITE_CONFIG } from '@/config/site-config'
-import { useRef } from 'react'
 import { PayHereCheckout } from '@/components/payherecheckout'
-// CitySearchComponent for city, postal code, and province selection
-function CitySearchComponent({
-  value,
-  onChange,
-  errors,
-}: {
-  value: { city: string; postalCode: string; province: string }
-  onChange: (v: { city: string; postalCode: string; province: string }) => void
-  errors: { city?: string; postalCode?: string; province?: string }
-}) {
-  const [searchTerm, setSearchTerm] = useState(value.city || '')
-  const [isDropdownOpen, setIsDropdownOpen] = useState(false)
-  const [filteredCities, setFilteredCities] = useState<any[]>([])
-  const dropdownRef = useRef<HTMLDivElement>(null)
-  const inputRef = useRef<HTMLInputElement>(null)
-
-  useEffect(() => {
-    setSearchTerm(value.city || '')
-  }, [value.city])
-
-  // Filter cities based on search term
-  useEffect(() => {
-    if (searchTerm.length > 0) {
-      const filtered = SITE_CONFIG.SRI_LANKAN_CITIES.filter(
-        (city: any) =>
-          city.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          city.province.toLowerCase().includes(searchTerm.toLowerCase()),
-      ).slice(0, 10)
-      setFilteredCities(filtered)
-      setIsDropdownOpen(true)
-    } else {
-      setFilteredCities([])
-      setIsDropdownOpen(false)
-    }
-  }, [searchTerm])
-
-  // Close dropdown when clicking outside
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
-        setIsDropdownOpen(false)
-      }
-    }
-    document.addEventListener('mousedown', handleClickOutside)
-    return () => document.removeEventListener('mousedown', handleClickOutside)
-  }, [])
-
-  const handleCitySelect = (city: any) => {
-    onChange({ city: city.name, postalCode: city.postalCode, province: city.province })
-    setSearchTerm(city.name)
-    setIsDropdownOpen(false)
-  }
-
-  const handleInputChange = (value: string) => {
-    setSearchTerm(value)
-    if (value === '') {
-      onChange({ city: '', postalCode: '', province: '' })
-    } else {
-      onChange({ city: value, postalCode: '', province: '' })
-    }
-  }
-
-  const handleProvinceChange = (province: string) => {
-    onChange({ ...value, province })
-  }
-
-  return (
-    <>
-      <div className="grid md:grid-cols-2 gap-6">
-        {/* City Search Input */}
-        <div className="relative" ref={dropdownRef}>
-          <Label htmlFor="city" className="block text-base font-semibold text-text-primary mb-2">
-            City *
-          </Label>
-          <div className="relative">
-            <Input
-              ref={inputRef}
-              id="city"
-              type="text"
-              value={searchTerm}
-              onChange={(e) => handleInputChange(e.target.value)}
-              placeholder="Search for your city..."
-              className={`w-full h-12 px-4 pr-10 border-2 rounded-xl bg-brand-background focus:outline-none focus:ring-2 focus:ring-brand-secondary transition-all ${
-                errors.city
-                  ? 'border-red-500 focus:border-red-500'
-                  : 'border-brand-border focus:border-brand-secondary'
-              }`}
-            />
-            <MapPin className="absolute right-3 top-1/2 transform -translate-y-1/2 text-brand-secondary w-5 h-5" />
-          </div>
-          {/* Dropdown */}
-          {isDropdownOpen && filteredCities.length > 0 && (
-            <div className="absolute z-50 w-full mt-1 bg-white border border-brand-border rounded-lg shadow-lg max-h-60 overflow-y-auto">
-              {filteredCities.map((city, index) => (
-                <div
-                  key={index}
-                  onClick={() => handleCitySelect(city)}
-                  className="px-4 py-3 cursor-pointer hover:bg-brand-background border-b border-brand-border last:border-b-0 transition-colors"
-                >
-                  <div className="flex items-center gap-2">
-                    <MapPin className="w-4 h-4 text-brand-secondary" />
-                    <div>
-                      <div className="font-medium text-text-primary">{city.name}</div>
-                      <div className="text-sm text-text-secondary">
-                        {city.province} • {city.postalCode}
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-          {searchTerm && filteredCities.length === 0 && isDropdownOpen && (
-            <div className="absolute z-50 w-full mt-1 bg-white border border-brand-border rounded-lg shadow-lg p-4 text-center text-text-secondary">
-              No cities found matching &quot;{searchTerm}&quot;
-            </div>
-          )}
-          {errors.city && <p className="text-sm text-red-600 mt-2">{errors.city}</p>}
-        </div>
-        {/* Auto-filled Postal Code */}
-        <div>
-          <Label
-            htmlFor="postalCode"
-            className="block text-base font-semibold text-text-primary mb-2"
-          >
-            Postal Code *
-          </Label>
-          <Input
-            id="postalCode"
-            type="text"
-            value={value.postalCode}
-            readOnly
-            className={`w-full h-12 px-4 border-2 rounded-xl bg-brand-background text-text-primary cursor-not-allowed ${
-              errors.postalCode ? 'border-red-500' : 'border-brand-border'
-            }`}
-            placeholder="Will be auto-filled when you select a city"
-          />
-          {errors.postalCode && <p className="text-sm text-red-600 mt-2">{errors.postalCode}</p>}
-        </div>
-      </div>
-      {/* Province Selection */}
-      <div className="mt-6">
-        <Label htmlFor="province" className="block text-base font-semibold text-text-primary mb-2">
-          Province *
-        </Label>
-        <div className="relative">
-          <select
-            id="province"
-            value={value.province}
-            onChange={(e) => handleProvinceChange(e.target.value)}
-            className={`w-full h-12 px-4 pr-10 border-2 rounded-xl bg-brand-background focus:outline-none focus:ring-2 focus:ring-brand-secondary transition-all appearance-none ${
-              errors.province
-                ? 'border-red-500 focus:border-red-500'
-                : 'border-brand-border focus:border-brand-secondary'
-            }`}
-          >
-            <option value="">Select your province</option>
-            {SITE_CONFIG.SRI_LANKAN_PROVINCES.map((province: string) => (
-              <option key={province} value={province}>
-                {province}
-              </option>
-            ))}
-          </select>
-        </div>
-        {errors.province && <p className="text-sm text-red-600 mt-2">{errors.province}</p>}
-      </div>
-    </>
-  )
-}
 
 export default function CheckoutPage() {
   const router = useRouter()
@@ -762,35 +592,82 @@ export default function CheckoutPage() {
                     )}
                   </div>
 
-                  {/* City, Postal Code, Province - Enhanced Search */}
-                  <CitySearchComponent
-                    value={{
-                      city: checkoutState.customerInfo.address?.city || '',
-                      postalCode: checkoutState.customerInfo.address?.postalCode || '',
-                      province: checkoutState.customerInfo.address?.province || '',
-                    }}
-                    onChange={({ city, postalCode, province }) => {
-                      setCheckoutState((prev) => ({
-                        ...prev,
-                        customerInfo: {
-                          ...prev.customerInfo,
-                          address: {
-                            ...prev.customerInfo.address,
-                            city,
-                            postalCode,
-                            province,
-                          },
-                        },
-                        errors: {
-                          ...prev.errors,
-                          city: undefined,
-                          postalCode: undefined,
-                          province: undefined,
-                        },
-                      }))
-                    }}
-                    errors={checkoutState.errors}
-                  />
+                  {/* City, Postal Code, Province - Simple Inputs */}
+                  <div className="grid md:grid-cols-2 gap-6">
+                    <div>
+                      <Label htmlFor="city" className="text-base font-semibold text-text-primary">
+                        City *
+                      </Label>
+                      <Input
+                        id="city"
+                        value={checkoutState.customerInfo.address?.city || ''}
+                        onChange={(e) => handleInputChange('address.city', e.target.value)}
+                        required
+                        className={`mt-2 h-12 border-2 rounded-xl bg-brand-background ${
+                          checkoutState.errors.city
+                            ? 'border-red-500'
+                            : 'border-brand-border focus:border-brand-secondary'
+                        }`}
+                        placeholder="Enter your city"
+                      />
+                      {checkoutState.errors.city && (
+                        <p className="text-sm text-red-600 mt-2">{checkoutState.errors.city}</p>
+                      )}
+                    </div>
+                    <div>
+                      <Label htmlFor="postalCode" className="text-base font-semibold text-text-primary">
+                        Postal Code *
+                      </Label>
+                      <Input
+                        id="postalCode"
+                        value={checkoutState.customerInfo.address?.postalCode || ''}
+                        onChange={(e) => handleInputChange('address.postalCode', e.target.value)}
+                        required
+                        className={`mt-2 h-12 border-2 rounded-xl bg-brand-background ${
+                          checkoutState.errors.postalCode
+                            ? 'border-red-500'
+                            : 'border-brand-border focus:border-brand-secondary'
+                        }`}
+                        placeholder="Enter postal code"
+                      />
+                      {checkoutState.errors.postalCode && (
+                        <p className="text-sm text-red-600 mt-2">{checkoutState.errors.postalCode}</p>
+                      )}
+                    </div>
+                  </div>
+                  <div>
+                    <Label htmlFor="province" className="text-base font-semibold text-text-primary">
+                      Province *
+                    </Label>
+                    <Select
+                      value={checkoutState.customerInfo.address?.province || ''}
+                      onValueChange={(value) => handleInputChange('address.province', value)}
+                    >
+                      <SelectTrigger
+                        className={`mt-2 h-12 border-2 rounded-xl bg-brand-background ${
+                          checkoutState.errors.province
+                            ? 'border-red-500'
+                            : 'border-brand-border focus:border-brand-secondary'
+                        }`}
+                      >
+                        <SelectValue placeholder="Select your province" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="Western">Western Province</SelectItem>
+                        <SelectItem value="Central">Central Province</SelectItem>
+                        <SelectItem value="Southern">Southern Province</SelectItem>
+                        <SelectItem value="Northern">Northern Province</SelectItem>
+                        <SelectItem value="Eastern">Eastern Province</SelectItem>
+                        <SelectItem value="North Western">North Western Province</SelectItem>
+                        <SelectItem value="North Central">North Central Province</SelectItem>
+                        <SelectItem value="Uva">Uva Province</SelectItem>
+                        <SelectItem value="Sabaragamuwa">Sabaragamuwa Province</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    {checkoutState.errors.province && (
+                      <p className="text-sm text-red-600 mt-2">{checkoutState.errors.province}</p>
+                    )}
+                  </div>
 
                   <div>
                     <Label

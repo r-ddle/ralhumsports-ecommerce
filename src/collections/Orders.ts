@@ -569,16 +569,18 @@ export const Orders: CollectionConfig = {
                   size: match.size || '',
                   color: match.color || '',
                   material: match.material || '',
-                  price: match.price || product || 0,
+                  price: match.price || 0,
                   sku: match.sku,
                 }
 
                 // Update subtotal based on variant price * quantity
                 const qty = item.quantity ?? 1
-                item.subtotal = (match.price ?? product.essentials.price ?? 0) * qty
-
-                // Also set unit price as variant price for clarity
-                item.unitPrice = match.price ?? product.essentials.price ?? 0
+                const variantPrice = match.price ?? 0
+                const basePrice = product?.essentials?.price ?? 0
+                const finalPrice = variantPrice || basePrice
+                
+                item.subtotal = finalPrice * qty
+                item.unitPrice = finalPrice
               }
             }
           }

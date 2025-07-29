@@ -17,6 +17,7 @@ import {
   OrderTrackingResponse,
 } from '@/types/api'
 import { useState } from 'react'
+import { apiLogger } from '@/lib/logger'
 
 // FIXED: Client-side safe base URL detection with same-origin optimization
 const getBaseUrl = (): string => {
@@ -24,14 +25,14 @@ const getBaseUrl = (): string => {
   if (typeof window !== 'undefined') {
     const origin = window.location.origin
     console.log('[API] Using window.location.origin:', origin)
-    
+
     // For production domain, always use HTTPS
     if (origin.includes('ralhumsports.lk') && origin.startsWith('http:')) {
       const httpsUrl = origin.replace('http:', 'https:')
       console.log('[API] Converting HTTP to HTTPS:', httpsUrl)
       return httpsUrl
     }
-    
+
     return origin
   }
 
@@ -62,14 +63,7 @@ class ApiClient {
     const currentBaseUrl = getBaseUrl()
     const url = `${currentBaseUrl}${endpoint}`
 
-    console.log('[API Client] Request URL generation:')
-    console.log('  - Endpoint:', endpoint)
-    console.log('  - Base URL:', currentBaseUrl)
-    console.log('  - Final URL:', url)
-    console.log('  - Environment variables:', {
-      NEXT_PUBLIC_SERVER_URL: process.env.NEXT_PUBLIC_SERVER_URL,
-      NODE_ENV: process.env.NODE_ENV,
-    })
+    apiLogger.error(`URL: ${url}`, { prefix: 'Request' })
 
     return url
   }
@@ -106,7 +100,7 @@ class ApiClient {
         'Content-Type': 'application/json',
         // Add Origin header for CORS when making cross-origin requests
         ...(typeof window !== 'undefined' && {
-          'Origin': window.location.origin,
+          Origin: window.location.origin,
         }),
         ...options.headers,
       },
@@ -117,22 +111,23 @@ class ApiClient {
     }
 
     try {
-      console.log('[API Client] Making request to:', url)
       const response = await fetch(url, config)
 
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({
           error: `Network error: ${response.status} ${response.statusText}`,
         }))
+        apiLogger.error(endpoint, new Error(errorData.error || `HTTP ${response.status}`))
         throw new Error(errorData.error || `HTTP error! status: ${response.status}`)
       }
 
       const data = await response.json()
-      console.log('[API Client] Request successful for:', endpoint)
+      apiLogger.success(endpoint, {
+        count: Array.isArray(data.data) ? data.data.length : undefined,
+      })
       return data
     } catch (error) {
-      console.error(`[API Client] Request failed: ${endpoint}`, error)
-      console.error('[API Client] Failed URL was:', url)
+      apiLogger.error(endpoint, error)
 
       // Provide better error messages for common issues
       if (error instanceof TypeError && error.message.includes('NetworkError')) {
@@ -146,9 +141,7 @@ class ApiClient {
       }
 
       if (error instanceof TypeError && error.message.includes('CORS')) {
-        throw new Error(
-          'Cross-origin request blocked. Please refresh the page and try again.',
-        )
+        throw new Error('Cross-origin request blocked. Please refresh the page and try again.')
       }
 
       throw error
@@ -250,7 +243,7 @@ class ApiClient {
 
   // FIXED: Order API methods with proper HTTPS handling
   async createOrder(orderData: OrderInput): Promise<ApiResponse<OrderResponse>> {
-    console.log('[API Client] Creating order with data:', orderData)
+    apiLogger.error('Creating order', { prefix: 'Order' })
     return this.request<ApiResponse<OrderResponse>>('/api/public/orders', {
       method: 'POST',
       body: JSON.stringify(orderData),

@@ -18,7 +18,7 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible'
-import { Search, X, ChevronDown, RotateCcw, SlidersHorizontal } from 'lucide-react'
+import { Search, X, ChevronDown, RotateCcw, SlidersHorizontal, ChevronRight } from 'lucide-react'
 import { useProductFilters } from '@/hooks/useProductFilters'
 
 // Types for real API data
@@ -54,6 +54,11 @@ export function EnhancedProductFilters({
   // Local state for form inputs
   const [searchTerm, setSearchTerm] = useState('')
   const [selectedCategories, setSelectedCategories] = useState<string[]>([])
+  const [hierarchicalFilters, setHierarchicalFilters] = useState({
+    sportsCategory: '',
+    sport: '',
+    sportsItem: '',
+  })
   const [selectedBrands, setSelectedBrands] = useState<string[]>([])
   const [priceFilter, setPriceFilter] = useState<[number, number]>([priceRange.min, priceRange.max])
   const [stockFilter, setStockFilter] = useState(false)
@@ -73,6 +78,13 @@ export function EnhancedProductFilters({
     setSelectedBrands(filters.brands || [])
     setPriceFilter([filters.minPrice || priceRange.min, filters.maxPrice || priceRange.max])
     setStockFilter(filters.inStock || false)
+
+    // Sync hierarchical filters
+    setHierarchicalFilters({
+      sportsCategory: filters.sportsCategory || '',
+      sport: filters.sport || '',
+      sportsItem: filters.sportsItem || '',
+    })
   }, [filters, priceRange])
 
   const handleCategoryChange = (categorySlug: string, checked: boolean) => {
@@ -167,6 +179,9 @@ export function EnhancedProductFilters({
       filters.brands?.length,
       filters.minPrice || filters.maxPrice,
       filters.inStock,
+      filters.sportsCategory,
+      filters.sport,
+      filters.sportsItem,
     ].filter(Boolean).length
   }, [filters])
 
@@ -287,12 +302,72 @@ export function EnhancedProductFilters({
         <Separator />
 
         {/* Categories */}
+        {/* Hierarchical Category Display */}
+        {(hierarchicalFilters.sportsCategory ||
+          hierarchicalFilters.sport ||
+          hierarchicalFilters.sportsItem) && (
+          <>
+            <div className="mb-4 p-3 bg-blue-50 rounded-lg border border-blue-200">
+              <h3 className="text-sm font-semibold text-blue-800 mb-2">Active Navigation Path</h3>
+              <div className="flex items-center gap-2 text-sm">
+                {hierarchicalFilters.sportsCategory && (
+                  <>
+                    <span className="px-2 py-1 bg-blue-600 text-white rounded text-xs font-medium">
+                      {hierarchicalFilters.sportsCategory
+                        .replace(/-/g, ' ')
+                        .replace(/\b\w/g, (l) => l.toUpperCase())}
+                    </span>
+                    {(hierarchicalFilters.sport || hierarchicalFilters.sportsItem) && (
+                      <ChevronRight className="w-3 h-3 text-blue-600" />
+                    )}
+                  </>
+                )}
+                {hierarchicalFilters.sport && (
+                  <>
+                    <span className="px-2 py-1 bg-blue-500 text-white rounded text-xs font-medium">
+                      {hierarchicalFilters.sport
+                        .replace(/-/g, ' ')
+                        .replace(/\b\w/g, (l) => l.toUpperCase())}
+                    </span>
+                    {hierarchicalFilters.sportsItem && (
+                      <ChevronRight className="w-3 h-3 text-blue-600" />
+                    )}
+                  </>
+                )}
+                {hierarchicalFilters.sportsItem && (
+                  <span className="px-2 py-1 bg-blue-400 text-white rounded text-xs font-medium">
+                    {hierarchicalFilters.sportsItem
+                      .replace(/-/g, ' ')
+                      .replace(/\b\w/g, (l) => l.toUpperCase())}
+                  </span>
+                )}
+              </div>
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                onClick={() => {
+                  removeFilter('sportsCategory')
+                  removeFilter('sport')
+                  removeFilter('sportsItem')
+                  removeFilter('categories')
+                }}
+                className="text-xs h-6 px-2 mt-2 text-blue-700 hover:text-blue-900"
+              >
+                <X className="w-3 h-3 mr-1" />
+                Clear Path
+              </Button>
+            </div>
+            <Separator />
+          </>
+        )}
+
         <Collapsible
           open={expandedSections.categories}
           onOpenChange={() => handleSectionToggle('categories')}
         >
           <CollapsibleTrigger className="flex items-center justify-between w-full p-0 hover:no-underline">
-            <h3 className="text-sm font-semibold">Categories</h3>
+            <h3 className="text-sm font-semibold">Additional Categories</h3>
             <div className="flex items-center gap-2">
               {selectedCategories.length > 0 && (
                 <Badge variant="secondary" className="text-xs">

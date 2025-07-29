@@ -12,6 +12,10 @@ export interface ProductFilters {
   inStock?: boolean
   sortBy?: string
   sortOrder?: 'asc' | 'desc'
+  // Hierarchical category filters
+  sportsCategory?: string
+  sport?: string
+  sportsItem?: string
 }
 
 export function useProductFilters() {
@@ -28,8 +32,19 @@ export function useProductFilters() {
     const search = searchParams.get('search')
     if (search) urlFilters.search = search
 
+    // Handle layered categories - can have multiple levels
     const categories = searchParams.get('categories')
     if (categories) urlFilters.categories = categories.split(',')
+    
+    // Handle individual category levels for hierarchical filtering
+    const sportsCategory = searchParams.get('sportsCategory')
+    if (sportsCategory) urlFilters.sportsCategory = sportsCategory
+    
+    const sport = searchParams.get('sport')
+    if (sport) urlFilters.sport = sport
+    
+    const sportsItem = searchParams.get('sportsItem')
+    if (sportsItem) urlFilters.sportsItem = sportsItem
 
     const brands = searchParams.get('brands')
     if (brands) urlFilters.brands = brands.split(',')
@@ -65,6 +80,11 @@ export function useProductFilters() {
       if (newFilters.inStock) params.set('inStock', 'true')
       if (newFilters.sortBy) params.set('sortBy', newFilters.sortBy)
       if (newFilters.sortOrder) params.set('sortOrder', newFilters.sortOrder)
+      
+      // Hierarchical category filters
+      if (newFilters.sportsCategory) params.set('sportsCategory', newFilters.sportsCategory)
+      if (newFilters.sport) params.set('sport', newFilters.sport)
+      if (newFilters.sportsItem) params.set('sportsItem', newFilters.sportsItem)
 
       const url = params.toString() ? `/products?${params.toString()}` : '/products'
       router.push(url, { scroll: false })

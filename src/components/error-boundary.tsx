@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { AlertTriangle, Home, RefreshCw, MessageCircle } from 'lucide-react'
 import { motion } from 'framer-motion'
+import logger from '@/lib/logger'
 
 interface ErrorBoundaryState {
   hasError: boolean
@@ -23,7 +24,7 @@ class ErrorBoundary extends React.Component<{ children: React.ReactNode }, Error
   }
 
   componentDidCatch(error: Error, errorInfo: React.ErrorInfo) {
-    console.error('Error caught by boundary:', error, errorInfo)
+    logger.error('Error caught by boundary', error, { prefix: 'ErrorBoundary' })
 
     this.setState({
       error,

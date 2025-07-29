@@ -1,8 +1,8 @@
 'use client'
 
-import React, { useState, useEffect, useRef } from 'react'
+import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react'
 import { Button } from '@/components/ui/button'
-import { Menu, X, Phone, ChevronRight, ShoppingBag, StoreIcon } from 'lucide-react'
+import { Menu, X, Phone, ChevronRight, ShoppingBag, StoreIcon, Sparkles } from 'lucide-react'
 import { CartButton } from '@/components/cart/cart-button'
 import Link from 'next/link'
 import { SITE_CONFIG } from '@/config/site-config'
@@ -54,11 +54,11 @@ type NavigationHierarchy = {
   sportsItems: { [sportSlug: string]: CategoryItem[] }
 }
 
-export default function EnhancedNavigation() {
-  // Cache duration: 5 minutes
-  const CACHE_DURATION = 5 * 60 * 1000
+// Optimized cache utilities outside component for better performance
+const CACHE_DURATION = 5 * 60 * 1000 // 5 minutes
 
-  function getCached<T>(key: string): T | null {
+const cacheUtils = {
+  get<T>(key: string): T | null {
     if (typeof window === 'undefined') return null
     try {
       const cached = localStorage.getItem(key)
@@ -72,17 +72,21 @@ export default function EnhancedNavigation() {
     } catch {
       return null
     }
-  }
+  },
 
-  function setCached<T>(key: string, data: T): void {
+  set<T>(key: string, data: T): void {
     if (typeof window === 'undefined') return
     try {
       localStorage.setItem(key, JSON.stringify({ data, timestamp: Date.now() }))
     } catch (error) {
-      console.warn('Failed to cache data:', error)
+      if (process.env.NODE_ENV === 'development') {
+        console.warn('Failed to cache data:', error)
+      }
     }
-  }
+  },
+}
 
+export default function EnhancedNavigation() {
   // State for real API data
   const [filterMetadata, setFilterMetadata] = useState<FilterMetadata | null>(null)
   const [navigationHierarchy, setNavigationHierarchy] = useState<NavigationHierarchy | null>(null)
@@ -93,15 +97,12 @@ export default function EnhancedNavigation() {
   const [isOpen, setIsOpen] = useState(false)
   const [hoveredIdx, setHoveredIdx] = useState<number | null>(null)
   const [megaMenuOpen, setMegaMenuOpen] = useState(false)
+  const [megaMenuType, setMegaMenuType] = useState<'shop' | 'brands' | null>(null)
   const [hoveredSportsCategory, setHoveredSportsCategory] = useState<string | null>(null)
   const [hoveredSport, setHoveredSport] = useState<string | null>(null)
   const [hoveredSportsItem, setHoveredSportsItem] = useState<string | null>(null)
-  const [squircle, setSquircle] = useState({ left: 0, top: 0, width: 0, height: 0, visible: false })
   const [isMobile, setIsMobile] = useState(false)
-  const [squircleAnimated, setSquircleAnimated] = useState(false)
   const [reducedMotion, setReducedMotion] = useState(false)
-
-  const lastSquircle = useRef({ left: 0, top: 0, width: 0, height: 0 })
 
   // Process API data into hierarchical structure
   const processHierarchicalData = (data: FilterMetadata): NavigationHierarchy => {
@@ -145,10 +146,11 @@ export default function EnhancedNavigation() {
     async function fetchFilterMetadata() {
       try {
         // Check cache first
-        const cachedData = getCached<FilterMetadata>('nav_filter_metadata')
+        const cachedData = window.localStorage.getItem('nav_filter_metadata')
         if (cachedData) {
-          setFilterMetadata(cachedData)
-          setNavigationHierarchy(processHierarchicalData(cachedData))
+          const parsedData: FilterMetadata = JSON.parse(cachedData)
+          setFilterMetadata(parsedData)
+          setNavigationHierarchy(processHierarchicalData(parsedData))
           setLoading(false)
           return
         }
@@ -163,7 +165,7 @@ export default function EnhancedNavigation() {
         if (result.success && result.data) {
           setFilterMetadata(result.data)
           setNavigationHierarchy(processHierarchicalData(result.data))
-          setCached('nav_filter_metadata', result.data)
+          window.localStorage.setItem('nav_filter_metadata', JSON.stringify(result.data))
           setError(null)
         } else {
           throw new Error(result.error || 'Failed to fetch filter metadata')
@@ -187,47 +189,59 @@ export default function EnhancedNavigation() {
     { name: 'Verify', href: '/products/verify' },
   ]
 
-  const navRefs = React.useRef<React.RefObject<HTMLAnchorElement>[]>([])
-  if (navRefs.current.length !== navItems.length) {
-    navRefs.current = Array.from({ length: navItems.length }, () =>
-      React.createRef<HTMLAnchorElement>(),
-    ) as React.RefObject<HTMLAnchorElement>[]
-  }
-
-  // Build filter URL based on current selection
+  // Build filter URL based on current selection for hierarchical filtering
   const buildFilterUrl = (params: {
-    category?: string
+    sportsCategory?: string
     sport?: string
-    item?: string
+    sportsItem?: string
     brand?: string
+    brands?: string[]
   }) => {
     const searchParams = new URLSearchParams()
 
-    if (params.category) searchParams.append('category', params.category)
+    // Build hierarchical category path
+    const categories: string[] = []
+    if (params.sportsCategory) categories.push(params.sportsCategory)
+    if (params.sport) categories.push(params.sport)
+    if (params.sportsItem) categories.push(params.sportsItem)
+
+    if (categories.length > 0) {
+      searchParams.append('categories', categories.join(','))
+    }
+
+    // Add individual hierarchical filters for proper filter display
+    if (params.sportsCategory) searchParams.append('sportsCategory', params.sportsCategory)
     if (params.sport) searchParams.append('sport', params.sport)
-    if (params.item) searchParams.append('item', params.item)
-    if (params.brand) searchParams.append('brand', params.brand)
+    if (params.sportsItem) searchParams.append('sportsItem', params.sportsItem)
+
+    if (params.brand) searchParams.append('brands', params.brand)
+    if (params.brands && params.brands.length > 0) {
+      searchParams.append('brands', params.brands.join(','))
+    }
 
     const queryString = searchParams.toString()
     return `/products${queryString ? `?${queryString}` : ''}`
   }
 
-  // Handle navigation clicks with proper filtering
+  // Handle navigation clicks with proper hierarchical filtering
   const handleCategoryClick = (categorySlug: string) => {
-    window.location.href = buildFilterUrl({ category: categorySlug })
+    window.location.href = buildFilterUrl({ sportsCategory: categorySlug })
     setMegaMenuOpen(false)
   }
 
   const handleSportClick = (categorySlug: string, sportSlug: string) => {
-    window.location.href = buildFilterUrl({ category: categorySlug, sport: sportSlug })
+    window.location.href = buildFilterUrl({
+      sportsCategory: categorySlug,
+      sport: sportSlug,
+    })
     setMegaMenuOpen(false)
   }
 
   const handleSportsItemClick = (categorySlug: string, sportSlug: string, itemSlug: string) => {
     window.location.href = buildFilterUrl({
-      category: categorySlug,
+      sportsCategory: categorySlug,
       sport: sportSlug,
-      item: itemSlug,
+      sportsItem: itemSlug,
     })
     setMegaMenuOpen(false)
   }
@@ -237,21 +251,38 @@ export default function EnhancedNavigation() {
     setMegaMenuOpen(false)
   }
 
+  const handleAllBrandsClick = () => {
+    window.location.href = '/brands'
+    setMegaMenuOpen(false)
+  }
+
+  const handleFeaturedBrandsClick = (brands: string[]) => {
+    window.location.href = buildFilterUrl({ brands })
+    setMegaMenuOpen(false)
+  }
+
   const getCurrentShopLink = () => {
     if (hoveredSportsItem && hoveredSport && hoveredSportsCategory) {
       return buildFilterUrl({
-        category: hoveredSportsCategory,
+        sportsCategory: hoveredSportsCategory,
         sport: hoveredSport,
-        item: hoveredSportsItem,
+        sportsItem: hoveredSportsItem,
       })
     }
     if (hoveredSport && hoveredSportsCategory) {
-      return buildFilterUrl({ category: hoveredSportsCategory, sport: hoveredSport })
+      return buildFilterUrl({
+        sportsCategory: hoveredSportsCategory,
+        sport: hoveredSport,
+      })
     }
     if (hoveredSportsCategory) {
-      return buildFilterUrl({ category: hoveredSportsCategory })
+      return buildFilterUrl({ sportsCategory: hoveredSportsCategory })
     }
     return '/products'
+  }
+
+  const getCurrentBrandsLink = () => {
+    return '/brands'
   }
 
   // Detect mobile and reduced motion
@@ -273,36 +304,425 @@ export default function EnhancedNavigation() {
     }
   }, [])
 
-  // Update squircle position/size on hover (desktop only)
-  useEffect(() => {
-    if (isMobile || reducedMotion) {
-      setSquircle((s) => ({ ...s, visible: false }))
-      return
-    }
-    if (hoveredIdx !== null && navRefs.current[hoveredIdx]?.current) {
-      const rect = navRefs.current[hoveredIdx]!.current!.getBoundingClientRect()
-      const parentRect =
-        navRefs.current[hoveredIdx]!.current!.parentElement!.parentElement!.getBoundingClientRect()
-      const newSquircle = {
-        left: rect.left - parentRect.left,
-        top: rect.top - parentRect.top,
-        width: rect.width,
-        height: rect.height,
-        visible: true,
-      }
-      setSquircle((prev) => {
-        if (!prev.visible) {
-          lastSquircle.current = newSquircle
-          if (!squircleAnimated) setSquircleAnimated(true)
-          return newSquircle
-        }
-        lastSquircle.current = newSquircle
-        return newSquircle
-      })
-    } else {
-      setSquircle((s) => ({ ...s, visible: false }))
-    }
-  }, [hoveredIdx, isMobile, reducedMotion])
+  // Render Shop Mega Menu with Clean, Brand-Style Design
+  // Render Shop Mega Menu with Clean 4-Layer Design
+  const renderShopMegaMenu = () => (
+    <div className="flex h-[500px]">
+      {/* Layer 1: Sports Categories */}
+      <div className="w-72 bg-gradient-to-b from-blue-50 to-blue-100 border-r border-brand-border p-6">
+        <div className="flex items-center gap-2 mb-6">
+          <div className="w-2 h-2 bg-blue-600 rounded-full"></div>
+          <h3 className="text-xl font-bold text-text-primary">Categories</h3>
+          <div className="text-sm text-text-secondary ml-auto">
+            {navigationHierarchy?.sportsCategories.length || 0}
+          </div>
+        </div>
+
+        {loading ? (
+          <div className="space-y-3">
+            {[1, 2, 3, 4, 5, 6].map((i) => (
+              <div key={i} className="animate-pulse">
+                <div className="h-12 bg-blue-200 rounded-lg"></div>
+              </div>
+            ))}
+          </div>
+        ) : error ? (
+          <div className="text-red-500 text-sm p-4 bg-red-50 rounded-xl border border-red-200">
+            <div className="font-semibold">Failed to load categories</div>
+            <div className="text-xs mt-1">Please try refreshing the page</div>
+          </div>
+        ) : (
+          <div className="space-y-2">
+            {navigationHierarchy?.sportsCategories.slice(0, 8).map((category) => (
+              <div
+                key={category.id}
+                className={`group p-4 rounded-lg cursor-pointer transition-all duration-200 relative ${
+                  hoveredSportsCategory === category.slug
+                    ? 'bg-blue-600 text-white shadow-md'
+                    : 'hover:bg-white hover:shadow-sm border border-transparent hover:border-blue-200'
+                }`}
+                onMouseEnter={() => {
+                  setHoveredSportsCategory(category.slug)
+                  setHoveredSport(null)
+                  setHoveredSportsItem(null)
+                }}
+                onClick={() => handleCategoryClick(category.slug)}
+              >
+                <div className="flex items-center justify-between">
+                  <div>
+                    <div className="font-bold text-base">{category.name}</div>
+                    <div
+                      className={`text-sm ${
+                        hoveredSportsCategory === category.slug
+                          ? 'text-white/80'
+                          : 'text-text-secondary'
+                      }`}
+                    >
+                      {category.productCount} products
+                    </div>
+                  </div>
+                  {hoveredSportsCategory === category.slug && (
+                    <ChevronRight className="w-5 h-5 text-white" />
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* Layer 2: Sports */}
+      {hoveredSportsCategory && navigationHierarchy?.sports[hoveredSportsCategory] && (
+        <motion.div
+          initial={{ opacity: 0, x: -20 }}
+          animate={{ opacity: 1, x: 0 }}
+          transition={{ duration: 0.2 }}
+          className="w-64 bg-gradient-to-b from-green-50 to-green-100 border-r border-brand-border p-6"
+        >
+          <div className="flex items-center gap-2 mb-6">
+            <div className="w-2 h-2 bg-green-600 rounded-full"></div>
+            <h4 className="text-lg font-bold text-text-primary">Sports</h4>
+            <div className="text-sm text-text-secondary ml-auto">
+              {navigationHierarchy.sports[hoveredSportsCategory].length}
+            </div>
+          </div>
+
+          <div className="space-y-2">
+            {navigationHierarchy.sports[hoveredSportsCategory].slice(0, 10).map((sport) => (
+              <div
+                key={sport.id}
+                className={`group p-3 rounded-lg cursor-pointer transition-all duration-200 ${
+                  hoveredSport === sport.slug
+                    ? 'bg-green-600 text-white shadow-md'
+                    : 'hover:bg-white hover:shadow-sm border border-transparent hover:border-green-200'
+                }`}
+                onMouseEnter={() => {
+                  setHoveredSport(sport.slug)
+                  setHoveredSportsItem(null)
+                }}
+                onClick={() => handleSportClick(hoveredSportsCategory, sport.slug)}
+              >
+                <div className="flex items-center justify-between">
+                  <div>
+                    <div className="font-semibold text-sm">{sport.name}</div>
+                    <div
+                      className={`text-xs ${
+                        hoveredSport === sport.slug ? 'text-white/80' : 'text-text-secondary'
+                      }`}
+                    >
+                      {sport.productCount} items
+                    </div>
+                  </div>
+                  {hoveredSport === sport.slug && <ChevronRight className="w-4 h-4 text-white" />}
+                </div>
+              </div>
+            ))}
+          </div>
+        </motion.div>
+      )}
+
+      {/* Layer 3: Equipment/Sports Items */}
+      {hoveredSport && navigationHierarchy?.sportsItems[hoveredSport] && (
+        <motion.div
+          initial={{ opacity: 0, x: -20 }}
+          animate={{ opacity: 1, x: 0 }}
+          transition={{ duration: 0.2 }}
+          className="w-64 bg-gradient-to-b from-orange-50 to-orange-100 border-r border-brand-border p-6"
+        >
+          <div className="flex items-center gap-2 mb-6">
+            <div className="w-2 h-2 bg-orange-600 rounded-full"></div>
+            <h4 className="text-lg font-bold text-text-primary">Equipment</h4>
+            <div className="text-sm text-text-secondary ml-auto">
+              {navigationHierarchy.sportsItems[hoveredSport].length}
+            </div>
+          </div>
+
+          <div className="space-y-2">
+            {navigationHierarchy.sportsItems[hoveredSport].slice(0, 12).map((item) => (
+              <div
+                key={item.id}
+                className={`group p-3 rounded-lg cursor-pointer transition-all duration-200 ${
+                  hoveredSportsItem === item.slug
+                    ? 'bg-orange-600 text-white shadow-md'
+                    : 'hover:bg-white hover:shadow-sm border border-transparent hover:border-orange-200'
+                }`}
+                onMouseEnter={() => setHoveredSportsItem(item.slug)}
+                onClick={() =>
+                  handleSportsItemClick(hoveredSportsCategory!, hoveredSport, item.slug)
+                }
+              >
+                <div className="flex items-center justify-between">
+                  <div>
+                    <div className="font-semibold text-sm">{item.name}</div>
+                    <div
+                      className={`text-xs ${
+                        hoveredSportsItem === item.slug ? 'text-white/80' : 'text-text-secondary'
+                      }`}
+                    >
+                      {item.productCount} products
+                    </div>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </motion.div>
+      )}
+
+      {/* Layer 4: Shop by Brands (Only show when category is selected) */}
+      {hoveredSportsCategory && (
+        <motion.div
+          initial={{ opacity: 0, x: -20 }}
+          animate={{ opacity: 1, x: 0 }}
+          transition={{ duration: 0.2 }}
+          className="flex-1 p-6 bg-gradient-to-br from-white to-gray-50"
+        >
+          {loading ? (
+            <div className="flex items-center justify-center h-full">
+              <div className="text-center">
+                <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-brand-primary mx-auto mb-4"></div>
+                <p className="text-text-secondary font-medium">Loading brands...</p>
+              </div>
+            </div>
+          ) : error ? (
+            <div className="flex items-center justify-center h-full">
+              <div className="text-center max-w-sm">
+                <div className="text-5xl mb-4">⚠️</div>
+                <h4 className="text-xl font-bold text-text-primary mb-2">Navigation Unavailable</h4>
+                <p className="text-text-secondary mb-6 text-sm leading-relaxed">{error}</p>
+                <Link
+                  href="/products"
+                  className="inline-flex items-center px-6 py-3 bg-brand-primary text-white rounded-xl font-semibold hover:bg-primary-600 transition-colors shadow-lg"
+                  onClick={() => setMegaMenuOpen(false)}
+                >
+                  <ShoppingBag className="w-4 h-4 mr-2" />
+                  Browse Products
+                </Link>
+              </div>
+            </div>
+          ) : (
+            <div className="h-full flex flex-col">
+              {/* Current Selection Breadcrumb */}
+              <div className="bg-gradient-to-r from-blue-50 to-purple-50 rounded-xl p-4 mb-6 border border-blue-200">
+                <div className="text-sm text-text-secondary mb-1">Current Selection:</div>
+                <div className="flex items-center gap-2 text-text-primary flex-wrap">
+                  <span className="font-bold px-3 py-1 bg-blue-100 rounded-lg">
+                    {
+                      navigationHierarchy?.sportsCategories.find(
+                        (c) => c.slug === hoveredSportsCategory,
+                      )?.name
+                    }
+                  </span>
+                  {hoveredSport && (
+                    <>
+                      <ChevronRight className="w-3 h-3 text-text-secondary" />
+                      <span className="font-semibold px-3 py-1 bg-green-100 rounded-lg">
+                        {
+                          navigationHierarchy?.sports[hoveredSportsCategory]?.find(
+                            (s) => s.slug === hoveredSport,
+                          )?.name
+                        }
+                      </span>
+                    </>
+                  )}
+                  {hoveredSportsItem && hoveredSport && (
+                    <>
+                      <ChevronRight className="w-3 h-3 text-text-secondary" />
+                      <span className="text-text-secondary px-3 py-1 bg-orange-100 rounded-lg">
+                        {
+                          navigationHierarchy?.sportsItems[hoveredSport]?.find(
+                            (i: CategoryItem) => i.slug === hoveredSportsItem,
+                          )?.name
+                        }
+                      </span>
+                    </>
+                  )}
+                </div>
+              </div>
+
+              {/* Shop by Brands Section */}
+              <div className="flex-1">
+                <div className="flex items-center gap-2 mb-4">
+                  <div className="w-2 h-2 bg-purple-600 rounded-full"></div>
+                  <h3 className="text-lg font-bold text-text-primary">Shop by Brand</h3>
+                  <div className="text-sm text-text-secondary ml-auto">
+                    Optional • {filterMetadata?.totalBrands} available
+                  </div>
+                </div>
+
+                {/* Featured Brands */}
+                {filterMetadata?.brands &&
+                  filterMetadata.brands.filter((b) => b.isFeature).length > 0 && (
+                    <div className="mb-6">
+                      <div className="flex items-center gap-2 mb-3">
+                        <Sparkles className="w-4 h-4 text-purple-600" />
+                        <h4 className="font-bold text-text-primary">Featured</h4>
+                      </div>
+                      <div className="grid grid-cols-2 gap-3">
+                        {filterMetadata.brands
+                          .filter((b) => b.isFeature)
+                          .slice(0, 4)
+                          .map((brand) => (
+                            <div
+                              key={brand.id}
+                              className="group p-3 rounded-lg cursor-pointer transition-all duration-200 hover:bg-white hover:shadow-md border border-transparent hover:border-purple-200"
+                              onClick={() => {
+                                const url =
+                                  hoveredSportsItem && hoveredSport && hoveredSportsCategory
+                                    ? buildFilterUrl({
+                                        sportsCategory: hoveredSportsCategory,
+                                        sport: hoveredSport,
+                                        sportsItem: hoveredSportsItem,
+                                        brand: brand.slug,
+                                      })
+                                    : hoveredSport && hoveredSportsCategory
+                                      ? buildFilterUrl({
+                                          sportsCategory: hoveredSportsCategory,
+                                          sport: hoveredSport,
+                                          brand: brand.slug,
+                                        })
+                                      : buildFilterUrl({
+                                          sportsCategory: hoveredSportsCategory,
+                                          brand: brand.slug,
+                                        })
+                                window.location.href = url
+                                setMegaMenuOpen(false)
+                              }}
+                            >
+                              <div className="flex items-center gap-3">
+                                {brand.logo?.url && (
+                                  <div className="w-10 h-10 flex-shrink-0 rounded-lg overflow-hidden bg-white p-1 shadow-sm">
+                                    <Image
+                                      src={brand.logo.url || '/placeholder.svg'}
+                                      alt={brand.logo.alt || brand.name}
+                                      width={40}
+                                      height={40}
+                                      className="w-full h-full object-contain"
+                                    />
+                                  </div>
+                                )}
+                                <div className="flex-1 min-w-0">
+                                  <div className="font-semibold text-sm text-text-primary truncate">
+                                    {brand.name}
+                                  </div>
+                                  <div className="text-xs text-text-secondary">
+                                    {brand.productCount} products
+                                  </div>
+                                </div>
+                              </div>
+                            </div>
+                          ))}
+                      </div>
+                    </div>
+                  )}
+
+                {/* All Brands Compact Grid */}
+                <div>
+                  <h4 className="font-bold text-text-primary mb-3">All Brands</h4>
+                  <div className="grid grid-cols-3 gap-2 max-h-48 overflow-y-auto">
+                    {filterMetadata?.brands.map((brand) => (
+                      <div
+                        key={brand.id}
+                        className="group p-2 rounded-lg cursor-pointer transition-all duration-200 hover:bg-white hover:shadow-sm border border-transparent hover:border-gray-200"
+                        onClick={() => {
+                          const url =
+                            hoveredSportsItem && hoveredSport && hoveredSportsCategory
+                              ? buildFilterUrl({
+                                  sportsCategory: hoveredSportsCategory,
+                                  sport: hoveredSport,
+                                  sportsItem: hoveredSportsItem,
+                                  brand: brand.slug,
+                                })
+                              : hoveredSport && hoveredSportsCategory
+                                ? buildFilterUrl({
+                                    sportsCategory: hoveredSportsCategory,
+                                    sport: hoveredSport,
+                                    brand: brand.slug,
+                                  })
+                                : buildFilterUrl({
+                                    sportsCategory: hoveredSportsCategory,
+                                    brand: brand.slug,
+                                  })
+                          window.location.href = url
+                          setMegaMenuOpen(false)
+                        }}
+                      >
+                        <div className="flex items-center gap-2">
+                          {brand.logo?.url && (
+                            <div className="w-6 h-6 flex-shrink-0 rounded overflow-hidden bg-white p-0.5">
+                              <Image
+                                src={brand.logo.url || '/placeholder.svg'}
+                                alt={brand.logo.alt || brand.name}
+                                width={24}
+                                height={24}
+                                className="w-full h-full object-contain"
+                              />
+                            </div>
+                          )}
+                          <div className="flex-1 min-w-0">
+                            <div className="font-medium text-xs text-text-primary truncate">
+                              {brand.name}
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+
+              {/* Action Buttons */}
+              <div className="pt-6 border-t border-gray-200 mt-6">
+                <div className="flex gap-3 justify-between">
+                  <Link
+                    href="/brands"
+                    className="inline-flex items-center px-4 py-2 border-2 border-purple-600 text-purple-600 rounded-lg font-semibold hover:bg-purple-600 hover:text-white transition-all duration-200"
+                    onClick={() => setMegaMenuOpen(false)}
+                  >
+                    <Sparkles className="w-4 h-4 mr-2" />
+                    All Brands
+                  </Link>
+                  <Link
+                    href={getCurrentShopLink()}
+                    className="inline-flex items-center px-6 py-2 bg-brand-primary text-white rounded-lg font-bold hover:bg-primary-600 transition-all duration-200 shadow-lg hover:shadow-xl"
+                    onClick={() => setMegaMenuOpen(false)}
+                  >
+                    <ShoppingBag className="w-4 h-4 mr-2" />
+                    {hoveredSportsItem
+                      ? 'Shop Equipment'
+                      : hoveredSport
+                        ? 'Shop Sport'
+                        : 'Shop Category'}
+                  </Link>
+                </div>
+              </div>
+            </div>
+          )}
+        </motion.div>
+      )}
+
+      {/* Default State: No Category Selected */}
+      {!hoveredSportsCategory && !loading && !error && (
+        <div className="flex-1 p-6 bg-gradient-to-br from-gray-50 to-white flex items-center justify-center">
+          <div className="text-center max-w-sm">
+            <ShoppingBag className="w-16 h-16 text-gray-300 mx-auto mb-4" />
+            <h4 className="text-xl font-bold text-text-primary mb-2">Choose a Category</h4>
+            <p className="text-text-secondary mb-6 text-sm leading-relaxed">
+              Select a sports category from the left to explore sports, equipment, and brands
+            </p>
+            <Link
+              href="/products"
+              className="inline-flex items-center px-6 py-3 bg-brand-primary text-white rounded-xl font-semibold hover:bg-primary-600 transition-colors shadow-lg"
+              onClick={() => setMegaMenuOpen(false)}
+            >
+              <ShoppingBag className="w-4 h-4 mr-2" />
+              Browse All Products
+            </Link>
+          </div>
+        </div>
+      )}
+    </div>
+  )
 
   return (
     <>
@@ -345,10 +765,12 @@ export default function EnhancedNavigation() {
                       className="relative"
                       onMouseEnter={() => {
                         setMegaMenuOpen(true)
+                        setMegaMenuType(item.name === 'Shop' ? 'shop' : 'brands')
                         setHoveredIdx(null)
                       }}
                       onMouseLeave={() => {
                         setMegaMenuOpen(false)
+                        setMegaMenuType(null)
                         setHoveredSportsCategory(null)
                         setHoveredSport(null)
                         setHoveredSportsItem(null)
@@ -356,457 +778,46 @@ export default function EnhancedNavigation() {
                       }}
                     >
                       <Link
-                        href={getCurrentShopLink()}
+                        href={item.name === 'Shop' ? getCurrentShopLink() : getCurrentBrandsLink()}
                         className={`relative px-3 lg:px-4 py-2 text-sm lg:text-base font-semibold rounded-xl transition-all duration-150 group overflow-hidden focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-primary focus-visible:ring-offset-2 flex items-center gap-1
-                          ${megaMenuOpen ? 'text-white bg-brand-primary font-bold' : 'text-text-primary hover:text-brand-primary hover:bg-brand-background'}`}
-                        aria-label="Shop filtered products"
+                          ${megaMenuOpen && megaMenuType === (item.name === 'Shop' ? 'shop' : 'brands') ? 'text-white bg-brand-primary font-bold' : 'text-text-primary hover:text-brand-primary hover:bg-brand-background'}`}
+                        aria-label={
+                          item.name === 'Shop' ? 'Shop filtered products' : 'Browse brands'
+                        }
                       >
                         {item.name}
                         <ChevronRight
-                          className={`w-3 h-3 transition-transform duration-200 ${megaMenuOpen ? 'rotate-90' : ''}`}
+                          className={`w-3 h-3 transition-transform duration-200 ${megaMenuOpen && megaMenuType === (item.name === 'Shop' ? 'shop' : 'brands') ? 'rotate-90' : ''}`}
                         />
                       </Link>
 
-                      {/* Hierarchical Mega Menu */}
+                      {/* Mega Menu */}
                       <AnimatePresence>
-                        {megaMenuOpen && (
-                          <motion.div
-                            initial={{ opacity: 0, y: 10 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            exit={{ opacity: 0, y: 10 }}
-                            transition={{ duration: 0.2 }}
-                            className="absolute top-full mt-4 bg-brand-surface border border-brand-border shadow-2xl rounded-2xl overflow-hidden z-50"
-                            style={{
-                              width: '1200px',
-                              maxWidth: '95vw',
-                              left: 'calc(-500px + 50%)',
-                            }}
-                          >
-                            <div className="flex h-fit min-h-[420px]">
-                              {/* Level 1: Sports Categories */}
-                              <div className="w-64 bg-gradient-to-b from-gray-50 to-gray-100 border-r border-brand-border p-5">
-                                <div className="flex items-center gap-2 mb-5">
-                                  <div className="w-2 h-2 bg-brand-primary rounded-full"></div>
-                                  <h3 className="text-lg font-bold text-text-primary">
-                                    Sports Categories
-                                  </h3>
-                                </div>
-                                <div className="space-y-2 max-h-80 overflow-hidden">
-                                  {loading ? (
-                                    <div className="space-y-3">
-                                      {[1, 2, 3, 4, 5].map((i) => (
-                                        <div key={i} className="animate-pulse">
-                                          <div className="h-14 bg-gray-200 rounded-xl"></div>
-                                        </div>
-                                      ))}
-                                    </div>
-                                  ) : error ? (
-                                    <div className="text-red-500 text-sm p-3 bg-red-50 rounded-xl border border-red-200">
-                                      <div className="font-semibold">Failed to load categories</div>
-                                      <div className="text-xs mt-1">
-                                        Please try refreshing the page
-                                      </div>
-                                    </div>
-                                  ) : (
-                                    navigationHierarchy?.sportsCategories.map((category) => (
-                                      <div
-                                        key={category.id}
-                                        className={`group p-4 rounded-xl cursor-pointer transition-all duration-300 relative overflow-hidden ${
-                                          hoveredSportsCategory === category.slug
-                                            ? 'bg-brand-primary text-white shadow-lg transform scale-[1.02]'
-                                            : 'hover:bg-white hover:shadow-md border border-transparent hover:border-gray-200'
-                                        }`}
-                                        onMouseEnter={() => {
-                                          setHoveredSportsCategory(category.slug)
-                                          setHoveredSport(null)
-                                          setHoveredSportsItem(null)
-                                        }}
-                                        onClick={() => handleCategoryClick(category.slug)}
-                                      >
-                                        {/* Hover gradient background */}
-                                        <div
-                                          className={`absolute inset-0 bg-gradient-to-r from-brand-primary/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 ${hoveredSportsCategory === category.slug ? 'opacity-100' : ''}`}
-                                        ></div>
-
-                                        <div className="flex items-center gap-4 relative z-10">
-                                          <div className="flex-shrink-0"></div>
-                                          <div className="flex-1 min-w-0">
-                                            <div className="font-semibold text-sm truncate">
-                                              {category.name}
-                                            </div>
-                                            <div
-                                              className={`text-xs mt-1 ${
-                                                hoveredSportsCategory === category.slug
-                                                  ? 'text-white/80'
-                                                  : 'text-text-secondary'
-                                              }`}
-                                            >
-                                              {category.productCount} products
-                                            </div>
-                                          </div>
-                                          <ChevronRight
-                                            className={`w-4 h-4 transition-transform duration-200 ${
-                                              hoveredSportsCategory === category.slug
-                                                ? 'transform translate-x-1'
-                                                : ''
-                                            }`}
-                                          />
-                                        </div>
-                                      </div>
-                                    ))
-                                  )}
-                                </div>
-                              </div>
-
-                              {/* Level 2: Sports */}
-                              {hoveredSportsCategory &&
-                                navigationHierarchy?.sports[hoveredSportsCategory] && (
-                                  <motion.div
-                                    initial={{ opacity: 0, x: -20 }}
-                                    animate={{ opacity: 1, x: 0 }}
-                                    transition={{ duration: 0.2 }}
-                                    className="w-60 bg-gradient-to-b from-white to-gray-50 border-r border-brand-border p-5"
-                                  >
-                                    <div className="flex items-center gap-2 mb-5">
-                                      <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
-                                      <h4 className="text-lg font-bold text-text-primary">
-                                        Sports
-                                      </h4>
-                                    </div>
-                                    <div className="space-y-2 max-h-80 overflow-hidden">
-                                      {navigationHierarchy.sports[hoveredSportsCategory].map(
-                                        (sport) => (
-                                          <div
-                                            key={sport.id}
-                                            className={`group p-3 rounded-lg cursor-pointer transition-all duration-200 relative ${
-                                              hoveredSport === sport.slug
-                                                ? 'bg-blue-500 text-white shadow-md transform scale-[1.02]'
-                                                : 'hover:bg-gray-100 hover:shadow-sm'
-                                            }`}
-                                            onMouseEnter={() => {
-                                              setHoveredSport(sport.slug)
-                                              setHoveredSportsItem(null)
-                                            }}
-                                            onClick={() =>
-                                              handleSportClick(hoveredSportsCategory, sport.slug)
-                                            }
-                                          >
-                                            <div className="flex items-center gap-3">
-                                              <div className="flex-shrink-0"></div>
-                                              <div className="flex-1 min-w-0">
-                                                <div className="font-medium text-sm truncate">
-                                                  {sport.name}
-                                                </div>
-                                                <div
-                                                  className={`text-xs ${
-                                                    hoveredSport === sport.slug
-                                                      ? 'text-white/80'
-                                                      : 'text-text-secondary'
-                                                  }`}
-                                                >
-                                                  {sport.productCount} items
-                                                </div>
-                                              </div>
-                                              <ChevronRight
-                                                className={`w-3 h-3 transition-transform duration-200 ${
-                                                  hoveredSport === sport.slug
-                                                    ? 'transform translate-x-1'
-                                                    : ''
-                                                }`}
-                                              />
-                                            </div>
-                                          </div>
-                                        ),
-                                      )}
-                                    </div>
-                                  </motion.div>
-                                )}
-
-                              {/* Level 3: Sports Items */}
-                              {hoveredSport && navigationHierarchy?.sportsItems[hoveredSport] && (
-                                <motion.div
-                                  initial={{ opacity: 0, x: -20 }}
-                                  animate={{ opacity: 1, x: 0 }}
-                                  transition={{ duration: 0.2 }}
-                                  className="w-56 bg-white border-r border-brand-border p-5"
-                                >
-                                  <div className="flex items-center gap-2 mb-5">
-                                    <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                                    <h4 className="text-lg font-bold text-text-primary">
-                                      Equipment
-                                    </h4>
-                                  </div>
-                                  <div className="space-y-2 max-h-80 overflow-hidden">
-                                    {navigationHierarchy.sportsItems[hoveredSport].map((item) => (
-                                      <div
-                                        key={item.id}
-                                        className={`group p-3 rounded-lg cursor-pointer transition-all duration-200 ${
-                                          hoveredSportsItem === item.slug
-                                            ? 'bg-green-500 text-white shadow-md transform scale-[1.02]'
-                                            : 'hover:bg-gray-50 hover:shadow-sm border border-transparent hover:border-gray-200'
-                                        }`}
-                                        onMouseEnter={() => setHoveredSportsItem(item.slug)}
-                                        onClick={() =>
-                                          handleSportsItemClick(
-                                            hoveredSportsCategory!,
-                                            hoveredSport,
-                                            item.slug,
-                                          )
-                                        }
-                                      >
-                                        <div className="flex items-center gap-3">
-                                          <div className="flex-shrink-0"></div>
-                                          <div className="flex-1 min-w-0">
-                                            <div className="font-medium text-sm truncate">
-                                              {item.name}
-                                            </div>
-                                            <div
-                                              className={`text-xs ${
-                                                hoveredSportsItem === item.slug
-                                                  ? 'text-white/80'
-                                                  : 'text-text-secondary'
-                                              }`}
-                                            >
-                                              {item.productCount} products
-                                            </div>
-                                          </div>
-                                        </div>
-                                      </div>
-                                    ))}
-                                  </div>
-                                </motion.div>
-                              )}
-
-                              {/* Level 4: Brands & Actions */}
-                              <div className="flex-1 p-6 bg-gradient-to-br from-gray-50 to-white relative">
-                                {loading ? (
-                                  <div className="flex items-center justify-center h-full">
-                                    <div className="text-center">
-                                      <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-brand-primary mx-auto mb-4"></div>
-                                      <p className="text-text-secondary font-medium">
-                                        Loading navigation...
-                                      </p>
-                                    </div>
-                                  </div>
-                                ) : error ? (
-                                  <div className="flex items-center justify-center h-full">
-                                    <div className="text-center max-w-sm">
-                                      <div className="text-5xl mb-4">⚠️</div>
-                                      <h4 className="text-xl font-bold text-text-primary mb-2">
-                                        Navigation Unavailable
-                                      </h4>
-                                      <p className="text-text-secondary mb-6 text-sm leading-relaxed">
-                                        {error}
-                                      </p>
-                                      <Link
-                                        href="/products"
-                                        className="inline-flex items-center px-6 py-3 bg-brand-primary text-white rounded-xl font-semibold hover:bg-primary-600 transition-colors shadow-lg"
-                                        onClick={() => setMegaMenuOpen(false)}
-                                      >
-                                        <ShoppingBag className="w-4 h-4 mr-2" />
-                                        Browse Products
-                                      </Link>
-                                    </div>
-                                  </div>
-                                ) : (
-                                  <div className="h-full flex flex-col">
-                                    {/* Featured Brands Section */}
-                                    <div className="flex-1">
-                                      {filterMetadata?.brands &&
-                                        filterMetadata.brands.filter((b) => b.isFeature).length >
-                                          0 && (
-                                          <div className="mb-6">
-                                            <div className="flex items-center gap-2 mb-4">
-                                              <div className="w-2 h-2 bg-purple-500 rounded-full"></div>
-                                              <h4 className="text-lg font-bold text-text-primary">
-                                                Featured Brands
-                                              </h4>
-                                            </div>
-                                            <div className="grid grid-cols-2 gap-3">
-                                              {filterMetadata.brands
-                                                .filter((b) => b.isFeature)
-                                                .slice(0, 6)
-                                                .map((brand) => (
-                                                  <div
-                                                    key={brand.id}
-                                                    className="group p-3 rounded-xl cursor-pointer transition-all duration-200 hover:bg-white hover:shadow-md border border-transparent hover:border-gray-200 relative overflow-hidden"
-                                                    onClick={() => handleBrandClick(brand.slug)}
-                                                  >
-                                                    {/* Subtle hover effect */}
-                                                    <div className="absolute inset-0 bg-gradient-to-r from-purple-50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
-
-                                                    <div className="flex items-center gap-3 relative z-10">
-                                                      {brand.logo?.url && (
-                                                        <div className="w-8 h-8 flex-shrink-0 rounded-lg overflow-hidden bg-white p-1 shadow-sm">
-                                                          <Image
-                                                            src={
-                                                              brand.logo.url || '/placeholder.svg'
-                                                            }
-                                                            alt={brand.logo.alt}
-                                                            width={32}
-                                                            height={32}
-                                                            className="w-full h-full object-contain"
-                                                          />
-                                                        </div>
-                                                      )}
-                                                      <div className="flex-1 min-w-0">
-                                                        <div className="font-semibold text-sm text-text-primary truncate">
-                                                          {brand.name}
-                                                        </div>
-                                                        <div className="text-xs text-text-secondary">
-                                                          {brand.productCount} products
-                                                        </div>
-                                                      </div>
-                                                    </div>
-                                                  </div>
-                                                ))}
-                                            </div>
-                                          </div>
-                                        )}
-
-                                      {/* Welcome Message for No Selection */}
-                                      {!hoveredSportsCategory && (
-                                        <div className="text-center py-8">
-                                          <div className="text-6xl mb-4">🏆</div>
-                                          <h4 className="text-2xl font-bold text-text-primary mb-3">
-                                            Discover Sports Equipment
-                                          </h4>
-                                          <p className="text-text-secondary mb-2 text-lg">
-                                            Explore {filterMetadata?.totalCategories} categories
-                                          </p>
-                                          <p className="text-text-secondary text-sm">
-                                            From {filterMetadata?.totalBrands} trusted brands
-                                          </p>
-                                        </div>
-                                      )}
-
-                                      {/* Current Selection Info */}
-                                      {hoveredSportsCategory && (
-                                        <div className="bg-white/60 rounded-xl p-4 mb-4 border border-gray-200">
-                                          <div className="text-sm text-text-secondary mb-1">
-                                            Currently browsing:
-                                          </div>
-                                          <div className="flex items-center gap-2 text-text-primary">
-                                            <span className="font-semibold">
-                                              {
-                                                navigationHierarchy?.sportsCategories.find(
-                                                  (c) => c.slug === hoveredSportsCategory,
-                                                )?.name
-                                              }
-                                            </span>
-                                            {hoveredSport && (
-                                              <>
-                                                <ChevronRight className="w-3 h-3 text-text-secondary" />
-                                                <span className="font-medium">
-                                                  {
-                                                    navigationHierarchy?.sports[
-                                                      hoveredSportsCategory
-                                                    ]?.find((s) => s.slug === hoveredSport)?.name
-                                                  }
-                                                </span>
-                                              </>
-                                            )}
-                                            {hoveredSportsItem && hoveredSport && (
-                                              <>
-                                                <ChevronRight className="w-3 h-3 text-text-secondary" />
-                                                <span className="text-text-secondary">
-                                                  {
-                                                    navigationHierarchy?.sportsItems[
-                                                      hoveredSport
-                                                    ]?.find(
-                                                      (i: CategoryItem) =>
-                                                        i.slug === hoveredSportsItem,
-                                                    )?.name
-                                                  }
-                                                </span>
-                                              </>
-                                            )}
-                                          </div>
-
-                                          {/* Related Brands for the selected category */}
-                                          {(() => {
-                                            const selectedCategory =
-                                              filterMetadata?.categories.find(
-                                                (cat) => cat.slug === hoveredSportsCategory,
-                                              )
-                                            if (
-                                              selectedCategory &&
-                                              Array.isArray(selectedCategory.relatedBrands) &&
-                                              selectedCategory.relatedBrands.length > 0
-                                            ) {
-                                              return (
-                                                <div className="mt-4">
-                                                  <div className="text-xs text-text-secondary mb-2 font-semibold">
-                                                    Related Brands:
-                                                  </div>
-                                                  <div className="flex flex-wrap gap-2">
-                                                    {selectedCategory.relatedBrands.map(
-                                                      (brand: any) => (
-                                                        <button
-                                                          key={brand.id}
-                                                          className="flex items-center gap-2 px-3 py-1 rounded-lg bg-brand-surface border border-brand-border hover:bg-brand-primary hover:text-white transition-colors text-xs font-medium shadow-sm"
-                                                          onClick={() =>
-                                                            handleBrandClick(brand.slug)
-                                                          }
-                                                        >
-                                                          {brand.logo?.url && (
-                                                            <Image
-                                                              src={brand.logo.url}
-                                                              alt={brand.logo.alt || brand.name}
-                                                              width={20}
-                                                              height={20}
-                                                              className="rounded-full w-5 h-5 object-contain"
-                                                            />
-                                                          )}
-                                                          <span>{brand.name}</span>
-                                                        </button>
-                                                      ),
-                                                    )}
-                                                  </div>
-                                                </div>
-                                              )
-                                            }
-                                            return null
-                                          })()}
-                                        </div>
-                                      )}
-                                    </div>
-
-                                    {/* Bottom Action Buttons */}
-                                    <div className="pt-4 border-t border-gray-200">
-                                      <div className="flex gap-3 justify-end">
-                                        <Link
-                                          href="/products"
-                                          className="inline-flex items-center px-5 py-3 border-2 border-brand-primary text-brand-primary rounded-xl font-bold hover:bg-brand-primary hover:text-white transition-all duration-200 shadow-sm hover:shadow-md"
-                                          onClick={() => setMegaMenuOpen(false)}
-                                        >
-                                          <StoreIcon className="w-4 h-4 mr-2" />
-                                          Shop All
-                                        </Link>
-                                        <Link
-                                          href={getCurrentShopLink()}
-                                          className="inline-flex items-center px-6 py-3 bg-brand-primary text-white rounded-xl font-bold hover:bg-primary-600 transition-all duration-200 shadow-lg hover:shadow-xl transform hover:scale-[1.02]"
-                                          onClick={() => setMegaMenuOpen(false)}
-                                        >
-                                          <ShoppingBag className="w-4 h-4 mr-2" />
-                                          Shop Category
-                                        </Link>
-                                      </div>
-                                    </div>
-                                  </div>
-                                )}
-                              </div>
-                            </div>
-                          </motion.div>
-                        )}
+                        {megaMenuOpen &&
+                          megaMenuType === (item.name === 'Shop' ? 'shop' : 'brands') && (
+                            <motion.div
+                              initial={{ opacity: 0, y: 10 }}
+                              animate={{ opacity: 1, y: 0 }}
+                              exit={{ opacity: 0, y: 10 }}
+                              transition={{ duration: 0.2 }}
+                              className="absolute top-full mt-4 bg-brand-surface border border-brand-border shadow-2xl rounded-2xl overflow-hidden z-50"
+                              style={{
+                                width: '1200px',
+                                maxWidth: '95vw',
+                                left: '-400%',
+                                transform: 'translateX(-50%)',
+                              }}
+                            >
+                              {megaMenuType === 'shop' && renderShopMegaMenu()}
+                            </motion.div>
+                          )}
                       </AnimatePresence>
                     </div>
                   ) : (
                     <Link
                       href={item.href}
-                      ref={navRefs.current[index]}
                       className={`relative px-3 lg:px-4 py-2 text-sm lg:text-base font-semibold rounded-xl transition-all duration-150 group overflow-hidden focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-primary focus-visible:ring-offset-2
-                        ${hoveredIdx === index ? 'text-white bg-brand-primary font-bold' : 'text-text-primary hover:text-brand-primary hover:bg-brand-background'}`}
+                        ${hoveredIdx === index ? 'text-white bg-gradient-to-r from-brand-primary to-orange-500 font-bold shadow-lg' : 'text-text-primary hover:text-brand-primary hover:bg-brand-background'}`}
                       onMouseEnter={() => setHoveredIdx(index)}
                       onMouseLeave={() => setHoveredIdx(null)}
                       role="menuitem"
@@ -817,56 +828,6 @@ export default function EnhancedNavigation() {
                   )}
                 </div>
               ))}
-
-              {/* Shared rectangle background for non-dropdown items */}
-              <AnimatePresence>
-                {!isMobile &&
-                  !reducedMotion &&
-                  squircle.visible &&
-                  hoveredIdx !== null &&
-                  !navItems[hoveredIdx]?.hasDropdown &&
-                  !megaMenuOpen && (
-                    <motion.div
-                      key="squircle-bg"
-                      initial={
-                        squircleAnimated
-                          ? {
-                              opacity: 1,
-                              scale: 1,
-                              left: squircle.left,
-                              top: squircle.top,
-                              width: squircle.width,
-                              height: squircle.height,
-                            }
-                          : {
-                              opacity: 0,
-                              scale: 0.98,
-                              left: lastSquircle.current.left,
-                              top: lastSquircle.current.top,
-                              width: lastSquircle.current.width,
-                              height: lastSquircle.current.height,
-                            }
-                      }
-                      animate={{
-                        opacity: 1,
-                        scale: 1,
-                        left: squircle.left,
-                        top: squircle.top,
-                        width: squircle.width,
-                        height: squircle.height,
-                      }}
-                      exit={{ opacity: 0, scale: 0.98 }}
-                      transition={{ type: 'spring', stiffness: 600, damping: 30, mass: 0.7 }}
-                      style={{
-                        position: 'absolute',
-                        zIndex: 1,
-                        borderRadius: '0.75rem',
-                        background: '#FF6B35',
-                        pointerEvents: 'none',
-                      }}
-                    />
-                  )}
-              </AnimatePresence>
             </div>
 
             {/* Desktop Actions */}
@@ -982,7 +943,7 @@ export default function EnhancedNavigation() {
                       {navigationHierarchy.sportsCategories.slice(0, 3).map((category) => (
                         <Link
                           key={category.id}
-                          href={buildFilterUrl({ category: category.slug })}
+                          href={buildFilterUrl({ sportsCategory: category.slug })}
                           onClick={() => setIsOpen(false)}
                           className="block w-full text-left px-3 sm:px-4 py-2 sm:py-3 text-text-primary hover:text-brand-primary hover:bg-gray-50 font-medium rounded-xl sm:rounded-2xl transition-all duration-200 text-base focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-primary focus-visible:ring-offset-2"
                           role="menuitem"
@@ -998,6 +959,47 @@ export default function EnhancedNavigation() {
                           </div>
                         </Link>
                       ))}
+                    </div>
+                  )}
+
+                  {/* Mobile Brands Preview */}
+                  {!loading && !error && filterMetadata?.brands && (
+                    <div className="mb-4">
+                      <h4 className="text-sm font-bold text-text-secondary uppercase tracking-wide mb-2 px-3">
+                        Featured Brands
+                      </h4>
+                      {filterMetadata.brands
+                        .filter((b) => b.isFeature)
+                        .slice(0, 2)
+                        .map((brand) => (
+                          <Link
+                            key={brand.id}
+                            href={buildFilterUrl({ brand: brand.slug })}
+                            onClick={() => setIsOpen(false)}
+                            className="block w-full text-left px-3 sm:px-4 py-2 sm:py-3 text-text-primary hover:text-brand-primary hover:bg-gray-50 font-medium rounded-xl sm:rounded-2xl transition-all duration-200 text-base focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-primary focus-visible:ring-offset-2"
+                            role="menuitem"
+                          >
+                            <div className="flex items-center gap-3">
+                              {brand.logo?.url && (
+                                <div className="w-6 h-6 flex-shrink-0 rounded overflow-hidden">
+                                  <Image
+                                    src={brand.logo.url}
+                                    alt={brand.logo.alt || brand.name}
+                                    width={24}
+                                    height={24}
+                                    className="w-full h-full object-contain"
+                                  />
+                                </div>
+                              )}
+                              <div>
+                                <div>{brand.name}</div>
+                                <div className="text-xs text-text-secondary">
+                                  {brand.productCount} products
+                                </div>
+                              </div>
+                            </div>
+                          </Link>
+                        ))}
                     </div>
                   )}
 
