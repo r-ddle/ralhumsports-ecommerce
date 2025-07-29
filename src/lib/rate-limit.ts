@@ -59,9 +59,19 @@ function getClientIP(request: NextRequest): string {
  */
 export function rateLimit(config: RateLimitConfig) {
   return async (request: NextRequest, next: () => Promise<Response>): Promise<Response> => {
+    // ADDED: Skip rate limiting in development mode
+    if (process.env.NODE_ENV === 'development') {
+      console.log('[Rate Limit] Skipping in development mode')
+      return next()
+    }
+
     const ip = getClientIP(request)
     const key = `${ip}:${request.nextUrl.pathname}`
     const now = Date.now()
+
+    console.log(
+      `[Rate Limit] Checking ${key}, Current count: ${rateLimitStore.get(key)?.count || 0}/${config.maxRequests}`,
+    )
 
     // Get or create rate limit entry
     let entry = rateLimitStore.get(key)
@@ -82,6 +92,8 @@ export function rateLimit(config: RateLimitConfig) {
     if (entry.count > config.maxRequests) {
       const retryAfter = Math.ceil((entry.resetTime - now) / 1000)
 
+      console.log(`[Rate Limit] BLOCKED ${key}, Count: ${entry.count}/${config.maxRequests}`)
+
       return new Response(
         JSON.stringify({
           success: false,
@@ -96,10 +108,16 @@ export function rateLimit(config: RateLimitConfig) {
             'X-RateLimit-Limit': config.maxRequests.toString(),
             'X-RateLimit-Remaining': '0',
             'X-RateLimit-Reset': entry.resetTime.toString(),
+            // ADDED: CORS headers for error responses
+            'Access-Control-Allow-Origin': 'https://ralhumsports.lk,https://www.ralhumsports.lk',
+            'Access-Control-Allow-Methods': 'GET,POST,PUT,DELETE,OPTIONS',
+            'Access-Control-Allow-Headers': 'Content-Type, Authorization, X-Requested-With',
           },
         },
       )
     }
+
+    console.log(`[Rate Limit] ALLOWED ${key}, Count: ${entry.count}/${config.maxRequests}`)
 
     // Continue to next handler
     const response = await next()
@@ -115,35 +133,42 @@ export function rateLimit(config: RateLimitConfig) {
 }
 
 /**
- * Predefined rate limit configurations
+ * Predefined rate limit configurations - UPDATED for production testing
  */
 export const rateLimitConfigs = {
-  // Very restrictive for write operations
+  // RELAXED: For order creation (was too strict)
   strict: {
-    windowMs: 15 * 60 * 1000, // 15 minutes
-    maxRequests: 5,
-    message: 'Too many requests. Please try again later.',
+    windowMs: 5 * 60 * 1000, // 5 minutes (reduced from 15)
+    maxRequests: 20, // Increased from 5 to 20
+    message: 'Too many order requests. Please try again in a few minutes.',
   },
 
-  // Moderate for API operations
+  // RELAXED: Moderate for API operations
   moderate: {
-    windowMs: 15 * 60 * 1000, // 15 minutes
-    maxRequests: 100,
+    windowMs: 10 * 60 * 1000, // 10 minutes (reduced from 15)
+    maxRequests: 200, // Increased from 100 to 200
     message: 'Too many requests. Please try again later.',
   },
 
   // Lenient for public browsing
   lenient: {
     windowMs: 60 * 1000, // 1 minute
-    maxRequests: 60,
+    maxRequests: 100, // Increased from 60 to 100
     message: 'Too many requests. Please slow down.',
   },
 
   // Search-specific (protect against search spam)
   search: {
     windowMs: 60 * 1000, // 1 minute
-    maxRequests: 20,
+    maxRequests: 30, // Increased from 20 to 30
     message: 'Too many search requests. Please wait a moment.',
+  },
+
+  // NEW: Very lenient for testing PayHere integration
+  payment: {
+    windowMs: 2 * 60 * 1000, // 2 minutes
+    maxRequests: 10, // 10 payment attempts per 2 minutes
+    message: 'Too many payment requests. Please wait before trying again.',
   },
 }
 
