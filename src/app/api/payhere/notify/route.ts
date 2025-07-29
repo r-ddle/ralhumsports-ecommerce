@@ -103,7 +103,7 @@ export async function POST(request: NextRequest) {
       status: 200,
       headers: {
         'Content-Type': 'text/plain',
-        ...getSecurityHeaders(),
+        ...getSecurityHeaders(request.headers.get('origin') || undefined),
       },
     })
   } catch (error) {
@@ -112,8 +112,17 @@ export async function POST(request: NextRequest) {
       status: 500,
       headers: {
         'Content-Type': 'text/plain',
-        ...getSecurityHeaders(),
+        ...getSecurityHeaders(request.headers.get('origin') || undefined),
       },
     })
   }
+}
+
+// OPTIONS /api/payhere/notify - Handle CORS preflight
+export async function OPTIONS(request: NextRequest) {
+  const origin = request.headers.get('origin')
+  return new Response(null, {
+    status: 200,
+    headers: getSecurityHeaders(origin || undefined),
+  })
 }

@@ -18,27 +18,27 @@ import {
 } from '@/types/api'
 import { useState } from 'react'
 
-// FIXED: Client-side safe base URL detection
+// FIXED: Client-side safe base URL detection with same-origin optimization
 const getBaseUrl = (): string => {
-  // First priority: Use the explicit environment variable if set
-  if (process.env.NEXT_PUBLIC_SERVER_URL) {
-    console.log('[API] Using NEXT_PUBLIC_SERVER_URL:', process.env.NEXT_PUBLIC_SERVER_URL)
-    return process.env.NEXT_PUBLIC_SERVER_URL
-  }
-
-  // Second priority: Detect from browser location (client-side)
+  // Client-side: prefer same-origin requests to avoid CORS
   if (typeof window !== 'undefined') {
     const origin = window.location.origin
     console.log('[API] Using window.location.origin:', origin)
-
-    // Force HTTPS in production domains
+    
+    // For production domain, always use HTTPS
     if (origin.includes('ralhumsports.lk') && origin.startsWith('http:')) {
       const httpsUrl = origin.replace('http:', 'https:')
       console.log('[API] Converting HTTP to HTTPS:', httpsUrl)
       return httpsUrl
     }
-
+    
     return origin
+  }
+
+  // Server-side: Use environment variable if available
+  if (process.env.NEXT_PUBLIC_SERVER_URL) {
+    console.log('[API] Using NEXT_PUBLIC_SERVER_URL:', process.env.NEXT_PUBLIC_SERVER_URL)
+    return process.env.NEXT_PUBLIC_SERVER_URL
   }
 
   // Fallback for server-side rendering
@@ -104,8 +104,14 @@ class ApiClient {
     const config: RequestInit = {
       headers: {
         'Content-Type': 'application/json',
+        // Add Origin header for CORS when making cross-origin requests
+        ...(typeof window !== 'undefined' && {
+          'Origin': window.location.origin,
+        }),
         ...options.headers,
       },
+      // Add credentials for same-origin requests
+      credentials: 'same-origin',
       ...options,
       ...cacheOptions,
     }
@@ -131,12 +137,18 @@ class ApiClient {
       // Provide better error messages for common issues
       if (error instanceof TypeError && error.message.includes('NetworkError')) {
         throw new Error(
-          'Network connection failed. Please check your internet connection and try again.',
+          'Network connection failed. This might be a CORS issue or connectivity problem. Please refresh the page and try again.',
         )
       }
 
       if (error instanceof TypeError && error.message.includes('Failed to fetch')) {
-        throw new Error('Unable to connect to server. Please try again later.')
+        throw new Error('Unable to connect to server. Please check your connection and try again.')
+      }
+
+      if (error instanceof TypeError && error.message.includes('CORS')) {
+        throw new Error(
+          'Cross-origin request blocked. Please refresh the page and try again.',
+        )
       }
 
       throw error
