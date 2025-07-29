@@ -256,6 +256,7 @@ export function getSecurityHeaders(requestOrigin?: string): Record<string, strin
   const allowedOrigins = [
     process.env.PAYLOAD_PUBLIC_SERVER_URL,
     process.env.NEXT_PUBLIC_SERVER_URL,
+    // Support both www and non-www versions
     'https://ralhumsports.lk',
     'https://www.ralhumsports.lk',
     'https://admin.ralhumsports.lk',
@@ -263,17 +264,23 @@ export function getSecurityHeaders(requestOrigin?: string): Record<string, strin
     'https://localhost:3000',
     // Add Vercel preview URLs
     ...(process.env.VERCEL_URL ? [`https://${process.env.VERCEL_URL}`] : []),
+    // Add common development URLs
+    'http://127.0.0.1:3000',
+    'https://127.0.0.1:3000',
   ].filter(Boolean)
 
   // Determine CORS origin based on request
   let corsOrigin = '*'
   if (requestOrigin && allowedOrigins.includes(requestOrigin)) {
     corsOrigin = requestOrigin
-  } else if (requestOrigin && requestOrigin.includes('ralhumsports.lk')) {
-    // Allow any subdomain of ralhumsports.lk
+  } else if (requestOrigin && (requestOrigin.includes('ralhumsports.lk') || requestOrigin.includes('vercel.app'))) {
+    // Allow ralhumsports.lk domains (with/without www) and Vercel deployments
     corsOrigin = requestOrigin
-  } else if (allowedOrigins.includes('https://ralhumsports.lk')) {
-    corsOrigin = 'https://ralhumsports.lk'
+  } else if (requestOrigin && requestOrigin.startsWith('http://localhost')) {
+    // Allow localhost for development
+    corsOrigin = requestOrigin
+  } else if (allowedOrigins.length > 0) {
+    corsOrigin = allowedOrigins[0] // Use first allowed origin as fallback
   }
 
   console.log('[Security Headers] Origin:', requestOrigin, '-> CORS Origin:', corsOrigin)

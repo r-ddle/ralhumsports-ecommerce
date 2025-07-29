@@ -1,15 +1,29 @@
 import crypto from 'crypto'
 import { PayHerePayment, PayHereNotification, PayHereStatusCode } from '@/types/payhere'
 
-// PayHere configuration
+// FIXED: PayHere configuration with dynamic domain detection
+const getNotifyUrl = (): string => {
+  // In production, use the current domain to avoid cross-origin issues
+  if (typeof window !== 'undefined' && process.env.NODE_ENV === 'production') {
+    return `${window.location.origin}/api/payhere/notify`
+  }
+  
+  // Server-side or fallback
+  if (process.env.NEXT_PUBLIC_SERVER_URL) {
+    return `${process.env.NEXT_PUBLIC_SERVER_URL}/api/payhere/notify`
+  }
+  
+  return 'https://www.ralhumsports.lk/api/payhere/notify'
+}
+
 export const PAYHERE_CONFIG = {
   merchantId: process.env.NEXT_PUBLIC_PAYHERE_MERCHANT_ID!,
   merchantSecret: process.env.NEXT_PUBLIC_PAYHERE_MERCHANT_SECRET!,
   sandbox: process.env.NODE_ENV !== 'production',
   scriptUrl: 'https://www.payhere.lk/lib/payhere.js',
-  notifyUrl: process.env.NEXT_PUBLIC_SERVER_URL
-    ? `${process.env.NEXT_PUBLIC_SERVER_URL}/api/payhere/notify`
-    : 'https://ralhumsports.lk/api/payhere/notify',
+  get notifyUrl() {
+    return getNotifyUrl()
+  },
 }
 
 // FIXED: Generate hash for payment - Updated to match PayHere documentation exactly
