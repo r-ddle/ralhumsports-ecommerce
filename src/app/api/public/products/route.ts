@@ -8,6 +8,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getPayload } from 'payload'
 import config from '@payload-config'
+import { getSecurityHeaders } from '@/lib/response-filter'
 
 // Type for Payload where conditions
 type Where = {
@@ -27,6 +28,7 @@ type Where = {
  * Adds detailed logging and comments for debugging.
  */
 export async function GET(request: NextRequest) {
+  const origin = request.headers.get('origin')
   // --- Parse query parameters ---
   const { searchParams } = new URL(request.url)
   const page = parseInt(searchParams.get('page') || '1')
@@ -77,17 +79,44 @@ export async function GET(request: NextRequest) {
     if (search) {
       whereConditions.or = [
         { name: { contains: search } },
-        { sku: { contains: search } },
-        { tags: { contains: search } },
+        { 'productDetails.sku': { contains: search } },
+        { 'productDetails.tags': { contains: search } },
+        { description: { contains: search } },
       ]
     }
 
     // --- Category filter ---
     if (categorySlugs && categorySlugs.length > 0) {
-      if (categorySlugs.length === 1) {
-        whereConditions['category.slug'] = { equals: categorySlugs[0] }
-      } else {
-        whereConditions['category.slug'] = { in: categorySlugs }
+      try {
+        // Find category IDs from slugs
+        const categoryResults = await payload.find({
+          collection: 'categories',
+          where: { slug: { in: categorySlugs } },
+          limit: 100,
+        })
+        
+        if (categoryResults.docs.length > 0) {
+          const categoryIds = categoryResults.docs.map(cat => cat.id)
+          
+          // Check which category field to use based on category type
+          const sampleCategory = categoryResults.docs[0]
+          
+          if (sampleCategory.type === 'sports-category') {
+            whereConditions['categorySelection.sportsCategory'] = categoryIds.length === 1 
+              ? { equals: categoryIds[0] } 
+              : { in: categoryIds }
+          } else if (sampleCategory.type === 'sports') {
+            whereConditions['categorySelection.sports'] = categoryIds.length === 1 
+              ? { equals: categoryIds[0] } 
+              : { in: categoryIds }
+          } else if (sampleCategory.type === 'sports-item') {
+            whereConditions['categorySelection.sportsItem'] = categoryIds.length === 1 
+              ? { equals: categoryIds[0] } 
+              : { in: categoryIds }
+          }
+        }
+      } catch (categoryError) {
+        console.error(`\x1b[31m[Products API ERROR]\x1b[0m Error finding categories:`, categoryError)
       }
     }
 
@@ -100,7 +129,8 @@ export async function GET(request: NextRequest) {
           limit: 1,
         })
         if (brandResult.docs.length > 0) {
-          whereConditions.brand = { equals: brandResult.docs[0].id }
+          // FIXED: Brand is nested in essentials group
+          whereConditions['essentials.brand'] = { equals: brandResult.docs[0].id }
         } else {
           console.error(`\x1b[31m[Products API ERROR]\x1b[0m Brand not found for slug:`, brand)
           return NextResponse.json({
@@ -114,7 +144,7 @@ export async function GET(request: NextRequest) {
               hasNextPage: false,
               hasPrevPage: false,
             },
-          })
+          }, { headers: getSecurityHeaders(origin || undefined) })
         }
       } catch (brandError) {
         console.error(`\x1b[31m[Products API ERROR]\x1b[0m Error finding brand:`, brandError)
@@ -129,22 +159,24 @@ export async function GET(request: NextRequest) {
             hasNextPage: false,
             hasPrevPage: false,
           },
-        })
+        }, { headers: getSecurityHeaders(origin || undefined) })
       }
     }
 
     // --- Price range filter ---
     if (minPrice || maxPrice) {
-      whereConditions.price = {}
+      // FIXED: Price is in essentials group
+      whereConditions['essentials.price'] = {}
       if (minPrice)
-        (whereConditions.price as Record<string, number>).greater_than_equal = parseFloat(minPrice)
+        (whereConditions['essentials.price'] as Record<string, number>).greater_than_equal = parseFloat(minPrice)
       if (maxPrice)
-        (whereConditions.price as Record<string, number>).less_than_equal = parseFloat(maxPrice)
+        (whereConditions['essentials.price'] as Record<string, number>).less_than_equal = parseFloat(maxPrice)
     }
 
     // --- Stock filter ---
     if (inStock === 'true') {
-      whereConditions.stock = { greater_than: 0 }
+      // FIXED: Stock is in inventory group
+      whereConditions['inventory.stock'] = { greater_than: 0 }
     }
 
     // --- Query the database ---
@@ -244,7 +276,7 @@ export async function GET(request: NextRequest) {
         hasNextPage: result.hasNextPage,
         hasPrevPage: result.hasPrevPage,
       },
-    })
+    }, { headers: getSecurityHeaders(origin || undefined) })
     response.headers.set('Cache-Control', 'public, s-maxage=60, stale-while-revalidate=300')
     return response
   } catch (error) {
@@ -256,7 +288,16 @@ export async function GET(request: NextRequest) {
         error: 'Failed to fetch products',
         details: error instanceof Error ? error.message : String(error),
       },
-      { status: 500 },
+      { status: 500, headers: getSecurityHeaders(origin || undefined) },
     )
   }
+}
+
+// OPTIONS /api/public/products - Handle CORS preflight
+export async function OPTIONS(request: NextRequest) {
+  const origin = request.headers.get('origin')
+  return new NextResponse(null, {
+    status: 200,
+    headers: getSecurityHeaders(origin || undefined),
+  })
 }
