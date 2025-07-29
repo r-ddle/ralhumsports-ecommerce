@@ -6,6 +6,30 @@ const nextConfig = {
   async redirects() {
     if (process.env.NODE_ENV === 'production') {
       return [
+        // Redirect admin subdomain to /admin route
+        {
+          source: '/((?!admin|api|_next|favicon.ico).*)',
+          has: [
+            {
+              type: 'host',
+              value: 'admin.ralhumsports.lk',
+            },
+          ],
+          destination: 'https://www.ralhumsports.lk/admin',
+          permanent: true,
+        },
+        // Redirect root admin subdomain to /admin
+        {
+          source: '/',
+          has: [
+            {
+              type: 'host',
+              value: 'admin.ralhumsports.lk',
+            },
+          ],
+          destination: 'https://www.ralhumsports.lk/admin',
+          permanent: true,
+        },
         // Redirect non-www to www for consistency (exclude API routes)
         {
           source: '/((?!api|_next|favicon.ico).*)',
@@ -125,9 +149,6 @@ const nextConfig = {
   // ADDED: Safe performance settings
   poweredByHeader: false,
   compress: true,
-
-  // ADDED: Safe optimizations that don't require extra packages
-  swcMinify: true,
 
   // ADDED: Bundle analyzer in development (optional)
   ...(process.env.ANALYZE === 'true' && {

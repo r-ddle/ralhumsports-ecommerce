@@ -5,6 +5,7 @@ import { Cart, CartItem, CartState, CartActions } from '@/types/cart'
 import { Product, ProductVariant } from '@/types/product'
 import { toast } from 'sonner'
 import { SITE_CONFIG } from '@/config/site-config'
+import { cartLogger } from '@/lib/logger'
 
 type CartAction =
   | {
@@ -24,33 +25,49 @@ function calculateTax(amount: number) {
   return Math.round(amount * SITE_CONFIG.taxRate)
 }
 
-function calculateCartTotals(items: CartItem[]): {
-  subtotal: number
-  tax: number
-  total: number
-  itemCount: number
-} {
-  const subtotalLKR = items.reduce((sum, item) => sum + item.variant.price * item.quantity, 0)
-  const tax = calculateTax(subtotalLKR) // Tax only on subtotal, not shipping
-  const total = subtotalLKR + tax
-  const itemCount = items.reduce((sum, item) => sum + item.quantity, 0)
+// Memoized calculation to avoid unnecessary re-computations
+const calculateCartTotals = (() => {
+  let lastItems = ''
+  let lastResult: {
+    subtotal: number
+    tax: number
+    total: number
+    itemCount: number
+  } | null = null
 
-  // Debug logging
-  console.log('Cart Totals Debug:', {
-    subtotalLKR,
-    tax,
-    total,
-    taxRate: SITE_CONFIG.taxRate,
-    taxCalculation: `${subtotalLKR} * ${SITE_CONFIG.taxRate} = ${subtotalLKR * SITE_CONFIG.taxRate}`,
-  })
+  return (items: CartItem[]) => {
+    // Create a simple hash of items for comparison
+    const itemsHash = items.map(item => `${item.product.id}-${item.variant.id}-${item.quantity}`).join('|')
+    
+    // Return cached result if items haven't changed
+    if (itemsHash === lastItems && lastResult) {
+      return lastResult
+    }
 
-  return {
-    subtotal: subtotalLKR,
-    tax,
-    total,
-    itemCount,
+    const subtotalLKR = items.reduce((sum, item) => sum + item.variant.price * item.quantity, 0)
+    const tax = calculateTax(subtotalLKR) // Tax only on subtotal, not shipping
+    const total = subtotalLKR + tax
+    const itemCount = items.reduce((sum, item) => sum + item.quantity, 0)
+
+    // Log cart totals for debugging
+    cartLogger.totals({
+      subtotal: subtotalLKR,
+      tax,
+      total,
+      itemCount,
+    })
+
+    lastItems = itemsHash
+    lastResult = {
+      subtotal: subtotalLKR,
+      tax,
+      total,
+      itemCount,
+    }
+
+    return lastResult
   }
-}
+})()
 
 function createEmptyCart(): Cart {
   return {
