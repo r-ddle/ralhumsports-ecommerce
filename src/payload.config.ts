@@ -101,12 +101,18 @@ export default buildConfig({
   cors: [
     process.env.PAYLOAD_PUBLIC_SERVER_URL || '',
     process.env.NEXT_PUBLIC_SERVER_URL || '',
+    'https://ralhumsports.lk',
+    'https://www.ralhumsports.lk',
+    'https://admin.ralhumsports.lk',
     'http://localhost:3000',
     'https://localhost:3000',
   ].filter(Boolean),
   csrf: [
     process.env.PAYLOAD_PUBLIC_SERVER_URL || '',
     process.env.NEXT_PUBLIC_SERVER_URL || '',
+    'https://ralhumsports.lk',
+    'https://www.ralhumsports.lk',
+    'https://admin.ralhumsports.lk',
     'http://localhost:3000',
     'https://localhost:3000',
   ].filter(Boolean),
