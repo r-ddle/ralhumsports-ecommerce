@@ -22,6 +22,12 @@ type CategoryItem = {
   showInNavigation: boolean
   productCount: number
   type: 'sports-category' | 'sports' | 'sports-item'
+  parentCategory?: {
+    id: string | number
+    name: string
+    slug: string
+    type: string
+  } | null
   relatedBrands?: Brand[]
 }
 
@@ -40,6 +46,11 @@ type Brand = {
 
 type FilterMetadata = {
   categories: CategoryItem[]
+  hierarchicalCategories?: {
+    sportsCategories: CategoryItem[]
+    sports: CategoryItem[]
+    sportsItems: CategoryItem[]
+  }
   brands: Brand[]
   priceRange: { min: number; max: number }
   totalProducts: number
@@ -101,41 +112,119 @@ export default function EnhancedNavigation() {
   const [hoveredSportsCategory, setHoveredSportsCategory] = useState<string | null>(null)
   const [hoveredSport, setHoveredSport] = useState<string | null>(null)
   const [hoveredSportsItem, setHoveredSportsItem] = useState<string | null>(null)
+  const [selectedSportsCategory, setSelectedSportsCategory] = useState<string | null>(null)
+  const [selectedSport, setSelectedSport] = useState<string | null>(null)
   const [isMobile, setIsMobile] = useState(false)
   const [reducedMotion, setReducedMotion] = useState(false)
 
-  // Process API data into hierarchical structure
+  // Refs for managing hover timeouts and click outside detection
+  const closeTimeoutRef = useRef<NodeJS.Timeout | null>(null)
+  const navigationRef = useRef<HTMLDivElement>(null)
+  const megaMenuRef = useRef<HTMLDivElement>(null)
+
+  // Helper functions for menu management
+  const openMegaMenu = (type: 'shop' | 'brands') => {
+    if (closeTimeoutRef.current) {
+      clearTimeout(closeTimeoutRef.current)
+      closeTimeoutRef.current = null
+    }
+    setMegaMenuOpen(true)
+    setMegaMenuType(type)
+    setHoveredIdx(null)
+  }
+
+  const closeMegaMenu = (delay = 200) => {
+    if (closeTimeoutRef.current) {
+      clearTimeout(closeTimeoutRef.current)
+    }
+    closeTimeoutRef.current = setTimeout(() => {
+      setMegaMenuOpen(false)
+      setMegaMenuType(null)
+      setHoveredSportsCategory(null)
+      setHoveredSport(null)
+      setHoveredSportsItem(null)
+      setHoveredIdx(null)
+    }, delay)
+  }
+
+  const closeMegaMenuImmediately = () => {
+    if (closeTimeoutRef.current) {
+      clearTimeout(closeTimeoutRef.current)
+      closeTimeoutRef.current = null
+    }
+    setMegaMenuOpen(false)
+    setMegaMenuType(null)
+    setHoveredSportsCategory(null)
+    setHoveredSport(null)
+    setHoveredSportsItem(null)
+    setHoveredIdx(null)
+  }
+
+  const cancelClose = () => {
+    if (closeTimeoutRef.current) {
+      clearTimeout(closeTimeoutRef.current)
+      closeTimeoutRef.current = null
+    }
+  }
+
+  // Process API data into hierarchical structure using the new hierarchicalCategories
   const processHierarchicalData = (data: FilterMetadata): NavigationHierarchy => {
+    // Use the hierarchicalCategories structure if available
+    if (data.hierarchicalCategories) {
+      const sportsCategories = data.hierarchicalCategories.sportsCategories.filter(
+        (cat) => cat.showInNavigation,
+      )
+      const sports: { [categorySlug: string]: CategoryItem[] } = {}
+      const sportsItems: { [sportSlug: string]: CategoryItem[] } = {}
+
+      // Group sports by their parent category
+      data.hierarchicalCategories.sports.forEach((sport) => {
+        if (sport.showInNavigation && sport.parentCategory) {
+          const parentSlug = sport.parentCategory.slug
+          if (!sports[parentSlug]) sports[parentSlug] = []
+          sports[parentSlug].push(sport)
+        }
+      })
+
+      // Group sports items by their parent sport
+      data.hierarchicalCategories.sportsItems.forEach((item) => {
+        if (item.showInNavigation && item.parentCategory) {
+          const parentSlug = item.parentCategory.slug
+          if (!sportsItems[parentSlug]) sportsItems[parentSlug] = []
+          sportsItems[parentSlug].push(item)
+        }
+      })
+
+      return { sportsCategories, sports, sportsItems }
+    }
+
+    // Fallback to old logic if hierarchicalCategories is not available
     const sportsCategories = data.categories.filter(
       (cat) => cat.type === 'sports-category' && cat.showInNavigation,
     )
     const sports: { [categorySlug: string]: CategoryItem[] } = {}
     const sportsItems: { [sportSlug: string]: CategoryItem[] } = {}
 
-    // Group sports by category (you might need to add parent relationships in your API)
+    // Group sports by category using parent relationships
     data.categories
       .filter((cat) => cat.type === 'sports' && cat.showInNavigation)
       .forEach((sport) => {
-        // For now, we'll show all sports under each category
-        // Ideally, you'd have parent-child relationships in your API
-        sportsCategories.forEach((category) => {
-          if (!sports[category.slug]) sports[category.slug] = []
-          sports[category.slug].push(sport)
-        })
+        if (sport.parentCategory) {
+          const parentSlug = sport.parentCategory.slug
+          if (!sports[parentSlug]) sports[parentSlug] = []
+          sports[parentSlug].push(sport)
+        }
       })
 
-    // Group sports items by sport
+    // Group sports items by sport using parent relationships
     data.categories
       .filter((cat) => cat.type === 'sports-item' && cat.showInNavigation)
       .forEach((item) => {
-        // For now, we'll show all items under each sport
-        // Ideally, you'd have parent-child relationships in your API
-        Object.values(sports)
-          .flat()
-          .forEach((sport) => {
-            if (!sportsItems[sport.slug]) sportsItems[sport.slug] = []
-            sportsItems[sport.slug].push(item)
-          })
+        if (item.parentCategory) {
+          const parentSlug = item.parentCategory.slug
+          if (!sportsItems[parentSlug]) sportsItems[parentSlug] = []
+          sportsItems[parentSlug].push(item)
+        }
       })
 
     return { sportsCategories, sports, sportsItems }
@@ -223,10 +312,40 @@ export default function EnhancedNavigation() {
     return `/products${queryString ? `?${queryString}` : ''}`
   }
 
-  // Handle navigation clicks with proper hierarchical filtering
+  // Handle category selection (show next layer)
+  const handleCategorySelect = (categorySlug: string) => {
+    if (selectedSportsCategory === categorySlug) {
+      // If already selected, go to products page
+      window.location.href = buildFilterUrl({ sportsCategory: categorySlug })
+      closeMegaMenuImmediately()
+    } else {
+      // Select this category and show sports layer
+      setSelectedSportsCategory(categorySlug)
+      setSelectedSport(null)
+      setHoveredSport(null)
+      setHoveredSportsItem(null)
+    }
+  }
+
+  const handleSportSelect = (categorySlug: string, sportSlug: string) => {
+    if (selectedSport === sportSlug) {
+      // If already selected, go to products page
+      window.location.href = buildFilterUrl({
+        sportsCategory: categorySlug,
+        sport: sportSlug,
+      })
+      closeMegaMenuImmediately()
+    } else {
+      // Select this sport and show sports items layer
+      setSelectedSport(sportSlug)
+      setHoveredSportsItem(null)
+    }
+  }
+
+  // Handle navigation clicks with proper hierarchical filtering (for final selection)
   const handleCategoryClick = (categorySlug: string) => {
     window.location.href = buildFilterUrl({ sportsCategory: categorySlug })
-    setMegaMenuOpen(false)
+    closeMegaMenuImmediately()
   }
 
   const handleSportClick = (categorySlug: string, sportSlug: string) => {
@@ -234,7 +353,7 @@ export default function EnhancedNavigation() {
       sportsCategory: categorySlug,
       sport: sportSlug,
     })
-    setMegaMenuOpen(false)
+    closeMegaMenuImmediately()
   }
 
   const handleSportsItemClick = (categorySlug: string, sportSlug: string, itemSlug: string) => {
@@ -243,35 +362,35 @@ export default function EnhancedNavigation() {
       sport: sportSlug,
       sportsItem: itemSlug,
     })
-    setMegaMenuOpen(false)
+    closeMegaMenuImmediately()
   }
 
   const handleBrandClick = (brandSlug: string) => {
     window.location.href = buildFilterUrl({ brand: brandSlug })
-    setMegaMenuOpen(false)
+    closeMegaMenuImmediately()
   }
 
   const handleAllBrandsClick = () => {
     window.location.href = '/brands'
-    setMegaMenuOpen(false)
+    closeMegaMenuImmediately()
   }
 
   const handleFeaturedBrandsClick = (brands: string[]) => {
     window.location.href = buildFilterUrl({ brands })
-    setMegaMenuOpen(false)
+    closeMegaMenuImmediately()
   }
 
   const getCurrentShopLink = () => {
     if (hoveredSportsItem && hoveredSport && hoveredSportsCategory) {
       return buildFilterUrl({
-        sportsCategory: hoveredSportsCategory,
+        sportsCategory: hoveredSportsCategory ?? undefined,
         sport: hoveredSport,
         sportsItem: hoveredSportsItem,
       })
     }
     if (hoveredSport && hoveredSportsCategory) {
       return buildFilterUrl({
-        sportsCategory: hoveredSportsCategory,
+        sportsCategory: hoveredSportsCategory ?? undefined,
         sport: hoveredSport,
       })
     }
@@ -284,6 +403,31 @@ export default function EnhancedNavigation() {
   const getCurrentBrandsLink = () => {
     return '/brands'
   }
+
+  // Handle click outside to close mega menu
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      const target = event.target as Node
+
+      // Check if click is outside the navigation and mega menu
+      if (
+        megaMenuOpen &&
+        navigationRef.current &&
+        megaMenuRef.current &&
+        !navigationRef.current.contains(target) &&
+        !megaMenuRef.current.contains(target)
+      ) {
+        closeMegaMenuImmediately()
+      }
+    }
+
+    if (megaMenuOpen) {
+      document.addEventListener('mousedown', handleClickOutside)
+      return () => {
+        document.removeEventListener('mousedown', handleClickOutside)
+      }
+    }
+  }, [megaMenuOpen])
 
   // Detect mobile and reduced motion
   useEffect(() => {
@@ -301,6 +445,10 @@ export default function EnhancedNavigation() {
     return () => {
       window.removeEventListener('resize', checkMobile)
       mediaQuery.removeEventListener('change', handleMotionChange)
+      // Clear any pending timeouts
+      if (closeTimeoutRef.current) {
+        clearTimeout(closeTimeoutRef.current)
+      }
     }
   }, [])
 
@@ -337,23 +485,18 @@ export default function EnhancedNavigation() {
               <div
                 key={category.id}
                 className={`group p-4 rounded-lg cursor-pointer transition-all duration-200 relative ${
-                  hoveredSportsCategory === category.slug
+                  selectedSportsCategory === category.slug
                     ? 'bg-blue-600 text-white shadow-md'
                     : 'hover:bg-white hover:shadow-sm border border-transparent hover:border-blue-200'
                 }`}
-                onMouseEnter={() => {
-                  setHoveredSportsCategory(category.slug)
-                  setHoveredSport(null)
-                  setHoveredSportsItem(null)
-                }}
-                onClick={() => handleCategoryClick(category.slug)}
+                onClick={() => handleCategorySelect(category.slug)}
               >
                 <div className="flex items-center justify-between">
                   <div>
                     <div className="font-bold text-base">{category.name}</div>
                     <div
                       className={`text-sm ${
-                        hoveredSportsCategory === category.slug
+                        selectedSportsCategory === category.slug
                           ? 'text-white/80'
                           : 'text-text-secondary'
                       }`}
@@ -361,8 +504,10 @@ export default function EnhancedNavigation() {
                       {category.productCount} products
                     </div>
                   </div>
-                  {hoveredSportsCategory === category.slug && (
+                  {selectedSportsCategory === category.slug ? (
                     <ChevronRight className="w-5 h-5 text-white" />
+                  ) : (
+                    <ChevronRight className="w-5 h-5 text-gray-400 opacity-0 group-hover:opacity-100 transition-opacity" />
                   )}
                 </div>
               </div>
@@ -372,7 +517,7 @@ export default function EnhancedNavigation() {
       </div>
 
       {/* Layer 2: Sports */}
-      {hoveredSportsCategory && navigationHierarchy?.sports[hoveredSportsCategory] && (
+      {selectedSportsCategory && navigationHierarchy?.sports[selectedSportsCategory] && (
         <motion.div
           initial={{ opacity: 0, x: -20 }}
           animate={{ opacity: 1, x: 0 }}
@@ -383,37 +528,37 @@ export default function EnhancedNavigation() {
             <div className="w-2 h-2 bg-green-600 rounded-full"></div>
             <h4 className="text-lg font-bold text-text-primary">Sports</h4>
             <div className="text-sm text-text-secondary ml-auto">
-              {navigationHierarchy.sports[hoveredSportsCategory].length}
+              {navigationHierarchy.sports[selectedSportsCategory].length}
             </div>
           </div>
 
           <div className="space-y-2">
-            {navigationHierarchy.sports[hoveredSportsCategory].slice(0, 10).map((sport) => (
+            {navigationHierarchy.sports[selectedSportsCategory].slice(0, 10).map((sport) => (
               <div
                 key={sport.id}
                 className={`group p-3 rounded-lg cursor-pointer transition-all duration-200 ${
-                  hoveredSport === sport.slug
+                  selectedSport === sport.slug
                     ? 'bg-green-600 text-white shadow-md'
                     : 'hover:bg-white hover:shadow-sm border border-transparent hover:border-green-200'
                 }`}
-                onMouseEnter={() => {
-                  setHoveredSport(sport.slug)
-                  setHoveredSportsItem(null)
-                }}
-                onClick={() => handleSportClick(hoveredSportsCategory, sport.slug)}
+                onClick={() => handleSportSelect(selectedSportsCategory!, sport.slug)}
               >
                 <div className="flex items-center justify-between">
                   <div>
                     <div className="font-semibold text-sm">{sport.name}</div>
                     <div
                       className={`text-xs ${
-                        hoveredSport === sport.slug ? 'text-white/80' : 'text-text-secondary'
+                        selectedSport === sport.slug ? 'text-white/80' : 'text-text-secondary'
                       }`}
                     >
                       {sport.productCount} items
                     </div>
                   </div>
-                  {hoveredSport === sport.slug && <ChevronRight className="w-4 h-4 text-white" />}
+                  {selectedSport === sport.slug ? (
+                    <ChevronRight className="w-4 h-4 text-white" />
+                  ) : (
+                    <ChevronRight className="w-4 h-4 text-gray-400 opacity-0 group-hover:opacity-100 transition-opacity" />
+                  )}
                 </div>
               </div>
             ))}
@@ -422,7 +567,7 @@ export default function EnhancedNavigation() {
       )}
 
       {/* Layer 3: Equipment/Sports Items */}
-      {hoveredSport && navigationHierarchy?.sportsItems[hoveredSport] && (
+      {selectedSport && navigationHierarchy?.sportsItems[selectedSport] && (
         <motion.div
           initial={{ opacity: 0, x: -20 }}
           animate={{ opacity: 1, x: 0 }}
@@ -433,12 +578,12 @@ export default function EnhancedNavigation() {
             <div className="w-2 h-2 bg-orange-600 rounded-full"></div>
             <h4 className="text-lg font-bold text-text-primary">Equipment</h4>
             <div className="text-sm text-text-secondary ml-auto">
-              {navigationHierarchy.sportsItems[hoveredSport].length}
+              {navigationHierarchy.sportsItems[selectedSport].length}
             </div>
           </div>
 
           <div className="space-y-2">
-            {navigationHierarchy.sportsItems[hoveredSport].slice(0, 12).map((item) => (
+            {navigationHierarchy.sportsItems[selectedSport].slice(0, 12).map((item) => (
               <div
                 key={item.id}
                 className={`group p-3 rounded-lg cursor-pointer transition-all duration-200 ${
@@ -446,9 +591,8 @@ export default function EnhancedNavigation() {
                     ? 'bg-orange-600 text-white shadow-md'
                     : 'hover:bg-white hover:shadow-sm border border-transparent hover:border-orange-200'
                 }`}
-                onMouseEnter={() => setHoveredSportsItem(item.slug)}
                 onClick={() =>
-                  handleSportsItemClick(hoveredSportsCategory!, hoveredSport, item.slug)
+                  handleSportsItemClick(selectedSportsCategory!, selectedSport!, item.slug)
                 }
               >
                 <div className="flex items-center justify-between">
@@ -470,7 +614,7 @@ export default function EnhancedNavigation() {
       )}
 
       {/* Layer 4: Shop by Brands (Only show when category is selected) */}
-      {hoveredSportsCategory && (
+      {selectedSportsCategory && (
         <motion.div
           initial={{ opacity: 0, x: -20 }}
           animate={{ opacity: 1, x: 0 }}
@@ -493,7 +637,7 @@ export default function EnhancedNavigation() {
                 <Link
                   href="/products"
                   className="inline-flex items-center px-6 py-3 bg-brand-primary text-white rounded-xl font-semibold hover:bg-primary-600 transition-colors shadow-lg"
-                  onClick={() => setMegaMenuOpen(false)}
+                  onClick={() => closeMegaMenuImmediately()}
                 >
                   <ShoppingBag className="w-4 h-4 mr-2" />
                   Browse Products
@@ -509,28 +653,28 @@ export default function EnhancedNavigation() {
                   <span className="font-bold px-3 py-1 bg-blue-100 rounded-lg">
                     {
                       navigationHierarchy?.sportsCategories.find(
-                        (c) => c.slug === hoveredSportsCategory,
+                        (c) => c.slug === selectedSportsCategory,
                       )?.name
                     }
                   </span>
-                  {hoveredSport && (
+                  {selectedSport && (
                     <>
                       <ChevronRight className="w-3 h-3 text-text-secondary" />
                       <span className="font-semibold px-3 py-1 bg-green-100 rounded-lg">
                         {
-                          navigationHierarchy?.sports[hoveredSportsCategory]?.find(
-                            (s) => s.slug === hoveredSport,
+                          navigationHierarchy?.sports[selectedSportsCategory]?.find(
+                            (s) => s.slug === selectedSport,
                           )?.name
                         }
                       </span>
                     </>
                   )}
-                  {hoveredSportsItem && hoveredSport && (
+                  {hoveredSportsItem && selectedSport && (
                     <>
                       <ChevronRight className="w-3 h-3 text-text-secondary" />
                       <span className="text-text-secondary px-3 py-1 bg-orange-100 rounded-lg">
                         {
-                          navigationHierarchy?.sportsItems[hoveredSport]?.find(
+                          navigationHierarchy?.sportsItems[selectedSport]?.find(
                             (i: CategoryItem) => i.slug === hoveredSportsItem,
                           )?.name
                         }
@@ -570,7 +714,7 @@ export default function EnhancedNavigation() {
                                 const url =
                                   hoveredSportsItem && hoveredSport && hoveredSportsCategory
                                     ? buildFilterUrl({
-                                        sportsCategory: hoveredSportsCategory,
+                                        sportsCategory: hoveredSportsCategory ?? undefined,
                                         sport: hoveredSport,
                                         sportsItem: hoveredSportsItem,
                                         brand: brand.slug,
@@ -582,11 +726,11 @@ export default function EnhancedNavigation() {
                                           brand: brand.slug,
                                         })
                                       : buildFilterUrl({
-                                          sportsCategory: hoveredSportsCategory,
+                                          sportsCategory: hoveredSportsCategory ?? undefined,
                                           brand: brand.slug,
                                         })
                                 window.location.href = url
-                                setMegaMenuOpen(false)
+                                closeMegaMenuImmediately()
                               }}
                             >
                               <div className="flex items-center gap-3">
@@ -602,7 +746,7 @@ export default function EnhancedNavigation() {
                                   </div>
                                 )}
                                 <div className="flex-1 min-w-0">
-                                  <div className="font-semibold text-sm text-text-primary truncate">
+                                  <div className="font-semibold text-xl text-text-primary truncate">
                                     {brand.name}
                                   </div>
                                   <div className="text-xs text-text-secondary">
@@ -626,25 +770,25 @@ export default function EnhancedNavigation() {
                         className="group p-2 rounded-lg cursor-pointer transition-all duration-200 hover:bg-white hover:shadow-sm border border-transparent hover:border-gray-200"
                         onClick={() => {
                           const url =
-                            hoveredSportsItem && hoveredSport && hoveredSportsCategory
+                            hoveredSportsItem && selectedSport
                               ? buildFilterUrl({
-                                  sportsCategory: hoveredSportsCategory,
-                                  sport: hoveredSport,
+                                  sportsCategory: selectedSportsCategory,
+                                  sport: selectedSport,
                                   sportsItem: hoveredSportsItem,
                                   brand: brand.slug,
                                 })
-                              : hoveredSport && hoveredSportsCategory
+                              : hoveredSport && selectedSportsCategory
                                 ? buildFilterUrl({
-                                    sportsCategory: hoveredSportsCategory,
+                                    sportsCategory: selectedSportsCategory,
                                     sport: hoveredSport,
                                     brand: brand.slug,
                                   })
                                 : buildFilterUrl({
-                                    sportsCategory: hoveredSportsCategory,
+                                    sportsCategory: selectedSportsCategory,
                                     brand: brand.slug,
                                   })
                           window.location.href = url
-                          setMegaMenuOpen(false)
+                          closeMegaMenuImmediately()
                         }}
                       >
                         <div className="flex items-center gap-2">
@@ -672,12 +816,12 @@ export default function EnhancedNavigation() {
               </div>
 
               {/* Action Buttons */}
-              <div className="pt-6 border-t border-gray-200 mt-6">
+              <div className="pt-6 border-t border-gray-200 mt-2">
                 <div className="flex gap-3 justify-between">
                   <Link
                     href="/brands"
                     className="inline-flex items-center px-4 py-2 border-2 border-purple-600 text-purple-600 rounded-lg font-semibold hover:bg-purple-600 hover:text-white transition-all duration-200"
-                    onClick={() => setMegaMenuOpen(false)}
+                    onClick={() => closeMegaMenuImmediately()}
                   >
                     <Sparkles className="w-4 h-4 mr-2" />
                     All Brands
@@ -685,7 +829,7 @@ export default function EnhancedNavigation() {
                   <Link
                     href={getCurrentShopLink()}
                     className="inline-flex items-center px-6 py-2 bg-brand-primary text-white rounded-lg font-bold hover:bg-primary-600 transition-all duration-200 shadow-lg hover:shadow-xl"
-                    onClick={() => setMegaMenuOpen(false)}
+                    onClick={() => closeMegaMenuImmediately()}
                   >
                     <ShoppingBag className="w-4 h-4 mr-2" />
                     {hoveredSportsItem
@@ -702,7 +846,7 @@ export default function EnhancedNavigation() {
       )}
 
       {/* Default State: No Category Selected */}
-      {!hoveredSportsCategory && !loading && !error && (
+      {!hoveredSportsCategory && !selectedSportsCategory && !loading && !error && (
         <div className="flex-1 p-6 bg-gradient-to-br from-gray-50 to-white flex items-center justify-center">
           <div className="text-center max-w-sm">
             <ShoppingBag className="w-16 h-16 text-gray-300 mx-auto mb-4" />
@@ -713,7 +857,7 @@ export default function EnhancedNavigation() {
             <Link
               href="/products"
               className="inline-flex items-center px-6 py-3 bg-brand-primary text-white rounded-xl font-semibold hover:bg-primary-600 transition-colors shadow-lg"
-              onClick={() => setMegaMenuOpen(false)}
+              onClick={() => closeMegaMenuImmediately()}
             >
               <ShoppingBag className="w-4 h-4 mr-2" />
               Browse All Products
@@ -761,63 +905,66 @@ export default function EnhancedNavigation() {
               {navItems.map((item, index) => (
                 <div key={item.name} className="relative">
                   {item.hasDropdown ? (
-                    <div
-                      className="relative"
-                      onMouseEnter={() => {
-                        setMegaMenuOpen(true)
-                        setMegaMenuType(item.name === 'Shop' ? 'shop' : 'brands')
-                        setHoveredIdx(null)
-                      }}
-                      onMouseLeave={() => {
-                        setMegaMenuOpen(false)
-                        setMegaMenuType(null)
-                        setHoveredSportsCategory(null)
-                        setHoveredSport(null)
-                        setHoveredSportsItem(null)
-                        setHoveredIdx(null)
-                      }}
-                    >
-                      <Link
-                        href={item.name === 'Shop' ? getCurrentShopLink() : getCurrentBrandsLink()}
-                        className={`relative px-3 lg:px-4 py-2 text-sm lg:text-base font-semibold rounded-xl transition-all duration-150 group overflow-hidden focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-primary focus-visible:ring-offset-2 flex items-center gap-1
-                          ${megaMenuOpen && megaMenuType === (item.name === 'Shop' ? 'shop' : 'brands') ? 'text-white bg-brand-primary font-bold' : 'text-text-primary hover:text-brand-primary hover:bg-brand-background'}`}
-                        aria-label={
-                          item.name === 'Shop' ? 'Shop filtered products' : 'Browse brands'
-                        }
+                    <div className="relative" ref={navigationRef}>
+                      <button
+                        onClick={(e) => {
+                          e.preventDefault()
+                          if (item.name === 'Shop') {
+                            // On mobile, go directly to products page
+                            if (isMobile) {
+                              window.location.href = '/products'
+                            } else {
+                              // Desktop: toggle mega menu
+                              if (megaMenuOpen && megaMenuType === 'shop') {
+                                closeMegaMenuImmediately()
+                              } else {
+                                openMegaMenu('shop')
+                              }
+                            }
+                          } else {
+                            window.location.href = getCurrentBrandsLink()
+                          }
+                        }}
+                        className={`relative px-3 lg:px-4 py-2 text-sm lg:text-base font-semibold rounded-xl transition-all duration-300 group overflow-hidden focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-primary focus-visible:ring-offset-2 flex items-center gap-1
+                          ${megaMenuOpen && megaMenuType === (item.name === 'Shop' ? 'shop' : 'brands') ? 'text-white bg-brand-primary font-bold' : 'text-text-primary hover:text-brand-primary hover:bg-brand-background/50'}`}
+                        aria-label={item.name === 'Shop' ? 'Toggle shop menu' : 'Browse brands'}
                       >
                         {item.name}
                         <ChevronRight
                           className={`w-3 h-3 transition-transform duration-200 ${megaMenuOpen && megaMenuType === (item.name === 'Shop' ? 'shop' : 'brands') ? 'rotate-90' : ''}`}
                         />
-                      </Link>
+                      </button>
 
-                      {/* Mega Menu */}
-                      <AnimatePresence>
-                        {megaMenuOpen &&
-                          megaMenuType === (item.name === 'Shop' ? 'shop' : 'brands') && (
-                            <motion.div
-                              initial={{ opacity: 0, y: 10 }}
-                              animate={{ opacity: 1, y: 0 }}
-                              exit={{ opacity: 0, y: 10 }}
-                              transition={{ duration: 0.2 }}
-                              className="absolute top-full mt-4 bg-brand-surface border border-brand-border shadow-2xl rounded-2xl overflow-hidden z-50"
-                              style={{
-                                width: '1200px',
-                                maxWidth: '95vw',
-                                left: '-400%',
-                                transform: 'translateX(-50%)',
-                              }}
-                            >
-                              {megaMenuType === 'shop' && renderShopMegaMenu()}
-                            </motion.div>
-                          )}
-                      </AnimatePresence>
+                      {/* Mega Menu - Desktop Only */}
+                      {!isMobile && (
+                        <AnimatePresence>
+                          {megaMenuOpen &&
+                            megaMenuType === (item.name === 'Shop' ? 'shop' : 'brands') && (
+                              <motion.div
+                                initial={{ opacity: 0, y: 10 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                exit={{ opacity: 0, y: 10 }}
+                                transition={{ duration: 0.2 }}
+                                className="absolute top-full mt-4 bg-brand-surface border border-brand-border shadow-2xl rounded-2xl overflow-hidden z-50"
+                                style={{
+                                  width: '1200px',
+                                  maxWidth: '95vw',
+                                  left: '-400%',
+                                  transform: 'translateX(-50%)',
+                                }}
+                                ref={megaMenuRef}
+                              >
+                                {megaMenuType === 'shop' && renderShopMegaMenu()}
+                              </motion.div>
+                            )}
+                        </AnimatePresence>
+                      )}
                     </div>
                   ) : (
                     <Link
                       href={item.href}
-                      className={`relative px-3 lg:px-4 py-2 text-sm lg:text-base font-semibold rounded-xl transition-all duration-150 group overflow-hidden focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-primary focus-visible:ring-offset-2
-                        ${hoveredIdx === index ? 'text-white bg-gradient-to-r from-brand-primary to-orange-500 font-bold shadow-lg' : 'text-text-primary hover:text-brand-primary hover:bg-brand-background'}`}
+                      className={`relative px-3 lg:px-4 py-2 text-sm lg:text-base font-semibold rounded-xl transition-all duration-300 ease-out group overflow-hidden focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-primary focus-visible:ring-offset-2
+                        ${hoveredIdx === index ? 'text-white bg-gradient-to-r from-brand-primary to-orange-500 font-bold shadow-lg transform scale-105' : 'text-text-primary hover:text-brand-primary hover:bg-brand-background/30 hover:shadow-md'}`}
                       onMouseEnter={() => setHoveredIdx(index)}
                       onMouseLeave={() => setHoveredIdx(null)}
                       role="menuitem"
@@ -934,75 +1081,6 @@ export default function EnhancedNavigation() {
             >
               <div className="p-4 sm:p-6">
                 <div className="space-y-1">
-                  {/* Mobile Categories */}
-                  {!loading && !error && navigationHierarchy?.sportsCategories && (
-                    <div className="mb-4">
-                      <h4 className="text-sm font-bold text-text-secondary uppercase tracking-wide mb-2 px-3">
-                        Categories
-                      </h4>
-                      {navigationHierarchy.sportsCategories.slice(0, 3).map((category) => (
-                        <Link
-                          key={category.id}
-                          href={buildFilterUrl({ sportsCategory: category.slug })}
-                          onClick={() => setIsOpen(false)}
-                          className="block w-full text-left px-3 sm:px-4 py-2 sm:py-3 text-text-primary hover:text-brand-primary hover:bg-gray-50 font-medium rounded-xl sm:rounded-2xl transition-all duration-200 text-base focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-primary focus-visible:ring-offset-2"
-                          role="menuitem"
-                        >
-                          <div className="flex items-center gap-3">
-                            <span className="text-lg">{category.icon || '🏆'}</span>
-                            <div>
-                              <div>{category.name}</div>
-                              <div className="text-xs text-text-secondary">
-                                {category.productCount} products
-                              </div>
-                            </div>
-                          </div>
-                        </Link>
-                      ))}
-                    </div>
-                  )}
-
-                  {/* Mobile Brands Preview */}
-                  {!loading && !error && filterMetadata?.brands && (
-                    <div className="mb-4">
-                      <h4 className="text-sm font-bold text-text-secondary uppercase tracking-wide mb-2 px-3">
-                        Featured Brands
-                      </h4>
-                      {filterMetadata.brands
-                        .filter((b) => b.isFeature)
-                        .slice(0, 2)
-                        .map((brand) => (
-                          <Link
-                            key={brand.id}
-                            href={buildFilterUrl({ brand: brand.slug })}
-                            onClick={() => setIsOpen(false)}
-                            className="block w-full text-left px-3 sm:px-4 py-2 sm:py-3 text-text-primary hover:text-brand-primary hover:bg-gray-50 font-medium rounded-xl sm:rounded-2xl transition-all duration-200 text-base focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-primary focus-visible:ring-offset-2"
-                            role="menuitem"
-                          >
-                            <div className="flex items-center gap-3">
-                              {brand.logo?.url && (
-                                <div className="w-6 h-6 flex-shrink-0 rounded overflow-hidden">
-                                  <Image
-                                    src={brand.logo.url}
-                                    alt={brand.logo.alt || brand.name}
-                                    width={24}
-                                    height={24}
-                                    className="w-full h-full object-contain"
-                                  />
-                                </div>
-                              )}
-                              <div>
-                                <div>{brand.name}</div>
-                                <div className="text-xs text-text-secondary">
-                                  {brand.productCount} products
-                                </div>
-                              </div>
-                            </div>
-                          </Link>
-                        ))}
-                    </div>
-                  )}
-
                   {/* Regular Nav Items */}
                   {navItems.map((item) => (
                     <div key={item.name}>

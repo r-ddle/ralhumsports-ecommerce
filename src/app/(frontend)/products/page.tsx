@@ -21,9 +21,15 @@ import {
 import { Separator } from '@/components/ui/separator'
 import { ProductListItem, Category, Brand } from '@/types/api'
 import { motion, AnimatePresence } from 'framer-motion'
+import { useSearchParams } from 'next/navigation'
 
 interface ProductFilters {
   categories: Category[]
+  hierarchicalCategories: {
+    sportsCategories: Category[]
+    sports: Category[]
+    sportsItems: Category[]
+  }
   brands: Brand[]
   priceRange: { min: number; max: number }
 }
@@ -40,14 +46,24 @@ interface ProductQueryParams {
   minPrice?: number
   maxPrice?: number
   inStock?: boolean
+  // Hierarchical category filters
+  sportsCategory?: string
+  sport?: string
+  sportsItem?: string
 }
 
 export default function StorePage() {
+  const searchParams = useSearchParams()
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid')
   const [showFilters, setShowFilters] = useState(false)
   const [products, setProducts] = useState<ProductListItem[]>([])
   const [filterOptions, setFilterOptions] = useState<ProductFilters>({
     categories: [],
+    hierarchicalCategories: {
+      sportsCategories: [],
+      sports: [],
+      sportsItems: [],
+    },
     brands: [],
     priceRange: { min: 0, max: 100000 }, // Default range
   })
@@ -80,6 +96,56 @@ export default function StorePage() {
     return () => mediaQuery.removeEventListener('change', handleChange)
   }, [])
 
+  // Read URL parameters and sync with currentFilters
+  useEffect(() => {
+    const urlFilters: ProductQueryParams = {
+      page: parseInt(searchParams.get('page') || '1'),
+      limit: parseInt(searchParams.get('limit') || '24'),
+      sort: (searchParams.get('sort') as any) || 'createdAt',
+      order: (searchParams.get('order') as any) || 'desc',
+      status: 'active',
+    }
+
+    // Handle search
+    const search = searchParams.get('search')
+    if (search) urlFilters.search = search
+
+    // Handle hierarchical categories (keep them separate, don't merge into categories array)
+    const sportsCategory = searchParams.get('sportsCategory')
+    const sport = searchParams.get('sport') 
+    const sportsItem = searchParams.get('sportsItem')
+    
+    if (sportsCategory) urlFilters.sportsCategory = sportsCategory
+    if (sport) urlFilters.sport = sport
+    if (sportsItem) urlFilters.sportsItem = sportsItem
+    
+    // Handle legacy categories array (only if no hierarchical filters)
+    if (!sportsCategory && !sport && !sportsItem) {
+      const categories = searchParams.get('categories')
+      if (categories) {
+        urlFilters.categories = categories.split(',')
+      }
+    }
+
+    // Handle brands (multiple brand parameters)
+    const brands = searchParams.getAll('brand')
+    if (brands.length > 0) {
+      urlFilters.brands = brands
+    }
+
+    // Handle price range
+    const minPrice = searchParams.get('minPrice')
+    const maxPrice = searchParams.get('maxPrice')
+    if (minPrice) urlFilters.minPrice = parseInt(minPrice)
+    if (maxPrice) urlFilters.maxPrice = parseInt(maxPrice)
+
+    // Handle stock filter
+    const inStock = searchParams.get('inStock')
+    if (inStock === 'true') urlFilters.inStock = true
+
+    setCurrentFilters(urlFilters)
+  }, [searchParams])
+
   const getDisplayPrice = (
     product: ProductListItem & { variants?: Array<{ price: number }> },
   ): number => {
@@ -92,12 +158,17 @@ export default function StorePage() {
   const fetchFilterOptions = useCallback(async () => {
     try {
       setFiltersLoading(true)
-      const response = await fetch('/api/public/products/filters-meta')
+      const response = await fetch('/api/public/filters-meta')
       if (!response.ok) throw new Error('Failed to fetch filter options')
       const data = await response.json()
       if (data.success && data.data) {
         setFilterOptions({
           categories: data.data.categories || [],
+          hierarchicalCategories: data.data.hierarchicalCategories || {
+            sportsCategories: [],
+            sports: [],
+            sportsItems: [],
+          },
           brands: data.data.brands || [],
           priceRange: data.data.priceRange || { min: 0, max: 100000 },
         })
@@ -127,13 +198,16 @@ export default function StorePage() {
   }
 
   const handleResetFilters = () => {
-    setCurrentFilters((prev) => ({
+    // Reset URL to trigger filter component reset
+    window.history.pushState({}, '', '/products')
+    
+    setCurrentFilters({
       page: 1,
-      limit: prev.limit,
+      limit: 24,
       sort: 'createdAt',
       order: 'desc',
       status: 'active',
-    }))
+    })
   }
 
   const handlePageChange = (page: number) => {
@@ -154,10 +228,16 @@ export default function StorePage() {
 
       Object.entries(currentFilters).forEach(([key, value]) => {
         if (value === undefined || value === null || value === '') return
-        // Special handling for categories/brands arrays
+        
+        // Special handling for hierarchical categories - these should be sent as individual parameters
         if (key === 'categories' && Array.isArray(value)) {
-          value.forEach((v) => params.append('category', v))
+          // Don't send categories array if we have hierarchical filters
+          const hasHierarchicalFilters = currentFilters.sportsCategory || currentFilters.sport || currentFilters.sportsItem
+          if (!hasHierarchicalFilters) {
+            value.forEach((v) => params.append('category', v))
+          }
         } else if (key === 'brands' && Array.isArray(value)) {
+          // Send brands as individual 'brand' parameters (singular, as expected by API)
           value.forEach((v) => params.append('brand', v))
         } else if (Array.isArray(value)) {
           value.forEach((v) => params.append(key, v))
@@ -301,8 +381,10 @@ export default function StorePage() {
                 <Card className="bg-brand-surface border-brand-border shadow-xl">
                   <FiltersComponent
                     categories={filterOptions.categories}
+                    hierarchicalCategories={filterOptions.hierarchicalCategories}
                     brands={filterOptions.brands}
                     priceRange={filterOptions.priceRange}
+                    loading={filtersLoading}
                   />
                 </Card>
               </div>

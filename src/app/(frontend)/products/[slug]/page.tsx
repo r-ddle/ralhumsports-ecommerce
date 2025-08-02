@@ -120,28 +120,13 @@ export default function ProductDetailPage({ params }: ProductDetailPageProps) {
     fetchProduct()
   }, [resolvedParams?.slug])
 
-  // Use backend variants array for accurate inventory and details
+  // Always display variants - the API now returns at least one variant
   useEffect(() => {
-    if (!product) return
+    if (!product || !product.variants) return
 
-    // If product.variants is a non-empty array, use as is
-    if (Array.isArray(product.variants) && product.variants.length > 0) {
-      setVariants(product.variants)
-      setSelectedVariant(product.variants[0])
-    } else {
-      // Create a virtual variant from the product itself
-      const virtualVariant = {
-        id: product.id?.toString() || 'default',
-        name: product.name || 'Standard',
-        price: product.price,
-        inventory: typeof product.stock === 'number' ? product.stock : 0,
-        sku: product.sku,
-        size: undefined,
-        color: undefined,
-      }
-      setVariants([virtualVariant])
-      setSelectedVariant(virtualVariant)
-    }
+    // API always returns variants array (minimum 1 item)
+    setVariants(product.variants)
+    setSelectedVariant(product.variants[0])
   }, [product])
 
   // Fetch related products
@@ -412,9 +397,9 @@ export default function ProductDetailPage({ params }: ProductDetailPageProps) {
                 {product.name}
               </h1>
 
-              {/* Enhanced Price Display */}
+              {/* Enhanced Price Display - Always show variant-specific pricing */}
               <div className="space-y-4">
-                {/* Main Price */}
+                {/* Main Price - Always from selected variant */}
                 <div className="flex items-baseline gap-3">
                   <span
                     className="text-3xl sm:text-4xl font-black"
@@ -425,17 +410,23 @@ export default function ProductDetailPage({ params }: ProductDetailPageProps) {
                       ? selectedVariant.price.toLocaleString('en-LK')
                       : 'N/A'}
                   </span>
-                  {product.originalPrice && product.originalPrice > product.price && (
+                  {product.originalPrice && product.originalPrice > selectedVariant.price && (
                     <span className="text-lg text-gray-500 line-through">
                       Rs. {product.originalPrice.toLocaleString('en-LK')}
                     </span>
                   )}
-                  {product.originalPrice && product.originalPrice > product.price && (
+                  {product.originalPrice && product.originalPrice > selectedVariant.price && (
                     <Badge className="bg-gradient-to-r from-red-500 to-red-600 text-white font-bold text-sm">
-                      Save Rs. {(product.originalPrice - product.price).toLocaleString('en-LK')}
+                      Save Rs. {(product.originalPrice - selectedVariant.price).toLocaleString('en-LK')}
                     </Badge>
                   )}
                 </div>
+                {/* Show price range for multiple variants */}
+                {variants.length > 1 && (
+                  <div className="text-sm text-gray-600">
+                    Price range: Rs. {Math.min(...variants.map(v => v.price)).toLocaleString('en-LK')} - Rs. {Math.max(...variants.map(v => v.price)).toLocaleString('en-LK')}
+                  </div>
+                )}
               </div>
 
               {/* Enhanced Stock Status */}
@@ -457,15 +448,15 @@ export default function ProductDetailPage({ params }: ProductDetailPageProps) {
                 )}
               </div>
 
-              {/* Enhanced Variant Selection */}
+              {/* Enhanced Variant Selection - Always show variants */}
               <div className="space-y-4 sm:space-y-6">
-                {variants.length > 1 && (
+                {variants.length > 0 && (
                   <div className="space-y-3">
                     <h3
                       className="font-bold text-sm sm:text-base"
                       style={{ color: 'var(--text-primary)' }}
                     >
-                      Select Variant:
+                      {variants.length > 1 ? 'Select Variant:' : 'Product Details:'}
                     </h3>
                     <div className="flex flex-wrap gap-2 sm:gap-3">
                       {variants.map((variant) => {
@@ -523,8 +514,8 @@ export default function ProductDetailPage({ params }: ProductDetailPageProps) {
                   </div>
                 )}
 
-                {/* Enhanced Selected Variant Info */}
-                {selectedVariant && variants.length > 1 && (
+                {/* Enhanced Selected Variant Info - Always show for transparency */}
+                {selectedVariant && (
                   <div className="p-4 bg-gradient-to-r from-gray-50 to-blue-50 rounded-xl border border-gray-200 shadow-lg">
                     <div className="flex items-center justify-between">
                       <div>
