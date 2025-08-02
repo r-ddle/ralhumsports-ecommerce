@@ -330,12 +330,12 @@ export function ProductCard({
               </div>
             )}
 
-            {/* Price */}
-            <div className="flex flex-col gap-1 mb-3">
-              <div className="flex items-baseline gap-2">
-                <span className="text-xl font-black text-brand-primary">Rs. {priceInLKR}</span>
+            {/* Price - Responsive sizing */}
+            <div className="flex flex-col gap-0.5 sm:gap-1 mb-2 sm:mb-3">
+              <div className="flex items-baseline gap-1.5 sm:gap-2">
+                <span className="text-base sm:text-xl font-black text-brand-primary">Rs. {priceInLKR}</span>
                 {hasDiscount && (
-                  <span className="text-sm text-text-secondary line-through">
+                  <span className="text-xs sm:text-sm text-text-secondary line-through">
                     Rs. {originalPriceInLKR}
                   </span>
                 )}
