@@ -497,7 +497,7 @@ export default function StorePage() {
                           variant={viewMode}
                           showBrand={true}
                           showCategory={true}
-                          className="h-full"
+                          className="h-full mobile-optimized"
                         />
                       </motion.div>
                     ))}
