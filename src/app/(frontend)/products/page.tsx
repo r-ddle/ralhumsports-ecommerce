@@ -353,7 +353,7 @@ export default function StorePage() {
       </section>
 
       <section className="py-12 bg-brand-background">
-        <div className="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 xl:px-10 2xl:px-12">
           <AnimatePresence>
             {error && (
               <motion.div
