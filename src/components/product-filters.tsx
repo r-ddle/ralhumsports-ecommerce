@@ -202,6 +202,21 @@ export function EnhancedProductFilters({
     }
   }
 
+  // Debounced search for real-time updates
+  useEffect(() => {
+    const debounceTimer = setTimeout(() => {
+      if (searchTerm.trim() !== (filters.search || '')) {
+        if (searchTerm.trim()) {
+          addFilter('search', searchTerm.trim())
+        } else {
+          removeFilter('search')
+        }
+      }
+    }, 300) // 300ms debounce
+
+    return () => clearTimeout(debounceTimer)
+  }, [searchTerm, filters.search, addFilter, removeFilter])
+
   const handleSortChange = (value: string) => {
     const [sortBy, sortOrder] = value.split('-')
     addFilter('sort', sortBy)
