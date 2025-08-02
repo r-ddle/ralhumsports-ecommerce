@@ -304,9 +304,9 @@ export function ProductCard({
               {product.name}
             </h3>
 
-            {/* Category */}
+            {/* Category - Compact */}
             {showCategory && product.category && (
-              <Badge variant="secondary" className="text-xs mb-3 w-fit">
+              <Badge variant="secondary" className="text-[10px] sm:text-xs mb-2 sm:mb-3 w-fit px-1.5 py-0.5">
                 {product.category.name}
               </Badge>
             )}
