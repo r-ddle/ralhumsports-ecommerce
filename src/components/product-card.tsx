@@ -234,6 +234,8 @@ export function ProductCard({
               className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
               containerClassName="w-full h-full"
               onClick={product.images.length > 1 ? handleImageCycle : undefined}
+              loading="lazy"
+              sizes="(max-width: 640px) 50vw, (max-width: 768px) 33vw, (max-width: 1024px) 25vw, (max-width: 1280px) 20vw, 16vw"
             />
 
             {/* Professional Corner Badges */}
