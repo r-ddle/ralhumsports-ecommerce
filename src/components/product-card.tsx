@@ -289,11 +289,11 @@ export function ProductCard({
 
           {/* Content Section - Optimized for compactness */}
           <CardContent className="p-3 sm:p-4 lg:p-5 flex-1 flex flex-col">
-            {/* Brand */}
+            {/* Brand - Compact display */}
             {showBrand && product.brand && (
               <Badge
                 variant="outline"
-                className="text-xs mb-2 w-fit text-brand-secondary border-brand-secondary/30"
+                className="text-[10px] sm:text-xs mb-1.5 sm:mb-2 w-fit text-brand-secondary border-brand-secondary/30 px-1.5 py-0.5"
               >
                 {product.brand.name}
               </Badge>
