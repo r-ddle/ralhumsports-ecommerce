@@ -299,8 +299,8 @@ export function ProductCard({
               </Badge>
             )}
 
-            {/* Product Name */}
-            <h3 className="text-base font-bold text-text-primary mb-2 line-clamp-3 flex-1 group-hover:text-brand-primary transition-colors leading-tight">
+            {/* Product Name - Compact with better line height */}
+            <h3 className="text-sm sm:text-base font-bold text-text-primary mb-1.5 sm:mb-2 line-clamp-2 sm:line-clamp-3 flex-1 group-hover:text-brand-primary transition-colors leading-snug">
               {product.name}
             </h3>
 
