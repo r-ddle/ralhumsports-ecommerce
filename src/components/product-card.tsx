@@ -257,7 +257,7 @@ export function ProductCard({
               className="absolute inset-x-2 bottom-2 opacity-0 group-hover:opacity-100 transition-all duration-300"
               initial={false}
               animate={isHovered ? { y: 0, scale: 1 } : { y: 10, scale: 0.95 }}
-              transition={{ type: "spring", stiffness: 300, damping: 20 }}
+              transition={{ type: 'spring', stiffness: 300, damping: 20 }}
             >
               <Button
                 variant="secondary"
@@ -309,7 +309,10 @@ export function ProductCard({
 
             {/* Category - Compact */}
             {showCategory && product.category && (
-              <Badge variant="secondary" className="text-[10px] sm:text-xs mb-2 sm:mb-3 w-fit px-1.5 py-0.5">
+              <Badge
+                variant="secondary"
+                className="text-[10px] sm:text-xs mb-2 sm:mb-3 w-fit px-1.5 py-0.5"
+              >
                 {product.category.name}
               </Badge>
             )}
@@ -329,14 +332,18 @@ export function ProductCard({
                     />
                   ))}
                 </div>
-                <span className="text-[9px] sm:text-[10px] text-text-secondary">({product.rating})</span>
+                <span className="text-[9px] sm:text-[10px] text-text-secondary">
+                  ({product.rating})
+                </span>
               </div>
             )}
 
             {/* Price - Responsive sizing */}
             <div className="flex flex-col gap-0.5 sm:gap-1 mb-2 sm:mb-3">
               <div className="flex items-baseline gap-1.5 sm:gap-2">
-                <span className="text-base sm:text-xl font-black text-brand-primary">Rs. {priceInLKR}</span>
+                <span className="text-base sm:text-xl font-black text-brand-primary">
+                  Rs. {priceInLKR}
+                </span>
                 {hasDiscount && (
                   <span className="text-xs sm:text-sm text-text-secondary line-through">
                     Rs. {originalPriceInLKR}

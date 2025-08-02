@@ -112,13 +112,13 @@ export default function StorePage() {
 
     // Handle hierarchical categories (keep them separate, don't merge into categories array)
     const sportsCategory = searchParams.get('sportsCategory')
-    const sport = searchParams.get('sport') 
+    const sport = searchParams.get('sport')
     const sportsItem = searchParams.get('sportsItem')
-    
+
     if (sportsCategory) urlFilters.sportsCategory = sportsCategory
     if (sport) urlFilters.sport = sport
     if (sportsItem) urlFilters.sportsItem = sportsItem
-    
+
     // Handle legacy categories array (only if no hierarchical filters)
     if (!sportsCategory && !sport && !sportsItem) {
       const categories = searchParams.get('categories')
@@ -200,7 +200,7 @@ export default function StorePage() {
   const handleResetFilters = () => {
     // Reset URL to trigger filter component reset
     window.history.pushState({}, '', '/products')
-    
+
     setCurrentFilters({
       page: 1,
       limit: 24,
@@ -228,11 +228,12 @@ export default function StorePage() {
 
       Object.entries(currentFilters).forEach(([key, value]) => {
         if (value === undefined || value === null || value === '') return
-        
+
         // Special handling for hierarchical categories - these should be sent as individual parameters
         if (key === 'categories' && Array.isArray(value)) {
           // Don't send categories array if we have hierarchical filters
-          const hasHierarchicalFilters = currentFilters.sportsCategory || currentFilters.sport || currentFilters.sportsItem
+          const hasHierarchicalFilters =
+            currentFilters.sportsCategory || currentFilters.sport || currentFilters.sportsItem
           if (!hasHierarchicalFilters) {
             value.forEach((v) => params.append('category', v))
           }

@@ -456,7 +456,7 @@ export function EnhancedProductFilters({
                 {hierarchicalFilters.sportsCategory && (
                   <motion.div
                     initial={{ opacity: 0, height: 0 }}
-                    animate={{ opacity: 1, height: "auto" }}
+                    animate={{ opacity: 1, height: 'auto' }}
                     exit={{ opacity: 0, height: 0 }}
                     transition={{ duration: 0.2 }}
                     className="overflow-hidden"
@@ -487,7 +487,7 @@ export function EnhancedProductFilters({
                 {hierarchicalFilters.sport && (
                   <motion.div
                     initial={{ opacity: 0, height: 0 }}
-                    animate={{ opacity: 1, height: "auto" }}
+                    animate={{ opacity: 1, height: 'auto' }}
                     exit={{ opacity: 0, height: 0 }}
                     transition={{ duration: 0.2, delay: 0.1 }}
                     className="overflow-hidden"
@@ -497,7 +497,9 @@ export function EnhancedProductFilters({
                     </Label>
                     <Select
                       value={hierarchicalFilters.sportsItem}
-                      onValueChange={(value) => handleHierarchicalCategoryChange('sportsItem', value)}
+                      onValueChange={(value) =>
+                        handleHierarchicalCategoryChange('sportsItem', value)
+                      }
                     >
                       <SelectTrigger>
                         <SelectValue placeholder="Select sports item" />
