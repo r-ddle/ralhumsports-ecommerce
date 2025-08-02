@@ -531,7 +531,7 @@ export default function StorePage() {
                   transition={{ delay: 0.3 }}
                   className="mt-12 flex flex-col sm:flex-row items-center justify-between gap-4"
                 >
-                  <div className="text-sm text-text-secondary">
+                  <div className="text-xs sm:text-sm text-text-secondary">
                     Page {pagination.page} of {pagination.totalPages}
                   </div>
                   <div className="flex items-center gap-1">
