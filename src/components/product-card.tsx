@@ -250,16 +250,17 @@ export function ProductCard({
               )}
             </div>
 
-            {/* Quick View Button */}
+            {/* Quick View Button - Enhanced animations */}
             <motion.div
-              className="absolute inset-x-2 bottom-2 opacity-0 group-hover:opacity-100 transition-opacity"
+              className="absolute inset-x-2 bottom-2 opacity-0 group-hover:opacity-100 transition-all duration-300"
               initial={false}
-              animate={isHovered ? { y: 0 } : { y: 10 }}
+              animate={isHovered ? { y: 0, scale: 1 } : { y: 10, scale: 0.95 }}
+              transition={{ type: "spring", stiffness: 300, damping: 20 }}
             >
               <Button
                 variant="secondary"
                 size="sm"
-                className="w-full bg-white/95 backdrop-blur-sm hover:bg-white text-text-primary"
+                className="w-full bg-white/95 backdrop-blur-sm hover:bg-white text-text-primary shadow-lg hover:shadow-xl transition-all duration-200 hover:scale-105"
                 onClick={(e) => {
                   e.preventDefault()
                   e.stopPropagation()
