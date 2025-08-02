@@ -508,7 +508,7 @@ export default function StorePage() {
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
                     exit={{ opacity: 0 }}
-                    className="text-center py-12"
+                    className="text-center py-8 sm:py-12"
                   >
                     <Package className="w-16 h-16 text-text-secondary mx-auto mb-4" />
                     <h3 className="text-lg font-semibold text-text-primary mb-2">
