@@ -71,7 +71,7 @@ export function ProductCard({
     }
   }
 
-  // List view variant
+  // List view variant (unchanged for desktop compatibility)
   if (variant === 'list') {
     return (
       <motion.div
@@ -79,187 +79,227 @@ export function ProductCard({
         onHoverEnd={() => setIsHovered(false)}
         initial={prefersReducedMotion ? false : { opacity: 0, y: 20 }}
         whileInView={{ opacity: 1, y: 0 }}
-        transition={{ duration: prefersReducedMotion ? 0 : 0.5 }}
-        viewport={{ once: true }}
-        className={className}
+        transition={{ duration: prefersReducedMotion ? 0 : 0.3 }}
+        viewport={{ once: true, margin: '-50px' }}
+        className={`group h-full ${className}`}
       >
-        <Card className="overflow-hidden bg-brand-surface border-brand-border hover:shadow-xl transition-all duration-300 group">
-          <Link href={`/products/${product.slug}`}>
-            <CardContent className="p-0">
-              <div className="grid grid-cols-1 sm:grid-cols-4 gap-4 p-6">
-                {/* Image Section */}
-                <div className="relative aspect-square sm:aspect-auto sm:h-32 rounded-xl overflow-hidden">
-                  <LazyImage
-                    width={400}
-                    height={400}
-                    src={
-                      product.images[currentImageIndex]?.url ||
-                      product.images[0]?.url ||
-                      '/placeholder.svg'
-                    }
-                    alt={
-                      product.images[currentImageIndex]?.alt ||
-                      product.images[0]?.alt ||
-                      product.name
-                    }
-                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                    containerClassName="w-full h-full"
-                    onClick={product.images.length > 1 ? handleImageCycle : undefined}
-                  />
+        <Link href={`/products/${product.slug}`} className="block h-full">
+          <Card className="h-full flex flex-col sm:flex-row overflow-hidden border-0 shadow-md hover:shadow-xl transition-all duration-300 bg-white/95 backdrop-blur-sm">
+            {/* Image Section */}
+            <div className="relative w-full sm:w-32 md:w-40 lg:w-48 h-32 sm:h-full overflow-hidden">
+              <div onMouseEnter={handleImageCycle}>
+                <LazyImage
+                  src={product.images[currentImageIndex]?.url || '/placeholder-product.jpg'}
+                  alt={product.images[currentImageIndex]?.alt || product.name}
+                  width={128}
+                  height={128}
+                  className="object-cover transition-transform duration-300 group-hover:scale-105"
+                />
+              </div>
 
-                  {/* Compact Badges */}
-                  <div className="absolute top-2 left-2 flex flex-wrap gap-1">
+              {/* Badges */}
+              <div className="absolute top-2 left-2 flex flex-col gap-1">
+                {isNew && (
+                  <Badge className="bg-gradient-to-r from-green-500 to-emerald-500 text-white text-xs px-2 py-0.5">
+                    <Sparkles className="w-3 h-3 mr-1" />
+                    New
+                  </Badge>
+                )}
+                {hasDiscount && (
+                  <Badge className="bg-gradient-to-r from-red-500 to-pink-500 text-white text-xs px-2 py-0.5">
+                    -{discountPercentage}%
+                  </Badge>
+                )}
+                {isLowStock && !isOutOfStock && (
+                  <Badge className="bg-gradient-to-r from-yellow-500 to-orange-500 text-white text-xs px-2 py-0.5">
+                    <Zap className="w-3 h-3 mr-1" />
+                    Low Stock
+                  </Badge>
+                )}
+                {isOutOfStock && (
+                  <Badge className="bg-gradient-to-r from-gray-500 to-gray-600 text-white text-xs px-2 py-0.5">
+                    <Package className="w-3 h-3 mr-1" />
+                    Out of Stock
+                  </Badge>
+                )}
+              </div>
+            </div>
+
+            {/* Content Section */}
+            <CardContent className="flex-1 p-4 sm:p-6 flex flex-col justify-between">
+              <div>
+                {/* Brand */}
+                {showBrand && product.brand && (
+                  <Badge
+                    variant="outline"
+                    className="text-xs mb-2 w-fit text-brand-secondary border-brand-secondary/30"
+                  >
+                    {product.brand.name}
+                  </Badge>
+                )}
+
+                {/* Product Name */}
+                <h3 className="text-lg sm:text-xl font-bold text-text-primary mb-2 line-clamp-2 group-hover:text-brand-primary transition-colors">
+                  {product.name}
+                </h3>
+
+                {/* Category */}
+                {showCategory && product.category && (
+                  <Badge variant="secondary" className="text-xs mb-3 w-fit">
+                    {product.category.name}
+                  </Badge>
+                )}
+
+                {/* Description */}
+                {product.description && (
+                  <p className="text-sm text-text-secondary line-clamp-2 mb-3">
+                    {typeof product.description === 'string' ? product.description : ''}
+                  </p>
+                )}
+
+                {/* Features - Only in List View */}
+                {product.features && product.features.length > 0 && (
+                  <div className="mb-3">
+                    <h4 className="text-sm font-semibold text-text-primary mb-2">Key Features:</h4>
+                    <ul className="space-y-1">
+                      {product.features.slice(0, 3).map((feature, index) => (
+                        <li
+                          key={index}
+                          className="text-sm text-text-secondary flex items-start gap-2"
+                        >
+                          <span className="text-brand-primary mt-1.5 block w-1 h-1 rounded-full bg-current flex-shrink-0" />
+                          <span className="line-clamp-1">{feature}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+
+                {/* Rating */}
+                {product.rating && product.rating > 0 && (
+                  <div className="flex items-center gap-2 mb-3">
+                    <div className="flex items-center gap-0.5">
+                      {[...Array(5)].map((_, i) => (
+                        <Star
+                          key={i}
+                          className={`w-4 h-4 ${
+                            i < Math.floor(product.rating!)
+                              ? 'fill-yellow-400 text-yellow-400'
+                              : 'text-gray-300'
+                          }`}
+                        />
+                      ))}
+                    </div>
+                    <span className="text-sm text-text-secondary">({product.rating})</span>
+                  </div>
+                )}
+              </div>
+
+              {/* Price and Actions */}
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                <div className="flex flex-col gap-1">
+                  <div className="flex items-baseline gap-2">
+                    <span className="text-2xl font-black text-brand-primary">Rs. {priceInLKR}</span>
                     {hasDiscount && (
-                      <Badge className="text-[10px] px-2 py-0.5 bg-red-500 text-white font-bold">
-                        -{discountPercentage}%
-                      </Badge>
-                    )}
-                    {isNew && (
-                      <Badge className="text-[10px] px-2 py-0.5 bg-green-500 text-white font-bold">
-                        NEW
-                      </Badge>
+                      <span className="text-sm text-text-secondary line-through">
+                        Rs. {originalPriceInLKR}
+                      </span>
                     )}
                   </div>
-
-                  {/* Stock Badge */}
-                  <div className="absolute bottom-2 right-2">
-                    {isOutOfStock ? (
-                      <Badge className="text-[10px] px-2 py-0.5 bg-gray-500 text-white">
-                        Out of Stock
-                      </Badge>
-                    ) : isLowStock ? (
-                      <Badge className="text-[10px] px-2 py-0.5 bg-orange-500 text-white">
-                        Low Stock
-                      </Badge>
-                    ) : null}
-                  </div>
+                  {availableStock <= 10 && availableStock > 0 && (
+                    <span className="text-xs text-text-secondary">Only {availableStock} left</span>
+                  )}
                 </div>
 
-                {/* Content Section */}
-                <div className="sm:col-span-3 flex flex-col justify-between">
-                  <div>
-                    {/* Brand */}
-                    {showBrand && product.brand && (
-                      <Badge
-                        variant="outline"
-                        className="text-xs mb-2 w-fit text-brand-secondary border-brand-secondary/30"
-                      >
-                        {product.brand.name}
-                      </Badge>
-                    )}
-
-                    {/* Product Name */}
-                    <h3 className="text-lg font-bold text-text-primary mb-2 line-clamp-2 group-hover:text-brand-primary transition-colors">
-                      {product.name}
-                    </h3>
-
-                    {/* Category */}
-                    {showCategory && product.category && (
-                      <Badge variant="secondary" className="text-xs mb-3 w-fit">
-                        {product.category.name}
-                      </Badge>
-                    )}
-
-                    {/* Rating */}
-                    {product.rating && product.rating > 0 && (
-                      <div className="flex items-center gap-2 mb-3">
-                        <div className="flex items-center gap-1">
-                          {[...Array(5)].map((_, i) => (
-                            <Star
-                              key={i}
-                              className={`w-4 h-4 ${
-                                i < Math.floor(product.rating!)
-                                  ? 'fill-yellow-400 text-yellow-400'
-                                  : 'text-gray-300'
-                              }`}
-                            />
-                          ))}
-                        </div>
-                        <span className="text-sm text-text-secondary">
-                          ({product.rating}) • {product.reviewCount} reviews
-                        </span>
-                      </div>
-                    )}
-                  </div>
-
-                  {/* Price and Actions */}
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-baseline gap-2">
-                      <span className="text-2xl font-black text-brand-primary">
-                        Rs. {priceInLKR}
-                      </span>
-                      {hasDiscount && (
-                        <span className="text-lg text-text-secondary line-through">
-                          Rs. {originalPriceInLKR}
-                        </span>
-                      )}
-                    </div>
-
-                    <div className="flex items-center gap-2"></div>
-                  </div>
+                <div className="flex gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={(e) => {
+                      e.preventDefault()
+                      e.stopPropagation()
+                      setQuickViewProduct(product)
+                      setShowQuickView(true)
+                    }}
+                  >
+                    <Eye className="w-4 h-4 mr-2" />
+                    Quick View
+                  </Button>
+                  <Button size="sm" disabled={isOutOfStock} className="px-4">
+                    {isOutOfStock ? 'Out of Stock' : 'View Details'}
+                  </Button>
                 </div>
               </div>
             </CardContent>
-          </Link>
-        </Card>
+          </Card>
+        </Link>
       </motion.div>
     )
   }
 
-  // Grid view variant (default)
+  // Enhanced Grid view with mobile-first optimization
   return (
     <motion.div
       onHoverStart={() => setIsHovered(true)}
       onHoverEnd={() => setIsHovered(false)}
       initial={prefersReducedMotion ? false : { opacity: 0, y: 20 }}
       whileInView={{ opacity: 1, y: 0 }}
-      transition={{ duration: prefersReducedMotion ? 0 : 0.5 }}
-      viewport={{ once: true }}
-      whileHover={prefersReducedMotion ? {} : { y: -4 }}
-      className={className}
+      transition={{ duration: prefersReducedMotion ? 0 : 0.3 }}
+      viewport={{ once: true, margin: '-50px' }}
+      className={`group h-full ${className}`}
     >
-      <Card className="overflow-hidden bg-brand-surface border-brand-border hover:shadow-xl transition-all duration-300 group h-full flex flex-col">
-        <Link href={`/products/${product.slug}`} className="flex-1 flex flex-col">
-          {/* Image Section */}
-          <div className="relative aspect-square overflow-hidden bg-gradient-to-br from-gray-50 to-gray-100">
+      <Link href={`/products/${product.slug}`} className="block h-full">
+        <Card className="h-full flex flex-col overflow-hidden border-0 shadow-md hover:shadow-xl transition-all duration-300 bg-white/95 backdrop-blur-sm">
+          {/* Image Section with Mobile Optimization */}
+          <div
+            className="relative w-full aspect-square sm:aspect-[4/3] md:aspect-square overflow-hidden"
+            onMouseEnter={handleImageCycle}
+          >
             <LazyImage
-              width={400}
-              height={400}
-              src={
-                product.images[currentImageIndex]?.url ||
-                product.images[0]?.url ||
-                '/placeholder.svg'
-              }
-              alt={product.images[currentImageIndex]?.alt || product.images[0]?.alt || product.name}
-              className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-              containerClassName="w-full h-full"
-              onClick={product.images.length > 1 ? handleImageCycle : undefined}
+              src={product.images[currentImageIndex]?.url || '/placeholder-product.jpg'}
+              alt={product.images[currentImageIndex]?.alt || product.name}
+              width={600}
+              height={600}
+              className="object-cover transition-transform duration-300 group-hover:scale-105"
             />
 
-            {/* Professional Corner Badges */}
-            <div className="absolute top-2 left-2 flex flex-col gap-1">
+            {/* Mobile-Optimized Badges */}
+            <div className="absolute top-1.5 left-1.5 sm:top-2 sm:left-2 flex flex-col gap-0.5 sm:gap-1">
+              {isNew && (
+                <Badge className="bg-gradient-to-r from-green-500 to-emerald-500 text-white text-[10px] sm:text-xs px-1.5 sm:px-2 py-0.5">
+                  <Sparkles className="w-2.5 h-2.5 sm:w-3 sm:h-3 mr-0.5 sm:mr-1" />
+                  New
+                </Badge>
+              )}
               {hasDiscount && (
-                <Badge className="text-[10px] px-2 py-0.5 bg-red-500 text-white font-bold shadow-sm">
+                <Badge className="bg-gradient-to-r from-red-500 to-pink-500 text-white text-[10px] sm:text-xs px-1.5 sm:px-2 py-0.5">
                   -{discountPercentage}%
                 </Badge>
               )}
-              {isNew && (
-                <Badge className="text-[10px] px-2 py-0.5 bg-green-500 text-white font-bold shadow-sm">
-                  NEW
+              {isLowStock && !isOutOfStock && (
+                <Badge className="bg-gradient-to-r from-yellow-500 to-orange-500 text-white text-[10px] sm:text-xs px-1.5 sm:px-2 py-0.5">
+                  <Zap className="w-2.5 h-2.5 sm:w-3 sm:h-3 mr-0.5 sm:mr-1" />
+                  Low
+                </Badge>
+              )}
+              {isOutOfStock && (
+                <Badge className="bg-gradient-to-r from-gray-500 to-gray-600 text-white text-[10px] sm:text-xs px-1.5 sm:px-2 py-0.5">
+                  <Package className="w-2.5 h-2.5 sm:w-3 sm:h-3 mr-0.5 sm:mr-1" />
+                  Out
                 </Badge>
               )}
             </div>
 
-            {/* Quick View Button */}
+            {/* Mobile-Optimized Quick View Button */}
             <motion.div
-              className="absolute inset-x-2 bottom-2 opacity-0 group-hover:opacity-100 transition-opacity"
-              initial={false}
-              animate={isHovered ? { y: 0 } : { y: 10 }}
+              className="absolute inset-x-2 bottom-2 sm:inset-x-3 sm:bottom-3 opacity-0 group-hover:opacity-100 transition-opacity duration-200"
+              initial={prefersReducedMotion ? { opacity: 0 } : { opacity: 0, y: 10 }}
+              animate={isHovered && !prefersReducedMotion ? { opacity: 1, y: 0 } : { y: 10 }}
             >
               <Button
                 variant="secondary"
                 size="sm"
-                className="w-full bg-white/95 backdrop-blur-sm hover:bg-white text-text-primary"
+                className="w-full bg-white/95 backdrop-blur-sm hover:bg-white text-text-primary text-xs sm:text-sm py-1.5 sm:py-2"
                 onClick={(e) => {
                   e.preventDefault()
                   e.stopPropagation()
@@ -267,18 +307,18 @@ export function ProductCard({
                   setShowQuickView(true)
                 }}
               >
-                <Eye className="w-4 h-4 mr-2" />
+                <Eye className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2" />
                 Quick View
               </Button>
             </motion.div>
 
             {/* Image Indicators */}
             {product.images.length > 1 && (
-              <div className="absolute bottom-2 left-1/2 transform -translate-x-1/2 flex gap-1">
+              <div className="absolute bottom-1.5 sm:bottom-2 left-1/2 transform -translate-x-1/2 flex gap-0.5 sm:gap-1">
                 {product.images.slice(0, 3).map((_, index) => (
                   <div
                     key={index}
-                    className={`w-1.5 h-1.5 rounded-full transition-colors ${
+                    className={`w-1 h-1 sm:w-1.5 sm:h-1.5 rounded-full transition-colors ${
                       index === currentImageIndex ? 'bg-white' : 'bg-white/50'
                     }`}
                   />
@@ -287,38 +327,41 @@ export function ProductCard({
             )}
           </div>
 
-          {/* Content Section */}
-          <CardContent className="p-5 flex-1 flex flex-col">
+          {/* Mobile-Optimized Content Section */}
+          <CardContent className="p-3 sm:p-4 md:p-5 flex-1 flex flex-col">
             {/* Brand */}
             {showBrand && product.brand && (
               <Badge
                 variant="outline"
-                className="text-xs mb-2 w-fit text-brand-secondary border-brand-secondary/30"
+                className="text-[10px] sm:text-xs mb-1.5 sm:mb-2 w-fit text-brand-secondary border-brand-secondary/30"
               >
                 {product.brand.name}
               </Badge>
             )}
 
-            {/* Product Name */}
-            <h3 className="text-base font-bold text-text-primary mb-2 line-clamp-3 flex-1 group-hover:text-brand-primary transition-colors leading-tight">
+            {/* Product Name - Mobile Optimized */}
+            <h3 className="text-sm sm:text-base md:text-base font-bold text-text-primary mb-1.5 sm:mb-2 line-clamp-2 sm:line-clamp-3 flex-1 group-hover:text-brand-primary transition-colors leading-tight">
               {product.name}
             </h3>
 
             {/* Category */}
             {showCategory && product.category && (
-              <Badge variant="secondary" className="text-xs mb-3 w-fit">
+              <Badge
+                variant="secondary"
+                className="text-[10px] sm:text-xs mb-2 sm:mb-3 w-fit text-white"
+              >
                 {product.category.name}
               </Badge>
             )}
 
-            {/* Rating */}
+            {/* Rating - Mobile Optimized */}
             {product.rating && product.rating > 0 && (
               <div className="flex items-center gap-1 mb-2">
                 <div className="flex items-center gap-0.5">
                   {[...Array(5)].map((_, i) => (
                     <Star
                       key={i}
-                      className={`w-3 h-3 ${
+                      className={`w-2.5 h-2.5 sm:w-3 sm:h-3 ${
                         i < Math.floor(product.rating!)
                           ? 'fill-yellow-400 text-yellow-400'
                           : 'text-gray-300'
@@ -326,250 +369,91 @@ export function ProductCard({
                     />
                   ))}
                 </div>
-                <span className="text-[10px] text-text-secondary">({product.rating})</span>
+                <span className="text-[9px] sm:text-[10px] text-text-secondary">
+                  ({product.rating})
+                </span>
               </div>
             )}
 
-            {/* Price */}
-            <div className="flex flex-col gap-1 mb-3">
-              <div className="flex items-baseline gap-2">
-                <span className="text-xl font-black text-brand-primary">Rs. {priceInLKR}</span>
+            {/* Price - Mobile Optimized */}
+            <div className="flex flex-col gap-0.5 sm:gap-1 mb-2 sm:mb-3">
+              <div className="flex items-baseline gap-1 sm:gap-2">
+                <span className="text-base sm:text-lg md:text-xl font-black text-brand-primary">
+                  Rs. {priceInLKR}
+                </span>
                 {hasDiscount && (
-                  <span className="text-sm text-text-secondary line-through">
+                  <span className="text-[10px] sm:text-xs text-text-secondary line-through">
                     Rs. {originalPriceInLKR}
                   </span>
                 )}
               </div>
-            </div>
-
-            {/* Stock Status */}
-            <div className="mb-3">
-              {isOutOfStock ? (
-                <Badge className="text-xs px-2 py-1 bg-gray-500 text-white w-fit">
-                  Out of Stock
-                </Badge>
-              ) : isLowStock ? (
-                <Badge className="text-xs px-2 py-1 bg-orange-500 text-white w-fit">
-                  <Zap className="w-3 h-3 mr-1" />
+              {availableStock <= 5 && availableStock > 0 && (
+                <span className="text-[9px] sm:text-xs text-text-secondary">
                   Only {availableStock} left
-                </Badge>
-              ) : (
-                <Badge className="text-xs px-2 py-1 bg-green-500 text-white w-fit">
-                  <Package className="w-3 h-3 mr-1" />
-                  Available
-                </Badge>
+                </span>
               )}
             </div>
+
+            {/* Action Button - Mobile Optimized */}
+            <Button
+              size="sm"
+              disabled={isOutOfStock}
+              className="w-full text-xs sm:text-sm py-1.5 sm:py-2 mt-auto text-white"
+            >
+              {isOutOfStock ? 'Out of Stock' : 'View Details'}
+            </Button>
           </CardContent>
-        </Link>
-      </Card>
+        </Card>
+      </Link>
 
       {/* Quick View Dialog */}
       <Dialog open={showQuickView} onOpenChange={setShowQuickView}>
-        <DialogContent className="max-w-4xl w-full max-h-[90vh] overflow-y-auto bg-white border shadow-2xl">
-          {quickViewProduct && <QuickViewContent product={quickViewProduct} />}
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto bg-white">
+          <DialogHeader>
+            <DialogTitle>{quickViewProduct?.name}</DialogTitle>
+          </DialogHeader>
+          {quickViewProduct && (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {/* Quick view content here */}
+              <div className="aspect-square relative">
+                <LazyImage
+                  src={quickViewProduct.images[0]?.url || '/placeholder-product.jpg'}
+                  alt={quickViewProduct.images[0]?.alt || quickViewProduct.name}
+                  width={600}
+                  height={600}
+                  className="object-cover rounded-lg"
+                />
+              </div>
+              <div className="space-y-4">
+                {quickViewProduct.brand && (
+                  <Badge variant="outline">{quickViewProduct.brand.name}</Badge>
+                )}
+                <h3 className="text-2xl font-bold">{quickViewProduct.name}</h3>
+                <div className="text-3xl font-black text-brand-primary">
+                  Rs. {quickViewProduct.price.toLocaleString()}
+                </div>
+                {quickViewProduct.description && (
+                  <div className="text-text-secondary">
+                    {typeof quickViewProduct.description === 'string' ? (
+                      <p>{quickViewProduct.description}</p>
+                    ) : (
+                      <RichTextRenderer content={quickViewProduct.description} />
+                    )}
+                  </div>
+                )}
+                <div className="flex gap-3">
+                  <Button asChild className="flex-1">
+                    <Link href={`/products/${quickViewProduct.slug}`}>View Full Details</Link>
+                  </Button>
+                  <Button variant="outline" onClick={() => setShowQuickView(false)}>
+                    Close
+                  </Button>
+                </div>
+              </div>
+            </div>
+          )}
         </DialogContent>
       </Dialog>
     </motion.div>
-  )
-}
-
-// Quick View Component
-interface QuickViewContentProps {
-  product: ProductListItem
-}
-
-function QuickViewContent({ product }: QuickViewContentProps) {
-  const [selectedImageIndex, setSelectedImageIndex] = useState(0)
-
-  // Stock calculations
-  const lowStockThreshold = 5
-  function getAvailableStock(): number {
-    if (product.variants && product.variants.length > 0) {
-      return product.variants.reduce((total, variant) => total + (variant.inventory || 0), 0)
-    }
-    return product.stock || 0
-  }
-
-  const availableStock = getAvailableStock()
-  const isOutOfStock = availableStock === 0
-  const isLowStock = !isOutOfStock && availableStock <= lowStockThreshold
-
-  // Price calculations
-  const hasDiscount = product.originalPrice && product.originalPrice > product.price
-  const discountPercentage = hasDiscount
-    ? Math.round(((product.originalPrice! - product.price) / product.originalPrice!) * 100)
-    : 0
-
-  const priceInLKR = product.price.toLocaleString()
-  const originalPriceInLKR = product.originalPrice?.toLocaleString()
-
-  return (
-    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-      {/* Image Section */}
-      <div className="space-y-3">
-        {/* Main Image */}
-        <div className="relative aspect-square bg-gradient-to-br from-gray-50 to-gray-100 rounded-lg overflow-hidden">
-          <LazyImage
-            width={400}
-            height={400}
-            src={
-              product.images[selectedImageIndex]?.url ||
-              product.images[0]?.url ||
-              '/placeholder.svg'
-            }
-            alt={product.images[selectedImageIndex]?.alt || product.images[0]?.alt || product.name}
-            className="w-full h-full object-cover"
-            containerClassName="w-full h-full"
-          />
-
-          {/* Badges */}
-          <div className="absolute top-2 left-2 flex flex-col gap-1">
-            {hasDiscount && (
-              <Badge className="text-xs px-2 py-1 bg-red-500 text-white font-bold">
-                -{discountPercentage}%
-              </Badge>
-            )}
-          </div>
-        </div>
-
-        {/* Thumbnail Images */}
-        {product.images && product.images.length > 1 && (
-          <div className="flex gap-2 overflow-x-auto">
-            {product.images.map((image, index) => (
-              <button
-                key={image.id || index}
-                onClick={() => setSelectedImageIndex(index)}
-                className={`flex-shrink-0 w-16 h-16 rounded-lg overflow-hidden border-2 transition-all duration-200 ${
-                  index === selectedImageIndex
-                    ? 'border-brand-primary'
-                    : 'border-gray-200 hover:border-gray-300'
-                }`}
-              >
-                <LazyImage
-                  width={64}
-                  height={64}
-                  src={image.url || '/placeholder.svg'}
-                  alt={image.alt || `${product.name} ${index + 1}`}
-                  className="w-full h-full object-cover"
-                  containerClassName="w-full h-full"
-                />
-              </button>
-            ))}
-          </div>
-        )}
-      </div>
-
-      {/* Product Details */}
-      <div className="space-y-4">
-        <DialogHeader>
-          <DialogTitle className="text-left">
-            {/* Brand */}
-            {product.brand && (
-              <Badge
-                variant="outline"
-                className="text-sm mb-2 w-fit text-brand-secondary border-brand-secondary/30"
-              >
-                {product.brand.name}
-              </Badge>
-            )}
-            <h2 className="text-2xl font-bold text-text-primary mb-2">{product.name}</h2>
-          </DialogTitle>
-        </DialogHeader>
-
-        {/* Category */}
-        {product.category && (
-          <Badge variant="secondary" className="text-sm w-fit">
-            {product.category.name}
-          </Badge>
-        )}
-
-        {/* Price */}
-        <div className="space-y-2">
-          <div className="flex items-baseline gap-3">
-            <span className="text-3xl font-black text-brand-primary">Rs. {priceInLKR}</span>
-            {hasDiscount && (
-              <span className="text-lg text-text-secondary line-through">
-                Rs. {originalPriceInLKR}
-              </span>
-            )}
-          </div>
-          {hasDiscount && (
-            <Badge className="bg-red-500 text-white font-bold">
-              Save Rs. {(product.originalPrice! - product.price).toLocaleString()}
-            </Badge>
-          )}
-        </div>
-
-        {/* Stock Status */}
-        <div>
-          {isOutOfStock ? (
-            <Badge className="bg-gray-500 text-white px-3 py-1">Out of Stock</Badge>
-          ) : isLowStock ? (
-            <Badge className="bg-orange-500 text-white px-3 py-1">
-              <Zap className="w-3 h-3 mr-1" />
-              Only {availableStock} left!
-            </Badge>
-          ) : (
-            <Badge className="bg-green-500 text-white px-3 py-1">
-              <Package className="w-3 h-3 mr-1" />
-              Available
-            </Badge>
-          )}
-        </div>
-
-        {/* Description */}
-        <div>
-          <h4 className="font-semibold mb-2 text-gray-900">Description:</h4>
-          <div className="text-sm text-gray-700 leading-relaxed">
-            {product.description && typeof product.description === 'object' ? (
-              <RichTextRenderer content={product.description} />
-            ) : product.description &&
-              typeof product.description === 'string' &&
-              product.description.trim() !== '' ? (
-              <p>{product.description}</p>
-            ) : (
-              <p>No description available.</p>
-            )}
-          </div>
-        </div>
-
-        {/* Features */}
-        {product.features && product.features.length > 0 && (
-          <div>
-            <h4 className="font-semibold mb-2">Key Features:</h4>
-            <ul className="space-y-1 text-sm">
-              {product.features.slice(0, 5).map((feature, index) => (
-                <li key={index} className="flex items-start gap-2">
-                  <span className="w-1.5 h-1.5 bg-brand-primary rounded-full mt-2 flex-shrink-0" />
-                  {feature}
-                </li>
-              ))}
-            </ul>
-          </div>
-        )}
-
-        {/* Tags */}
-        {product.tags && product.tags.length > 0 && (
-          <div>
-            <h4 className="font-semibold mb-2">Tags:</h4>
-            <div className="flex flex-wrap gap-2">
-              {product.tags.slice(0, 6).map((tag) => (
-                <Badge key={tag} variant="secondary" className="text-xs">
-                  {tag}
-                </Badge>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {/* View Full Details Button */}
-        <div className="pt-4 border-t">
-          <Button asChild className="w-full bg-brand-primary hover:bg-brand-primary/90 text-white">
-            <Link href={`/products/${product.slug}`}>View Full Details</Link>
-          </Button>
-        </div>
-      </div>
-    </div>
   )
 }

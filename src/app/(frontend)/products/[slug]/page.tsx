@@ -343,7 +343,7 @@ export default function ProductDetailPage({ params }: ProductDetailPageProps) {
 
               {/* Enhanced Thumbnail Images */}
               {product.images && product.images.length > 1 && (
-                <div className="flex gap-2 overflow-x-auto">
+                <div className="flex gap-2 overflow-x-auto p-2">
                   {product.images.map((image, index) => (
                     <button
                       key={image.id || index}
@@ -417,14 +417,17 @@ export default function ProductDetailPage({ params }: ProductDetailPageProps) {
                   )}
                   {product.originalPrice && product.originalPrice > selectedVariant.price && (
                     <Badge className="bg-gradient-to-r from-red-500 to-red-600 text-white font-bold text-sm">
-                      Save Rs. {(product.originalPrice - selectedVariant.price).toLocaleString('en-LK')}
+                      Save Rs.{' '}
+                      {(product.originalPrice - selectedVariant.price).toLocaleString('en-LK')}
                     </Badge>
                   )}
                 </div>
                 {/* Show price range for multiple variants */}
                 {variants.length > 1 && (
                   <div className="text-sm text-gray-600">
-                    Price range: Rs. {Math.min(...variants.map(v => v.price)).toLocaleString('en-LK')} - Rs. {Math.max(...variants.map(v => v.price)).toLocaleString('en-LK')}
+                    Price range: Rs.{' '}
+                    {Math.min(...variants.map((v) => v.price)).toLocaleString('en-LK')} - Rs.{' '}
+                    {Math.max(...variants.map((v) => v.price)).toLocaleString('en-LK')}
                   </div>
                 )}
               </div>

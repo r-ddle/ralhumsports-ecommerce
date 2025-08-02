@@ -62,7 +62,7 @@ export async function POST(request: NextRequest) {
 
     // Update order based on payment status
     const paymentStatus = isPaymentSuccessful(notification.status_code)
-      ? 'paid-online'
+      ? 'paid'
       : notification.status_code === PayHereStatusCode.PENDING
         ? 'pending'
         : 'failed'
