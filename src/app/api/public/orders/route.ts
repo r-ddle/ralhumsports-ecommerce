@@ -168,11 +168,11 @@ export const POST = withRateLimit(rateLimitConfigs.strict, async (request: NextR
                 (variant.id && variant.id.toString() === item.variantId.toString()) ||
                 (variant.sku && variant.sku === item.productSku)
               ) {
-                const newInventory = Math.max(0, (variant.stock || 0) - item.quantity)
+                const newStock = Math.max(0, (variant.stock || 0) - item.quantity)
                 console.log(
-                  `[Orders API] Updating variant stock for product ${item.productId}, variant ${item.variantId}: ${variant.stock} -> ${newInventory}`,
+                  `[Orders API] Updating variant stock for product ${item.productId}, variant ${item.variantId}: ${variant.stock} -> ${newStock}`,
                 )
-                return { ...variant, inventory: newInventory }
+                return { ...variant, stock: newStock }
               }
               return variant
             })
@@ -204,6 +204,18 @@ export const POST = withRateLimit(rateLimitConfigs.strict, async (request: NextR
         } catch (err) {
           console.error(`[Orders API] Error updating stock for product ${item.productId}:`, err)
         }
+      }
+
+      // Invalidate caches to ensure fresh data
+      try {
+        // Increment cache version to invalidate browser caches
+        if (typeof globalThis !== 'undefined') {
+          globalThis.__CACHE_VERSION = (globalThis.__CACHE_VERSION || 0) + 1
+        }
+        console.log('[Orders API] Cache invalidation triggered - version incremented')
+      } catch (cacheError) {
+        console.warn('[Orders API] Cache invalidation failed:', cacheError)
+        // Don't fail the order if cache invalidation fails
       }
 
       // Return success immediately

@@ -36,13 +36,18 @@ export async function GET(request: NextRequest) {
   const search = searchParams.get('search')
   // Support multiple category params
   const categorySlugs = searchParams.getAll('category')
-  const brand = searchParams.get('brand') // This will be a slug
+  const brands = searchParams.getAll('brand') // Support multiple brand params
   const sort = searchParams.get('sort') || 'createdAt'
   const order = searchParams.get('order') || 'desc'
   const status = searchParams.get('status') || 'active'
   const minPrice = searchParams.get('minPrice')
   const maxPrice = searchParams.get('maxPrice')
   const inStock = searchParams.get('inStock')
+
+  // Hierarchical category filters
+  const sportsCategory = searchParams.get('sportsCategory')
+  const sport = searchParams.get('sport')
+  const sportsItem = searchParams.get('sportsItem')
 
   // --- Logging input parameters ---
   console.log(`\x1b[36m[Products API] Incoming GET request\x1b[0m`)
@@ -51,42 +56,108 @@ export async function GET(request: NextRequest) {
     limit,
     search,
     categorySlugs,
-    brand,
+    brands,
     sort,
     order,
     status,
     minPrice,
     maxPrice,
     inStock,
+    sportsCategory,
+    sport,
+    sportsItem,
   })
 
   try {
     const payload = await getPayload({ config })
-    const whereConditions: Where = {}
+    let whereConditions: Where = {}
 
     // --- Status filter ---
+    const statusConditions = []
     if (status && status !== 'active') {
-      whereConditions.status = { equals: status }
+      statusConditions.push({ status: { equals: status } })
     } else {
       // Default: show active and out-of-stock products
-      whereConditions.or = [
+      statusConditions.push(
         { status: { equals: 'active' } },
         { status: { equals: 'out-of-stock' } },
-      ]
+      )
     }
 
     // --- Search filter ---
+    const searchConditions = []
     if (search) {
-      whereConditions.or = [
+      searchConditions.push(
         { name: { contains: search } },
         { 'productDetails.sku': { contains: search } },
         { 'productDetails.tags': { contains: search } },
         { description: { contains: search } },
-      ]
+      )
     }
 
-    // --- Category filter ---
-    if (categorySlugs && categorySlugs.length > 0) {
+    // --- Combine status and search conditions properly ---
+    if (searchConditions.length > 0 && statusConditions.length > 1) {
+      // Both search and multiple status conditions exist
+      whereConditions.and = [{ or: statusConditions }, { or: searchConditions }]
+    } else if (searchConditions.length > 0) {
+      // Only search conditions
+      whereConditions.and = [statusConditions[0], { or: searchConditions }]
+    } else if (statusConditions.length > 1) {
+      // Only multiple status conditions
+      whereConditions.or = statusConditions
+    } else if (statusConditions.length === 1) {
+      // Single status condition
+      Object.assign(whereConditions, statusConditions[0])
+    }
+
+    // --- Build additional filter conditions ---
+    const additionalConditions = []
+
+    // --- Hierarchical category filters (priority over legacy category filter) ---
+    if (sportsCategory || sport || sportsItem) {
+      try {
+        // Convert slugs to IDs for hierarchical filters
+        const hierarchicalSlugs = []
+        if (sportsCategory) hierarchicalSlugs.push(sportsCategory)
+        if (sport) hierarchicalSlugs.push(sport)
+        if (sportsItem) hierarchicalSlugs.push(sportsItem)
+
+        const categoryResults = await payload.find({
+          collection: 'categories',
+          where: { slug: { in: hierarchicalSlugs } },
+          limit: 100,
+        })
+
+        if (categoryResults.docs.length > 0) {
+          const categoryMap = new Map()
+          categoryResults.docs.forEach((cat) => {
+            categoryMap.set(cat.slug, cat.id)
+          })
+
+          if (sportsCategory && categoryMap.has(sportsCategory)) {
+            additionalConditions.push({
+              'categorySelection.sportsCategory': { equals: categoryMap.get(sportsCategory) },
+            })
+          }
+          if (sport && categoryMap.has(sport)) {
+            additionalConditions.push({
+              'categorySelection.sports': { equals: categoryMap.get(sport) },
+            })
+          }
+          if (sportsItem && categoryMap.has(sportsItem)) {
+            additionalConditions.push({
+              'categorySelection.sportsItem': { equals: categoryMap.get(sportsItem) },
+            })
+          }
+        }
+      } catch (categoryError) {
+        console.error(
+          `\x1b[31m[Products API ERROR]\x1b[0m Error finding hierarchical categories:`,
+          categoryError,
+        )
+      }
+    } else if (categorySlugs && categorySlugs.length > 0) {
+      // Legacy category filter (by slug) - fallback when hierarchical filters are not used
       try {
         // Find category IDs from slugs
         const categoryResults = await payload.find({
@@ -94,46 +165,74 @@ export async function GET(request: NextRequest) {
           where: { slug: { in: categorySlugs } },
           limit: 100,
         })
-        
+
         if (categoryResults.docs.length > 0) {
-          const categoryIds = categoryResults.docs.map(cat => cat.id)
-          
+          const categoryIds = categoryResults.docs.map((cat) => cat.id)
+
           // Check which category field to use based on category type
           const sampleCategory = categoryResults.docs[0]
-          
+
           if (sampleCategory.type === 'sports-category') {
-            whereConditions['categorySelection.sportsCategory'] = categoryIds.length === 1 
-              ? { equals: categoryIds[0] } 
-              : { in: categoryIds }
+            additionalConditions.push({
+              'categorySelection.sportsCategory':
+                categoryIds.length === 1 ? { equals: categoryIds[0] } : { in: categoryIds },
+            })
           } else if (sampleCategory.type === 'sports') {
-            whereConditions['categorySelection.sports'] = categoryIds.length === 1 
-              ? { equals: categoryIds[0] } 
-              : { in: categoryIds }
+            additionalConditions.push({
+              'categorySelection.sports':
+                categoryIds.length === 1 ? { equals: categoryIds[0] } : { in: categoryIds },
+            })
           } else if (sampleCategory.type === 'sports-item') {
-            whereConditions['categorySelection.sportsItem'] = categoryIds.length === 1 
-              ? { equals: categoryIds[0] } 
-              : { in: categoryIds }
+            additionalConditions.push({
+              'categorySelection.sportsItem':
+                categoryIds.length === 1 ? { equals: categoryIds[0] } : { in: categoryIds },
+            })
           }
         }
       } catch (categoryError) {
-        console.error(`\x1b[31m[Products API ERROR]\x1b[0m Error finding categories:`, categoryError)
+        console.error(
+          `\x1b[31m[Products API ERROR]\x1b[0m Error finding categories:`,
+          categoryError,
+        )
       }
     }
 
-    // --- Brand filter (resolve slug to ID) ---
-    if (brand) {
+    // --- Brand filter (resolve slugs to IDs) ---
+    if (brands && brands.length > 0) {
       try {
-        const brandResult = await payload.find({
+        const brandResults = await payload.find({
           collection: 'brands',
-          where: { slug: { equals: brand } },
-          limit: 1,
+          where: { slug: { in: brands } },
+          limit: 100,
         })
-        if (brandResult.docs.length > 0) {
+        if (brandResults.docs.length > 0) {
+          const brandIds = brandResults.docs.map((brand) => brand.id)
           // FIXED: Brand is nested in essentials group
-          whereConditions['essentials.brand'] = { equals: brandResult.docs[0].id }
+          additionalConditions.push({
+            'essentials.brand': brandIds.length === 1 ? { equals: brandIds[0] } : { in: brandIds },
+          })
         } else {
-          console.error(`\x1b[31m[Products API ERROR]\x1b[0m Brand not found for slug:`, brand)
-          return NextResponse.json({
+          console.error(`\x1b[31m[Products API ERROR]\x1b[0m Brands not found for slugs:`, brands)
+          return NextResponse.json(
+            {
+              success: true,
+              data: [],
+              pagination: {
+                page: 1,
+                limit,
+                totalPages: 0,
+                totalDocs: 0,
+                hasNextPage: false,
+                hasPrevPage: false,
+              },
+            },
+            { headers: getSecurityHeaders(origin || undefined) },
+          )
+        }
+      } catch (brandError) {
+        console.error(`\x1b[31m[Products API ERROR]\x1b[0m Error finding brands:`, brandError)
+        return NextResponse.json(
+          {
             success: true,
             data: [],
             pagination: {
@@ -144,39 +243,45 @@ export async function GET(request: NextRequest) {
               hasNextPage: false,
               hasPrevPage: false,
             },
-          }, { headers: getSecurityHeaders(origin || undefined) })
-        }
-      } catch (brandError) {
-        console.error(`\x1b[31m[Products API ERROR]\x1b[0m Error finding brand:`, brandError)
-        return NextResponse.json({
-          success: true,
-          data: [],
-          pagination: {
-            page: 1,
-            limit,
-            totalPages: 0,
-            totalDocs: 0,
-            hasNextPage: false,
-            hasPrevPage: false,
           },
-        }, { headers: getSecurityHeaders(origin || undefined) })
+          { headers: getSecurityHeaders(origin || undefined) },
+        )
       }
     }
 
     // --- Price range filter ---
     if (minPrice || maxPrice) {
-      // FIXED: Price is in essentials group
-      whereConditions['essentials.price'] = {}
-      if (minPrice)
-        (whereConditions['essentials.price'] as Record<string, number>).greater_than_equal = parseFloat(minPrice)
-      if (maxPrice)
-        (whereConditions['essentials.price'] as Record<string, number>).less_than_equal = parseFloat(maxPrice)
+      const priceCondition: any = {}
+      if (minPrice) priceCondition.greater_than_equal = parseFloat(minPrice)
+      if (maxPrice) priceCondition.less_than_equal = parseFloat(maxPrice)
+      additionalConditions.push({ 'essentials.price': priceCondition })
     }
 
     // --- Stock filter ---
     if (inStock === 'true') {
-      // FIXED: Stock is in inventory group
-      whereConditions['inventory.stock'] = { greater_than: 0 }
+      additionalConditions.push({ 'inventory.stock': { greater_than: 0 } })
+    }
+
+    // --- Combine all conditions ---
+    if (additionalConditions.length > 0) {
+      if (whereConditions.and) {
+        // Already has and conditions, append additional ones
+        whereConditions.and = [
+          ...(Array.isArray(whereConditions.and) ? whereConditions.and : [whereConditions.and]),
+          ...additionalConditions,
+        ]
+      } else if (whereConditions.or || Object.keys(whereConditions).length > 0) {
+        // Has existing conditions (or/other), combine with additional ones
+        const existingConditions = { ...whereConditions }
+        whereConditions = { and: [existingConditions, ...additionalConditions] }
+      } else {
+        // No existing conditions, just use additional ones
+        if (additionalConditions.length === 1) {
+          Object.assign(whereConditions, additionalConditions[0])
+        } else {
+          whereConditions.and = additionalConditions
+        }
+      }
     }
 
     // --- Query the database ---
@@ -187,7 +292,7 @@ export async function GET(request: NextRequest) {
         where: whereConditions as unknown as import('payload').Where,
         page,
         limit,
-        sort: `${order === 'desc' ? '-' : ''}${sort}`,
+        sort: `${order === 'desc' ? '-' : ''}${sort === 'price' ? 'essentials.price' : sort}`,
         depth: 2, // Include related data
       })
       console.log(`\x1b[32m[Products API] DB Query Success\x1b[0m`, {
@@ -265,18 +370,21 @@ export async function GET(request: NextRequest) {
     }))
 
     // --- Build and return response ---
-    const response = NextResponse.json({
-      success: true,
-      data: transformedProducts,
-      pagination: {
-        page: result.page || 1,
-        limit: result.limit,
-        totalPages: result.totalPages,
-        totalDocs: result.totalDocs,
-        hasNextPage: result.hasNextPage,
-        hasPrevPage: result.hasPrevPage,
+    const response = NextResponse.json(
+      {
+        success: true,
+        data: transformedProducts,
+        pagination: {
+          page: result.page || 1,
+          limit: result.limit,
+          totalPages: result.totalPages,
+          totalDocs: result.totalDocs,
+          hasNextPage: result.hasNextPage,
+          hasPrevPage: result.hasPrevPage,
+        },
       },
-    }, { headers: getSecurityHeaders(origin || undefined) })
+      { headers: getSecurityHeaders(origin || undefined) },
+    )
     response.headers.set('Cache-Control', 'public, s-maxage=60, stale-while-revalidate=300')
     return response
   } catch (error) {

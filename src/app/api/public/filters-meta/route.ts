@@ -6,7 +6,7 @@ export async function GET() {
   try {
     const payload = await getPayload({ config })
 
-    // Get all active categories with their relationships
+    // Get all active categories with proper relationship population
     const categoriesResult = await payload.find({
       collection: 'categories',
       where: {
@@ -15,19 +15,7 @@ export async function GET() {
         },
       },
       limit: 1000,
-      select: {
-        id: true,
-        name: true,
-        slug: true,
-        description: true,
-        icon: true,
-        image: true,
-        displayOrder: true,
-        isFeature: true,
-        showInNavigation: true,
-        productCount: true,
-        type: true, // <-- Add type field for hierarchy
-      },
+      depth: 2, // Ensure related brands are populated
       sort: 'displayOrder',
     })
 
@@ -40,21 +28,11 @@ export async function GET() {
         },
       },
       limit: 1000,
-      select: {
-        id: true,
-        name: true,
-        slug: true,
-        description: true,
-        logo: true,
-        website: true,
-        isFeature: true,
-        country: true,
-        foundedYear: true,
-      },
+      depth: 1, // Include logo details
       sort: 'name',
     })
 
-    // Get price range from actual products
+    // Get price range from actual products - use essentials.price field
     const productsResult = await payload.find({
       collection: 'products',
       where: {
@@ -67,33 +45,101 @@ export async function GET() {
         ],
       },
       limit: 1000,
+      select: {
+        essentials: {
+          price: true,
+        },
+        variants: true,
+      },
     })
 
-    // Calculate actual price range from products
-    const prices = productsResult.docs
-      .map((product: any) => product.price)
-      .filter((price: any) => typeof price === 'number' && price > 0)
+    // Calculate price range from products (including variants)
+    const prices: number[] = []
+    productsResult.docs.forEach((product: any) => {
+      // Add base price
+      if (product.essentials?.price && typeof product.essentials.price === 'number') {
+        prices.push(product.essentials.price)
+      }
+      // Add variant prices
+      if (product.variants && Array.isArray(product.variants)) {
+        product.variants.forEach((variant: any) => {
+          if (variant.price && typeof variant.price === 'number') {
+            prices.push(variant.price)
+          }
+        })
+      }
+    })
 
     const priceRange = {
       min: prices.length > 0 ? Math.min(...prices) : 0,
-      max: prices.length > 0 ? Math.max(...prices) : 1000,
+      max: prices.length > 0 ? Math.max(...prices) : 100000,
     }
 
-    // Get product counts per category for navigation
+    // Get accurate product counts per category using the correct schema
     const categoryProductCounts = await Promise.all(
       categoriesResult.docs.map(async (category: any) => {
-        const productCount = await payload.count({
-          collection: 'products',
-          where: {
+        let whereClause: any
+        
+        // Build query based on category type
+        if (category.type === 'sports-category') {
+          whereClause = {
             and: [
               {
                 status: {
                   in: ['active', 'out-of-stock'],
                 },
               },
+              {
+                'categorySelection.sportsCategory': {
+                  equals: category.id,
+                },
+              },
             ],
-          },
+          }
+        } else if (category.type === 'sports') {
+          whereClause = {
+            and: [
+              {
+                status: {
+                  in: ['active', 'out-of-stock'],
+                },
+              },
+              {
+                'categorySelection.sports': {
+                  equals: category.id,
+                },
+              },
+            ],
+          }
+        } else if (category.type === 'sports-item') {
+          whereClause = {
+            and: [
+              {
+                status: {
+                  in: ['active', 'out-of-stock'],
+                },
+              },
+              {
+                'categorySelection.sportsItem': {
+                  equals: category.id,
+                },
+              },
+            ],
+          }
+        } else {
+          // Fallback for categories without type
+          whereClause = {
+            status: {
+              in: ['active', 'out-of-stock'],
+            },
+          }
+        }
+
+        const productCount = await payload.count({
+          collection: 'products',
+          where: whereClause,
         })
+        
         return {
           categoryId: category.id,
           count: productCount.totalDocs,
@@ -101,7 +147,7 @@ export async function GET() {
       }),
     )
 
-    // Get product counts per brand for navigation
+    // Get product counts per brand
     const brandProductCounts = await Promise.all(
       brandsResult.docs.map(async (brand: any) => {
         const productCount = await payload.count({
@@ -128,32 +174,30 @@ export async function GET() {
       }),
     )
 
-    // Transform categories for frontend with product counts
+    // Transform categories with hierarchical structure
     const transformedCategories = categoriesResult.docs.map((category: any) => {
       const productCount =
         categoryProductCounts.find((count) => count.categoryId === category.id)?.count || 0
 
-      // Populate related brands (array of brand objects)
+      // Handle related brands safely
       let relatedBrands: any[] = []
       if (Array.isArray(category.relatedBrands) && category.relatedBrands.length > 0) {
         relatedBrands = category.relatedBrands.map((brand: any) => {
           if (typeof brand === 'object' && brand.id) {
-            // Already populated
             return {
               id: brand.id,
               name: brand.name,
               slug: brand.slug,
-              logo:
-                brand.logo && brand.logo.url
-                  ? { url: brand.logo.url, alt: brand.logo.alt || brand.name }
-                  : null,
+              logo: brand.branding?.logo?.url ? {
+                url: brand.branding.logo.url,
+                alt: brand.branding.logo.alt || brand.name,
+              } : null,
               website: brand.website,
               isFeature: brand.isFeature || false,
               country: brand.country,
               foundedYear: brand.foundedYear,
             }
           }
-          // If not populated, fallback to ID only
           return { id: brand }
         })
       }
@@ -163,24 +207,31 @@ export async function GET() {
         name: category.name,
         slug: category.slug,
         description: category.description,
-        icon: category.icon,
-        image:
-          typeof category.image === 'object' && category.image?.url
-            ? {
-                url: category.image.url,
-                alt: category.image.alt || category.name,
-              }
-            : null,
+        icon: category.visual?.icon,
+        image: category.visual?.image?.url ? {
+          url: category.visual.image.url,
+          alt: category.visual.image.alt || category.name,
+        } : null,
         displayOrder: category.displayOrder || 0,
         isFeature: category.isFeature || false,
         showInNavigation: category.showInNavigation !== false,
         productCount,
-        type: category.type || null, // <-- Pass type to frontend
+        type: category.type,
+        level: category.level,
+        fullPath: category.fullPath,
+        parentCategory: typeof category.parentCategory === 'object' && category.parentCategory 
+          ? {
+              id: category.parentCategory.id,
+              name: category.parentCategory.name,
+              slug: category.parentCategory.slug,
+              type: category.parentCategory.type,
+            }
+          : null,
         relatedBrands,
       }
     })
 
-    // Transform brands for frontend with product counts
+    // Transform brands with proper logo handling
     const transformedBrands = brandsResult.docs.map((brand: any) => {
       const productCount =
         brandProductCounts.find((count) => count.brandId === brand.id)?.count || 0
@@ -190,13 +241,10 @@ export async function GET() {
         name: brand.name,
         slug: brand.slug,
         description: brand.description,
-        logo:
-          typeof brand.logo === 'object' && brand.logo?.url
-            ? {
-                url: brand.logo.url,
-                alt: brand.logo.alt || brand.name,
-              }
-            : null,
+        logo: brand.branding?.logo?.url ? {
+          url: brand.branding.logo.url,
+          alt: brand.branding.logo.alt || brand.name,
+        } : null,
         website: brand.website,
         isFeature: brand.isFeature || false,
         country: brand.country,
@@ -205,19 +253,29 @@ export async function GET() {
       }
     })
 
+    // Structure categories hierarchically for easier frontend consumption
+    const hierarchicalCategories = {
+      sportsCategories: transformedCategories.filter(cat => cat.type === 'sports-category'),
+      sports: transformedCategories.filter(cat => cat.type === 'sports'),
+      sportsItems: transformedCategories.filter(cat => cat.type === 'sports-item'),
+    }
+
     const response = NextResponse.json({
       success: true,
       data: {
         categories: transformedCategories,
+        hierarchicalCategories,
         brands: transformedBrands,
         priceRange,
         totalProducts: productsResult.totalDocs,
         totalCategories: categoriesResult.totalDocs,
         totalBrands: brandsResult.totalDocs,
+        cacheVersion: (globalThis as any).__CACHE_VERSION || 0,
+        timestamp: Date.now(),
       },
     })
 
-    // Add caching headers - cache for 5 minutes, stale-while-revalidate for 10 minutes
+    // Add caching headers
     response.headers.set('Cache-Control', 'public, s-maxage=300, stale-while-revalidate=600')
     return response
   } catch (error) {

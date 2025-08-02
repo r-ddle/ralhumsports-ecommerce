@@ -10,8 +10,8 @@ export interface ProductFilters {
   minPrice?: number
   maxPrice?: number
   inStock?: boolean
-  sortBy?: string
-  sortOrder?: 'asc' | 'desc'
+  sort?: string
+  order?: 'asc' | 'desc'
   // Hierarchical category filters
   sportsCategory?: string
   sport?: string
@@ -46,8 +46,8 @@ export function useProductFilters() {
     const sportsItem = searchParams.get('sportsItem')
     if (sportsItem) urlFilters.sportsItem = sportsItem
 
-    const brands = searchParams.get('brands')
-    if (brands) urlFilters.brands = brands.split(',')
+    const brands = searchParams.getAll('brand')
+    if (brands.length > 0) urlFilters.brands = brands
 
     const minPrice = searchParams.get('minPrice')
     if (minPrice) urlFilters.minPrice = Number.parseInt(minPrice)
@@ -58,11 +58,11 @@ export function useProductFilters() {
     const inStock = searchParams.get('inStock')
     if (inStock === 'true') urlFilters.inStock = true
 
-    const sortBy = searchParams.get('sortBy')
-    if (sortBy) urlFilters.sortBy = sortBy
+    const sort = searchParams.get('sort')
+    if (sort) urlFilters.sort = sort
 
-    const sortOrder = searchParams.get('sortOrder')
-    if (sortOrder === 'asc' || sortOrder === 'desc') urlFilters.sortOrder = sortOrder
+    const order = searchParams.get('order')
+    if (order === 'asc' || order === 'desc') urlFilters.order = order
 
     setFilters(urlFilters)
   }, [searchParams])
@@ -74,12 +74,14 @@ export function useProductFilters() {
 
       if (newFilters.search) params.set('search', newFilters.search)
       if (newFilters.categories?.length) params.set('categories', newFilters.categories.join(','))
-      if (newFilters.brands?.length) params.set('brands', newFilters.brands.join(','))
+      if (newFilters.brands?.length) {
+        newFilters.brands.forEach(brand => params.append('brand', brand))
+      }
       if (newFilters.minPrice) params.set('minPrice', newFilters.minPrice.toString())
       if (newFilters.maxPrice) params.set('maxPrice', newFilters.maxPrice.toString())
       if (newFilters.inStock) params.set('inStock', 'true')
-      if (newFilters.sortBy) params.set('sortBy', newFilters.sortBy)
-      if (newFilters.sortOrder) params.set('sortOrder', newFilters.sortOrder)
+      if (newFilters.sort) params.set('sort', newFilters.sort)
+      if (newFilters.order) params.set('order', newFilters.order)
       
       // Hierarchical category filters
       if (newFilters.sportsCategory) params.set('sportsCategory', newFilters.sportsCategory)

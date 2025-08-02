@@ -21,12 +21,21 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/component
 import { Search, X, ChevronDown, RotateCcw, SlidersHorizontal, ChevronRight } from 'lucide-react'
 import { useProductFilters } from '@/hooks/useProductFilters'
 
-// Types for real API data
+// Types for hierarchical API data
 interface Category {
   id: string | number
   name: string
   slug: string
   productCount: number
+  type: 'sports-category' | 'sports' | 'sports-item'
+  level: number
+  fullPath?: string
+  parentCategory?: {
+    id: string | number
+    name: string
+    slug: string
+    type: string
+  } | null
 }
 
 interface Brand {
@@ -34,10 +43,22 @@ interface Brand {
   name: string
   slug: string
   productCount: number
+  logo?: {
+    url: string
+    alt: string
+  } | null
+  description?: string
+}
+
+interface HierarchicalCategories {
+  sportsCategories: Category[]
+  sports: Category[]
+  sportsItems: Category[]
 }
 
 interface ProductFiltersProps {
   categories: Category[]
+  hierarchicalCategories: HierarchicalCategories
   brands: Brand[]
   priceRange: { min: number; max: number }
   loading?: boolean
@@ -45,6 +66,7 @@ interface ProductFiltersProps {
 
 export function EnhancedProductFilters({
   categories,
+  hierarchicalCategories,
   brands,
   priceRange,
   loading = false,
@@ -65,11 +87,39 @@ export function EnhancedProductFilters({
   const [expandedSections, setExpandedSections] = useState<Record<string, boolean>>({
     search: true,
     sort: true,
+    hierarchical: true,
     categories: true,
     brands: true,
     price: true,
     stock: true,
   })
+
+  // Derived state for hierarchical filtering
+  const [availableSports, setAvailableSports] = useState<Category[]>([])
+  const [availableSportsItems, setAvailableSportsItems] = useState<Category[]>([])
+
+  // Update available options based on parent selection
+  useEffect(() => {
+    if (hierarchicalFilters.sportsCategory) {
+      const filteredSports = hierarchicalCategories.sports.filter(
+        (sport) => sport.parentCategory?.id.toString() === hierarchicalFilters.sportsCategory,
+      )
+      setAvailableSports(filteredSports)
+    } else {
+      setAvailableSports([])
+    }
+  }, [hierarchicalFilters.sportsCategory, hierarchicalCategories.sports])
+
+  useEffect(() => {
+    if (hierarchicalFilters.sport) {
+      const filteredSportsItems = hierarchicalCategories.sportsItems.filter(
+        (sportsItem) => sportsItem.parentCategory?.id.toString() === hierarchicalFilters.sport,
+      )
+      setAvailableSportsItems(filteredSportsItems)
+    } else {
+      setAvailableSportsItems([])
+    }
+  }, [hierarchicalFilters.sport, hierarchicalCategories.sportsItems])
 
   // Sync local state with URL filters
   useEffect(() => {
@@ -154,8 +204,40 @@ export function EnhancedProductFilters({
 
   const handleSortChange = (value: string) => {
     const [sortBy, sortOrder] = value.split('-')
-    addFilter('sortBy', sortBy)
-    addFilter('sortOrder', sortOrder)
+    addFilter('sort', sortBy)
+    addFilter('order', sortOrder)
+  }
+
+  const handleHierarchicalCategoryChange = (
+    level: 'sportsCategory' | 'sport' | 'sportsItem',
+    value: string,
+  ) => {
+    setHierarchicalFilters((prev) => {
+      const newFilters = { ...prev }
+
+      // Set the selected level
+      newFilters[level] = value
+
+      // Clear child levels when parent changes
+      if (level === 'sportsCategory') {
+        newFilters.sport = ''
+        newFilters.sportsItem = ''
+        removeFilter('sport')
+        removeFilter('sportsItem')
+      } else if (level === 'sport') {
+        newFilters.sportsItem = ''
+        removeFilter('sportsItem')
+      }
+
+      // Update URL filters
+      if (value) {
+        addFilter(level, value)
+      } else {
+        removeFilter(level)
+      }
+
+      return newFilters
+    })
   }
 
   const handleReset = () => {
@@ -164,6 +246,11 @@ export function EnhancedProductFilters({
     setSelectedBrands([])
     setPriceFilter([priceRange.min, priceRange.max])
     setStockFilter(false)
+    setHierarchicalFilters({
+      sportsCategory: '',
+      sport: '',
+      sportsItem: '',
+    })
     clearFilters()
   }
 
@@ -301,6 +388,103 @@ export function EnhancedProductFilters({
 
         <Separator />
 
+        {/* Hierarchical Category Selection */}
+        <Collapsible
+          open={expandedSections.hierarchical}
+          onOpenChange={() => handleSectionToggle('hierarchical')}
+        >
+          <CollapsibleTrigger className="flex items-center justify-between w-full p-0 hover:no-underline">
+            <h3 className="text-sm font-semibold">Category Navigation</h3>
+            <ChevronDown
+              className={`w-4 h-4 transition-transform ${expandedSections.hierarchical ? 'rotate-180' : ''}`}
+            />
+          </CollapsibleTrigger>
+          <CollapsibleContent className="mt-3">
+            <div className="space-y-4">
+              {/* Sports Category (Level 1) */}
+              <div>
+                <Label className="text-xs font-medium text-gray-600 mb-2 block">
+                  🏆 Sports Category
+                </Label>
+                <Select
+                  value={hierarchicalFilters.sportsCategory}
+                  onValueChange={(value) =>
+                    handleHierarchicalCategoryChange('sportsCategory', value)
+                  }
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select sports category" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Categories</SelectItem>
+                    {hierarchicalCategories.sportsCategories.map((category) => (
+                      <SelectItem
+                        key={`sports-category-${category.id}`}
+                        value={category.id.toString()}
+                      >
+                        {category.name} ({category.productCount})
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {/* Sport (Level 2) */}
+              {hierarchicalFilters.sportsCategory && (
+                <div className="animate-fade-in">
+                  <Label className="text-xs font-medium text-gray-600 mb-2 block">⚽ Sport</Label>
+                  <Select
+                    value={hierarchicalFilters.sport}
+                    onValueChange={(value) => handleHierarchicalCategoryChange('sport', value)}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select sport" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All Sports</SelectItem>
+                      {availableSports.map((category) => (
+                        <SelectItem key={`sport-${category.id}`} value={category.id.toString()}>
+                          {category.name} ({category.productCount})
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
+
+              {/* Sports Item (Level 3) */}
+              {hierarchicalFilters.sport && (
+                <div className="animate-fade-in">
+                  <Label className="text-xs font-medium text-gray-600 mb-2 block">
+                    👕 Sports Item
+                  </Label>
+                  <Select
+                    value={hierarchicalFilters.sportsItem}
+                    onValueChange={(value) => handleHierarchicalCategoryChange('sportsItem', value)}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select sports item" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All Items</SelectItem>
+                      {availableSportsItems.map((category) => (
+                        <SelectItem
+                          key={`sports-item-${category.id}`}
+                          value={category.id.toString()}
+                        >
+                          {category.name} ({category.productCount})
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
+            </div>
+          </CollapsibleContent>
+        </Collapsible>
+
+        <Separator />
+
         {/* Categories */}
         {/* Hierarchical Category Display */}
         {(hierarchicalFilters.sportsCategory ||
@@ -382,7 +566,7 @@ export function EnhancedProductFilters({
           <CollapsibleContent className="mt-3">
             <div className="space-y-3 max-h-48 overflow-y-auto">
               {categories.map((category) => (
-                <div key={category.id} className="flex items-center space-x-2">
+                <div key={`category-${category.id}`} className="flex items-center space-x-2">
                   <Checkbox
                     id={`category-${category.id}`}
                     checked={selectedCategories.includes(category.slug)}
@@ -428,12 +612,25 @@ export function EnhancedProductFilters({
           <CollapsibleContent className="mt-3">
             <div className="space-y-3 max-h-48 overflow-y-auto">
               {brands.map((brand) => (
-                <div key={brand.id} className="flex items-center space-x-2">
+                <div key={`brand-${brand.id}`} className="flex items-center space-x-3">
                   <Checkbox
                     id={`brand-${brand.id}`}
                     checked={selectedBrands.includes(brand.slug)}
                     onCheckedChange={(checked) => handleBrandChange(brand.slug, checked as boolean)}
                   />
+                  {brand.logo && (
+                    <div className="w-6 h-6 flex-shrink-0">
+                      <img
+                        src={brand.logo.url}
+                        alt={brand.logo.alt}
+                        className="w-full h-full object-contain rounded-sm"
+                        onError={(e) => {
+                          const target = e.target as HTMLImageElement
+                          target.style.display = 'none'
+                        }}
+                      />
+                    </div>
+                  )}
                   <Label
                     htmlFor={`brand-${brand.id}`}
                     className="text-sm font-medium cursor-pointer flex-1 hover:text-primary transition-colors"
