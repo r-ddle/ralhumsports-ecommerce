@@ -364,12 +364,18 @@ export function EnhancedProductFilters({
                       setSearchTerm('')
                       removeFilter('search')
                     }}
-                    className="absolute right-1 top-1/2 transform -translate-y-1/2 h-6 w-6 p-0"
+                    className="absolute right-1 top-1/2 transform -translate-y-1/2 h-6 w-6 p-0 hover:bg-gray-100"
+                    title="Clear search"
                   >
                     <X className="w-3 h-3" />
                   </Button>
                 )}
               </div>
+              {searchTerm && (
+                <div className="mt-2 text-xs text-muted-foreground">
+                  Press Enter to search or wait for auto-search
+                </div>
+              )}
             </form>
           </CollapsibleContent>
         </Collapsible>
