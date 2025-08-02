@@ -467,7 +467,7 @@ export default function StorePage() {
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
                     exit={{ opacity: 0 }}
-                    className={`grid gap-4 ${gridClasses}`}
+                    className={`grid gap-2 sm:gap-3 md:gap-4 lg:gap-5 xl:gap-6 ${gridClasses}`}
                   >
                     {Array.from({ length: pagination.limit }).map((_, i) =>
                       viewMode === 'grid' ? (
