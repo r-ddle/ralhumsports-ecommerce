@@ -19,6 +19,7 @@ import {
 } from '@/components/ui/select'
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible'
 import { Search, X, ChevronDown, RotateCcw, SlidersHorizontal, ChevronRight } from 'lucide-react'
+import { motion, AnimatePresence } from 'framer-motion'
 import { useProductFilters } from '@/hooks/useProductFilters'
 
 // Types for hierarchical API data
