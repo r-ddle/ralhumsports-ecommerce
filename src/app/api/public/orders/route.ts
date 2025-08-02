@@ -5,6 +5,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getPayload } from 'payload'
 import config from '@/payload.config'
 import { requireAdminOrManager } from '@/lib/auth'
+import { revalidatePath } from 'next/cache'
 
 type PayloadError = Error & { status?: number }
 
@@ -206,16 +207,22 @@ export const POST = withRateLimit(rateLimitConfigs.strict, async (request: NextR
         }
       }
 
-      // Invalidate caches to ensure fresh data
+      // Invalidate caches to ensure fresh product data with updated stock
       try {
-        // Increment cache version to invalidate browser caches
-        if (typeof globalThis !== 'undefined') {
-          globalThis.__CACHE_VERSION = (globalThis.__CACHE_VERSION || 0) + 1
+        // Revalidate product pages to show updated stock levels
+        revalidatePath('/products')
+        revalidatePath('/api/public/products')
+
+        // Revalidate individual product pages for updated products
+        for (const item of orderData.items) {
+          revalidatePath(`/products/${item.productId}`)
+          revalidatePath(`/api/public/products/${item.productId}`)
         }
-        console.log('[Orders API] Cache invalidation triggered - version incremented')
+
+        console.log('[Orders API] Cache revalidation completed - product pages refreshed')
       } catch (cacheError) {
-        console.warn('[Orders API] Cache invalidation failed:', cacheError)
-        // Don't fail the order if cache invalidation fails
+        console.warn('[Orders API] Cache revalidation failed:', cacheError)
+        // Don't fail the order if cache revalidation fails
       }
 
       // Return success immediately

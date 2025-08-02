@@ -36,7 +36,8 @@ export async function GET(request: NextRequest) {
   const search = searchParams.get('search')
   // Support multiple category params
   const categorySlugs = searchParams.getAll('category')
-  const brands = searchParams.getAll('brand') // Support multiple brand params
+  // Support both 'brand' and 'brands' parameters for flexibility
+  const brands = [...searchParams.getAll('brand'), ...searchParams.getAll('brands')].filter(Boolean)
   const sort = searchParams.get('sort') || 'createdAt'
   const order = searchParams.get('order') || 'desc'
   const status = searchParams.get('status') || 'active'
@@ -91,7 +92,7 @@ export async function GET(request: NextRequest) {
         { name: { contains: search } },
         { 'productDetails.sku': { contains: search } },
         { 'productDetails.tags': { contains: search } },
-        { description: { contains: search } },
+        // Note: description is richText/JSONB field and cannot be searched with contains
       )
     }
 

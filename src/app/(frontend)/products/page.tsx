@@ -19,18 +19,81 @@ import {
   SlidersHorizontal,
 } from 'lucide-react'
 import { Separator } from '@/components/ui/separator'
-import { ProductListItem, Category, Brand } from '@/types/api'
+import { ProductListItem, Category as ApiCategory, Brand as ApiBrand } from '@/types/api'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useSearchParams } from 'next/navigation'
 
+// Type adapters for ProductFilters component
+interface FilterCategory {
+  id: string | number
+  name: string
+  slug: string
+  productCount: number
+  type: 'sports-category' | 'sports' | 'sports-item'
+  level: number
+  fullPath?: string
+  parentCategory?: {
+    id: string | number
+    name: string
+    slug: string
+    type: string
+  } | null
+}
+
+interface FilterBrand {
+  id: string | number
+  name: string
+  slug: string
+  productCount: number
+  image?: {
+    url: string
+    alt: string
+  } | null
+  description?: string
+}
+
+interface FilterHierarchicalCategories {
+  sportsCategories: FilterCategory[]
+  sports: FilterCategory[]
+  sportsItems: FilterCategory[]
+}
+
+// Helper functions to convert API types to filter component types
+const convertApiCategoryToFilterCategory = (apiCategory: ApiCategory): FilterCategory => ({
+  id: apiCategory.id,
+  name: apiCategory.name,
+  slug: apiCategory.slug,
+  productCount: apiCategory.productCount,
+  type: 'sports-category', // Default type, should be determined by API
+  level: 0, // Default level, should be determined by API
+  fullPath: `/${apiCategory.slug}`,
+  parentCategory: null,
+})
+
+const convertApiBrandToFilterBrand = (apiBrand: ApiBrand): FilterBrand => ({
+  id: apiBrand.id,
+  name: apiBrand.name,
+  slug: apiBrand.slug,
+  productCount: 0, // This should come from API
+  image: apiBrand.logo
+    ? {
+        url: apiBrand.logo.url,
+        alt: apiBrand.logo.alt || `${apiBrand.name} logo`,
+      }
+    : null,
+  description: apiBrand.description,
+})
+
+const convertHierarchicalCategories = (hierarchical: any): FilterHierarchicalCategories => ({
+  sportsCategories: (hierarchical?.sportsCategories || []).map(convertApiCategoryToFilterCategory),
+  sports: (hierarchical?.sports || []).map(convertApiCategoryToFilterCategory),
+  sportsItems: (hierarchical?.sportsItems || []).map(convertApiCategoryToFilterCategory),
+})
+
 interface ProductFilters {
-  categories: Category[]
-  hierarchicalCategories: {
-    sportsCategories: Category[]
-    sports: Category[]
-    sportsItems: Category[]
-  }
-  brands: Brand[]
+  categories: FilterCategory[]
+  hierarchicalCategories: FilterHierarchicalCategories
+  brands: FilterBrand[]
   priceRange: { min: number; max: number }
 }
 
@@ -112,13 +175,13 @@ export default function StorePage() {
 
     // Handle hierarchical categories (keep them separate, don't merge into categories array)
     const sportsCategory = searchParams.get('sportsCategory')
-    const sport = searchParams.get('sport') 
+    const sport = searchParams.get('sport')
     const sportsItem = searchParams.get('sportsItem')
-    
+
     if (sportsCategory) urlFilters.sportsCategory = sportsCategory
     if (sport) urlFilters.sport = sport
     if (sportsItem) urlFilters.sportsItem = sportsItem
-    
+
     // Handle legacy categories array (only if no hierarchical filters)
     if (!sportsCategory && !sport && !sportsItem) {
       const categories = searchParams.get('categories')
@@ -127,8 +190,10 @@ export default function StorePage() {
       }
     }
 
-    // Handle brands (multiple brand parameters)
-    const brands = searchParams.getAll('brand')
+    // Handle brands (support both 'brand' and 'brands' parameters)
+    const brands = [...searchParams.getAll('brand'), ...searchParams.getAll('brands')].filter(
+      Boolean,
+    )
     if (brands.length > 0) {
       urlFilters.brands = brands
     }
@@ -163,13 +228,9 @@ export default function StorePage() {
       const data = await response.json()
       if (data.success && data.data) {
         setFilterOptions({
-          categories: data.data.categories || [],
-          hierarchicalCategories: data.data.hierarchicalCategories || {
-            sportsCategories: [],
-            sports: [],
-            sportsItems: [],
-          },
-          brands: data.data.brands || [],
+          categories: (data.data.categories || []).map(convertApiCategoryToFilterCategory),
+          hierarchicalCategories: convertHierarchicalCategories(data.data.hierarchicalCategories),
+          brands: (data.data.brands || []).map(convertApiBrandToFilterBrand),
           priceRange: data.data.priceRange || { min: 0, max: 100000 },
         })
       }
@@ -200,7 +261,7 @@ export default function StorePage() {
   const handleResetFilters = () => {
     // Reset URL to trigger filter component reset
     window.history.pushState({}, '', '/products')
-    
+
     setCurrentFilters({
       page: 1,
       limit: 24,
@@ -227,44 +288,39 @@ export default function StorePage() {
       const params = new URLSearchParams()
 
       Object.entries(currentFilters).forEach(([key, value]) => {
-        if (value === undefined || value === null || value === '') return
-        
-        // Special handling for hierarchical categories - these should be sent as individual parameters
-        if (key === 'categories' && Array.isArray(value)) {
-          // Don't send categories array if we have hierarchical filters
-          const hasHierarchicalFilters = currentFilters.sportsCategory || currentFilters.sport || currentFilters.sportsItem
-          if (!hasHierarchicalFilters) {
-            value.forEach((v) => params.append('category', v))
+        if (value !== undefined && value !== null) {
+          if (Array.isArray(value)) {
+            // Handle arrays - use singular form for URLSearchParams
+            const paramKey = key === 'brands' ? 'brand' : key === 'categories' ? 'category' : key
+            value.forEach((v) => params.append(paramKey, v.toString()))
+          } else {
+            params.append(key, value.toString())
           }
-        } else if (key === 'brands' && Array.isArray(value)) {
-          // Send brands as individual 'brand' parameters (singular, as expected by API)
-          value.forEach((v) => params.append('brand', v))
-        } else if (Array.isArray(value)) {
-          value.forEach((v) => params.append(key, v))
-        } else {
-          params.append(key, String(value))
         }
       })
 
       try {
         const response = await fetch(`/api/public/products?${params.toString()}`)
-        if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`)
-        const data = await response.json()
+        if (!response.ok) throw new Error('Failed to fetch products')
 
-        if (data.success && data.data) {
-          const productsWithDisplayPrice = data.data.map((product: any) => ({
-            ...product,
-            _displayPrice: getDisplayPrice(product),
-          }))
-          setProducts(productsWithDisplayPrice)
-          setPagination(data.pagination)
+        const data = await response.json()
+        if (data.success) {
+          const products = data.data || []
+          setProducts(products)
+          setPagination({
+            page: data.pagination?.page || 1,
+            limit: data.pagination?.limit || 24,
+            totalPages: data.pagination?.totalPages || 1,
+            totalDocs: data.pagination?.totalDocs || 0,
+            hasNextPage: data.pagination?.hasNextPage || false,
+            hasPrevPage: data.pagination?.hasPrevPage || false,
+          })
         } else {
-          throw new Error(data.error || 'Failed to load products')
+          setError(data.error || 'Failed to load products')
         }
-      } catch (err: any) {
+      } catch (err) {
         console.error('Error fetching products:', err)
-        setError(err.message)
-        setProducts([])
+        setError(err instanceof Error ? err.message : 'An error occurred')
       } finally {
         setLoading(false)
       }
@@ -273,333 +329,292 @@ export default function StorePage() {
     fetchProducts()
   }, [currentFilters])
 
-  const containerVariants = {
-    hidden: { opacity: 0 },
-    visible: { opacity: 1, transition: { staggerChildren: 0.1 } },
-  }
-
-  const itemVariants = {
-    hidden: { opacity: 0, y: 20 },
-    visible: { opacity: 1, y: 0 },
-  }
-
-  const gridClasses = useMemo(() => {
-    return viewMode === 'list'
-      ? 'grid-cols-1'
-      : 'grid-cols-1 sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-4'
-  }, [viewMode])
-
   const activeFiltersCount = useMemo(() => {
-    const { search, categories, brands, minPrice, maxPrice, inStock } = currentFilters
-    return [search, categories?.length, brands?.length, minPrice, maxPrice, inStock].filter(Boolean)
-      .length
+    return Object.entries(currentFilters).filter(([key, value]) => {
+      if (
+        key === 'page' ||
+        key === 'limit' ||
+        key === 'sort' ||
+        key === 'order' ||
+        key === 'status'
+      )
+        return false
+      if (Array.isArray(value)) return value.length > 0
+      return !!value
+    }).length
   }, [currentFilters])
 
+  if (error) {
+    return (
+      <main className="min-h-screen pt-16 bg-gradient-to-br from-gray-50 via-white to-blue-50">
+        <div className="max-w-7xl mx-auto px-4 py-8">
+          <Alert>
+            <AlertCircle className="h-4 w-4" />
+            <AlertDescription>{error}</AlertDescription>
+          </Alert>
+        </div>
+      </main>
+    )
+  }
+
   return (
-    <main className="min-h-screen pt-8 mt-5 bg-brand-background">
-      <section className="relative py-8 sm:py-12 overflow-hidden bg-brand-background">
-        <div className="absolute inset-0 overflow-hidden pointer-events-none">
-          <motion.div
-            className="absolute top-1/4 left-1/6 w-72 h-72 bg-gradient-to-br from-brand-secondary/10 to-brand-primary/10 rounded-full blur-3xl"
-            animate={
-              prefersReducedMotion
-                ? {}
-                : { scale: [1, 1.2, 1], opacity: [0.3, 0.6, 0.3], x: [0, 30, 0], y: [0, -20, 0] }
-            }
-            transition={{ duration: 8, repeat: Infinity, ease: 'easeInOut' }}
-          />
-          <motion.div
-            className="absolute top-1/3 right-1/4 w-96 h-96 bg-gradient-to-br from-brand-accent/10 to-brand-primary/10 rounded-full blur-3xl"
-            animate={
-              prefersReducedMotion
-                ? {}
-                : { scale: [1, 0.8, 1], opacity: [0.4, 0.7, 0.4], x: [0, -40, 0], y: [0, 30, 0] }
-            }
-            transition={{ duration: 10, repeat: Infinity, ease: 'easeInOut', delay: 2 }}
-          />
-        </div>
-        <div className="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
-          <motion.div
-            className="text-center"
-            variants={containerVariants}
-            initial="hidden"
-            animate="visible"
-          >
-            <motion.div
-              variants={itemVariants}
-              className="inline-flex items-center gap-2 px-6 py-3 rounded-full font-bold text-sm mb-6 bg-brand-accent text-white shadow-lg"
-            >
-              <Sparkles className="w-4 h-4" />
-              PREMIUM SPORTS STORE
-            </motion.div>
-            <motion.h1
-              variants={itemVariants}
-              className="text-4xl sm:text-5xl md:text-6xl font-black mb-6 leading-tight"
-            >
-              <span className="text-text-primary">PROFESSIONAL</span>
-              <span className="block bg-gradient-to-r from-brand-primary to-brand-accent bg-clip-text text-transparent">
-                SPORTS EQUIPMENT
-              </span>
-            </motion.h1>
-            <motion.p
-              variants={itemVariants}
-              className="text-base sm:text-lg md:text-xl text-text-secondary max-w-3xl mx-auto mb-6 sm:mb-8 leading-relaxed"
-            >
-              Discover hundreds of premium sports products from world-renowned brands. From
-              professional athletes to weekend warriors, find everything you need to excel.
-            </motion.p>
-          </motion.div>
-        </div>
-      </section>
+    <main className="min-h-screen pt-16 bg-gradient-to-br from-gray-50 via-white to-blue-50">
+      <div className="max-w-7xl mx-auto px-4 py-6 sm:py-8">
+        {/* Header */}
+        <div className="mb-6 sm:mb-8">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+            <div>
+              <h1 className="text-2xl sm:text-3xl lg:text-4xl font-black text-text-primary mb-2">
+                Sports Products
+                <Sparkles className="inline-block w-6 h-6 sm:w-8 sm:h-8 ml-2 text-brand-primary" />
+              </h1>
+              <p className="text-text-secondary text-sm sm:text-base">
+                Discover premium sports equipment and gear
+              </p>
+            </div>
 
-      <section className="py-12 bg-brand-background">
-        <div className="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8">
-          <AnimatePresence>
-            {error && (
-              <motion.div
-                initial={{ opacity: 0, scale: 0.95 }}
-                animate={{ opacity: 1, scale: 1 }}
-                exit={{ opacity: 0, scale: 0.95 }}
-                className="mb-6"
+            {/* Mobile Filter Toggle */}
+            <div className="flex items-center gap-2 sm:hidden">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setShowFilters(!showFilters)}
+                className="flex items-center gap-2"
               >
-                <Alert variant="destructive">
-                  <AlertCircle className="h-4 w-4" />
-                  <AlertDescription>{error}</AlertDescription>
-                </Alert>
-              </motion.div>
-            )}
-          </AnimatePresence>
-
-          <div className="flex flex-col lg:flex-row gap-8">
-            <motion.aside
-              className={`lg:w-80 flex-shrink-0 ${showFilters ? 'block' : 'hidden lg:block'}`}
-              initial={{ opacity: 0, x: -20 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ duration: 0.5 }}
-            >
-              <div className="sticky top-24">
-                <Card className="bg-brand-surface border-brand-border shadow-xl">
-                  <FiltersComponent
-                    categories={filterOptions.categories}
-                    hierarchicalCategories={filterOptions.hierarchicalCategories}
-                    brands={filterOptions.brands}
-                    priceRange={filterOptions.priceRange}
-                    loading={filtersLoading}
-                  />
-                </Card>
-              </div>
-            </motion.aside>
-
-            <div className="flex-1">
-              <Card className="mb-6 bg-brand-surface border-brand-border shadow-lg">
-                <CardContent className="p-4">
-                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                    <div className="flex flex-col sm:flex-row sm:items-center gap-3">
-                      {!loading && pagination.totalDocs > 0 && (
-                        <p className="text-sm text-text-secondary font-medium">
-                          Showing {(pagination.page - 1) * pagination.limit + 1}-
-                          {Math.min(pagination.page * pagination.limit, pagination.totalDocs)} of{' '}
-                          <span className="font-bold text-text-primary">
-                            {pagination.totalDocs}
-                          </span>{' '}
-                          products
-                        </p>
-                      )}
-                      {activeFiltersCount > 0 && (
-                        <div className="flex items-center gap-2">
-                          <Badge variant="secondary" className="text-xs">
-                            {activeFiltersCount} filter{activeFiltersCount > 1 ? 's' : ''} active
-                          </Badge>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={handleResetFilters}
-                            className="text-xs h-6 px-2"
-                          >
-                            Clear all
-                          </Button>
-                        </div>
-                      )}
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => setShowFilters(!showFilters)}
-                        className="lg:hidden"
-                      >
-                        <SlidersHorizontal className="w-4 h-4 mr-2" />
-                        Filters
-                        {activeFiltersCount > 0 && (
-                          <Badge variant="secondary" className="ml-1 text-xs h-4 px-1">
-                            {activeFiltersCount}
-                          </Badge>
-                        )}
-                      </Button>
-                      <Separator orientation="vertical" className="h-6" />
-                      <div className="flex items-center border border-brand-border rounded-lg p-1">
-                        <Button
-                          variant={viewMode === 'grid' ? 'default' : 'ghost'}
-                          size="sm"
-                          onClick={() => setViewMode('grid')}
-                          className="h-7 px-2"
-                        >
-                          <Grid3X3 className="w-4 h-4" />
-                        </Button>
-                        <Button
-                          variant={viewMode === 'list' ? 'default' : 'ghost'}
-                          size="sm"
-                          onClick={() => setViewMode('list')}
-                          className="h-7 px-2"
-                        >
-                          <List className="w-4 h-4" />
-                        </Button>
-                      </div>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-
-              <AnimatePresence mode="wait">
-                {loading ? (
-                  <motion.div
-                    key="loading"
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    exit={{ opacity: 0 }}
-                    className={`grid gap-4 ${gridClasses}`}
-                  >
-                    {Array.from({ length: pagination.limit }).map((_, i) =>
-                      viewMode === 'grid' ? (
-                        <ProductCardSkeleton key={i} />
-                      ) : (
-                        <ProductListSkeleton key={i} />
-                      ),
-                    )}
-                  </motion.div>
-                ) : products.length > 0 ? (
-                  <motion.div
-                    key="products"
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    exit={{ opacity: 0 }}
-                    className={`grid gap-4 sm:gap-6 ${gridClasses}`}
-                  >
-                    {products.map((product, index) => (
-                      <motion.div
-                        key={product.id}
-                        initial={prefersReducedMotion ? {} : { opacity: 0, y: 20 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ duration: 0.5, delay: index * 0.05 }}
-                      >
-                        <ProductCard
-                          product={{ ...product, price: product.price ?? product.price }}
-                          variant={viewMode}
-                          showBrand={true}
-                          showCategory={true}
-                          className="h-full"
-                        />
-                      </motion.div>
-                    ))}
-                  </motion.div>
-                ) : (
-                  <motion.div
-                    key="empty"
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    exit={{ opacity: 0 }}
-                    className="text-center py-12"
-                  >
-                    <Package className="w-16 h-16 text-text-secondary mx-auto mb-4" />
-                    <h3 className="text-lg font-semibold text-text-primary mb-2">
-                      No products found
-                    </h3>
-                    <p className="text-text-secondary mb-6">
-                      Try adjusting your filters or search terms
-                    </p>
-                    <Button onClick={handleResetFilters} variant="outline">
-                      Reset Filters
-                    </Button>
-                  </motion.div>
+                <SlidersHorizontal className="h-4 w-4" />
+                Filters
+                {activeFiltersCount > 0 && (
+                  <Badge variant="secondary" className="ml-1">
+                    {activeFiltersCount}
+                  </Badge>
                 )}
-              </AnimatePresence>
-
-              {!loading && pagination.totalPages > 1 && (
-                <motion.div
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.3 }}
-                  className="mt-12 flex flex-col sm:flex-row items-center justify-between gap-4"
-                >
-                  <div className="text-sm text-text-secondary">
-                    Page {pagination.page} of {pagination.totalPages}
-                  </div>
-                  <div className="flex items-center gap-1">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => handlePageChange(pagination.page - 1)}
-                      disabled={!pagination.hasPrevPage}
-                      className="h-9 px-3"
-                    >
-                      <ChevronLeft className="w-4 h-4 mr-1" />
-                      Previous
-                    </Button>
-                    <div className="flex items-center gap-1 mx-2">
-                      {/* Pagination logic can be improved, but is functional */}
-                      {Array.from({ length: Math.min(5, pagination.totalPages) }).map((_, i) => {
-                        let page = i + 1
-                        // Basic logic to center current page
-                        if (pagination.page > 3 && pagination.totalPages > 5) {
-                          page = pagination.page - 2 + i
-                        }
-                        if (page > pagination.totalPages) return null
-                        return (
-                          <Button
-                            key={page}
-                            variant={page === pagination.page ? 'default' : 'outline'}
-                            size="sm"
-                            onClick={() => handlePageChange(page)}
-                            className="h-9 w-9"
-                          >
-                            {page}
-                          </Button>
-                        )
-                      })}
-                    </div>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => handlePageChange(pagination.page + 1)}
-                      disabled={!pagination.hasNextPage}
-                      className="h-9 px-3"
-                    >
-                      Next
-                      <ChevronRight className="w-4 h-4 ml-1" />
-                    </Button>
-                  </div>
-                  <div className="hidden sm:flex items-center gap-2 text-sm">
-                    <span className="text-text-secondary">Go to page:</span>
-                    <input
-                      type="number"
-                      min={1}
-                      max={pagination.totalPages}
-                      defaultValue={pagination.page}
-                      onKeyDown={(e) => {
-                        if (e.key === 'Enter') {
-                          const page = parseInt((e.target as HTMLInputElement).value)
-                          if (page >= 1 && page <= pagination.totalPages) handlePageChange(page)
-                        }
-                      }}
-                      className="w-16 h-8 px-2 text-center border border-brand-border rounded bg-brand-surface"
-                    />
-                  </div>
-                </motion.div>
-              )}
+              </Button>
             </div>
           </div>
         </div>
-      </section>
+
+        <div className="flex flex-col lg:flex-row gap-6 lg:gap-8">
+          {/* Mobile Filters Overlay */}
+          {showFilters && (
+            <div className="fixed inset-0 z-50 lg:hidden">
+              <div className="absolute inset-0 bg-black/50" onClick={() => setShowFilters(false)} />
+              <div className="absolute right-0 top-0 h-full w-80 max-w-[85vw] bg-white p-4 overflow-y-auto">
+                <div className="flex items-center justify-between mb-4">
+                  <h2 className="text-lg font-semibold">Filters</h2>
+                  <Button variant="ghost" size="sm" onClick={() => setShowFilters(false)}>
+                    ×
+                  </Button>
+                </div>
+                <FiltersComponent
+                  categories={filterOptions.categories}
+                  hierarchicalCategories={filterOptions.hierarchicalCategories}
+                  brands={filterOptions.brands}
+                  priceRange={filterOptions.priceRange}
+                  loading={filtersLoading}
+                  onApplyFilters={() => setShowFilters(false)}
+                />
+              </div>
+            </div>
+          )}
+
+          {/* Desktop Filters Sidebar */}
+          <div className="hidden lg:block w-80 flex-shrink-0">
+            <FiltersComponent
+              categories={filterOptions.categories}
+              hierarchicalCategories={filterOptions.hierarchicalCategories}
+              brands={filterOptions.brands}
+              priceRange={filterOptions.priceRange}
+              loading={filtersLoading}
+            />
+          </div>
+
+          {/* Main Content */}
+          <div className="flex-1 min-w-0">
+            {/* Results Header */}
+            <Card className="mb-4 sm:mb-6">
+              <CardContent className="p-3 sm:p-4">
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                  <div className="flex items-center gap-3">
+                    <p className="text-sm text-text-secondary">
+                      {loading ? (
+                        'Loading products...'
+                      ) : (
+                        <>
+                          Showing {products.length} of {pagination.totalDocs} products
+                          {activeFiltersCount > 0 && ` (${activeFiltersCount} filters applied)`}
+                        </>
+                      )}
+                    </p>
+                  </div>
+
+                  <div className="flex items-center gap-2">
+                    {/* View Mode Toggle - Hidden on mobile */}
+                    <div className="hidden sm:flex items-center gap-1 mr-2">
+                      <Button
+                        variant={viewMode === 'grid' ? 'default' : 'outline'}
+                        size="sm"
+                        onClick={() => setViewMode('grid')}
+                        className="h-8 w-8 p-0"
+                      >
+                        <Grid3X3 className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        variant={viewMode === 'list' ? 'default' : 'outline'}
+                        size="sm"
+                        onClick={() => setViewMode('list')}
+                        className="h-8 w-8 p-0"
+                      >
+                        <List className="h-4 w-4" />
+                      </Button>
+                    </div>
+
+                    {activeFiltersCount > 0 && (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={handleResetFilters}
+                        className="text-xs"
+                      >
+                        Clear All
+                      </Button>
+                    )}
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Products Grid with Enhanced Mobile Layout */}
+            <AnimatePresence mode="wait">
+              {loading ? (
+                <motion.div
+                  key="loading"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                  className={`grid gap-3 sm:gap-4 lg:gap-6 ${
+                    viewMode === 'grid'
+                      ? 'grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-4' // Enhanced mobile: 2 columns on mobile, 3 on tablet, 4 on desktop
+                      : 'grid-cols-1'
+                  }`}
+                >
+                  {Array.from({ length: 12 }).map((_, i) => (
+                    <ProductCardSkeleton key={i} />
+                  ))}
+                </motion.div>
+              ) : products.length > 0 ? (
+                <motion.div
+                  key="products"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                  className={`grid gap-3 sm:gap-4 lg:gap-6 ${
+                    viewMode === 'grid'
+                      ? 'grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-4' // Enhanced mobile: 2 columns on mobile, 3 on tablet, 4 on desktop
+                      : 'grid-cols-1'
+                  }`}
+                >
+                  {products.map((product, index) => (
+                    <motion.div
+                      key={product.id}
+                      initial={prefersReducedMotion ? {} : { opacity: 0, y: 20 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ duration: 0.5, delay: index * 0.05 }}
+                      className="h-full" // Ensure consistent height
+                    >
+                      <ProductCard
+                        product={product}
+                        variant={viewMode}
+                        showBrand={true}
+                        showCategory={true}
+                        className="h-full"
+                      />
+                    </motion.div>
+                  ))}
+                </motion.div>
+              ) : (
+                <motion.div
+                  key="empty"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                  className="text-center py-12"
+                >
+                  <Package className="w-16 h-16 text-text-secondary mx-auto mb-4" />
+                  <h3 className="text-lg font-semibold text-text-primary mb-2">
+                    No products found
+                  </h3>
+                  <p className="text-text-secondary mb-6">
+                    Try adjusting your filters or search terms
+                  </p>
+                  <Button onClick={handleResetFilters} variant="outline">
+                    Reset Filters
+                  </Button>
+                </motion.div>
+              )}
+            </AnimatePresence>
+
+            {/* Pagination */}
+            {!loading && pagination.totalPages > 1 && (
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.3 }}
+                className="mt-8 sm:mt-12 flex flex-col sm:flex-row items-center justify-between gap-4"
+              >
+                <div className="text-sm text-text-secondary">
+                  Page {pagination.page} of {pagination.totalPages}
+                </div>
+                <div className="flex items-center gap-1">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => handlePageChange(pagination.page - 1)}
+                    disabled={!pagination.hasPrevPage}
+                    className="h-9 px-3"
+                  >
+                    <ChevronLeft className="w-4 h-4 mr-1" />
+                    <span className="hidden sm:inline">Previous</span>
+                    <span className="sm:hidden">Prev</span>
+                  </Button>
+                  <div className="flex items-center gap-1 mx-2">
+                    {/* Simplified pagination for mobile */}
+                    {Array.from({ length: Math.min(3, pagination.totalPages) }).map((_, i) => {
+                      let page = i + 1
+                      // Center current page
+                      if (pagination.page > 2 && pagination.totalPages > 3) {
+                        page = pagination.page - 1 + i
+                      }
+                      if (page > pagination.totalPages) return null
+                      return (
+                        <Button
+                          key={page}
+                          variant={page === pagination.page ? 'default' : 'outline'}
+                          size="sm"
+                          onClick={() => handlePageChange(page)}
+                          className="h-9 w-9 p-0"
+                        >
+                          {page}
+                        </Button>
+                      )
+                    })}
+                  </div>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => handlePageChange(pagination.page + 1)}
+                    disabled={!pagination.hasNextPage}
+                    className="h-9 px-3"
+                  >
+                    <span className="hidden sm:inline">Next</span>
+                    <span className="sm:hidden">Next</span>
+                    <ChevronRight className="w-4 h-4 ml-1" />
+                  </Button>
+                </div>
+              </motion.div>
+            )}
+          </div>
+        </div>
+      </div>
     </main>
   )
 }

@@ -132,15 +132,14 @@ export async function GET(
               id: product.essentials.brand.id,
               name: product.essentials.brand.name,
               slug: product.essentials.brand.slug,
-              description: product.essentials.brand.description,
-              logo:
-                product.essentials.brand.branding?.logo?.url
-                  ? {
-                      url: product.essentials.brand.branding.logo.url,
-                      alt: product.essentials.brand.branding.logo.alt || product.essentials.brand.name,
-                    }
-                  : null,
-              website: product.essentials.brand.website,
+              description: product.essentials.brand.branding.description,
+              logo: product.essentials.brand.branding?.logo
+                ? {
+                    url: product.essentials.brand.branding.logo,
+                    alt: product.essentials.brand.name,
+                  }
+                : null,
+              website: product.essentials.brand.details?.website,
             }
           : null,
       features: product.features?.map((f: any) => f.feature) || [],
