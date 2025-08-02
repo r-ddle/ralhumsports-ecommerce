@@ -311,14 +311,14 @@ export function ProductCard({
               </Badge>
             )}
 
-            {/* Rating */}
+            {/* Rating - More compact on mobile */}
             {product.rating && product.rating > 0 && (
-              <div className="flex items-center gap-1 mb-2">
+              <div className="flex items-center gap-1 mb-1.5 sm:mb-2">
                 <div className="flex items-center gap-0.5">
                   {[...Array(5)].map((_, i) => (
                     <Star
                       key={i}
-                      className={`w-3 h-3 ${
+                      className={`w-2.5 h-2.5 sm:w-3 sm:h-3 ${
                         i < Math.floor(product.rating!)
                           ? 'fill-yellow-400 text-yellow-400'
                           : 'text-gray-300'
@@ -326,7 +326,7 @@ export function ProductCard({
                     />
                   ))}
                 </div>
-                <span className="text-[10px] text-text-secondary">({product.rating})</span>
+                <span className="text-[9px] sm:text-[10px] text-text-secondary">({product.rating})</span>
               </div>
             )}
 
