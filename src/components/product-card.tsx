@@ -287,8 +287,8 @@ export function ProductCard({
             )}
           </div>
 
-          {/* Content Section */}
-          <CardContent className="p-5 flex-1 flex flex-col">
+          {/* Content Section - Optimized for compactness */}
+          <CardContent className="p-3 sm:p-4 lg:p-5 flex-1 flex flex-col">
             {/* Brand */}
             {showBrand && product.brand && (
               <Badge
