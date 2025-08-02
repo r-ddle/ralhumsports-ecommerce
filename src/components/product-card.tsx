@@ -342,20 +342,20 @@ export function ProductCard({
               </div>
             </div>
 
-            {/* Stock Status */}
-            <div className="mb-3">
+            {/* Stock Status - Compact */}
+            <div className="mb-2 sm:mb-3">
               {isOutOfStock ? (
-                <Badge className="text-xs px-2 py-1 bg-gray-500 text-white w-fit">
+                <Badge className="text-[10px] sm:text-xs px-1.5 py-0.5 sm:px-2 sm:py-1 bg-gray-500 text-white w-fit">
                   Out of Stock
                 </Badge>
               ) : isLowStock ? (
-                <Badge className="text-xs px-2 py-1 bg-orange-500 text-white w-fit">
-                  <Zap className="w-3 h-3 mr-1" />
+                <Badge className="text-[10px] sm:text-xs px-1.5 py-0.5 sm:px-2 sm:py-1 bg-orange-500 text-white w-fit">
+                  <Zap className="w-2.5 h-2.5 sm:w-3 sm:h-3 mr-0.5 sm:mr-1" />
                   Only {availableStock} left
                 </Badge>
               ) : (
-                <Badge className="text-xs px-2 py-1 bg-green-500 text-white w-fit">
-                  <Package className="w-3 h-3 mr-1" />
+                <Badge className="text-[10px] sm:text-xs px-1.5 py-0.5 sm:px-2 sm:py-1 bg-green-500 text-white w-fit">
+                  <Package className="w-2.5 h-2.5 sm:w-3 sm:h-3 mr-0.5 sm:mr-1" />
                   Available
                 </Badge>
               )}
