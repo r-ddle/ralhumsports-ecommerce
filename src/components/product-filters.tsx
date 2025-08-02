@@ -452,55 +452,71 @@ export function EnhancedProductFilters({
               </div>
 
               {/* Sport (Level 2) */}
-              {hierarchicalFilters.sportsCategory && (
-                <div className="animate-fade-in">
-                  <Label className="text-xs font-medium text-gray-600 mb-2 block">⚽ Sport</Label>
-                  <Select
-                    value={hierarchicalFilters.sport}
-                    onValueChange={(value) => handleHierarchicalCategoryChange('sport', value)}
+              <AnimatePresence>
+                {hierarchicalFilters.sportsCategory && (
+                  <motion.div
+                    initial={{ opacity: 0, height: 0 }}
+                    animate={{ opacity: 1, height: "auto" }}
+                    exit={{ opacity: 0, height: 0 }}
+                    transition={{ duration: 0.2 }}
+                    className="overflow-hidden"
                   >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select sport" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">All Sports</SelectItem>
-                      {availableSports.map((category) => (
-                        <SelectItem key={`sport-${category.id}`} value={category.id.toString()}>
-                          {category.name} ({category.productCount})
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-              )}
+                    <Label className="text-xs font-medium text-gray-600 mb-2 block">⚽ Sport</Label>
+                    <Select
+                      value={hierarchicalFilters.sport}
+                      onValueChange={(value) => handleHierarchicalCategoryChange('sport', value)}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select sport" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">All Sports</SelectItem>
+                        {availableSports.map((category) => (
+                          <SelectItem key={`sport-${category.id}`} value={category.id.toString()}>
+                            {category.name} ({category.productCount})
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </motion.div>
+                )}
+              </AnimatePresence>
 
               {/* Sports Item (Level 3) */}
-              {hierarchicalFilters.sport && (
-                <div className="animate-fade-in">
-                  <Label className="text-xs font-medium text-gray-600 mb-2 block">
-                    👕 Sports Item
-                  </Label>
-                  <Select
-                    value={hierarchicalFilters.sportsItem}
-                    onValueChange={(value) => handleHierarchicalCategoryChange('sportsItem', value)}
+              <AnimatePresence>
+                {hierarchicalFilters.sport && (
+                  <motion.div
+                    initial={{ opacity: 0, height: 0 }}
+                    animate={{ opacity: 1, height: "auto" }}
+                    exit={{ opacity: 0, height: 0 }}
+                    transition={{ duration: 0.2, delay: 0.1 }}
+                    className="overflow-hidden"
                   >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select sports item" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">All Items</SelectItem>
-                      {availableSportsItems.map((category) => (
-                        <SelectItem
-                          key={`sports-item-${category.id}`}
-                          value={category.id.toString()}
-                        >
-                          {category.name} ({category.productCount})
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-              )}
+                    <Label className="text-xs font-medium text-gray-600 mb-2 block">
+                      👕 Sports Item
+                    </Label>
+                    <Select
+                      value={hierarchicalFilters.sportsItem}
+                      onValueChange={(value) => handleHierarchicalCategoryChange('sportsItem', value)}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select sports item" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">All Items</SelectItem>
+                        {availableSportsItems.map((category) => (
+                          <SelectItem
+                            key={`sports-item-${category.id}`}
+                            value={category.id.toString()}
+                          >
+                            {category.name} ({category.productCount})
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </motion.div>
+                )}
+              </AnimatePresence>
             </div>
           </CollapsibleContent>
         </Collapsible>
