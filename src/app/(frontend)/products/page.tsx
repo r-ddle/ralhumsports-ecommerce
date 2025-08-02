@@ -483,7 +483,7 @@ export default function StorePage() {
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
                     exit={{ opacity: 0 }}
-                    className={`grid gap-4 sm:gap-6 ${gridClasses}`}
+                    className={`grid gap-2 sm:gap-3 md:gap-4 lg:gap-5 xl:gap-6 ${gridClasses}`}
                   >
                     {products.map((product, index) => (
                       <motion.div
