@@ -318,7 +318,7 @@ export default function StorePage() {
             transition={{ duration: 10, repeat: Infinity, ease: 'easeInOut', delay: 2 }}
           />
         </div>
-        <div className="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+        <div className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 xl:px-10 2xl:px-12 relative z-10">
           <motion.div
             className="text-center"
             variants={containerVariants}
