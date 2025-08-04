@@ -67,21 +67,25 @@ export async function generateMetadata({ params }: ProductDetailPageProps): Prom
         title: `${formattedTitle} - Ralhum Sports Sri Lanka`,
         description: `Find ${formattedTitle} at ralhumsports.lk - your trusted Ralhum Store.`,
         url: `https://ralhumsports.lk/products/${resolvedParams.slug}`,
+        siteName: 'Ralhum Sports Sri Lanka',
         images: [
           {
-            url: '/ralhumbanner.png',
+            url: 'https://ralhumsports.lk/ralhumbanner.png',
             width: 1200,
             height: 630,
             alt: `${formattedTitle} - Ralhum Sports Sri Lanka`,
           }
         ],
         type: 'website',
+        locale: 'en_LK',
       },
       twitter: {
         card: 'summary_large_image',
+        site: '@ralhumsports',
+        creator: '@ralhumsports',
         title: `${formattedTitle} - Ralhum Sports Sri Lanka`,
         description: `Find ${formattedTitle} at ralhumsports.lk`,
-        images: ['/ralhumbanner.png'],
+        images: ['https://ralhumsports.lk/ralhumbanner.png'],
       },
       alternates: {
         canonical: `https://ralhumsports.lk/products/${resolvedParams.slug}`,
@@ -123,25 +127,29 @@ export async function generateMetadata({ params }: ProductDetailPageProps): Prom
     openGraph: {
       title: `${productName} - Ralhum Sports Sri Lanka`,
       description: fullDescription,
-      url: `/products/${resolvedParams.slug}`,
+      url: `https://ralhumsports.lk/products/${resolvedParams.slug}`,
+      siteName: 'Ralhum Sports Sri Lanka',
       images: [
         {
-          url: productImage,
+          url: productImage.startsWith('http') ? productImage : `https://ralhumsports.lk${productImage}`,
           width: 1200,
           height: 630,
           alt: `${productName} - Ralhum Sports Sri Lanka`,
         },
       ],
       type: 'website',
+      locale: 'en_LK',
     },
     twitter: {
       card: 'summary_large_image',
+      site: '@ralhumsports',
+      creator: '@ralhumsports',
       title: `${productName} - Ralhum Sports Sri Lanka`,
       description: `Buy ${productName} at ralhumsports.lk - your trusted Ralhum Store.`,
-      images: [productImage],
+      images: [productImage.startsWith('http') ? productImage : `https://ralhumsports.lk${productImage}`],
     },
     alternates: {
-      canonical: `/products/${resolvedParams.slug}`,
+      canonical: `https://ralhumsports.lk/products/${resolvedParams.slug}`,
     },
     other: {
       'product:price:amount': price?.toString() || '',
