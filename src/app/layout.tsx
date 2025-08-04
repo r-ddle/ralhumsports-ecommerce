@@ -1,6 +1,17 @@
 import type React from 'react'
 import type { Metadata } from 'next'
 import { Inter } from 'next/font/google'
+import './(frontend)/globals.css'
+import Navigation from '@/components/navigation'
+import Footer from '@/components/footer'
+import { CartProvider } from '@/hooks/use-cart'
+import { CartSidebar } from '@/components/cart/cart-sidebar'
+import { Toaster } from '@/components/ui/sonner'
+import ErrorBoundary from '@/components/error-boundary'
+import { Suspense } from 'react'
+import { Analytics } from '@vercel/analytics/next'
+import { NavigationProvider } from '@/components/navigation-provider'
+import { WebVitals } from '@/components/performance/web-vitals'
 
 const inter = Inter({
   subsets: ['latin'],
@@ -9,16 +20,38 @@ const inter = Inter({
   variable: '--font-inter',
 })
 
+// Dynamic MetadataBase Configuration for Vercel
+function getMetadataBase(): URL {
+  // Production environment - use your custom domain
+  if (process.env.VERCEL_ENV === 'production') {
+    return new URL('https://ralhumsports.lk')
+  }
+
+  // Preview environment - use Vercel's deployment URL
+  if (process.env.VERCEL_PROJECT_PRODUCTION_URL) {
+    return new URL(`https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}`)
+  }
+
+  // Fallback for Vercel preview deployments
+  if (process.env.VERCEL_URL) {
+    return new URL(`https://${process.env.VERCEL_URL}`)
+  }
+
+  // Development fallback
+  return new URL(`http://localhost:${process.env.PORT || 3000}`)
+}
+
 export const metadata: Metadata = {
+  metadataBase: getMetadataBase(),
   title: {
     template: '%s | Ralhum Sports Sri Lanka - Premium Sports Equipment Store',
-    default: 'Ralhum Sports Sri Lanka - Premium Sports Equipment & Gear | ralhumsports.lk'
+    default: 'Ralhum Sports Sri Lanka - Premium Sports Equipment & Gear | ralhumsports.lk',
   },
   description:
     'Shop premium sports equipment at Ralhum Sports Sri Lanka (ralhumsports.lk). Official distributor of Gray-Nicolls, Gilbert, Molten & Grays. Fast nationwide delivery across Sri Lanka.',
   keywords: [
     'ralhumsports.lk',
-    'ralhum sports sri lanka', 
+    'ralhum sports sri lanka',
     'ralhum store',
     'sports equipment sri lanka',
     'cricket gear sri lanka',
@@ -36,12 +69,11 @@ export const metadata: Metadata = {
     'official sports distributor',
     'sports gear western province',
     'athletic equipment sri lanka',
-    'sportswear colombo'
+    'sportswear colombo',
   ].join(', '),
   authors: [{ name: 'Ralhum Sports Team' }],
   creator: 'Ralhum Sports Sri Lanka',
   publisher: 'Ralhum Sports',
-  metadataBase: new URL('https://ralhumsports.lk'),
   robots: {
     index: true,
     follow: true,
@@ -56,14 +88,14 @@ export const metadata: Metadata = {
   openGraph: {
     type: 'website',
     locale: 'en_LK',
-    url: 'https://ralhumsports.lk',
+    url: '/',
     siteName: 'Ralhum Sports Sri Lanka',
     title: 'Ralhum Sports Sri Lanka - Premium Sports Equipment Store',
     description:
       'Shop premium sports equipment at ralhumsports.lk. Official distributor of Gray-Nicolls, Gilbert, Grays & Molten. Fast delivery across Sri Lanka.',
     images: [
       {
-        url: '/ralhumbanner.png',
+        url: '/ralhumbanner.png', // This will now resolve to absolute URL via metadataBase
         width: 1200,
         height: 630,
         alt: 'Ralhum Sports Sri Lanka - Premium Sports Equipment Store',
@@ -77,13 +109,13 @@ export const metadata: Metadata = {
     title: 'Ralhum Sports Sri Lanka - Premium Sports Equipment',
     description:
       'Shop premium sports equipment at ralhumsports.lk. Official distributor with fast delivery across Sri Lanka.',
-    images: ['/ralhumbanner.png'],
+    images: ['/ralhumbanner.png'], // This will now resolve to absolute URL
   },
   verification: {
     google: 'pjZLxNs-yhkubiRfnamMtruzHA58nrlA6y4myDerRNI',
   },
   alternates: {
-    canonical: 'https://ralhumsports.lk',
+    canonical: '/',
   },
   category: 'Sports Equipment Store',
   other: {
@@ -93,6 +125,16 @@ export const metadata: Metadata = {
     'mobile-web-app-capable': 'yes',
     'msapplication-TileColor': '#FF6B35',
   },
+}
+
+// Loading component for Suspense boundaries
+function LoadingSpinner() {
+  return (
+    <div className="flex items-center justify-center min-h-screen bg-brand-background">
+      <div className="animate-spin rounded-full h-8 w-8 sm:h-12 sm:w-12 border-b-2 border-brand-primary"></div>
+      <span className="sr-only">Loading...</span>
+    </div>
+  )
 }
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
@@ -122,7 +164,8 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
               name: 'Ralhum Sports Sri Lanka',
               url: 'https://ralhumsports.lk',
               logo: 'https://ralhumsports.lk/ralhumlogo.svg',
-              description: 'Premium sports equipment store in Sri Lanka. Official distributor of Gray-Nicolls, Gilbert, Molten & Grays.',
+              description:
+                'Premium sports equipment store in Sri Lanka. Official distributor of Gray-Nicolls, Gilbert, Molten & Grays.',
               address: {
                 '@type': 'PostalAddress',
                 addressCountry: 'LK',
@@ -136,14 +179,41 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
               },
               sameAs: [
                 'https://www.facebook.com/ralhumsports',
-                'https://www.instagram.com/ralhumsports'
-              ]
-            })
+                'https://www.instagram.com/ralhumsports',
+              ],
+            }),
           }}
         />
       </head>
-      <body className={`${inter.className} antialiased`}>
-        {children}
+      <body
+        className={`${inter.className} antialiased bg-brand-background text-text-primary overflow-x-hidden`}
+      >
+        <ErrorBoundary>
+          <CartProvider>
+            <Suspense fallback={<LoadingSpinner />}>
+              <NavigationProvider>
+                <div className="flex flex-col min-h-screen">
+                  <Suspense fallback={<LoadingSpinner />}>
+                    <Navigation />
+                  </Suspense>
+
+                  <main className="flex-1">
+                    <Suspense fallback={<LoadingSpinner />}>{children}</Suspense>
+                  </main>
+
+                  <Suspense fallback={null}>
+                    <Footer />
+                  </Suspense>
+
+                  <CartSidebar />
+                </div>
+                <Toaster />
+              </NavigationProvider>
+            </Suspense>
+          </CartProvider>
+        </ErrorBoundary>
+        <Analytics />
+        <WebVitals />
       </body>
     </html>
   )
