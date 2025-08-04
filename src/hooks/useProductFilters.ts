@@ -32,37 +32,44 @@ export function useProductFilters() {
     const search = searchParams.get('search')
     if (search) urlFilters.search = search
 
-    // Handle layered categories - can have multiple levels
-    const categories = searchParams.get('categories')
-    if (categories) urlFilters.categories = categories.split(',')
+    // Handle preselected parameters from navigation - these don't apply filters yet
+    const preselected = searchParams.get('preselected')
+    const preselectValue = searchParams.get('preselectValue')
     
-    // Handle individual category levels for hierarchical filtering
-    const sportsCategory = searchParams.get('sportsCategory')
-    if (sportsCategory) urlFilters.sportsCategory = sportsCategory
-    
-    const sport = searchParams.get('sport')
-    if (sport) urlFilters.sport = sport
-    
-    const sportsItem = searchParams.get('sportsItem')
-    if (sportsItem) urlFilters.sportsItem = sportsItem
+    // Only parse filter parameters if no preselected values
+    if (!preselected && !preselectValue) {
+      // Handle layered categories - can have multiple levels
+      const categories = searchParams.get('categories')
+      if (categories) urlFilters.categories = categories.split(',')
+      
+      // Handle individual category levels for hierarchical filtering
+      const sportsCategory = searchParams.get('sportsCategory')
+      if (sportsCategory) urlFilters.sportsCategory = sportsCategory
+      
+      const sport = searchParams.get('sport')
+      if (sport) urlFilters.sport = sport
+      
+      const sportsItem = searchParams.get('sportsItem')
+      if (sportsItem) urlFilters.sportsItem = sportsItem
 
-    const brands = searchParams.getAll('brand')
-    if (brands.length > 0) urlFilters.brands = brands
+      const brands = searchParams.getAll('brand')
+      if (brands.length > 0) urlFilters.brands = brands
 
-    const minPrice = searchParams.get('minPrice')
-    if (minPrice) urlFilters.minPrice = Number.parseInt(minPrice)
+      const minPrice = searchParams.get('minPrice')
+      if (minPrice) urlFilters.minPrice = Number.parseInt(minPrice)
 
-    const maxPrice = searchParams.get('maxPrice')
-    if (maxPrice) urlFilters.maxPrice = Number.parseInt(maxPrice)
+      const maxPrice = searchParams.get('maxPrice')
+      if (maxPrice) urlFilters.maxPrice = Number.parseInt(maxPrice)
 
-    const inStock = searchParams.get('inStock')
-    if (inStock === 'true') urlFilters.inStock = true
+      const inStock = searchParams.get('inStock')
+      if (inStock === 'true') urlFilters.inStock = true
 
-    const sort = searchParams.get('sort')
-    if (sort) urlFilters.sort = sort
+      const sort = searchParams.get('sort')
+      if (sort) urlFilters.sort = sort
 
-    const order = searchParams.get('order')
-    if (order === 'asc' || order === 'desc') urlFilters.order = order
+      const order = searchParams.get('order')
+      if (order === 'asc' || order === 'desc') urlFilters.order = order
+    }
 
     setFilters(urlFilters)
   }, [searchParams])
@@ -159,6 +166,17 @@ export function useProductFilters() {
     [updateURL],
   )
 
+  // Get preselected values from navigation
+  const getPreselectedValues = useCallback(() => {
+    const preselected = searchParams.get('preselected')
+    const preselectValue = searchParams.get('preselectValue')
+    
+    return {
+      type: preselected,
+      value: preselectValue,
+    }
+  }, [searchParams])
+
   return {
     filters,
     loading,
@@ -168,5 +186,6 @@ export function useProductFilters() {
     navigateToProducts,
     setMultipleFilters,
     setLoading,
+    getPreselectedValues,
   }
 }

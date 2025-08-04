@@ -91,7 +91,7 @@ export function EnhancedProductFilters({
   loading = false,
   onApplyFilters,
 }: ProductFiltersProps) {
-  const { filters, setMultipleFilters, clearFilters } = useProductFilters()
+  const { filters, setMultipleFilters, clearFilters, getPreselectedValues } = useProductFilters()
 
   // Pending filters state (before applying)
   const [pendingFilters, setPendingFilters] = useState<PendingFilters>({
@@ -130,9 +130,11 @@ export function EnhancedProductFilters({
     )
   }, [pendingFilters.sport, hierarchicalCategories.sportsItems])
 
-  // Initialize pending filters from URL filters
+  // Initialize pending filters from URL filters and preselected values
   useEffect(() => {
-    setPendingFilters({
+    const preselected = getPreselectedValues()
+    
+    const newPendingFilters: PendingFilters = {
       search: filters.search || '',
       sportsCategory: filters.sportsCategory || ALL_CATEGORIES,
       sport: filters.sport || ALL_SPORTS,
@@ -141,8 +143,26 @@ export function EnhancedProductFilters({
       priceRange: [filters.minPrice || priceRange.min, filters.maxPrice || priceRange.max],
       inStock: filters.inStock || false,
       sort: `${filters.sort || 'createdAt'}-${filters.order || 'desc'}`,
-    })
-  }, [filters, priceRange])
+    }
+
+    // Handle preselected values from navigation
+    if (preselected.type && preselected.value) {
+      if (preselected.type === 'sportsCategory') {
+        newPendingFilters.sportsCategory = preselected.value
+        newPendingFilters.sport = ALL_SPORTS
+        newPendingFilters.sportsItem = ALL_ITEMS
+      } else if (preselected.type === 'sport') {
+        newPendingFilters.sport = preselected.value
+        newPendingFilters.sportsItem = ALL_ITEMS
+      } else if (preselected.type === 'sportsItem') {
+        newPendingFilters.sportsItem = preselected.value
+      } else if (preselected.type === 'brand') {
+        newPendingFilters.brands = [preselected.value]
+      }
+    }
+
+    setPendingFilters(newPendingFilters)
+  }, [filters, priceRange, getPreselectedValues])
 
   // Calculate active filters count
   const activeFiltersCount = useMemo(() => {
@@ -175,8 +195,10 @@ export function EnhancedProductFilters({
 
   const handleApplyFilters = useCallback(() => {
     const [sortBy, sortOrder] = pendingFilters.sort.split('-')
+    const preselected = getPreselectedValues()
 
-    const newFilters: any = {
+    // When applying filters with preselected values, we need to set up the proper hierarchy
+    const finalFilters: any = {
       search: pendingFilters.search || undefined,
       sportsCategory:
         pendingFilters.sportsCategory !== ALL_CATEGORIES
@@ -194,16 +216,44 @@ export function EnhancedProductFilters({
       order: sortOrder,
     }
 
+    // Handle preselected values - ensure proper hierarchy
+    if (preselected.type && preselected.value) {
+      if (preselected.type === 'sportsCategory') {
+        finalFilters.sportsCategory = preselected.value
+      } else if (preselected.type === 'sport') {
+        finalFilters.sport = preselected.value
+        // Find parent category for sport
+        const sport = hierarchicalCategories.sports.find(s => s.slug === preselected.value)
+        if (sport?.parentCategory) {
+          finalFilters.sportsCategory = sport.parentCategory.slug
+        }
+      } else if (preselected.type === 'sportsItem') {
+        finalFilters.sportsItem = preselected.value
+        // Find parent sport and category
+        const item = hierarchicalCategories.sportsItems.find(i => i.slug === preselected.value)
+        if (item?.parentCategory) {
+          finalFilters.sport = item.parentCategory.slug
+          // Find sport's parent category
+          const sport = hierarchicalCategories.sports.find(s => s.slug === item.parentCategory?.slug)
+          if (sport?.parentCategory) {
+            finalFilters.sportsCategory = sport.parentCategory.slug
+          }
+        }
+      } else if (preselected.type === 'brand') {
+        finalFilters.brands = [preselected.value]
+      }
+    }
+
     // Remove undefined values
-    Object.keys(newFilters).forEach((key) => {
-      if (newFilters[key] === undefined) {
-        delete newFilters[key]
+    Object.keys(finalFilters).forEach((key) => {
+      if (finalFilters[key] === undefined) {
+        delete finalFilters[key]
       }
     })
 
-    setMultipleFilters(newFilters)
+    setMultipleFilters(finalFilters)
     onApplyFilters?.()
-  }, [pendingFilters, priceRange, setMultipleFilters, onApplyFilters])
+  }, [pendingFilters, priceRange, setMultipleFilters, onApplyFilters, getPreselectedValues, hierarchicalCategories])
 
   const handleReset = useCallback(() => {
     setPendingFilters({
@@ -294,6 +344,52 @@ export function EnhancedProductFilters({
       </CardHeader>
 
       <CardContent className="space-y-3 sm:space-y-4 pb-3 sm:pb-4">
+        {/* Preselected Filter Notice */}
+        {(() => {
+          const preselected = getPreselectedValues()
+          if (preselected.type && preselected.value) {
+            const getPreselectedName = () => {
+              if (preselected.type === 'sportsCategory') {
+                const category = hierarchicalCategories.sportsCategories.find(c => c.slug === preselected.value)
+                return category?.name || preselected.value
+              } else if (preselected.type === 'sport') {
+                const sport = hierarchicalCategories.sports.find(s => s.slug === preselected.value)
+                return sport?.name || preselected.value
+              } else if (preselected.type === 'sportsItem') {
+                const item = hierarchicalCategories.sportsItems.find(i => i.slug === preselected.value)
+                return item?.name || preselected.value
+              } else if (preselected.type === 'brand') {
+                const brand = brands.find(b => b.slug === preselected.value)
+                return brand?.name || preselected.value
+              }
+              return preselected.value
+            }
+
+            return (
+              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-4">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h4 className="font-semibold text-blue-900 mb-1">Selected from Navigation</h4>
+                    <p className="text-blue-700 text-sm">
+                      {preselected.type === 'sportsCategory' ? 'Category' : 
+                       preselected.type === 'sport' ? 'Sport' :
+                       preselected.type === 'sportsItem' ? 'Equipment' : 'Brand'}: <strong>{getPreselectedName()}</strong>
+                    </p>
+                  </div>
+                  <Button 
+                    size="sm" 
+                    onClick={handleApplyFilters}
+                    className="bg-blue-600 hover:bg-blue-700 text-white"
+                  >
+                    Apply Filter
+                  </Button>
+                </div>
+              </div>
+            )
+          }
+          return null
+        })()}
+
         {/* Search */}
         <Collapsible
           open={expandedSections.search}

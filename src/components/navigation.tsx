@@ -278,7 +278,35 @@ export default function EnhancedNavigation() {
     { name: 'Verify', href: '/products/verify' },
   ]
 
-  // Build filter URL based on current selection for hierarchical filtering
+  // Build preselect URL for navigation (doesn't apply filters immediately)
+  const buildPreselectUrl = (params: {
+    sportsCategory?: string
+    sport?: string
+    sportsItem?: string
+    brand?: string
+  }) => {
+    const searchParams = new URLSearchParams()
+
+    // Use preselect parameters instead of direct filtering
+    if (params.sportsCategory) {
+      searchParams.append('preselected', 'sportsCategory')
+      searchParams.append('preselectValue', params.sportsCategory)
+    } else if (params.sport) {
+      searchParams.append('preselected', 'sport')
+      searchParams.append('preselectValue', params.sport)
+    } else if (params.sportsItem) {
+      searchParams.append('preselected', 'sportsItem')
+      searchParams.append('preselectValue', params.sportsItem)
+    } else if (params.brand) {
+      searchParams.append('preselected', 'brand')
+      searchParams.append('preselectValue', params.brand)
+    }
+
+    const queryString = searchParams.toString()
+    return `/products${queryString ? `?${queryString}` : ''}`
+  }
+
+  // Build filter URL for immediate filtering (used when user confirms selection)
   const buildFilterUrl = (params: {
     sportsCategory?: string
     sport?: string
@@ -288,24 +316,14 @@ export default function EnhancedNavigation() {
   }) => {
     const searchParams = new URLSearchParams()
 
-    // Build hierarchical category path
-    const categories: string[] = []
-    if (params.sportsCategory) categories.push(params.sportsCategory)
-    if (params.sport) categories.push(params.sport)
-    if (params.sportsItem) categories.push(params.sportsItem)
-
-    if (categories.length > 0) {
-      searchParams.append('categories', categories.join(','))
-    }
-
     // Add individual hierarchical filters for proper filter display
     if (params.sportsCategory) searchParams.append('sportsCategory', params.sportsCategory)
     if (params.sport) searchParams.append('sport', params.sport)
     if (params.sportsItem) searchParams.append('sportsItem', params.sportsItem)
 
-    if (params.brand) searchParams.append('brands', params.brand)
+    if (params.brand) searchParams.append('brand', params.brand)
     if (params.brands && params.brands.length > 0) {
-      searchParams.append('brands', params.brands.join(','))
+      params.brands.forEach(brand => searchParams.append('brand', brand))
     }
 
     const queryString = searchParams.toString()
@@ -315,8 +333,8 @@ export default function EnhancedNavigation() {
   // Handle category selection (show next layer)
   const handleCategorySelect = (categorySlug: string) => {
     if (selectedSportsCategory === categorySlug) {
-      // If already selected, go to products page
-      window.location.href = buildFilterUrl({ sportsCategory: categorySlug })
+      // If already selected, go to products page with preselected category
+      window.location.href = buildPreselectUrl({ sportsCategory: categorySlug })
       closeMegaMenuImmediately()
     } else {
       // Select this category and show sports layer
@@ -329,11 +347,8 @@ export default function EnhancedNavigation() {
 
   const handleSportSelect = (categorySlug: string, sportSlug: string) => {
     if (selectedSport === sportSlug) {
-      // If already selected, go to products page
-      window.location.href = buildFilterUrl({
-        sportsCategory: categorySlug,
-        sport: sportSlug,
-      })
+      // If already selected, go to products page with preselected sport
+      window.location.href = buildPreselectUrl({ sport: sportSlug })
       closeMegaMenuImmediately()
     } else {
       // Select this sport and show sports items layer
@@ -342,31 +357,24 @@ export default function EnhancedNavigation() {
     }
   }
 
-  // Handle navigation clicks with proper hierarchical filtering (for final selection)
+  // Handle navigation clicks with preselection (for final selection)
   const handleCategoryClick = (categorySlug: string) => {
-    window.location.href = buildFilterUrl({ sportsCategory: categorySlug })
+    window.location.href = buildPreselectUrl({ sportsCategory: categorySlug })
     closeMegaMenuImmediately()
   }
 
   const handleSportClick = (categorySlug: string, sportSlug: string) => {
-    window.location.href = buildFilterUrl({
-      sportsCategory: categorySlug,
-      sport: sportSlug,
-    })
+    window.location.href = buildPreselectUrl({ sport: sportSlug })
     closeMegaMenuImmediately()
   }
 
   const handleSportsItemClick = (categorySlug: string, sportSlug: string, itemSlug: string) => {
-    window.location.href = buildFilterUrl({
-      sportsCategory: categorySlug,
-      sport: sportSlug,
-      sportsItem: itemSlug,
-    })
+    window.location.href = buildPreselectUrl({ sportsItem: itemSlug })
     closeMegaMenuImmediately()
   }
 
   const handleBrandClick = (brandSlug: string) => {
-    window.location.href = buildFilterUrl({ brand: brandSlug })
+    window.location.href = buildPreselectUrl({ brand: brandSlug })
     closeMegaMenuImmediately()
   }
 
@@ -711,25 +719,8 @@ export default function EnhancedNavigation() {
                               key={brand.id}
                               className="group p-3 rounded-lg cursor-pointer transition-all duration-200 hover:bg-white hover:shadow-md border border-transparent hover:border-purple-200"
                               onClick={() => {
-                                const url =
-                                  hoveredSportsItem && hoveredSport && hoveredSportsCategory
-                                    ? buildFilterUrl({
-                                        sportsCategory: hoveredSportsCategory ?? undefined,
-                                        sport: hoveredSport,
-                                        sportsItem: hoveredSportsItem,
-                                        brand: brand.slug,
-                                      })
-                                    : hoveredSport && hoveredSportsCategory
-                                      ? buildFilterUrl({
-                                          sportsCategory: hoveredSportsCategory,
-                                          sport: hoveredSport,
-                                          brand: brand.slug,
-                                        })
-                                      : buildFilterUrl({
-                                          sportsCategory: hoveredSportsCategory ?? undefined,
-                                          brand: brand.slug,
-                                        })
-                                window.location.href = url
+                                // Use preselect URL for brand selection
+                                window.location.href = buildPreselectUrl({ brand: brand.slug })
                                 closeMegaMenuImmediately()
                               }}
                             >
@@ -769,25 +760,8 @@ export default function EnhancedNavigation() {
                         key={brand.id}
                         className="group p-2 rounded-lg cursor-pointer transition-all duration-200 hover:bg-white hover:shadow-sm border border-transparent hover:border-gray-200"
                         onClick={() => {
-                          const url =
-                            hoveredSportsItem && selectedSport
-                              ? buildFilterUrl({
-                                  sportsCategory: selectedSportsCategory,
-                                  sport: selectedSport,
-                                  sportsItem: hoveredSportsItem,
-                                  brand: brand.slug,
-                                })
-                              : hoveredSport && selectedSportsCategory
-                                ? buildFilterUrl({
-                                    sportsCategory: selectedSportsCategory,
-                                    sport: hoveredSport,
-                                    brand: brand.slug,
-                                  })
-                                : buildFilterUrl({
-                                    sportsCategory: selectedSportsCategory,
-                                    brand: brand.slug,
-                                  })
-                          window.location.href = url
+                          // Use preselect URL for brand selection
+                          window.location.href = buildPreselectUrl({ brand: brand.slug })
                           closeMegaMenuImmediately()
                         }}
                       >
