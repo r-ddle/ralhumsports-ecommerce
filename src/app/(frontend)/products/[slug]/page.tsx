@@ -81,18 +81,11 @@ export async function generateMetadata({ params }: ProductDetailPageProps): Prom
       openGraph: {
         title: `${formattedTitle} - Ralhum Sports Sri Lanka`,
         description: `Find ${formattedTitle} at ralhumsports.lk - your trusted Ralhum Store.`,
-<<<<<<< Updated upstream
-        url: `https://ralhumsports.lk/products/${resolvedParams.slug}`,
+        url: `/products/${resolvedParams.slug}`,
         siteName: 'Ralhum Sports Sri Lanka',
         images: [
           {
-            url: 'https://ralhumsports.lk/ralhumbanner.png',
-=======
-        url: `/products/${resolvedParams.slug}`,
-        images: [
-          {
             url: '/ralhumbanner.png', // Will resolve via metadataBase
->>>>>>> Stashed changes
             width: 1200,
             height: 630,
             alt: `${formattedTitle} - Ralhum Sports Sri Lanka`,
@@ -107,11 +100,7 @@ export async function generateMetadata({ params }: ProductDetailPageProps): Prom
         creator: '@ralhumsports',
         title: `${formattedTitle} - Ralhum Sports Sri Lanka`,
         description: `Find ${formattedTitle} at ralhumsports.lk`,
-<<<<<<< Updated upstream
-        images: ['https://ralhumsports.lk/ralhumbanner.png'],
-=======
         images: ['/ralhumbanner.png'], // Will resolve via metadataBase
->>>>>>> Stashed changes
       },
       alternates: {
         canonical: `/products/${resolvedParams.slug}`,
@@ -158,11 +147,7 @@ export async function generateMetadata({ params }: ProductDetailPageProps): Prom
       siteName: 'Ralhum Sports Sri Lanka',
       images: [
         {
-<<<<<<< Updated upstream
-          url: productImage.startsWith('http') ? productImage : `https://ralhumsports.lk${productImage}`,
-=======
           url: productImage, // Will resolve via metadataBase
->>>>>>> Stashed changes
           width: 1200,
           height: 630,
           alt: `${productName} - Ralhum Sports Sri Lanka`,
@@ -177,11 +162,7 @@ export async function generateMetadata({ params }: ProductDetailPageProps): Prom
       creator: '@ralhumsports',
       title: `${productName} - Ralhum Sports Sri Lanka`,
       description: `Buy ${productName} at ralhumsports.lk - your trusted Ralhum Store.`,
-<<<<<<< Updated upstream
-      images: [productImage.startsWith('http') ? productImage : `https://ralhumsports.lk${productImage}`],
-=======
       images: [productImage], // Will resolve via metadataBase
->>>>>>> Stashed changes
     },
     alternates: {
       canonical: `https://ralhumsports.lk/products/${resolvedParams.slug}`,
