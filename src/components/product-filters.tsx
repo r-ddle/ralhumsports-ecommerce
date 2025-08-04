@@ -198,7 +198,7 @@ export function EnhancedProductFilters({
     const preselected = getPreselectedValues()
 
     // When applying filters with preselected values, we need to set up the proper hierarchy
-    let finalFilters: any = {
+    const finalFilters: any = {
       search: pendingFilters.search || undefined,
       sportsCategory:
         pendingFilters.sportsCategory !== ALL_CATEGORIES
