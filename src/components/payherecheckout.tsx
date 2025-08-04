@@ -20,6 +20,7 @@ interface PayHereCheckoutProps {
   onSuccess?: (orderId: string) => void
   onError?: (error: string) => void
   onDismiss?: () => void
+  onPaymentStart?: () => void
 }
 
 // FIXED: Use same origin to avoid cross-domain issues
@@ -46,6 +47,7 @@ export function PayHereCheckout({
   onSuccess,
   onError,
   onDismiss,
+  onPaymentStart,
 }: PayHereCheckoutProps) {
   const { isLoaded, isLoading, error: scriptError, startPayment } = usePayHere()
   const [isProcessing, setIsProcessing] = useState(false)
@@ -108,6 +110,9 @@ export function PayHereCheckout({
   const handlePayment = async () => {
     setIsProcessing(true)
     setError(null)
+
+    // Notify parent that payment is starting
+    onPaymentStart?.()
 
     try {
       console.log('[PayHere Checkout] Generating hash for order:', orderId, 'amount:', totalAmount)

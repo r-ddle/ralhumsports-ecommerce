@@ -31,6 +31,9 @@ export default function robots(): MetadataRoute.Robots {
           '/*.json',
           '/private',
           '/private/*',
+          '/*?*utm_*', // Block UTM parameters
+          '/*?*ref=*', // Block referral parameters
+          '/search?*', // Block search parameters
         ],
       },
       {
@@ -59,8 +62,40 @@ export default function robots(): MetadataRoute.Robots {
           '/*.json',
           '/private',
           '/private/*',
+          '/*?*utm_*',
+          '/*?*ref=*',
         ],
         crawlDelay: 1,
+      },
+      {
+        userAgent: 'Bingbot',
+        allow: [
+          '/',
+          '/products',
+          '/products/*',
+          '/brands',
+          '/about',
+          '/contact',
+        ],
+        disallow: [
+          '/admin',
+          '/api',
+          '/_next',
+          '/checkout',
+          '/private',
+        ],
+        crawlDelay: 2,
+      },
+      // Block bad bots
+      {
+        userAgent: [
+          'AhrefsBot',
+          'SemrushBot',
+          'MJ12bot',
+          'DotBot',
+          'AspiegelBot',
+        ],
+        disallow: '/',
       },
     ],
     sitemap: `${baseUrl}/sitemap.xml`,

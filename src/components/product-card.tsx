@@ -206,7 +206,7 @@ export function ProductCard({
                       </span>
                     )}
                   </div>
-                  {availableStock <= 10 && availableStock > 0 && (
+                  {availableStock <= 5 && availableStock > 0 && (
                     <span className="text-xs text-text-secondary">Only {availableStock} left</span>
                   )}
                 </div>
