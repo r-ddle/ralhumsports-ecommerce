@@ -1,3 +1,4 @@
+// app/products/[slug]/page.tsx
 import { Suspense } from 'react'
 import type { Metadata } from 'next'
 import { notFound } from 'next/navigation'
@@ -11,19 +12,33 @@ interface ProductDetailPageProps {
   }>
 }
 
+// Utility function for consistent base URL resolution
+function getBaseUrl(): string {
+  if (process.env.VERCEL_ENV === 'production') {
+    return 'https://ralhumsports.lk'
+  }
+
+  if (process.env.VERCEL_PROJECT_PRODUCTION_URL) {
+    return `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}`
+  }
+
+  if (process.env.VERCEL_URL) {
+    return `https://${process.env.VERCEL_URL}`
+  }
+
+  return `http://localhost:${process.env.PORT || 3000}`
+}
+
 // Server-side function to fetch product data for metadata
 async function getProductData(slug: string) {
   try {
-    // Use API call approach with better error handling
-    const baseUrl = process.env.NODE_ENV === 'development' 
-      ? 'http://localhost:3000'
-      : process.env.NEXT_PUBLIC_BASE_URL || 'https://ralhumsports.lk'
-    
+    const baseUrl = getBaseUrl()
+
     const response = await fetch(`${baseUrl}/api/public/products/${slug}`, {
       next: { revalidate: 3600 }, // Revalidate every hour
       headers: {
         'User-Agent': 'ralhumsports-seo-bot',
-      }
+      },
     })
 
     if (!response.ok) {
@@ -42,16 +57,17 @@ async function getProductData(slug: string) {
 export async function generateMetadata({ params }: ProductDetailPageProps): Promise<Metadata> {
   const resolvedParams = await params
   const product = await getProductData(resolvedParams.slug)
+  const baseUrl = getBaseUrl()
 
   // Fallback for when API is not available or product not found
   if (!product) {
-    // Generate a basic title from the slug
     const formattedTitle = resolvedParams.slug
       .split('-')
-      .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+      .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
       .join(' ')
-    
+
     return {
+      metadataBase: new URL(baseUrl),
       title: `${formattedTitle} - Ralhum Sports Sri Lanka`,
       description: `Find ${formattedTitle} at Ralhum Sports Sri Lanka (ralhumsports.lk). Browse our premium sports equipment collection with fast delivery across Sri Lanka.`,
       keywords: [
@@ -60,21 +76,27 @@ export async function generateMetadata({ params }: ProductDetailPageProps): Prom
         'ralhum sports sri lanka',
         'ralhum store',
         'sports equipment sri lanka',
-        'premium sports gear'
+        'premium sports gear',
       ].join(', '),
-      metadataBase: new URL('https://ralhumsports.lk'),
       openGraph: {
         title: `${formattedTitle} - Ralhum Sports Sri Lanka`,
         description: `Find ${formattedTitle} at ralhumsports.lk - your trusted Ralhum Store.`,
+<<<<<<< Updated upstream
         url: `https://ralhumsports.lk/products/${resolvedParams.slug}`,
         siteName: 'Ralhum Sports Sri Lanka',
         images: [
           {
             url: 'https://ralhumsports.lk/ralhumbanner.png',
+=======
+        url: `/products/${resolvedParams.slug}`,
+        images: [
+          {
+            url: '/ralhumbanner.png', // Will resolve via metadataBase
+>>>>>>> Stashed changes
             width: 1200,
             height: 630,
             alt: `${formattedTitle} - Ralhum Sports Sri Lanka`,
-          }
+          },
         ],
         type: 'website',
         locale: 'en_LK',
@@ -85,10 +107,14 @@ export async function generateMetadata({ params }: ProductDetailPageProps): Prom
         creator: '@ralhumsports',
         title: `${formattedTitle} - Ralhum Sports Sri Lanka`,
         description: `Find ${formattedTitle} at ralhumsports.lk`,
+<<<<<<< Updated upstream
         images: ['https://ralhumsports.lk/ralhumbanner.png'],
+=======
+        images: ['/ralhumbanner.png'], // Will resolve via metadataBase
+>>>>>>> Stashed changes
       },
       alternates: {
-        canonical: `https://ralhumsports.lk/products/${resolvedParams.slug}`,
+        canonical: `/products/${resolvedParams.slug}`,
       },
     }
   }
@@ -104,9 +130,11 @@ export async function generateMetadata({ params }: ProductDetailPageProps): Prom
   const title = `${productName} ${brandName ? `- ${brandName}` : ''} | Ralhum Sports Sri Lanka`
   const fullDescription = `Buy ${productName} ${brandName ? `from ${brandName}` : ''} at Ralhum Sports Sri Lanka (ralhumsports.lk). ${description} ${price ? `Starting from Rs. ${price.toLocaleString('en-LK')}` : ''} with fast delivery.`
 
+  // Use product image or fallback to banner
   const productImage = product.images?.[0]?.url || '/ralhumbanner.png'
 
   return {
+    metadataBase: new URL(baseUrl),
     title,
     description: fullDescription,
     keywords: [
@@ -123,7 +151,6 @@ export async function generateMetadata({ params }: ProductDetailPageProps): Prom
     ]
       .filter(Boolean)
       .join(', '),
-    metadataBase: new URL('https://ralhumsports.lk'),
     openGraph: {
       title: `${productName} - Ralhum Sports Sri Lanka`,
       description: fullDescription,
@@ -131,7 +158,11 @@ export async function generateMetadata({ params }: ProductDetailPageProps): Prom
       siteName: 'Ralhum Sports Sri Lanka',
       images: [
         {
+<<<<<<< Updated upstream
           url: productImage.startsWith('http') ? productImage : `https://ralhumsports.lk${productImage}`,
+=======
+          url: productImage, // Will resolve via metadataBase
+>>>>>>> Stashed changes
           width: 1200,
           height: 630,
           alt: `${productName} - Ralhum Sports Sri Lanka`,
@@ -146,7 +177,11 @@ export async function generateMetadata({ params }: ProductDetailPageProps): Prom
       creator: '@ralhumsports',
       title: `${productName} - Ralhum Sports Sri Lanka`,
       description: `Buy ${productName} at ralhumsports.lk - your trusted Ralhum Store.`,
+<<<<<<< Updated upstream
       images: [productImage.startsWith('http') ? productImage : `https://ralhumsports.lk${productImage}`],
+=======
+      images: [productImage], // Will resolve via metadataBase
+>>>>>>> Stashed changes
     },
     alternates: {
       canonical: `https://ralhumsports.lk/products/${resolvedParams.slug}`,
@@ -187,6 +222,7 @@ export async function generateStaticParams() {
 export default async function ProductDetailPage({ params }: ProductDetailPageProps) {
   const resolvedParams = await params
   const product = await getProductData(resolvedParams.slug)
+  const baseUrl = getBaseUrl()
 
   return (
     <>
@@ -199,20 +235,20 @@ export default async function ProductDetailPage({ params }: ProductDetailPagePro
               __html: JSON.stringify({
                 '@context': 'https://schema.org',
                 '@type': 'Product',
-                '@id': `https://ralhumsports.lk/products/${resolvedParams.slug}#product`,
+                '@id': `${baseUrl}/products/${resolvedParams.slug}#product`,
                 name: product.name,
                 description:
                   typeof product.description === 'string'
                     ? product.description.replace(/<[^>]*>/g, '')
                     : `${product.name} from ${product.brand?.name || ''} at Ralhum Sports Sri Lanka`,
-                image: product.images?.map((img: any) => img.url) || [
-                  '/ralhumbanner.png',
-                ],
+                image: product.images?.map((img: any) =>
+                  img.url.startsWith('http') ? img.url : `${baseUrl}${img.url}`,
+                ) || [`${baseUrl}/ralhumbanner.png`],
                 brand: product.brand
                   ? {
                       '@type': 'Brand',
                       name: product.brand.name,
-                      url: `https://ralhumsports.lk/products?brand=${product.brand.slug}`,
+                      url: `${baseUrl}/products?brand=${product.brand.slug}`,
                     }
                   : undefined,
                 manufacturer: product.brand
@@ -225,7 +261,7 @@ export default async function ProductDetailPage({ params }: ProductDetailPagePro
                 category: product.categories?.[0]?.name || 'Sports Equipment',
                 offers: {
                   '@type': 'AggregateOffer',
-                  url: `https://ralhumsports.lk/products/${resolvedParams.slug}`,
+                  url: `${baseUrl}/products/${resolvedParams.slug}`,
                   priceCurrency: 'LKR',
                   lowPrice:
                     product.variants && product.variants.length > 0
@@ -242,9 +278,9 @@ export default async function ProductDetailPage({ params }: ProductDetailPagePro
                       : 'https://schema.org/OutOfStock',
                   seller: {
                     '@type': 'Organization',
-                    '@id': 'https://ralhumsports.lk/#organization',
+                    '@id': `${baseUrl}/#organization`,
                     name: 'Ralhum Sports Sri Lanka',
-                    url: 'https://ralhumsports.lk',
+                    url: baseUrl,
                   },
                 },
                 aggregateRating: product.rating
@@ -272,19 +308,19 @@ export default async function ProductDetailPage({ params }: ProductDetailPagePro
                     '@type': 'ListItem',
                     position: 1,
                     name: 'Home',
-                    item: 'https://ralhumsports.lk',
+                    item: baseUrl,
                   },
                   {
                     '@type': 'ListItem',
                     position: 2,
                     name: 'Products',
-                    item: 'https://ralhumsports.lk/products',
+                    item: `${baseUrl}/products`,
                   },
                   {
                     '@type': 'ListItem',
                     position: 3,
                     name: product.name,
-                    item: `https://ralhumsports.lk/products/${resolvedParams.slug}`,
+                    item: `${baseUrl}/products/${resolvedParams.slug}`,
                   },
                 ],
               }),
