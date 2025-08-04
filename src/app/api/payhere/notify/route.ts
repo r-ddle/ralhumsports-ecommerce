@@ -7,6 +7,7 @@ import { getSecurityHeaders } from '@/lib/response-filter'
 
 export async function POST(request: NextRequest) {
   console.log('[PayHere Notify] Processing payment notification')
+  console.log('[PayHere Notify] Request headers:', Object.fromEntries(request.headers.entries()))
 
   try {
     // Parse form data (PayHere sends application/x-www-form-urlencoded)
@@ -28,7 +29,10 @@ export async function POST(request: NextRequest) {
       card_expiry: formData.get('card_expiry') as string | undefined,
     }
 
-    console.log('[PayHere Notify] Notification data:', notification)
+    console.log('[PayHere Notify] Notification data:', {
+      ...notification,
+      md5sig: notification.md5sig?.substring(0, 8) + '...',
+    })
 
     // Verify payment notification
     if (!verifyPaymentNotification(notification)) {
@@ -71,6 +75,14 @@ export async function POST(request: NextRequest) {
       ? 'confirmed'
       : order.status.orderStatus
 
+    console.log('[PayHere Notify] Updating order status:', {
+      orderId: order.id,
+      orderNumber: notification.order_id,
+      paymentStatus,
+      orderStatus,
+      statusCode: notification.status_code,
+    })
+
     await payload.update({
       collection: 'orders',
       id: order.id,
@@ -96,7 +108,12 @@ export async function POST(request: NextRequest) {
       },
     })
 
-    console.log('[PayHere Notify] Order updated successfully')
+    console.log(
+      '[PayHere Notify] Order updated successfully - ID:',
+      order.id,
+      'Payment Status:',
+      paymentStatus,
+    )
 
     // PayHere expects a plain text response
     return new Response('OK', {

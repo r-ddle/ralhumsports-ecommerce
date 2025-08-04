@@ -11,6 +11,7 @@ import ErrorBoundary from '@/components/error-boundary'
 import { Suspense } from 'react'
 import { Analytics } from '@vercel/analytics/next'
 import { NavigationProvider } from '@/components/navigation-provider'
+import { WebVitals } from '@/components/performance/web-vitals'
 
 const inter = Inter({
   subsets: ['latin'],
@@ -20,65 +21,73 @@ const inter = Inter({
 })
 
 export const metadata: Metadata = {
-  title: 'Ralhum Sports | Sri Lanka Sports Equipment Store – Cricket, Rugby, Hockey Gear',
+  title: {
+    template: '%s | Ralhum Sports Sri Lanka - Premium Sports Equipment Store',
+    default: 'Ralhum Sports Sri Lanka - Premium Sports Equipment & Gear | ralhumsports.lk'
+  },
   description:
-    'Shop top‑quality cricket, rugby, hockey, basketball & tennis gear in Sri Lanka. Official distributor of Gray‑Nicolls, Gilbert, Molten & Grays. Fast nationwide delivery.',
+    'Shop premium sports equipment at Ralhum Sports Sri Lanka (ralhumsports.lk). Official distributor of Gray-Nicolls, Gilbert, Molten & Grays. Fast nationwide delivery across Sri Lanka.',
   keywords: [
-    'sports equipment',
-    'cricket gear',
-    'rugby equipment',
-    'basketball shoes',
-    'hockey sticks',
-    'tennis rackets',
-    'Sri Lanka sports shop',
-    'buy sports gear Sri Lanka',
-    'Colombo sports store',
-    'Gray-Nicolls Sri Lanka',
-    'Gilbert rugby Sri Lanka',
-    'Molten basketball Sri Lanka',
-    'Grays hockey sticks',
-    'sportswear Sri Lanka',
-    'online sports store LK',
-    'cricket bats Sri Lanka',
+    'ralhumsports.lk',
+    'ralhum sports sri lanka', 
+    'ralhum store',
+    'sports equipment sri lanka',
+    'cricket gear sri lanka',
+    'rugby equipment colombo',
+    'basketball shoes sri lanka',
+    'hockey sticks sri lanka',
+    'tennis rackets colombo',
+    'Gray-Nicolls sri lanka',
+    'Gilbert rugby sri lanka',
+    'Molten basketball sri lanka',
+    'Grays hockey sri lanka',
+    'sports shop colombo',
+    'online sports store sri lanka',
+    'cricket bats sri lanka',
     'official sports distributor',
-    'sports gear for schools',
-    'athletic equipment',
-    'Ralhum Sports',
+    'sports gear western province',
+    'athletic equipment sri lanka',
+    'sportswear colombo'
   ].join(', '),
-  authors: [{ name: 'Ralhum Sports' }],
+  authors: [{ name: 'Ralhum Sports Team' }],
+  creator: 'Ralhum Sports Sri Lanka',
   publisher: 'Ralhum Sports',
-  openGraph: {
-    title: 'Ralhum Sports – Premium Cricket, Rugby & Hockey Gear in Sri Lanka',
-    description:
-      'Official distributor of Gray‑Nicolls, Gilbert, Grays & Molten. Shop cricket, rugby, hockey & basketball equipment with fast delivery across Sri Lanka.',
-    url: 'https://ralhumsports.lk',
-    siteName: 'Ralhum Sports',
-    images: [
-      {
-        url: 'https://ralhumsports.lk/ralhumbanner.png',
-        width: 1200,
-        height: 630,
-        alt: 'Ralhum Sports – Sri Lanka Sports Gear',
-      },
-    ],
-    type: 'website',
-    locale: 'en_LK',
-  },
-  twitter: {
-    card: 'summary_large_image',
-    title: 'Ralhum Sports – Sports Gear Store in Sri Lanka',
-    description:
-      'Official distributor of Gray‑Nicolls, Gilbert, Grays & Molten with nationwide delivery.',
-    images: ['https://ralhumsports.lk/ralhumbanner.png'],
-  },
   robots: {
     index: true,
     follow: true,
     googleBot: {
       index: true,
       follow: true,
+      'max-video-preview': -1,
       'max-image-preview': 'large',
+      'max-snippet': -1,
     },
+  },
+  openGraph: {
+    type: 'website',
+    locale: 'en_LK',
+    url: 'https://ralhumsports.lk',
+    siteName: 'Ralhum Sports Sri Lanka',
+    title: 'Ralhum Sports Sri Lanka - Premium Sports Equipment Store',
+    description:
+      'Shop premium sports equipment at ralhumsports.lk. Official distributor of Gray-Nicolls, Gilbert, Grays & Molten. Fast delivery across Sri Lanka.',
+    images: [
+      {
+        url: 'https://ralhumsports.lk/ralhumbanner.png',
+        width: 1200,
+        height: 630,
+        alt: 'Ralhum Sports Sri Lanka - Premium Sports Equipment Store',
+      },
+    ],
+  },
+  twitter: {
+    card: 'summary_large_image',
+    site: '@ralhumsports',
+    creator: '@ralhumsports',
+    title: 'Ralhum Sports Sri Lanka - Premium Sports Equipment',
+    description:
+      'Shop premium sports equipment at ralhumsports.lk. Official distributor with fast delivery across Sri Lanka.',
+    images: ['https://ralhumsports.lk/ralhumbanner.png'],
   },
   verification: {
     google: 'pjZLxNs-yhkubiRfnamMtruzHA58nrlA6y4myDerRNI',
@@ -87,6 +96,13 @@ export const metadata: Metadata = {
     canonical: 'https://ralhumsports.lk',
   },
   category: 'Sports Equipment Store',
+  other: {
+    'apple-mobile-web-app-capable': 'yes',
+    'apple-mobile-web-app-status-bar-style': 'default',
+    'apple-mobile-web-app-title': 'Ralhum Sports',
+    'mobile-web-app-capable': 'yes',
+    'msapplication-TileColor': '#FF6B35',
+  },
 }
 
 // Loading component for Suspense boundaries
@@ -145,6 +161,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           </CartProvider>
         </ErrorBoundary>
         <Analytics />
+        <WebVitals />
       </body>
     </html>
   )

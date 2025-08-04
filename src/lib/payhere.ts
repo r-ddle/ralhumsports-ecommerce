@@ -1,19 +1,20 @@
 import crypto from 'crypto'
 import { PayHerePayment, PayHereNotification, PayHereStatusCode } from '@/types/payhere'
 
-// FIXED: PayHere configuration with dynamic domain detection
+// FIXED: PayHere configuration with proper domain detection
 const getNotifyUrl = (): string => {
-  // In production, use the current domain to avoid cross-origin issues
-  if (typeof window !== 'undefined' && process.env.NODE_ENV === 'production') {
-    return `${window.location.origin}/api/payhere/notify`
-  }
-  
-  // Server-side or fallback
+  // Server-side or production fallback
   if (process.env.NEXT_PUBLIC_SERVER_URL) {
     return `${process.env.NEXT_PUBLIC_SERVER_URL}/api/payhere/notify`
   }
-  
-  return 'https://www.ralhumsports.lk/api/payhere/notify'
+
+  // Production fallback
+  if (process.env.NODE_ENV === 'production') {
+    return 'https://www.ralhumsports.lk/api/payhere/notify'
+  }
+
+  // Development fallback
+  return 'http://localhost:3000/api/payhere/notify'
 }
 
 export const PAYHERE_CONFIG = {

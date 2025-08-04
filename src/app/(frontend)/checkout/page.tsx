@@ -71,6 +71,7 @@ export default function CheckoutPage() {
   const [confirmationOrderId, setConfirmationOrderId] = useState('')
   const [apiError, setApiError] = useState<string | null>(null)
   const [isProcessing, setIsProcessing] = useState(false)
+  const [isPaymentProcessing, setIsPaymentProcessing] = useState(false)
 
   // Memoized form validation state
   const [isFormValid, setIsFormValid] = useState(false)
@@ -123,12 +124,12 @@ export default function CheckoutPage() {
     }))
   }, [cart.items])
 
-  // Redirect if cart is empty
+  // Redirect if cart is empty (but not during payment processing)
   useEffect(() => {
-    if (cart.items.length === 0 && !showConfirmation) {
+    if (cart.items.length === 0 && !showConfirmation && !isPaymentProcessing) {
       router.push('/products')
     }
-  }, [cart.items.length, showConfirmation, router])
+  }, [cart.items.length, showConfirmation, isPaymentProcessing, router])
 
   const validateForm = (): boolean => {
     const errors: FormErrors = {}
@@ -615,7 +616,10 @@ export default function CheckoutPage() {
                       )}
                     </div>
                     <div>
-                      <Label htmlFor="postalCode" className="text-base font-semibold text-text-primary">
+                      <Label
+                        htmlFor="postalCode"
+                        className="text-base font-semibold text-text-primary"
+                      >
                         Postal Code *
                       </Label>
                       <Input
@@ -631,7 +635,9 @@ export default function CheckoutPage() {
                         placeholder="Enter postal code"
                       />
                       {checkoutState.errors.postalCode && (
-                        <p className="text-sm text-red-600 mt-2">{checkoutState.errors.postalCode}</p>
+                        <p className="text-sm text-red-600 mt-2">
+                          {checkoutState.errors.postalCode}
+                        </p>
                       )}
                     </div>
                   </div>
@@ -882,12 +888,20 @@ export default function CheckoutPage() {
                           }}
                           orderId={checkoutState.orderId}
                           totalAmount={checkoutState.pricing.total}
+                          onPaymentStart={() => {
+                            setIsPaymentProcessing(true)
+                          }}
                           onSuccess={(orderId) => {
+                            setIsPaymentProcessing(false)
                             clearCart()
                             router.push(`/checkout/success?orderId=${orderId}`)
                           }}
                           onError={(error) => {
+                            setIsPaymentProcessing(false)
                             setApiError(error)
+                          }}
+                          onDismiss={() => {
+                            setIsPaymentProcessing(false)
                           }}
                         />
                       )}

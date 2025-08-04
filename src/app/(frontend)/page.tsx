@@ -7,14 +7,42 @@ import ContactCTA from '@/components/contact-cta'
 import type { Metadata } from 'next'
 
 export const metadata: Metadata = {
-  title: "Ralhum Sports - Sri Lanka's #1 Sports Equipment Distributor",
+  title: "Ralhum Sports Sri Lanka - Premium Sports Equipment Store | ralhumsports.lk",
   description:
-    'Shop premium sports equipment from world-renowned brands. Exclusive distributor of Gray-Nicolls, Gilbert, Grays & Molten in Sri Lanka.',
+    'Welcome to Ralhum Sports Sri Lanka (ralhumsports.lk) - your trusted Ralhum Store for premium sports equipment. Official distributor of Gray-Nicolls, Gilbert, Grays & Molten in Sri Lanka.',
+  keywords: [
+    'ralhumsports.lk',
+    'ralhum sports sri lanka',
+    'ralhum store',
+    'sports equipment sri lanka',
+    'cricket gear sri lanka',
+    'Gray-Nicolls sri lanka',
+    'Gilbert rugby sri lanka',
+    'Molten basketball sri lanka',
+    'Grays hockey sri lanka',
+    'sports shop colombo',
+    'premium sports equipment'
+  ].join(', '),
   openGraph: {
-    title: 'Ralhum Sports - Premium Sports Equipment Store',
+    title: 'Ralhum Sports Sri Lanka - Premium Sports Equipment | ralhumsports.lk',
     description:
-      'Shop the best sports equipment from trusted global brands. Fast delivery across Sri Lanka.',
-    images: ['/og-image.jpg'],
+      'Visit ralhumsports.lk - Ralhum Sports Sri Lanka. Official Ralhum Store for premium sports equipment from Gray-Nicolls, Gilbert, Grays & Molten.',
+    url: 'https://ralhumsports.lk',
+    images: [
+      {
+        url: 'https://ralhumsports.lk/ralhumbanner.png',
+        width: 1200,
+        height: 630,
+        alt: 'Ralhum Sports Sri Lanka - Premium Sports Equipment Store',
+      }
+    ],
+  },
+  twitter: {
+    title: 'Ralhum Sports Sri Lanka | ralhumsports.lk',
+    description: 'Visit ralhumsports.lk - your trusted Ralhum Store for premium sports equipment in Sri Lanka.',
+  },
+  alternates: {
+    canonical: 'https://ralhumsports.lk',
   },
   metadataBase: new URL('https://ralhumsports.lk'),
 }
@@ -52,6 +80,150 @@ function SectionSkeleton() {
 export default function HomePage() {
   return (
     <>
+      {/* Comprehensive Schema Markup for Homepage */}
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify({
+            '@context': 'https://schema.org',
+            '@type': 'Organization',
+            '@id': 'https://ralhumsports.lk/#organization',
+            name: 'Ralhum Sports Sri Lanka',
+            alternateName: ['Ralhum Store', 'ralhumsports.lk'],
+            url: 'https://ralhumsports.lk',
+            logo: {
+              '@type': 'ImageObject',
+              url: 'https://ralhumsports.lk/ralhumlogo.svg',
+              width: 300,
+              height: 300
+            },
+            image: 'https://ralhumsports.lk/ralhumbanner.png',
+            description: 'Ralhum Sports Sri Lanka (ralhumsports.lk) - your trusted Ralhum Store for premium sports equipment. Official distributor of Gray-Nicolls, Gilbert, Molten & Grays in Sri Lanka since 1990.',
+            foundingDate: '1990',
+            slogan: 'Sri Lanka\'s Premier Sports Equipment Store',
+            telephone: '+94 11 234 5678',
+            email: 'info@ralhumsports.lk',
+            address: {
+              '@type': 'PostalAddress',
+              streetAddress: '123 Colombo Road',
+              addressLocality: 'Colombo',
+              addressRegion: 'Western Province',
+              postalCode: '00400',
+              addressCountry: 'LK'
+            },
+            geo: {
+              '@type': 'GeoCoordinates',
+              latitude: '6.9271',
+              longitude: '79.8612'
+            },
+            sameAs: [
+              'https://facebook.com/ralhumsports',
+              'https://instagram.com/ralhumsports'
+            ],
+            hasOfferCatalog: {
+              '@type': 'OfferCatalog',
+              name: 'Sports Equipment Catalog',
+              itemListElement: [
+                {
+                  '@type': 'Offer',
+                  itemOffered: {
+                    '@type': 'Product',
+                    name: 'Cricket Equipment',
+                    category: 'Sports Equipment'
+                  }
+                },
+                {
+                  '@type': 'Offer',
+                  itemOffered: {
+                    '@type': 'Product',
+                    name: 'Rugby Equipment',
+                    category: 'Sports Equipment'
+                  }
+                },
+                {
+                  '@type': 'Offer',
+                  itemOffered: {
+                    '@type': 'Product',
+                    name: 'Basketball Equipment',
+                    category: 'Sports Equipment'
+                  }
+                },
+                {
+                  '@type': 'Offer',
+                  itemOffered: {
+                    '@type': 'Product',
+                    name: 'Hockey Equipment',
+                    category: 'Sports Equipment'
+                  }
+                }
+              ]
+            },
+            areaServed: {
+              '@type': 'Country',
+              name: 'Sri Lanka'
+            }
+          })
+        }}
+      />
+
+      {/* Local Business Schema */}
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify({
+            '@context': 'https://schema.org',
+            '@type': 'LocalBusiness',
+            '@id': 'https://ralhumsports.lk/#localbusiness',
+            name: 'Ralhum Sports Sri Lanka',
+            alternateName: 'Ralhum Store',
+            url: 'https://ralhumsports.lk',
+            telephone: '+94 11 234 5678',
+            email: 'info@ralhumsports.lk',
+            address: {
+              '@type': 'PostalAddress',
+              streetAddress: '123 Colombo Road',
+              addressLocality: 'Colombo',
+              addressRegion: 'Western Province',
+              postalCode: '00400',
+              addressCountry: 'LK'
+            },
+            geo: {
+              '@type': 'GeoCoordinates',
+              latitude: '6.9271',
+              longitude: '79.8612'
+            },
+            openingHours: ['Mo-Sa 09:00-18:00'],
+            priceRange: '$$',
+            paymentAccepted: ['Cash', 'Credit Card', 'Bank Transfer'],
+            currenciesAccepted: 'LKR'
+          })
+        }}
+      />
+
+      {/* WebSite Schema */}
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify({
+            '@context': 'https://schema.org',
+            '@type': 'WebSite',
+            '@id': 'https://ralhumsports.lk/#website',
+            url: 'https://ralhumsports.lk',
+            name: 'Ralhum Sports Sri Lanka',
+            alternateName: 'ralhumsports.lk',
+            description: 'Official website of Ralhum Sports Sri Lanka - your trusted Ralhum Store for premium sports equipment.',
+            publisher: {
+              '@id': 'https://ralhumsports.lk/#organization'
+            },
+            potentialAction: {
+              '@type': 'SearchAction',
+              target: 'https://ralhumsports.lk/products?search={search_term_string}',
+              'query-input': 'required name=search_term_string'
+            }
+          })
+        }}
+      />
+
       <Suspense fallback={<HeroSkeleton />}>
         <Hero />
       </Suspense>
