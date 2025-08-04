@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect } from 'react'
-import { onCLS, onFCP, onLCP, onTTFB } from 'web-vitals'
+import { onCLS, onFCP, onLCP, onTTFB, onINP } from 'web-vitals'
 
 interface WebVitalsMetric {
   name: string
@@ -36,6 +36,19 @@ export function WebVitals() {
         })
       }
       console.log('FCP:', metric.value)
+    })
+
+    // Use INP (Interaction to Next Paint) instead of deprecated FID
+    onINP((metric: WebVitalsMetric) => {
+      if (typeof window !== 'undefined' && window.gtag) {
+        window.gtag('event', 'web_vitals', {
+          event_category: 'Performance',
+          event_label: metric.name,
+          value: Math.round(metric.value),
+          non_interaction: true,
+        })
+      }
+      console.log('INP:', metric.value)
     })
 
     onLCP((metric: WebVitalsMetric) => {

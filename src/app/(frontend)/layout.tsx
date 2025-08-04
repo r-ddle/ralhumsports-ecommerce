@@ -21,6 +21,7 @@ const inter = Inter({
 })
 
 export const metadata: Metadata = {
+  metadataBase: new URL('https://ralhumsports.lk'),
   title: {
     template: '%s | Ralhum Sports Sri Lanka - Premium Sports Equipment Store',
     default: 'Ralhum Sports Sri Lanka - Premium Sports Equipment & Gear | ralhumsports.lk'
@@ -73,7 +74,7 @@ export const metadata: Metadata = {
       'Shop premium sports equipment at ralhumsports.lk. Official distributor of Gray-Nicolls, Gilbert, Grays & Molten. Fast delivery across Sri Lanka.',
     images: [
       {
-        url: 'https://ralhumsports.lk/ralhumbanner.png',
+        url: '/ralhumbanner.png',
         width: 1200,
         height: 630,
         alt: 'Ralhum Sports Sri Lanka - Premium Sports Equipment Store',
