@@ -24,7 +24,7 @@ export const productsMetadata: Metadata = {
     title: 'Sports Products - Ralhum Sports Sri Lanka | ralhumsports.lk',
     description:
       'Explore premium sports products at ralhumsports.lk. Official Ralhum Store with cricket, rugby, hockey equipment from top brands.',
-    url: 'https://ralhumsports.lk/products',
+    url: '/products',
     images: [
       {
         url: '/ralhumbanner.png',
@@ -39,6 +39,6 @@ export const productsMetadata: Metadata = {
     description: 'Browse premium sports products at ralhumsports.lk - your trusted Ralhum Store.',
   },
   alternates: {
-    canonical: 'https://ralhumsports.lk/products',
+    canonical: '/products',
   },
 }
