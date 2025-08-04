@@ -27,7 +27,7 @@ export const productsMetadata: Metadata = {
     url: 'https://ralhumsports.lk/products',
     images: [
       {
-        url: 'https://ralhumsports.lk/ralhumbanner.png',
+        url: '/ralhumbanner.png',
         width: 1200,
         height: 630,
         alt: 'Sports Products - Ralhum Sports Sri Lanka',

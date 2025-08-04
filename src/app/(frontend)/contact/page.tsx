@@ -29,7 +29,7 @@ export const metadata: Metadata = {
     url: 'https://ralhumsports.lk/contact',
     images: [
       {
-        url: 'https://ralhumsports.lk/ralhumbanner.png',
+        url: '/ralhumbanner.png',
         width: 1200,
         height: 630,
         alt: 'Contact Ralhum Sports Sri Lanka - Expert Sports Equipment Advice',

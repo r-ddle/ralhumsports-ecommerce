@@ -30,7 +30,7 @@ export const metadata: Metadata = {
     url: 'https://ralhumsports.lk',
     images: [
       {
-        url: 'https://ralhumsports.lk/ralhumbanner.png',
+        url: '/ralhumbanner.png',
         width: 1200,
         height: 630,
         alt: 'Ralhum Sports Sri Lanka - Premium Sports Equipment Store',
@@ -93,11 +93,11 @@ export default function HomePage() {
             url: 'https://ralhumsports.lk',
             logo: {
               '@type': 'ImageObject',
-              url: 'https://ralhumsports.lk/ralhumlogo.svg',
+              url: '/ralhumlogo.svg',
               width: 300,
               height: 300
             },
-            image: 'https://ralhumsports.lk/ralhumbanner.png',
+            image: '/ralhumbanner.png',
             description: 'Ralhum Sports Sri Lanka (ralhumsports.lk) - your trusted Ralhum Store for premium sports equipment. Official distributor of Gray-Nicolls, Gilbert, Molten & Grays in Sri Lanka since 1990.',
             foundingDate: '1990',
             slogan: 'Sri Lanka\'s Premier Sports Equipment Store',

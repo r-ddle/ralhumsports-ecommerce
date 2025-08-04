@@ -14,17 +14,29 @@ interface ProductDetailPageProps {
 // Server-side function to fetch product data for metadata
 async function getProductData(slug: string) {
   try {
-    // In production, this would be your actual API call
-    const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://ralhumsports.lk'
+    // Use localhost for server-side fetching during development
+    const baseUrl = process.env.NODE_ENV === 'development' 
+      ? 'http://localhost:3000'
+      : process.env.NEXT_PUBLIC_BASE_URL || 'https://ralhumsports.lk'
+    
+    console.log(`Fetching product metadata for slug: ${slug} from ${baseUrl}`)
+    
     const response = await fetch(`${baseUrl}/api/public/products/${slug}`, {
       next: { revalidate: 3600 }, // Revalidate every hour
+      headers: {
+        'User-Agent': 'ralhumsports-seo-bot',
+      }
     })
 
+    console.log(`Response status: ${response.status}`)
+
     if (!response.ok) {
+      console.error(`Failed to fetch product: ${response.status} ${response.statusText}`)
       return null
     }
 
     const data = await response.json()
+    console.log(`Product data success: ${data.success}, product name: ${data.data?.name}`)
     return data.success ? data.data : null
   } catch (error) {
     console.error('Error fetching product for metadata:', error)
@@ -36,11 +48,49 @@ export async function generateMetadata({ params }: ProductDetailPageProps): Prom
   const resolvedParams = await params
   const product = await getProductData(resolvedParams.slug)
 
+  // Fallback for when API is not available or product not found
   if (!product) {
+    // Generate a basic title from the slug
+    const formattedTitle = resolvedParams.slug
+      .split('-')
+      .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+      .join(' ')
+    
     return {
-      title: 'Product Not Found - Ralhum Sports Sri Lanka',
-      description:
-        'The requested product was not found at Ralhum Sports Sri Lanka (ralhumsports.lk).',
+      title: `${formattedTitle} - Ralhum Sports Sri Lanka`,
+      description: `Find ${formattedTitle} at Ralhum Sports Sri Lanka (ralhumsports.lk). Browse our premium sports equipment collection with fast delivery across Sri Lanka.`,
+      keywords: [
+        formattedTitle.toLowerCase(),
+        'ralhumsports.lk',
+        'ralhum sports sri lanka',
+        'ralhum store',
+        'sports equipment sri lanka',
+        'premium sports gear'
+      ].join(', '),
+      metadataBase: new URL('https://ralhumsports.lk'),
+      openGraph: {
+        title: `${formattedTitle} - Ralhum Sports Sri Lanka`,
+        description: `Find ${formattedTitle} at ralhumsports.lk - your trusted Ralhum Store.`,
+        url: `https://ralhumsports.lk/products/${resolvedParams.slug}`,
+        images: [
+          {
+            url: '/ralhumbanner.png',
+            width: 1200,
+            height: 630,
+            alt: `${formattedTitle} - Ralhum Sports Sri Lanka`,
+          }
+        ],
+        type: 'website',
+      },
+      twitter: {
+        card: 'summary_large_image',
+        title: `${formattedTitle} - Ralhum Sports Sri Lanka`,
+        description: `Find ${formattedTitle} at ralhumsports.lk`,
+        images: ['/ralhumbanner.png'],
+      },
+      alternates: {
+        canonical: `https://ralhumsports.lk/products/${resolvedParams.slug}`,
+      },
     }
   }
 
@@ -55,7 +105,7 @@ export async function generateMetadata({ params }: ProductDetailPageProps): Prom
   const title = `${productName} ${brandName ? `- ${brandName}` : ''} | Ralhum Sports Sri Lanka`
   const fullDescription = `Buy ${productName} ${brandName ? `from ${brandName}` : ''} at Ralhum Sports Sri Lanka (ralhumsports.lk). ${description} ${price ? `Starting from Rs. ${price.toLocaleString('en-LK')}` : ''} with fast delivery.`
 
-  const productImage = product.images?.[0]?.url || 'https://ralhumsports.lk/ralhumbanner.png'
+  const productImage = product.images?.[0]?.url || '/ralhumbanner.png'
 
   return {
     title,
@@ -74,6 +124,7 @@ export async function generateMetadata({ params }: ProductDetailPageProps): Prom
     ]
       .filter(Boolean)
       .join(', '),
+    metadataBase: new URL('https://ralhumsports.lk'),
     openGraph: {
       title: `${productName} - Ralhum Sports Sri Lanka`,
       description: fullDescription,
@@ -126,7 +177,7 @@ export default async function ProductDetailPage({ params }: ProductDetailPagePro
                     ? product.description.replace(/<[^>]*>/g, '')
                     : `${product.name} from ${product.brand?.name || ''} at Ralhum Sports Sri Lanka`,
                 image: product.images?.map((img: any) => img.url) || [
-                  'https://ralhumsports.lk/ralhumbanner.png',
+                  '/ralhumbanner.png',
                 ],
                 brand: product.brand
                   ? {
