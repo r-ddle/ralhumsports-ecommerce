@@ -5,11 +5,14 @@ import { ArrowRight, Sparkles } from 'lucide-react'
 import { motion } from 'framer-motion'
 import { useRef, useEffect, useState } from 'react'
 import Link from 'next/link'
+import Image from 'next/image'
 import { SITE_CONFIG } from '@/config/site-config'
 
 export default function Hero() {
   const hasAnimated = useRef(false)
   const [reducedMotion, setReducedMotion] = useState(false)
+  const [brandImages, setBrandImages] = useState<Record<string, string>>({})
+  const [imageErrors, setImageErrors] = useState<Record<string, boolean>>({})
 
   useEffect(() => {
     const mediaQuery = window.matchMedia('(prefers-reduced-motion: reduce)')
@@ -19,6 +22,42 @@ export default function Hero() {
     mediaQuery.addEventListener('change', handleChange)
     return () => mediaQuery.removeEventListener('change', handleChange)
   }, [])
+
+  // Enhanced image loading with better error handling and validation
+  useEffect(() => {
+    const loadBrandImages = async () => {
+      const imageMap: Record<string, string> = {}
+      let loadedCount = 0
+      let errorCount = 0
+
+      console.log('🎨 Loading brand images from SITE_CONFIG...')
+
+      SITE_CONFIG.brands.forEach((brand) => {
+        if (brand.image) {
+          // Ensure the image path is properly formatted
+          const imagePath = brand.image.startsWith('/') ? brand.image : `/${brand.image}`
+          imageMap[brand.name] = imagePath
+          loadedCount++
+        } else {
+          console.warn(`⚠️ No image configured for brand: ${brand.name}`)
+          errorCount++
+        }
+      })
+
+      console.log(`✅ Brand images loaded: ${loadedCount} successful, ${errorCount} missing`)
+      setBrandImages(imageMap)
+    }
+
+    loadBrandImages()
+  }, [])
+
+  const handleImageError = (brandName: string) => {
+    console.warn(`❌ Failed to load image for brand: ${brandName}`)
+    setImageErrors((prev) => ({
+      ...prev,
+      [brandName]: true,
+    }))
+  }
 
   const getInitial = () => {
     if (reducedMotion) return false
@@ -31,18 +70,27 @@ export default function Hero() {
 
   return (
     <section
-      className="relative overflow-hidden py-24 sm:py-32 md:py-40 lg:py-48"
-      style={{ background: 'linear-gradient(135deg, var(--text-primary), var(--secondary-blue))' }}
+      className="relative overflow-hidden py-24 sm:py-32 md:py-40 lg:py-48 bg-heroBanner bg-cover bg-center text-white flex items-center justify-center"
+      style={{
+        backgroundImage: `url('/ralhummainbackground.jpg'), var(--tw-gradient-stops)`,
+        backgroundSize: 'cover',
+        backgroundPosition: 'center',
+      }}
     >
       {/* Enhanced Animated Background - Only on desktop and with motion preference */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
         <div
-          className="absolute inset-0"
+          className="absolute inset-0 bg-cover bg-center"
           style={{
-            background:
-              'linear-gradient(135deg, rgba(59, 130, 246, 0.2), rgba(255, 107, 53, 0.2), rgba(243, 156, 18, 0.2))',
+            backgroundImage: `url('/ralhummainbackground.jpg')`,
+            backgroundSize: 'cover',
+            backgroundPosition: 'center',
           }}
         />
+
+        {/* Enhanced dark overlay for better text contrast */}
+        <div className="absolute inset-0 bg-gradient-to-br from-black/50 via-black/40 to-black/60" />
+        <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-black/30" />
 
         {/* Floating Orbs - Only on desktop without reduced motion */}
         {!reducedMotion && (
@@ -109,7 +157,7 @@ export default function Hero() {
           initial={getInitial() ?? { opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: reducedMotion ? 0.1 : 0.8 }}
-          className="inline-flex items-center gap-2 px-4 sm:px-6 py-2 sm:py-3 rounded-full font-bold text-xs sm:text-sm mb-6 sm:mb-8 bg-gradient-to-r from-brand-accent to-brand-primary text-white shadow-lg backdrop-blur-sm border border-brand-accent/30"
+          className="relative z-10 inline-flex items-center gap-2 px-4 sm:px-6 py-2 sm:py-3 rounded-full font-bold text-xs sm:text-sm mb-6 sm:mb-8 bg-gradient-to-r from-brand-accent to-brand-primary text-white"
         >
           <Sparkles className="w-3 h-3 sm:w-4 sm:h-4" />
           <span className="sr-only">Celebrating</span>
@@ -121,7 +169,7 @@ export default function Hero() {
           initial={getInitial() ?? { opacity: 0, y: 30 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: reducedMotion ? 0.1 : 1, delay: reducedMotion ? 0 : 0.2 }}
-          className="text-3xl sm:text-4xl md:text-6xl lg:text-7xl xl:text-8xl font-black text-white mb-4 sm:mb-6 leading-tight"
+          className="relative z-10 text-3xl sm:text-4xl md:text-6xl lg:text-7xl xl:text-8xl font-black text-white mb-4 sm:mb-6 leading-tight"
         >
           <motion.span
             initial={getInitial() ?? { opacity: 0, x: -20 }}
@@ -135,7 +183,7 @@ export default function Hero() {
             initial={getInitial() ?? { opacity: 0, scale: 0.8 }}
             animate={{ opacity: 1, scale: 1 }}
             transition={{ duration: reducedMotion ? 0.1 : 0.8, delay: reducedMotion ? 0 : 0.6 }}
-            className="block bg-gradient-to-r from-brand-accent via-brand-primary to-brand-accent bg-clip-text text-transparent drop-shadow-lg"
+            className="block text-brand-primary"
           >
             #1 SPORTS EQUIPMENT
           </motion.span>
@@ -202,76 +250,104 @@ export default function Hero() {
           </Link>
         </motion.div>
 
-        {/* Enhanced Responsive Brand Carousel */}
+        {/* Full-Width Brand Carousel */}
         <motion.div
           initial={getInitial() ?? { opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ duration: reducedMotion ? 0.1 : 1, delay: reducedMotion ? 0 : 0.8 }}
-          className="mt-8 sm:mt-12 lg:mt-16 relative w-full"
-          role="region"
-          aria-label="Partner brands"
+          className="mt-8 sm:mt-12 lg:mt-16 relative"
         >
-          {/* Enhanced scrollable container with hidden scrollbar */}
-          <div className="relative overflow-hidden w-full rounded-2xl">
-            <div className="overflow-x-auto w-full scrollbar-hidden pb-2 cursor-grab active:cursor-grabbing">
-              <div
-                className={`flex gap-2 sm:gap-3 md:gap-4 lg:gap-6 w-max ${
-                  !reducedMotion
-                    ? 'animate-infinite-scroll hover:animation-paused'
-                    : 'justify-center flex-wrap max-w-none'
-                }`}
-                onMouseDown={(e) => {
-                  const container = e.currentTarget.parentElement
-                  if (!container) return
-                  const startX = e.pageX - container.offsetLeft
-                  const scrollLeft = container.scrollLeft
+          {/* Break out of container constraints */}
+          <div
+            className="w-screen relative left-1/2 right-1/2 -mx-[50vw] overflow-hidden"
+            role="region"
+            aria-label="Partner brands showcase"
+          >
+            {/* Gradient fade edges */}
+            <div className="absolute left-0 top-0 bottom-0 w-20 sm:w-32 bg-gradient-to-r from-black/60 to-transparent z-10 pointer-events-none" />
+            <div className="absolute right-0 top-0 bottom-0 w-20 sm:w-32 bg-gradient-to-l from-black/60 to-transparent z-10 pointer-events-none" />
 
-                  interface MouseMoveEvent extends MouseEvent {
-                    // No additional properties needed, but interface for clarity
+            {/* Scrolling container */}
+            <div
+              className={`flex gap-4 sm:gap-6 py-6 ${
+                !reducedMotion ? 'animate-infinite-scroll' : 'justify-center flex-wrap px-8'
+              }`}
+              style={{
+                animation: !reducedMotion ? 'scroll 35s linear infinite' : 'none',
+                width: !reducedMotion ? 'max-content' : 'auto',
+              }}
+            >
+              {/* CSS Keyframes for smooth scrolling */}
+              <style jsx>{`
+                @keyframes scroll {
+                  0% {
+                    transform: translateX(0);
                   }
-
-                  const handleMouseMove = (e: MouseMoveEvent) => {
-                    if (!container) return
-                    const x: number = e.pageX - container.offsetLeft
-                    const walk: number = (x - startX) * 2
-                    container.scrollLeft = scrollLeft - walk
+                  100% {
+                    transform: translateX(-50%);
                   }
+                }
+                .animate-infinite-scroll:hover {
+                  animation-play-state: paused;
+                }
+              `}</style>
 
-                  const handleMouseUp = () => {
-                    document.removeEventListener('mousemove', handleMouseMove)
-                    document.removeEventListener('mouseup', handleMouseUp)
-                  }
+              {/* Render brands - duplicate for seamless loop */}
+              {(reducedMotion
+                ? SITE_CONFIG.brands
+                : [...SITE_CONFIG.brands, ...SITE_CONFIG.brands]
+              ).map((brand, index) => (
+                <motion.div
+                  key={`${brand.name}-${index}`}
+                  initial={getInitial() ?? { opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{
+                    duration: reducedMotion ? 0.1 : 0.6,
+                    delay: reducedMotion ? 0 : 0.8 + (index % SITE_CONFIG.brands.length) * 0.1,
+                  }}
+                  whileHover={!reducedMotion ? { scale: 1.03, y: -4 } : {}}
+                  className="flex-shrink-0 group cursor-pointer"
+                >
+                  <div className="bg-white/10 backdrop-blur-md border border-white/20 rounded-xl hover:bg-white/20 hover:border-white/40 transition-all duration-300 shadow-xl hover:shadow-white/10 w-32 sm:w-36 lg:w-40 h-28 sm:h-32 lg:h-36">
+                    <div className="p-3 sm:p-4 text-center h-full flex flex-col justify-center">
+                      {/* Brand logo with enhanced loading and error handling */}
+                      <div className="w-12 h-12 sm:w-14 sm:h-14 mx-auto mb-2 bg-white/90 rounded-lg flex items-center justify-center group-hover:scale-105 transition-transform duration-300 overflow-hidden flex-shrink-0">
+                        {brandImages[brand.name] && !imageErrors[brand.name] ? (
+                          <Image
+                            src={brandImages[brand.name]}
+                            alt={`${brand.name} logo`}
+                            width={56}
+                            height={56}
+                            className="w-full h-full object-contain p-1"
+                            onError={() => handleImageError(brand.name)}
+                            onLoad={() =>
+                              console.log(`✅ Image loaded successfully: ${brand.name}`)
+                            }
+                            priority={index < 6} // Prioritize first 6 images
+                          />
+                        ) : (
+                          // Enhanced fallback with better styling
+                          <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-gray-100 to-gray-200">
+                            <span className="text-lg sm:text-xl font-black text-gray-700">
+                              {brand.name.substring(0, 2).toUpperCase()}
+                            </span>
+                          </div>
+                        )}
+                      </div>
 
-                  document.addEventListener('mousemove', handleMouseMove)
-                  document.addEventListener('mouseup', handleMouseUp)
-                }}
-              >
-                {(reducedMotion
-                  ? SITE_CONFIG.brands
-                  : [...SITE_CONFIG.brands, ...SITE_CONFIG.brands, ...SITE_CONFIG.brands]
-                ).map((brand, index) => (
-                  <motion.div
-                    key={`${brand.name}-${index}`}
-                    initial={getInitial() ?? { opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{
-                      duration: reducedMotion ? 0.1 : 0.6,
-                      delay: reducedMotion ? 0 : 0.8 + (index % SITE_CONFIG.brands.length) * 0.1,
-                    }}
-                    whileHover={!reducedMotion ? { scale: 1.05, y: -5 } : {}}
-                    className="bg-white/15 backdrop-blur-md border border-white/30 rounded-lg sm:rounded-xl lg:rounded-2xl hover:bg-white/25 hover:border-white/50 transition-all duration-300 cursor-pointer shadow-lg flex-shrink-0 group min-w-[110px] sm:min-w-[130px] md:min-w-[140px] lg:min-w-[150px] max-w-[130px] sm:max-w-[150px] md:max-w-[160px] lg:max-w-[180px]"
-                  >
-                    <div className="px-3 sm:px-4 md:px-5 lg:px-7 py-3 sm:py-4 lg:py-5 text-center">
-                      <div className="text-white font-bold text-xs sm:text-sm md:text-base lg:text-lg tracking-wide mb-1 group-hover:scale-105 transition-transform duration-300 truncate">
+                      {/* Brand name - smaller and more compact */}
+                      <h3 className="text-white font-bold text-sm sm:text-base mb-1 group-hover:text-brand-accent transition-colors duration-300 leading-tight flex-shrink-0">
                         {brand.name}
-                      </div>
-                      <div className="text-white/70 text-xs sm:text-xs md:text-sm font-medium truncate">
+                      </h3>
+
+                      {/* Brand category - smaller text */}
+                      <p className="text-white/60 text-xs sm:text-sm font-medium flex-shrink-0">
                         {brand.category}
-                      </div>
+                      </p>
                     </div>
-                  </motion.div>
-                ))}
-              </div>
+                  </div>
+                </motion.div>
+              ))}
             </div>
           </div>
         </motion.div>
