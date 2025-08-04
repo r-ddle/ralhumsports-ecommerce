@@ -14,12 +14,10 @@ interface ProductDetailPageProps {
 // Server-side function to fetch product data for metadata
 async function getProductData(slug: string) {
   try {
-    // Use localhost for server-side fetching during development
+    // Use API call approach with better error handling
     const baseUrl = process.env.NODE_ENV === 'development' 
       ? 'http://localhost:3000'
       : process.env.NEXT_PUBLIC_BASE_URL || 'https://ralhumsports.lk'
-    
-    console.log(`Fetching product metadata for slug: ${slug} from ${baseUrl}`)
     
     const response = await fetch(`${baseUrl}/api/public/products/${slug}`, {
       next: { revalidate: 3600 }, // Revalidate every hour
@@ -28,15 +26,12 @@ async function getProductData(slug: string) {
       }
     })
 
-    console.log(`Response status: ${response.status}`)
-
     if (!response.ok) {
       console.error(`Failed to fetch product: ${response.status} ${response.statusText}`)
       return null
     }
 
     const data = await response.json()
-    console.log(`Product data success: ${data.success}, product name: ${data.data?.name}`)
     return data.success ? data.data : null
   } catch (error) {
     console.error('Error fetching product for metadata:', error)
@@ -128,7 +123,7 @@ export async function generateMetadata({ params }: ProductDetailPageProps): Prom
     openGraph: {
       title: `${productName} - Ralhum Sports Sri Lanka`,
       description: fullDescription,
-      url: `https://ralhumsports.lk/products/${resolvedParams.slug}`,
+      url: `/products/${resolvedParams.slug}`,
       images: [
         {
           url: productImage,
@@ -146,12 +141,38 @@ export async function generateMetadata({ params }: ProductDetailPageProps): Prom
       images: [productImage],
     },
     alternates: {
-      canonical: `https://ralhumsports.lk/products/${resolvedParams.slug}`,
+      canonical: `/products/${resolvedParams.slug}`,
     },
     other: {
       'product:price:amount': price?.toString() || '',
       'product:price:currency': 'LKR',
     },
+  }
+}
+
+// Generate static params for ISR
+export async function generateStaticParams() {
+  try {
+    const { getPayload } = await import('payload')
+    const config = await import('@payload-config')
+    const payload = await getPayload({ config: config.default })
+
+    const products = await payload.find({
+      collection: 'products',
+      limit: 100, // Get first 100 products for static generation
+      where: {
+        status: {
+          equals: 'active',
+        },
+      },
+    })
+
+    return products.docs.map((product) => ({
+      slug: product.slug,
+    }))
+  } catch (error) {
+    console.error('Error generating static params:', error)
+    return []
   }
 }
 
