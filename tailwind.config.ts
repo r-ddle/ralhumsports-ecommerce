@@ -9,6 +9,9 @@ const config: Config = {
   ],
   theme: {
     extend: {
+      backgroundImage: {
+        heroBanner: "url('/ralhummainbanner.jpg",
+      },
       colors: {
         // New Brand Color System
         brand: {
