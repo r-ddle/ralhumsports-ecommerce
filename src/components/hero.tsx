@@ -23,19 +23,28 @@ export default function Hero() {
     return () => mediaQuery.removeEventListener('change', handleChange)
   }, [])
 
-  // Smart image loading with API fallback (extendable for future API integration)
+  // Enhanced image loading with better error handling and validation
   useEffect(() => {
     const loadBrandImages = async () => {
       const imageMap: Record<string, string> = {}
+      let loadedCount = 0
+      let errorCount = 0
 
-      // For now, use SITE_CONFIG images directly
-      // This can be extended to fetch from API first, then fallback to SITE_CONFIG
+      console.log('🎨 Loading brand images from SITE_CONFIG...')
+
       SITE_CONFIG.brands.forEach((brand) => {
         if (brand.image) {
-          imageMap[brand.name] = brand.image
+          // Ensure the image path is properly formatted
+          const imagePath = brand.image.startsWith('/') ? brand.image : `/${brand.image}`
+          imageMap[brand.name] = imagePath
+          loadedCount++
+        } else {
+          console.warn(`⚠️ No image configured for brand: ${brand.name}`)
+          errorCount++
         }
       })
 
+      console.log(`✅ Brand images loaded: ${loadedCount} successful, ${errorCount} missing`)
       setBrandImages(imageMap)
     }
 
@@ -43,6 +52,7 @@ export default function Hero() {
   }, [])
 
   const handleImageError = (brandName: string) => {
+    console.warn(`❌ Failed to load image for brand: ${brandName}`)
     setImageErrors((prev) => ({
       ...prev,
       [brandName]: true,
@@ -300,7 +310,7 @@ export default function Hero() {
                 >
                   <div className="bg-white/10 backdrop-blur-md border border-white/20 rounded-xl hover:bg-white/20 hover:border-white/40 transition-all duration-300 shadow-xl hover:shadow-white/10 w-32 sm:w-36 lg:w-40 h-28 sm:h-32 lg:h-36">
                     <div className="p-3 sm:p-4 text-center h-full flex flex-col justify-center">
-                      {/* Brand logo with smart loading */}
+                      {/* Brand logo with enhanced loading and error handling */}
                       <div className="w-12 h-12 sm:w-14 sm:h-14 mx-auto mb-2 bg-white/90 rounded-lg flex items-center justify-center group-hover:scale-105 transition-transform duration-300 overflow-hidden flex-shrink-0">
                         {brandImages[brand.name] && !imageErrors[brand.name] ? (
                           <Image
@@ -310,13 +320,18 @@ export default function Hero() {
                             height={56}
                             className="w-full h-full object-contain p-1"
                             onError={() => handleImageError(brand.name)}
+                            onLoad={() =>
+                              console.log(`✅ Image loaded successfully: ${brand.name}`)
+                            }
                             priority={index < 6} // Prioritize first 6 images
                           />
                         ) : (
-                          // Fallback to text placeholder
-                          <span className="text-lg sm:text-xl font-black text-gray-800">
-                            {brand.name.substring(0, 2).toUpperCase()}
-                          </span>
+                          // Enhanced fallback with better styling
+                          <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-gray-100 to-gray-200">
+                            <span className="text-lg sm:text-xl font-black text-gray-700">
+                              {brand.name.substring(0, 2).toUpperCase()}
+                            </span>
+                          </div>
                         )}
                       </div>
 

@@ -29,20 +29,20 @@ export default function SportsCategories() {
       name: 'Cricket',
       description: 'Professional cricket equipment from Gray-Nicolls, Grays & more',
       icon: Target,
-      image: '/cricket.avif',
+      image: '/cricket.jpg',
       products: ['Bats', 'Balls', 'Protective Gear', 'Accessories'],
       featured: true,
-      color: 'from-green-500 to-emerald-600',
+      color: 'from-blue-900 to-blue-800', // Dark blue
     },
     {
       id: 'rugby',
       name: 'Rugby',
       description: 'Official Gilbert rugby balls and professional equipment',
       icon: Trophy,
-      image: '/rugby.avif',
+      image: '/rugby.jpg',
       products: ['Balls', 'Training Equipment', 'Protective Gear'],
       featured: true,
-      color: 'from-brand-secondary to-secondary-600',
+      color: 'from-[#7A263A] to-[#A71930]', // Rugby color (maroon shades)
       stats: '200+ Products',
     },
     {
@@ -50,20 +50,20 @@ export default function SportsCategories() {
       name: 'Basketball',
       description: 'Premium Molten basketballs and court equipment',
       icon: Zap,
-      image: '/basketball.avif',
+      image: '/basketball.jpg',
       products: ['Balls', 'Hoops', 'Training Aids', 'Accessories'],
       featured: false,
-      color: 'from-brand-primary to-primary-600',
+      color: 'from-red-600 to-red-800', // Red
     },
     {
       id: 'hockey',
       name: 'Hockey',
       description: 'Professional hockey sticks, balls and protective equipment',
       icon: Users,
-      image: '/hockey.avif',
+      image: '/hockey.jpg',
       products: ['Sticks', 'Balls', 'Protective Gear', 'Goals'],
       featured: false,
-      color: 'from-brand-accent to-warning',
+      color: 'from-green-600 to-emerald-700', // Green
     },
   ]
 
@@ -114,7 +114,7 @@ export default function SportsCategories() {
                 }`}
               >
                 {/* Background Image */}
-                <div className="absolute inset-0 opacity-20 group-hover:opacity-30 transition-opacity duration-300">
+                <div className="absolute inset-0 opacity-50 group-hover:opacity-30 transition-opacity duration-300">
                   <Image
                     src={category.image || '/placeholder.svg'}
                     alt={`${category.name} equipment`}
