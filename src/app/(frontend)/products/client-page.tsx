@@ -173,40 +173,47 @@ export default function StorePage() {
     const search = searchParams.get('search')
     if (search) urlFilters.search = search
 
-    // Handle hierarchical categories (keep them separate, don't merge into categories array)
-    const sportsCategory = searchParams.get('sportsCategory')
-    const sport = searchParams.get('sport')
-    const sportsItem = searchParams.get('sportsItem')
+    // Handle preselected parameters from navigation (don't apply filters yet)
+    const preselected = searchParams.get('preselected')
+    const preselectValue = searchParams.get('preselectValue')
+    
+    // Only apply actual filters if no preselected parameters
+    if (!preselected && !preselectValue) {
+      // Handle hierarchical categories (keep them separate, don't merge into categories array)
+      const sportsCategory = searchParams.get('sportsCategory')
+      const sport = searchParams.get('sport')
+      const sportsItem = searchParams.get('sportsItem')
 
-    if (sportsCategory) urlFilters.sportsCategory = sportsCategory
-    if (sport) urlFilters.sport = sport
-    if (sportsItem) urlFilters.sportsItem = sportsItem
+      if (sportsCategory) urlFilters.sportsCategory = sportsCategory
+      if (sport) urlFilters.sport = sport
+      if (sportsItem) urlFilters.sportsItem = sportsItem
 
-    // Handle legacy categories array (only if no hierarchical filters)
-    if (!sportsCategory && !sport && !sportsItem) {
-      const categories = searchParams.get('categories')
-      if (categories) {
-        urlFilters.categories = categories.split(',')
+      // Handle legacy categories array (only if no hierarchical filters)
+      if (!sportsCategory && !sport && !sportsItem) {
+        const categories = searchParams.get('categories')
+        if (categories) {
+          urlFilters.categories = categories.split(',')
+        }
       }
+
+      // Handle brands (support both 'brand' and 'brands' parameters)
+      const brands = [...searchParams.getAll('brand'), ...searchParams.getAll('brands')].filter(
+        Boolean,
+      )
+      if (brands.length > 0) {
+        urlFilters.brands = brands
+      }
+
+      // Handle price range
+      const minPrice = searchParams.get('minPrice')
+      const maxPrice = searchParams.get('maxPrice')
+      if (minPrice) urlFilters.minPrice = parseInt(minPrice)
+      if (maxPrice) urlFilters.maxPrice = parseInt(maxPrice)
+
+      // Handle stock filter
+      const inStock = searchParams.get('inStock')
+      if (inStock === 'true') urlFilters.inStock = true
     }
-
-    // Handle brands (support both 'brand' and 'brands' parameters)
-    const brands = [...searchParams.getAll('brand'), ...searchParams.getAll('brands')].filter(
-      Boolean,
-    )
-    if (brands.length > 0) {
-      urlFilters.brands = brands
-    }
-
-    // Handle price range
-    const minPrice = searchParams.get('minPrice')
-    const maxPrice = searchParams.get('maxPrice')
-    if (minPrice) urlFilters.minPrice = parseInt(minPrice)
-    if (maxPrice) urlFilters.maxPrice = parseInt(maxPrice)
-
-    // Handle stock filter
-    const inStock = searchParams.get('inStock')
-    if (inStock === 'true') urlFilters.inStock = true
 
     setCurrentFilters(urlFilters)
   }, [searchParams])
