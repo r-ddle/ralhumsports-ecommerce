@@ -2,7 +2,7 @@ import { MetadataRoute } from 'next'
 
 export default function robots(): MetadataRoute.Robots {
   const baseUrl = 'https://ralhumsports.lk'
-  
+
   return {
     rules: [
       {
@@ -55,8 +55,6 @@ export default function robots(): MetadataRoute.Robots {
           '/admin/*',
           '/api',
           '/api/*',
-          '/_next',
-          '/_next/*',
           '/checkout',
           '/checkout/*',
           '/*.json',
@@ -69,32 +67,13 @@ export default function robots(): MetadataRoute.Robots {
       },
       {
         userAgent: 'Bingbot',
-        allow: [
-          '/',
-          '/products',
-          '/products/*',
-          '/brands',
-          '/about',
-          '/contact',
-        ],
-        disallow: [
-          '/admin',
-          '/api',
-          '/_next',
-          '/checkout',
-          '/private',
-        ],
+        allow: ['/', '/products', '/products/*', '/brands', '/about', '/contact'],
+        disallow: ['/admin', '/api', '/_next', '/checkout', '/private'],
         crawlDelay: 2,
       },
       // Block bad bots
       {
-        userAgent: [
-          'AhrefsBot',
-          'SemrushBot',
-          'MJ12bot',
-          'DotBot',
-          'AspiegelBot',
-        ],
+        userAgent: ['AhrefsBot', 'SemrushBot', 'MJ12bot', 'DotBot', 'AspiegelBot'],
         disallow: '/',
       },
     ],
