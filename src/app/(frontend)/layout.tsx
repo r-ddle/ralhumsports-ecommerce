@@ -21,16 +21,16 @@ const inter = Inter({
 })
 
 export const metadata: Metadata = {
-  metadataBase: new URL('https://ralhumsports.lk'),
+  metadataBase: new URL('https://www.ralhumsports.lk'),
   title: {
     template: '%s | Ralhum Sports Sri Lanka - Premium Sports Equipment Store',
-    default: 'Ralhum Sports Sri Lanka - Premium Sports Equipment & Gear | ralhumsports.lk'
+    default: 'Ralhum Sports Sri Lanka - Premium Sports Equipment & Gear | ralhumsports.lk',
   },
   description:
     'Shop premium sports equipment at Ralhum Sports Sri Lanka (ralhumsports.lk). Official distributor of Gray-Nicolls, Gilbert, Molten & Grays. Fast nationwide delivery across Sri Lanka.',
   keywords: [
     'ralhumsports.lk',
-    'ralhum sports sri lanka', 
+    'ralhum sports sri lanka',
     'ralhum store',
     'sports equipment sri lanka',
     'cricket gear sri lanka',
@@ -48,7 +48,7 @@ export const metadata: Metadata = {
     'official sports distributor',
     'sports gear western province',
     'athletic equipment sri lanka',
-    'sportswear colombo'
+    'sportswear colombo',
   ].join(', '),
   authors: [{ name: 'Ralhum Sports Team' }],
   creator: 'Ralhum Sports Sri Lanka',
@@ -143,7 +143,8 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
               name: 'Ralhum Sports Sri Lanka',
               url: 'https://ralhumsports.lk',
               logo: 'https://ralhumsports.lk/ralhumlogo.svg',
-              description: 'Premium sports equipment store in Sri Lanka. Official distributor of Gray-Nicolls, Gilbert, Molten & Grays.',
+              description:
+                'Premium sports equipment store in Sri Lanka. Official distributor of Gray-Nicolls, Gilbert, Molten & Grays.',
               address: {
                 '@type': 'PostalAddress',
                 addressCountry: 'LK',
@@ -157,9 +158,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
               },
               sameAs: [
                 'https://www.facebook.com/ralhumsports',
-                'https://www.instagram.com/ralhumsports'
-              ]
-            })
+                'https://www.instagram.com/ralhumsports',
+              ],
+            }),
           }}
         />
       </head>
