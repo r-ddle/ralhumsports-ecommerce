@@ -117,40 +117,73 @@ export async function GET(request: NextRequest) {
     // --- Hierarchical category filters (priority over legacy category filter) ---
     if (sportsCategory || sport || sportsItem) {
       try {
-        // Convert slugs to IDs for hierarchical filters
-        const hierarchicalSlugs = []
-        if (sportsCategory) hierarchicalSlugs.push(sportsCategory)
-        if (sport) hierarchicalSlugs.push(sport)
-        if (sportsItem) hierarchicalSlugs.push(sportsItem)
+        // Handle both slugs and IDs for hierarchical filters
+        const hierarchicalIdentifiers = []
+        if (sportsCategory) hierarchicalIdentifiers.push(sportsCategory)
+        if (sport) hierarchicalIdentifiers.push(sport)
+        if (sportsItem) hierarchicalIdentifiers.push(sportsItem)
 
-        const categoryResults = await payload.find({
-          collection: 'categories',
-          where: { slug: { in: hierarchicalSlugs } },
-          limit: 100,
-        })
-
-        if (categoryResults.docs.length > 0) {
-          const categoryMap = new Map()
-          categoryResults.docs.forEach((cat) => {
-            categoryMap.set(cat.slug, cat.id)
-          })
-
-          if (sportsCategory && categoryMap.has(sportsCategory)) {
-            additionalConditions.push({
-              'categorySelection.sportsCategory': { equals: categoryMap.get(sportsCategory) },
+        // Check if identifiers are numeric IDs or string slugs
+        const isNumericId = (identifier: string) => /^\d+$/.test(identifier)
+        
+        const categoryMap = new Map()
+        
+        for (const identifier of hierarchicalIdentifiers) {
+          if (isNumericId(identifier)) {
+            // If it's a numeric ID, use it directly
+            categoryMap.set(identifier, parseInt(identifier))
+          } else {
+            // If it's a slug, find the category by slug
+            const categoryResult = await payload.find({
+              collection: 'categories',
+              where: { slug: { equals: identifier } },
+              limit: 1,
             })
+            if (categoryResult.docs.length > 0) {
+              categoryMap.set(identifier, categoryResult.docs[0].id)
+            }
           }
-          if (sport && categoryMap.has(sport)) {
+        }
+
+        // Apply hierarchical category filters
+        if (sportsCategory) {
+          const categoryId = isNumericId(sportsCategory) 
+            ? parseInt(sportsCategory) 
+            : categoryMap.get(sportsCategory)
+          if (categoryId) {
             additionalConditions.push({
-              'categorySelection.sports': { equals: categoryMap.get(sport) },
-            })
-          }
-          if (sportsItem && categoryMap.has(sportsItem)) {
-            additionalConditions.push({
-              'categorySelection.sportsItem': { equals: categoryMap.get(sportsItem) },
+              'categorySelection.sportsCategory': { equals: categoryId },
             })
           }
         }
+        if (sport) {
+          const sportId = isNumericId(sport) 
+            ? parseInt(sport) 
+            : categoryMap.get(sport)
+          if (sportId) {
+            additionalConditions.push({
+              'categorySelection.sports': { equals: sportId },
+            })
+          }
+        }
+        if (sportsItem) {
+          const itemId = isNumericId(sportsItem) 
+            ? parseInt(sportsItem) 
+            : categoryMap.get(sportsItem)
+          if (itemId) {
+            additionalConditions.push({
+              'categorySelection.sportsItem': { equals: itemId },
+            })
+          }
+        }
+        
+        console.log(`\x1b[32m[Products API] Applied hierarchical filters:\x1b[0m`, {
+          sportsCategory: sportsCategory && categoryMap.get(sportsCategory),
+          sport: sport && categoryMap.get(sport),
+          sportsItem: sportsItem && categoryMap.get(sportsItem),
+          conditions: additionalConditions
+        })
+        
       } catch (categoryError) {
         console.error(
           `\x1b[31m[Products API ERROR]\x1b[0m Error finding hierarchical categories:`,

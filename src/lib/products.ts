@@ -175,6 +175,13 @@ export async function getProducts(
       minPrice: filters.priceRange?.min,
       maxPrice: filters.priceRange?.max,
       inStock: filters.inStock,
+      // Add hierarchical category filters
+      sportsCategory: filters.sportsCategory,
+      sport: filters.sport,
+      sportsItem: filters.sportsItem,
+      // Add legacy filters for backward compatibility
+      category: filters.categories && filters.categories.length > 0 ? filters.categories[0] : undefined,
+      brand: filters.brands && filters.brands.length > 0 ? filters.brands[0] : undefined,
     })
 
     if (!response.success) {

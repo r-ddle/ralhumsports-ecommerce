@@ -125,41 +125,48 @@ export function ProductCard({
               </div>
             </div>
 
-            {/* Content Section */}
-            <CardContent className="flex-1 p-4 sm:p-6 flex flex-col justify-between">
-              <div>
-                {/* Brand */}
+            {/* Content Section with Unified Layout */}
+            <CardContent className="flex-1 p-4 sm:p-6 grid grid-rows-[auto_auto_auto_auto_1fr_auto] gap-2 sm:gap-3">
+              {/* Brand */}
+              <div className="min-h-[24px] flex items-start">
                 {showBrand && product.brand && (
                   <Badge
                     variant="outline"
-                    className="text-xs mb-2 w-fit text-brand-secondary border-brand-secondary/30"
+                    className="text-xs w-fit text-brand-secondary border-brand-secondary/30"
                   >
                     {product.brand.name}
                   </Badge>
                 )}
+              </div>
 
-                {/* Product Name */}
-                <h3 className="text-lg sm:text-xl font-bold text-text-primary mb-2 line-clamp-2 group-hover:text-brand-primary transition-colors">
+              {/* Product Name - Consistent height */}
+              <div className="min-h-[56px] flex items-start">
+                <h3 className="text-lg sm:text-xl font-bold text-text-primary line-clamp-2 group-hover:text-brand-primary transition-colors">
                   {product.name}
                 </h3>
+              </div>
 
-                {/* Category */}
+              {/* Category */}
+              <div className="min-h-[24px] flex items-start">
                 {showCategory && product.category && (
-                  <Badge variant="secondary" className="text-xs mb-3 w-fit">
+                  <Badge variant="secondary" className="text-xs w-fit">
                     {product.category.name}
                   </Badge>
                 )}
+              </div>
 
+              {/* Description and Features - Flexible height */}
+              <div className="flex-1 min-h-0 space-y-3">
                 {/* Description */}
                 {product.description && (
-                  <p className="text-sm text-text-secondary line-clamp-2 mb-3">
+                  <p className="text-sm text-text-secondary line-clamp-2">
                     {typeof product.description === 'string' ? product.description : ''}
                   </p>
                 )}
 
                 {/* Features - Only in List View */}
                 {product.features && product.features.length > 0 && (
-                  <div className="mb-3">
+                  <div>
                     <h4 className="text-sm font-semibold text-text-primary mb-2">Key Features:</h4>
                     <ul className="space-y-1">
                       {product.features.slice(0, 3).map((feature, index) => (
@@ -177,7 +184,7 @@ export function ProductCard({
 
                 {/* Rating */}
                 {product.rating && product.rating > 0 && (
-                  <div className="flex items-center gap-2 mb-3">
+                  <div className="flex items-center gap-2">
                     <div className="flex items-center gap-0.5">
                       {[...Array(5)].map((_, i) => (
                         <Star
@@ -195,8 +202,8 @@ export function ProductCard({
                 )}
               </div>
 
-              {/* Price and Actions */}
-              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+              {/* Price and Actions - Fixed bottom section */}
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 min-h-[60px]">
                 <div className="flex flex-col gap-1">
                   <div className="flex items-baseline gap-2">
                     <span className="text-2xl font-black text-brand-primary">Rs. {priceInLKR}</span>
@@ -327,58 +334,63 @@ export function ProductCard({
             )}
           </div>
 
-          {/* Mobile-Optimized Content Section */}
-          <CardContent className="p-3 sm:p-4 md:p-5 flex-1 flex flex-col">
-            {/* Brand */}
-            {showBrand && product.brand && (
-              <Badge
-                variant="outline"
-                className="text-[10px] sm:text-xs mb-1.5 sm:mb-2 w-fit text-brand-secondary border-brand-secondary/30"
-              >
-                {product.brand.name}
-              </Badge>
-            )}
+          {/* Unified Content Section with CSS Grid */}
+          <CardContent className="p-3 sm:p-4 flex-1 grid grid-rows-[auto_48px_auto_auto_auto_auto_auto] gap-1.5 sm:gap-2">
+            {/* Brand - Fixed height section */}
+            <div className="min-h-[20px] flex items-start">
+              {showBrand && product.brand && (
+                <Badge
+                  variant="outline"
+                  className="text-[10px] sm:text-xs w-fit text-brand-secondary border-brand-secondary/30"
+                >
+                  {product.brand.name}
+                </Badge>
+              )}
+            </div>
 
-            {/* Product Name - Mobile Optimized */}
-            <h3 className="text-sm sm:text-base md:text-base font-bold text-text-primary mb-1.5 sm:mb-2 line-clamp-2 sm:line-clamp-3 flex-1 group-hover:text-brand-primary transition-colors leading-tight">
-              {product.name}
-            </h3>
+            {/* Product Name - Fixed height with consistent line-clamp */}
+            <div className="h-12 sm:h-12 flex items-start">
+              <h3 className="text-sm sm:text-base font-bold text-text-primary line-clamp-2 group-hover:text-brand-primary transition-colors leading-tight w-full">
+                {product.name}
+              </h3>
+            </div>
 
-            {/* Category */}
-            {showCategory && product.category && (
-              <Badge
-                variant="secondary"
-                className="text-[10px] sm:text-xs mb-2 sm:mb-3 w-fit text-white"
-              >
-                {product.category.name}
-              </Badge>
-            )}
+            {/* Category - Fixed height section */}
+            <div className="min-h-[20px] flex items-start">
+              {showCategory && product.category && (
+                <Badge variant="secondary" className="text-[10px] sm:text-xs w-fit text-white">
+                  {product.category.name}
+                </Badge>
+              )}
+            </div>
 
-            {/* Rating - Mobile Optimized */}
-            {product.rating && product.rating > 0 && (
-              <div className="flex items-center gap-1 mb-2">
-                <div className="flex items-center gap-0.5">
-                  {[...Array(5)].map((_, i) => (
-                    <Star
-                      key={i}
-                      className={`w-2.5 h-2.5 sm:w-3 sm:h-3 ${
-                        i < Math.floor(product.rating!)
-                          ? 'fill-yellow-400 text-yellow-400'
-                          : 'text-gray-300'
-                      }`}
-                    />
-                  ))}
+            {/* Rating - Fixed height section */}
+            <div className="min-h-[18px] flex items-start">
+              {product.rating && product.rating > 0 && (
+                <div className="flex items-center gap-1">
+                  <div className="flex items-center gap-0.5">
+                    {[...Array(5)].map((_, i) => (
+                      <Star
+                        key={i}
+                        className={`w-2.5 h-2.5 sm:w-3 sm:h-3 ${
+                          i < Math.floor(product.rating!)
+                            ? 'fill-yellow-400 text-yellow-400'
+                            : 'text-gray-300'
+                        }`}
+                      />
+                    ))}
+                  </div>
+                  <span className="text-[9px] sm:text-[10px] text-text-secondary">
+                    ({product.rating})
+                  </span>
                 </div>
-                <span className="text-[9px] sm:text-[10px] text-text-secondary">
-                  ({product.rating})
-                </span>
-              </div>
-            )}
+              )}
+            </div>
 
-            {/* Price - Mobile Optimized */}
-            <div className="flex flex-col gap-0.5 sm:gap-1 mb-2 sm:mb-3">
+            {/* Price - Fixed height section */}
+            <div className="min-h-[28px] sm:min-h-[32px] flex flex-col justify-start">
               <div className="flex items-baseline gap-1 sm:gap-2">
-                <span className="text-base sm:text-lg md:text-xl font-black text-brand-primary">
+                <span className="text-base sm:text-lg font-black text-brand-primary">
                   Rs. {priceInLKR}
                 </span>
                 {hasDiscount && (
@@ -387,6 +399,10 @@ export function ProductCard({
                   </span>
                 )}
               </div>
+            </div>
+
+            {/* Stock Info - Fixed height section */}
+            <div className="min-h-[16px] flex items-start">
               {availableStock <= 5 && availableStock > 0 && (
                 <span className="text-[9px] sm:text-xs text-text-secondary">
                   Only {availableStock} left
@@ -394,14 +410,16 @@ export function ProductCard({
               )}
             </div>
 
-            {/* Action Button - Mobile Optimized */}
-            <Button
-              size="sm"
-              disabled={isOutOfStock}
-              className="w-full text-xs sm:text-sm py-1.5 sm:py-2 mt-auto text-white"
-            >
-              {isOutOfStock ? 'Out of Stock' : 'View Details'}
-            </Button>
+            {/* Action Button - Fixed height section */}
+            <div className="min-h-[32px] sm:min-h-[36px] flex items-end">
+              <Button
+                size="sm"
+                disabled={isOutOfStock}
+                className="w-full text-xs sm:text-sm h-8 sm:h-9 text-white"
+              >
+                {isOutOfStock ? 'Out of Stock' : 'View Details'}
+              </Button>
+            </div>
           </CardContent>
         </Card>
       </Link>
