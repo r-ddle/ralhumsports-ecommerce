@@ -61,16 +61,13 @@ export function PayHereCheckout({
       paymentLogger.success(orderId)
       setIsProcessing(false)
 
-      // Show success toast with shorter duration
-      const successToast = toast.success('Payment completed successfully!', {
+      // Immediately redirect - don't delay
+      onSuccess?.(orderId)
+
+      // Show success message
+      toast.success('Payment completed successfully!', {
         duration: 2000,
       })
-
-      // Clear the toast and redirect after a short delay
-      setTimeout(() => {
-        toast.dismiss(successToast)
-        onSuccess?.(orderId)
-      }, 1500)
     }
 
     window.payhere.onDismissed = () => {
@@ -105,7 +102,7 @@ export function PayHereCheckout({
       toast.error(userMessage, { duration: 6000 })
       onError?.(error)
     }
-  }, [isLoaded, onSuccess, onError, onDismiss])
+  }, [isLoaded, onSuccess, onError, onDismiss, orderId])
 
   const handlePayment = async () => {
     setIsProcessing(true)
