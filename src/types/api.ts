@@ -233,6 +233,7 @@ export interface OrderCustomer {
 }
 
 export interface OrderInput {
+  customerId?: string // Add customer ID for order tracking
   customer: OrderCustomer
   items: Array<{
     id?: string

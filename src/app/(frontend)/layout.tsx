@@ -6,6 +6,8 @@ import Navigation from '@/components/navigation'
 import Footer from '@/components/footer'
 import { CartProvider } from '@/hooks/use-cart'
 import { CartSidebar } from '@/components/cart/cart-sidebar'
+import { OrdersProvider } from '@/hooks/use-orders'
+import { OrdersSidebar } from '@/components/orders/orders-sidebar'
 import { Toaster } from '@/components/ui/sonner'
 import ErrorBoundary from '@/components/error-boundary'
 import { Suspense } from 'react'
@@ -169,26 +171,29 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       >
         <ErrorBoundary>
           <CartProvider>
-            <Suspense fallback={<LoadingSpinner />}>
-              <NavigationProvider>
-                <div className="flex flex-col min-h-screen">
-                  <Suspense fallback={<LoadingSpinner />}>
-                    <Navigation />
-                  </Suspense>
+            <OrdersProvider>
+              <Suspense fallback={<LoadingSpinner />}>
+                <NavigationProvider>
+                  <div className="flex flex-col min-h-screen">
+                    <Suspense fallback={<LoadingSpinner />}>
+                      <Navigation />
+                    </Suspense>
 
-                  <main className="flex-1">
-                    <Suspense fallback={<LoadingSpinner />}>{children}</Suspense>
-                  </main>
+                    <main className="flex-1">
+                      <Suspense fallback={<LoadingSpinner />}>{children}</Suspense>
+                    </main>
 
-                  <Suspense fallback={null}>
-                    <Footer />
-                  </Suspense>
+                    <Suspense fallback={null}>
+                      <Footer />
+                    </Suspense>
 
-                  <CartSidebar />
-                </div>
-                <Toaster />
-              </NavigationProvider>
-            </Suspense>
+                    <CartSidebar />
+                    <OrdersSidebar />
+                  </div>
+                  <Toaster />
+                </NavigationProvider>
+              </Suspense>
+            </OrdersProvider>
           </CartProvider>
         </ErrorBoundary>
         <Analytics />

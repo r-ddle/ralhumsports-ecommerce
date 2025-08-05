@@ -729,6 +729,10 @@ export interface Order {
    * Auto-generated order identifier
    */
   orderNumber: string;
+  /**
+   * PayloadCMS customer identifier for order tracking
+   */
+  customerId: string;
   customer: {
     /**
      * Customer full name
@@ -1512,6 +1516,7 @@ export interface ProductsSelect<T extends boolean = true> {
  */
 export interface OrdersSelect<T extends boolean = true> {
   orderNumber?: T;
+  customerId?: T;
   customer?:
     | T
     | {

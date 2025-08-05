@@ -1,6 +1,7 @@
 import { vercelBlobStorage } from '@payloadcms/storage-vercel-blob'
 import { vercelPostgresAdapter } from '@payloadcms/db-vercel-postgres'
 import { lexicalEditor } from '@payloadcms/richtext-lexical'
+import { nodemailerAdapter } from '@payloadcms/email-nodemailer'
 import path from 'path'
 import { buildConfig } from 'payload'
 import { fileURLToPath } from 'url'
@@ -116,6 +117,20 @@ export default buildConfig({
     'http://localhost:3000',
     'https://localhost:3000',
   ].filter(Boolean),
+  // Temporarily disable email until we fix the configuration
+  // email: nodemailerAdapter({
+  //   defaultFromAddress: process.env.SMTP_FROM || 'noreply@ralhumsports.lk',
+  //   defaultFromName: 'Ralhum Sports',
+  //   transport: {
+  //     host: process.env.SMTP_HOST || 'sandbox.smtp.mailtrap.io',
+  //     port: parseInt(process.env.SMTP_PORT || '2525'),
+  //     secure: false,
+  //     auth: {
+  //       user: process.env.SMTP_USER || '',
+  //       pass: process.env.SMTP_PASS || '',
+  //     },
+  //   },
+  // }),
   plugins: [
     vercelBlobStorage({
       collections: {
