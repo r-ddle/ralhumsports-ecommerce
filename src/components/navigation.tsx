@@ -4,6 +4,7 @@ import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react'
 import { Button } from '@/components/ui/button'
 import { Menu, X, Phone, ChevronRight, ShoppingBag, StoreIcon, Sparkles } from 'lucide-react'
 import { CartButton } from '@/components/cart/cart-button'
+import { OrdersButton } from '@/components/orders/orders-button'
 import Link from 'next/link'
 import { SITE_CONFIG } from '@/config/site-config'
 import { motion, AnimatePresence } from 'framer-motion'
@@ -954,6 +955,9 @@ export default function EnhancedNavigation() {
             {/* Desktop Actions */}
             <div className="hidden md:flex items-center space-x-2 lg:space-x-3">
               <div style={{ transform: 'scale(1.1)' }}>
+                <OrdersButton />
+              </div>
+              <div style={{ transform: 'scale(1.1)' }}>
                 <CartButton />
               </div>
               <Button
@@ -972,6 +976,9 @@ export default function EnhancedNavigation() {
 
             {/* Mobile Actions */}
             <div className="md:hidden flex items-center space-x-2">
+              <div style={{ transform: 'scale(1.1)' }}>
+                <OrdersButton />
+              </div>
               <div style={{ transform: 'scale(1.1)' }}>
                 <CartButton />
               </div>

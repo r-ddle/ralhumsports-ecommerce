@@ -8,6 +8,8 @@ import { Label } from '@/components/ui/label'
 import { Badge } from '@/components/ui/badge'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Separator } from '@/components/ui/separator'
+import { useOrderTracking } from '@/hooks/use-orders'
+import { getCustomerOrders, getCustomerIdForAPI } from '@/lib/customer-id'
 import {
   Search,
   Package,
@@ -104,6 +106,8 @@ export default function OrderTrackingPage() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [prefersReducedMotion, setPrefersReducedMotion] = useState(false)
+  const [recentOrders, setRecentOrders] = useState<Partial<Order>[]>([])
+  const [showRecentOrders, setShowRecentOrders] = useState(false)
   const searchParams =
     typeof window !== 'undefined' ? new URLSearchParams(window.location.search) : null
 
@@ -120,7 +124,10 @@ export default function OrderTrackingPage() {
   useEffect(() => {
     if (searchParams) {
       const queryOrderId =
-        searchParams.get('orderId') || searchParams.get('orderNumber') || searchParams.get('code')
+        searchParams.get('orderId') ||
+        searchParams.get('orderNumber') ||
+        searchParams.get('code') ||
+        searchParams.get('id')
       if (queryOrderId) {
         setOrderId(queryOrderId)
         setTimeout(() => {
@@ -130,6 +137,13 @@ export default function OrderTrackingPage() {
           }
         }, 200)
       }
+    }
+
+    // Load recent orders from localStorage
+    const customerOrders = getCustomerOrders()
+    if (customerOrders.length > 0) {
+      setRecentOrders(customerOrders.slice(0, 5)) // Show last 5 orders
+      setShowRecentOrders(true)
     }
   }, [])
 
@@ -145,6 +159,58 @@ export default function OrderTrackingPage() {
     setError(null)
 
     try {
+      // First, try to find the order in localStorage (customer's own orders)
+      const customerOrders = getCustomerOrders()
+      const localOrder = customerOrders.find(
+        (order) =>
+          order.orderNumber?.toLowerCase() === orderId.trim().toLowerCase() ||
+          order.orderId?.toLowerCase() === orderId.trim().toLowerCase(),
+      )
+
+      if (localOrder) {
+        // Convert localStorage order to display format
+        const convertedOrder: Order = {
+          id: localOrder.id || localOrder.orderId,
+          orderNumber: localOrder.orderNumber || localOrder.orderId,
+          customerName: localOrder.customer?.fullName || localOrder.customerName || 'Customer',
+          customerEmail: localOrder.customer?.email || localOrder.customerEmail || '',
+          customerPhone: localOrder.customer?.phone || localOrder.customerPhone || '',
+          deliveryAddress: localOrder.customer?.address
+            ? `${localOrder.customer.address.street}, ${localOrder.customer.address.city}, ${localOrder.customer.address.province} ${localOrder.customer.address.postalCode}`
+            : localOrder.deliveryAddress || '',
+          orderItems: (localOrder.items || localOrder.orderItems || []).map((item: any) => ({
+            productId: item.productId || '',
+            productName: item.productName || item.product?.title || '',
+            productSku: item.productSku || item.product?.sku || '',
+            unitPrice: item.unitPrice || item.variant?.price || 0,
+            quantity: item.quantity,
+            selectedSize: item.selectedSize || item.variant?.size,
+            selectedColor: item.selectedColor || item.variant?.color,
+            subtotal: item.subtotal || item.quantity * (item.unitPrice || item.variant?.price || 0),
+          })),
+          orderSubtotal: localOrder.pricing?.subtotal || localOrder.orderSubtotal || 0,
+          shippingCost: 0,
+          discount: 0,
+          orderTotal: localOrder.pricing?.total || localOrder.orderTotal || 0,
+          orderStatus: (localOrder.status ||
+            localOrder.orderStatus ||
+            'pending') as Order['orderStatus'],
+          paymentStatus: (localOrder.paymentStatus || 'pending') as Order['paymentStatus'],
+          paymentMethod: localOrder.paymentMethod,
+          specialInstructions:
+            localOrder.customer?.specialInstructions || localOrder.specialInstructions || '',
+          createdAt: localOrder.createdAt || new Date().toISOString(),
+          updatedAt: localOrder.updatedAt || new Date().toISOString(),
+        }
+
+        setOrder(convertedOrder)
+        setError(null)
+        toast.success('Order found in your history!')
+        setLoading(false)
+        return
+      }
+
+      // If not found locally, try the API
       const response = await fetch(
         `/api/public/orders/track?orderNumber=${encodeURIComponent(orderId.trim())}`,
       )
@@ -401,6 +467,85 @@ export default function OrderTrackingPage() {
                 </CardContent>
               </Card>
             </motion.div>
+
+            {/* Recent Orders Quick Access */}
+            {showRecentOrders && recentOrders.length > 0 && !order && (
+              <motion.div variants={itemVariants}>
+                <Card className="bg-brand-surface border-brand-border shadow-2xl">
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2 text-xl font-bold text-text-primary">
+                      <div className="p-2 rounded-lg bg-gradient-to-br from-green-500 to-emerald-500 text-white">
+                        <Clock className="w-5 h-5" />
+                      </div>
+                      Your Recent Orders
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-3">
+                      {recentOrders.map((recentOrder, index) => (
+                        <div
+                          key={index}
+                          className="flex items-center justify-between p-4 bg-brand-background rounded-xl border border-brand-border hover:shadow-md transition-all duration-200 cursor-pointer"
+                          onClick={() => {
+                            setOrderId(String(recentOrder.id || recentOrder.orderNumber || ''))
+                            const form = document.querySelector('form')
+                            if (form) {
+                              form.dispatchEvent(
+                                new Event('submit', { cancelable: true, bubbles: true }),
+                              )
+                            }
+                          }}
+                        >
+                          <div className="flex-1">
+                            <p className="font-bold text-text-primary">
+                              {recentOrder.orderNumber || recentOrder.id}
+                            </p>
+                            <p className="text-sm text-text-secondary">
+                              {new Date(recentOrder.createdAt || Date.now()).toLocaleDateString()} •
+                              {recentOrder.orderItems?.length ||
+                                recentOrder.orderItems?.length ||
+                                0}{' '}
+                              items
+                            </p>
+                          </div>
+                          <div className="text-right">
+                            <p className="font-bold text-brand-secondary">
+                              LKR{' '}
+                              {(
+                                recentOrder.orderTotal ||
+                                recentOrder.orderTotal ||
+                                0
+                              ).toLocaleString()}
+                            </p>
+                            <Badge
+                              className={`text-xs ${
+                                ORDER_STATUS_CONFIG[recentOrder.orderStatus || 'pending']?.color ||
+                                'bg-gray-100 text-gray-800'
+                              }`}
+                            >
+                              {ORDER_STATUS_CONFIG[
+                                (recentOrder.orderStatus ||
+                                  recentOrder.orderStatus ||
+                                  'pending') as keyof typeof ORDER_STATUS_CONFIG
+                              ]?.label ||
+                                recentOrder.orderStatus ||
+                                recentOrder.orderStatus ||
+                                'pending'}
+                            </Badge>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                    <div className="mt-4 p-3 bg-gradient-to-r from-blue-50 to-cyan-50 rounded-lg border border-blue-200">
+                      <p className="text-sm text-blue-800">
+                        💡 <strong>Quick Tip:</strong> Click on any order above to track it
+                        instantly!
+                      </p>
+                    </div>
+                  </CardContent>
+                </Card>
+              </motion.div>
+            )}
 
             {/* Enhanced Error Display */}
             <AnimatePresence>

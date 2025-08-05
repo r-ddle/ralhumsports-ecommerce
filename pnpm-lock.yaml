@@ -17,6 +17,9 @@ importers:
       '@payloadcms/db-vercel-postgres':
         specifier: 3.44.0
         version: 3.44.0(@types/pg@8.11.6)(payload@3.44.0(bufferutil@4.0.9)(graphql@16.11.0)(typescript@5.7.3)(utf-8-validate@6.0.5))
+      '@payloadcms/email-nodemailer':
+        specifier: ^3.49.1
+        version: 3.49.1(payload@3.44.0(bufferutil@4.0.9)(graphql@16.11.0)(typescript@5.7.3)(utf-8-validate@6.0.5))
       '@payloadcms/next':
         specifier: 3.44.0
         version: 3.44.0(@types/react@19.1.0)(graphql@16.11.0)(monaco-editor@0.52.2)(next@15.3.0(@babel/core@7.28.0)(@playwright/test@1.50.0)(react-dom@19.1.0(react@19.1.0))(react@19.1.0)(sass@1.77.4))(payload@3.44.0(bufferutil@4.0.9)(graphql@16.11.0)(typescript@5.7.3)(utf-8-validate@6.0.5))(react-dom@19.1.0(react@19.1.0))(react@19.1.0)(typescript@5.7.3)
@@ -197,6 +200,9 @@ importers:
       tailwindcss-animate:
         specifier: ^1.0.7
         version: 1.0.7(tailwindcss@3.4.17)
+      uuid:
+        specifier: ^11.1.0
+        version: 11.1.0
       vaul:
         specifier: ^0.9.6
         version: 0.9.9(@types/react-dom@19.1.2(@types/react@19.1.0))(@types/react@19.1.0)(react-dom@19.1.0(react@19.1.0))(react@19.1.0)
@@ -1520,6 +1526,12 @@ packages:
     engines: {node: ^18.20.2 || >=20.9.0}
     peerDependencies:
       payload: 3.44.0
+
+  '@payloadcms/email-nodemailer@3.49.1':
+    resolution: {integrity: sha512-9Y4OVPi+wwScCqSXOYHvK/Yuz9k93cCGJIJp/wBM7pJwv/IMPQobNWv1qBgRtPGO9H//EFf+7CMoRN6BVyf6yw==}
+    engines: {node: ^18.20.2 || >=20.9.0}
+    peerDependencies:
+      payload: 3.49.1
 
   '@payloadcms/graphql@3.44.0':
     resolution: {integrity: sha512-6YsRSYAyL3HMl1geRTvVCljOJ109fl1q23+BsoVCf+0cqkJGJfodDJxVzReQFLtFAuMhZAHb4d+p7GitJ4uozw==}
@@ -5807,6 +5819,10 @@ packages:
     resolution: {integrity: sha512-8XkAphELsDnEGrDxUOHB3RGvXz6TeuYSGEZBOjtTtPm2lwhGBjLgOzLHB63IUWfBpNucQjND6d3AOudO+H3RWQ==}
     hasBin: true
 
+  uuid@11.1.0:
+    resolution: {integrity: sha512-0/A9rDy9P7cJ+8w1c9WD9V//9Wj15Ce2MPz8Ri6032usz+NfePxx5AcN3bN+r6ZL6jEo066/yNYB3tn4pQEx+A==}
+    hasBin: true
+
   uuid@9.0.0:
     resolution: {integrity: sha512-MXcSTerfPa4uqyzStbRoTgt5XIe3x5+42+q1sDuy3R5MDk66URdLMOZe5aPX/SQd+kuYAh0FdP/pO28IkQyTeg==}
     hasBin: true
@@ -7619,6 +7635,11 @@ snapshots:
       - sqlite3
 
   '@payloadcms/email-nodemailer@3.44.0(payload@3.44.0(bufferutil@4.0.9)(graphql@16.11.0)(typescript@5.7.3)(utf-8-validate@6.0.5))':
+    dependencies:
+      nodemailer: 6.9.16
+      payload: 3.44.0(bufferutil@4.0.9)(graphql@16.11.0)(typescript@5.7.3)(utf-8-validate@6.0.5)
+
+  '@payloadcms/email-nodemailer@3.49.1(payload@3.44.0(bufferutil@4.0.9)(graphql@16.11.0)(typescript@5.7.3)(utf-8-validate@6.0.5))':
     dependencies:
       nodemailer: 6.9.16
       payload: 3.44.0(bufferutil@4.0.9)(graphql@16.11.0)(typescript@5.7.3)(utf-8-validate@6.0.5)
@@ -12592,6 +12613,8 @@ snapshots:
   util-deprecate@1.0.2: {}
 
   uuid@10.0.0: {}
+
+  uuid@11.1.0: {}
 
   uuid@9.0.0: {}
 

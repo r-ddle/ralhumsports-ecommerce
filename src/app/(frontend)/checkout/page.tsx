@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { useCart } from '@/hooks/use-cart'
+import { useOrders } from '@/hooks/use-orders'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -17,6 +18,7 @@ import {
 import { Separator } from '@/components/ui/separator'
 import { Badge } from '@/components/ui/badge'
 import { Alert, AlertDescription } from '@/components/ui/alert'
+import { ScrollArea } from '@/components/ui/scroll-area'
 import {
   CreditCard,
   MessageCircle,
@@ -30,6 +32,9 @@ import {
   MapPin,
   Package,
   Loader2,
+  Minus,
+  Plus,
+  Trash2,
 } from 'lucide-react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
@@ -48,10 +53,19 @@ import Image from 'next/image'
 import { motion, AnimatePresence, easeOut } from 'framer-motion'
 import { SITE_CONFIG } from '@/config/site-config'
 import { PayHereCheckout } from '@/components/payherecheckout'
+import {
+  getOrCreateCustomerId,
+  updateCustomerInfo,
+  storeOrderWithCustomerId,
+  findPendingOrderForCart,
+  getCustomerInfo,
+  clearPendingOrders,
+} from '@/lib/customer-id'
 
 export default function CheckoutPage() {
   const router = useRouter()
-  const { cart, clearCart } = useCart()
+  const { cart, clearCart, updateQuantity, removeItem, addItem } = useCart()
+  const { refreshOrders } = useOrders()
   const [prefersReducedMotion, setPrefersReducedMotion] = useState(false)
 
   const [checkoutState, setCheckoutState] = useState<CheckoutState>({
@@ -72,6 +86,7 @@ export default function CheckoutPage() {
   const [apiError, setApiError] = useState<string | null>(null)
   const [isProcessing, setIsProcessing] = useState(false)
   const [isPaymentProcessing, setIsPaymentProcessing] = useState(false)
+  const [orderCreationInProgress, setOrderCreationInProgress] = useState(false)
 
   // Memoized form validation state
   const [isFormValid, setIsFormValid] = useState(false)
@@ -131,6 +146,47 @@ export default function CheckoutPage() {
     }
   }, [cart.items.length, showConfirmation, isPaymentProcessing, router])
 
+  // Check for existing pending orders on mount and when cart changes
+  useEffect(() => {
+    if (cart.items.length === 0) return
+
+    const pendingOrderId = findPendingOrderForCart(cart.items)
+
+    if (pendingOrderId) {
+      console.log('[Checkout] Found existing pending order:', pendingOrderId)
+
+      // Get customer info from localStorage to pre-fill form
+      const customerInfo = getCustomerInfo()
+
+      if (customerInfo) {
+        // Pre-populate form with existing customer info
+        setCheckoutState((prev) => ({
+          ...prev,
+          orderId: pendingOrderId,
+          customerInfo: {
+            fullName: customerInfo.fullName || '',
+            email: customerInfo.email || '',
+            phone: customerInfo.phone || '',
+            // Try to get address from stored customer info
+            address: {
+              street: '', // Will need to be filled if not stored
+              city: '',
+              postalCode: '',
+              province: '',
+            },
+            specialInstructions: '',
+          },
+        }))
+
+        // Show success message to user
+        toast.success('Resuming your previous order', {
+          description: `Order ${pendingOrderId} is ready for payment`,
+          duration: 4000,
+        })
+      }
+    }
+  }, [cart.items])
+
   const validateForm = (): boolean => {
     const errors: FormErrors = {}
     const { customerInfo } = checkoutState
@@ -172,14 +228,97 @@ export default function CheckoutPage() {
   }
 
   const handleWhatsAppOrder = async () => {
-    if (!validateForm()) return
+    if (isProcessing || orderCreationInProgress) return
 
     setIsProcessing(true)
+
+    try {
+      const result = await createOrder()
+
+      if (!result.success) {
+        setApiError(result.error || 'Failed to create order')
+        return
+      }
+
+      // Refresh orders in sidebar to show the new order
+      try {
+        await refreshOrders(true) // Silent refresh - no toast
+        console.log('[Checkout] Orders refreshed after successful order creation')
+      } catch (refreshError) {
+        console.warn('[Checkout] Failed to refresh orders:', refreshError)
+        // Don't fail the entire flow if refresh fails
+      }
+
+      // Build order summary for WhatsApp
+      const orderSummary: OrderSummary = {
+        orderId: result.orderNumber!,
+        items: cart.items,
+        customer: {
+          fullName: checkoutState.customerInfo.fullName!,
+          email: checkoutState.customerInfo.email!,
+          phone: checkoutState.customerInfo.phone!,
+          address: {
+            street: checkoutState.customerInfo.address?.street ?? '',
+            city: checkoutState.customerInfo.address?.city ?? '',
+            postalCode: checkoutState.customerInfo.address?.postalCode ?? '',
+            province: checkoutState.customerInfo.address?.province ?? '',
+          },
+          specialInstructions: checkoutState.customerInfo.specialInstructions,
+        },
+        pricing: checkoutState.pricing,
+        createdAt: new Date().toISOString(),
+        status: 'pending',
+      }
+
+      // Only call openWhatsAppOrder after order is created and orderId is present
+      openWhatsAppOrder(orderSummary)
+
+      // Clear cart and pending orders, then redirect
+      clearPendingOrders() // Clear pending orders on successful WhatsApp order
+      clearCart()
+      // Refresh orders to update the count
+      refreshOrders()
+      router.push(`/checkout/success?orderId=${result.orderNumber}`)
+    } catch (error) {
+      console.error('WhatsApp order error:', error)
+      setApiError(error instanceof Error ? error.message : 'Failed to create order')
+    } finally {
+      setIsProcessing(false)
+    }
+  }
+
+  // Shared order creation function to prevent duplicates
+  const createOrder = async (): Promise<{
+    success: boolean
+    orderNumber?: string
+    error?: string
+  }> => {
+    if (orderCreationInProgress) {
+      console.log('Order creation already in progress, skipping...')
+      return { success: false, error: 'Order creation already in progress' }
+    }
+
+    if (!validateForm()) {
+      return { success: false, error: 'Please fill in all required fields correctly' }
+    }
+
+    setOrderCreationInProgress(true)
     setApiError(null)
 
     try {
-      // Create order first
+      // Get or create customer ID
+      const customerId = getOrCreateCustomerId()
+
+      // Update customer info in localStorage
+      updateCustomerInfo({
+        email: checkoutState.customerInfo.email,
+        phone: checkoutState.customerInfo.phone,
+        fullName: checkoutState.customerInfo.fullName,
+        lastOrderAt: new Date().toISOString(),
+      })
+
       const orderResponse = await api.createOrder({
+        customerId, // Add customer ID to order
         customer: {
           fullName: checkoutState.customerInfo.fullName!,
           email: checkoutState.customerInfo.email!,
@@ -211,9 +350,17 @@ export default function CheckoutPage() {
         throw new Error(orderResponse.error || 'Failed to create order')
       }
 
-      // Build order summary from API response only
-      const orderSummary: OrderSummary = {
+      // Store the PayloadCMS customer ID returned from the API
+      if (orderResponse.data.customerId) {
+        // Store PayloadCMS customer ID for future order operations
+        localStorage.setItem('ralhum-payload-customer-id', orderResponse.data.customerId.toString())
+        console.log('[Checkout] Stored PayloadCMS customer ID:', orderResponse.data.customerId)
+      }
+
+      // Build order summary from API response
+      const orderSummary = {
         orderId: orderResponse.data.orderNumber,
+        customerId,
         items: cart.items,
         customer: {
           fullName: checkoutState.customerInfo.fullName!,
@@ -232,17 +379,27 @@ export default function CheckoutPage() {
         status: 'pending',
       }
 
-      // Only call openWhatsAppOrder after order is created and orderId is present
-      openWhatsAppOrder(orderSummary)
+      // Store order with customer ID using the new system
+      storeOrderWithCustomerId({
+        ...orderSummary,
+        customerEmail: checkoutState.customerInfo.email,
+        customerPhone: checkoutState.customerInfo.phone,
+      })
 
-      // Clear cart and redirect
-      clearCart()
-      router.push(`/checkout/success?orderId=${orderResponse.data.orderNumber}`)
+      // Update checkout state with order ID
+      setCheckoutState((prev) => ({
+        ...prev,
+        orderId: orderResponse.data?.orderNumber ?? '',
+      }))
+
+      return { success: true, orderNumber: orderResponse.data.orderNumber }
     } catch (error) {
       console.error('Order creation error:', error)
-      setApiError(error instanceof Error ? error.message : 'Failed to create order')
+      const errorMessage = error instanceof Error ? error.message : 'Failed to create order'
+      setApiError(errorMessage)
+      return { success: false, error: errorMessage }
     } finally {
-      setIsProcessing(false)
+      setOrderCreationInProgress(false)
     }
   }
 
@@ -268,117 +425,29 @@ export default function CheckoutPage() {
     }))
   }
 
-  const handleSubmitOrder = async () => {
-    if (checkoutState.isSubmitting) {
-      return
-    }
+  // Enhanced cart management handlers for checkout
+  const handleQuantityUpdate = (itemId: string, newQuantity: number) => {
+    updateQuantity(itemId, newQuantity)
+  }
 
-    if (!validateForm()) {
-      toast.error('Please fill in all required fields correctly')
-      return
-    }
+  const handleRemoveItem = (itemId: string) => {
+    removeItem(itemId)
+    // Show success message
+    toast.success('Item removed from cart')
+  }
 
-    setCheckoutState((prev) => ({
-      ...prev,
-      isSubmitting: true,
-      errors: {},
-    }))
+  const handleVariantChange = (itemId: string, newVariantId: string) => {
+    const item = cart.items.find((i) => i.id === itemId)
+    if (!item) return
 
-    try {
-      const orderData: OrderInput = {
-        customer: {
-          fullName: checkoutState.customerInfo.fullName!,
-          email: checkoutState.customerInfo.email!,
-          phone: formatSriLankanPhone(checkoutState.customerInfo.phone!),
-          secondaryPhone: checkoutState.customerInfo.secondaryPhone,
-          address: {
-            street: checkoutState.customerInfo.address?.street ?? '',
-            city: checkoutState.customerInfo.address?.city ?? '',
-            postalCode: checkoutState.customerInfo.address?.postalCode ?? '',
-            province: checkoutState.customerInfo.address?.province ?? '',
-          },
-          specialInstructions: checkoutState.customerInfo.specialInstructions,
-          preferredLanguage: 'english',
-          marketingOptIn: true,
-        },
-        items: cart.items.map((item) => ({
-          id: item.id,
-          productId: item.product.id,
-          productName: item.product.title,
-          productSku: item.product.sku,
-          variantId: item.variant.id,
-          unitPrice: item.variant.price,
-          quantity: item.quantity,
-          selectedSize: item.variant.size,
-          selectedColor: item.variant.color,
-          subtotal: item.variant.price * item.quantity,
-        })),
-        pricing: checkoutState.pricing,
-        specialInstructions: checkoutState.customerInfo.specialInstructions,
-        orderSource: 'website',
-      }
+    const newVariant = item.product.variants.find((v) => v.id === newVariantId)
+    if (!newVariant) return
 
-      const apiResponse = await api.createOrder(orderData)
+    // Remove old item and add new one with same quantity
+    removeItem(itemId)
 
-      if (!apiResponse.success) {
-        throw new Error(apiResponse.error || 'Failed to create order')
-      }
-
-      const orderNumber = apiResponse.data?.orderNumber
-
-      if (!orderNumber) {
-        throw new Error('Order number not received from API')
-      }
-
-      const order: OrderSummary = {
-        orderId: orderNumber,
-        items: cart.items,
-        customer: {
-          fullName: checkoutState.customerInfo.fullName!,
-          email: checkoutState.customerInfo.email!,
-          phone: formatSriLankanPhone(checkoutState.customerInfo.phone!),
-          address: {
-            street: checkoutState.customerInfo.address?.street ?? '',
-            city: checkoutState.customerInfo.address?.city ?? '',
-            postalCode: checkoutState.customerInfo.address?.postalCode ?? '',
-            province: checkoutState.customerInfo.address?.province ?? '',
-          },
-          specialInstructions: checkoutState.customerInfo.specialInstructions,
-        },
-        pricing: checkoutState.pricing,
-        createdAt: new Date().toISOString(),
-        status: 'pending',
-      }
-
-      const existingOrders = JSON.parse(localStorage.getItem('ralhum-orders') || '[]')
-      existingOrders.push({
-        ...order,
-        customerEmail: checkoutState.customerInfo.email,
-        customerPhone: checkoutState.customerInfo.phone,
-      })
-      localStorage.setItem('ralhum-orders', JSON.stringify(existingOrders))
-
-      openWhatsAppOrder(order)
-      clearCart()
-
-      setConfirmationOrderId(orderNumber)
-      setShowConfirmation(true)
-
-      setCheckoutState((prev) => ({
-        ...prev,
-        step: 'confirmation',
-        orderId: orderNumber,
-        isSubmitting: false,
-      }))
-
-      toast.success('Order created successfully and sent to WhatsApp!')
-    } catch (error) {
-      console.error('Error submitting order:', error)
-      setApiError(error instanceof Error ? error.message : 'Failed to create order')
-      toast.error('Failed to create order. Please try again.')
-
-      setCheckoutState((prev) => ({ ...prev, isSubmitting: false }))
-    }
+    // Add the new variant
+    addItem(item.product, newVariant, item.quantity)
   }
 
   if (cart.items.length === 0 && !showConfirmation) {
@@ -414,7 +483,7 @@ export default function CheckoutPage() {
   }
 
   return (
-    <main className="min-h-screen pt-8 bg-brand-background">
+    <main className="min-h-screen pt-16 bg-brand-background">
       <div className="max-w-7xl mx-auto px-4 py-8">
         <motion.div variants={containerVariants} initial="hidden" animate="visible">
           {/* Enhanced Header */}
@@ -703,45 +772,242 @@ export default function CheckoutPage() {
                     <div className="p-2 rounded-lg bg-gradient-to-br from-brand-accent to-warning text-white">
                       <Package className="w-5 h-5" />
                     </div>
-                    Order Summary
+                    Order Summary ({cart.items.length} item{cart.items.length !== 1 ? 's' : ''})
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <div className="space-y-4">
-                    {cart.items.map((item) => {
-                      const itemTotal = item.variant.price * item.quantity
+                  {/* Scrollable container for more than 3 items */}
+                  <div
+                    className={cart.items.length > 3 ? 'max-h-[400px] overflow-y-auto pr-2' : ''}
+                  >
+                    <div className="space-y-4">
+                      {cart.items.map((item, index) => {
+                        const itemTotal = item.variant.price * item.quantity
+                        const isLowStock = (item.variant.inventory || 0) <= 5
+                        const isOutOfStock = (item.variant.inventory || 0) === 0
+                        const maxQuantity = Math.min(10, item.variant.inventory || 0)
+                        const hasMultipleVariants = item.product.variants.length > 1
 
-                      return (
-                        <div
-                          key={item.id}
-                          className="flex items-center gap-4 pb-4 border-b last:border-b-0 border-brand-border"
-                        >
-                          <Image
-                            width={64}
-                            height={64}
-                            src={item.product.images[0]?.url || 'https://placehold.co/600x400'}
-                            alt={item.product.title}
-                            className="w-16 h-16 object-cover rounded-lg"
-                          />
-                          <div className="flex-1">
-                            <h4 className="font-semibold text-text-primary">
-                              {item.product.title}
-                            </h4>
-                            <p className="text-sm text-text-secondary">{item.variant.name}</p>
-                            <p className="text-sm text-text-secondary">Qty: {item.quantity}</p>
+                        return (
+                          <div
+                            key={item.id}
+                            className={`p-4 bg-brand-background rounded-xl border border-brand-border hover:shadow-sm transition-all duration-200 ${
+                              isOutOfStock ? 'opacity-60' : ''
+                            }`}
+                          >
+                            {/* Product Header */}
+                            <div className="flex items-start gap-4 mb-3">
+                              <div className="relative flex-shrink-0">
+                                <Image
+                                  width={80}
+                                  height={80}
+                                  src={
+                                    item.product.images[0]?.url || 'https://placehold.co/600x400'
+                                  }
+                                  alt={item.product.title}
+                                  className="w-20 h-20 object-cover rounded-lg shadow-sm"
+                                />
+                                {isOutOfStock && (
+                                  <div className="absolute inset-0 bg-gray-900/60 rounded-lg flex items-center justify-center backdrop-blur-sm">
+                                    <span className="text-white text-xs font-bold">
+                                      OUT OF STOCK
+                                    </span>
+                                  </div>
+                                )}
+                              </div>
+
+                              <div className="flex-1 min-w-0">
+                                <h4 className="font-semibold text-text-primary line-clamp-2 mb-1">
+                                  {item.product.title}
+                                </h4>
+                                <div className="flex items-center gap-2 flex-wrap mb-2">
+                                  <p className="text-xs text-brand-secondary font-medium">
+                                    {item.product.brand?.name}
+                                  </p>
+                                  <Badge
+                                    variant="secondary"
+                                    className="text-xs px-2 py-0.5 bg-gray-100 text-text-secondary"
+                                  >
+                                    {item.variant.name}
+                                  </Badge>
+                                </div>
+
+                                {/* Variant Options Display */}
+                                {item.variant.options &&
+                                  Object.keys(item.variant.options).length > 0 && (
+                                    <div className="flex flex-wrap gap-1 mb-2">
+                                      {Object.entries(item.variant.options).map(([key, value]) => (
+                                        <Badge
+                                          key={key}
+                                          variant="outline"
+                                          className="text-xs px-2 py-0.5 border-brand-border"
+                                        >
+                                          {key}: {value}
+                                        </Badge>
+                                      ))}
+                                    </div>
+                                  )}
+
+                                {/* Stock Warning */}
+                                {isLowStock && !isOutOfStock && (
+                                  <div className="flex items-center gap-1 mb-2 p-2 bg-orange-50 rounded-lg border border-orange-200">
+                                    <AlertCircle className="w-3 h-3 text-orange-500 flex-shrink-0" />
+                                    <span className="text-xs text-orange-600 font-medium">
+                                      Only {item.variant.inventory || 0} left in stock
+                                    </span>
+                                  </div>
+                                )}
+                              </div>
+
+                              {/* Remove Button */}
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                className="h-8 w-8 p-0 text-red-500 hover:text-red-700 hover:bg-red-50 rounded-lg flex-shrink-0"
+                                onClick={() => handleRemoveItem(item.id)}
+                                aria-label="Remove item from cart"
+                              >
+                                <Trash2 className="w-4 h-4" />
+                              </Button>
+                            </div>
+
+                            {/* Variant Selection (if multiple variants available) */}
+                            {hasMultipleVariants && (
+                              <div className="mb-3">
+                                <Label className="text-sm font-medium text-text-primary mb-2 block">
+                                  Select Variant:
+                                </Label>
+                                <Select
+                                  value={item.variant.id}
+                                  onValueChange={(newVariantId) =>
+                                    handleVariantChange(item.id, newVariantId)
+                                  }
+                                >
+                                  <SelectTrigger className="h-9 border-brand-border bg-brand-surface">
+                                    <SelectValue />
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    {item.product.variants.map((variant) => (
+                                      <SelectItem
+                                        key={variant.id}
+                                        value={variant.id}
+                                        disabled={variant.inventory === 0}
+                                      >
+                                        <div className="flex items-center justify-between w-full">
+                                          <span>{variant.name}</span>
+                                          <div className="flex items-center gap-2 ml-2">
+                                            <span className="text-sm font-medium">
+                                              {formatCurrency(variant.price)}
+                                            </span>
+                                            {variant.inventory === 0 ? (
+                                              <Badge variant="destructive" className="text-xs">
+                                                Out of Stock
+                                              </Badge>
+                                            ) : variant.inventory <= 5 ? (
+                                              <Badge
+                                                variant="secondary"
+                                                className="text-xs bg-orange-100 text-orange-700"
+                                              >
+                                                {variant.inventory} left
+                                              </Badge>
+                                            ) : null}
+                                          </div>
+                                        </div>
+                                      </SelectItem>
+                                    ))}
+                                  </SelectContent>
+                                </Select>
+                              </div>
+                            )}
+
+                            {/* Quantity Controls and Price */}
+                            <div className="flex items-center justify-between">
+                              <div className="flex flex-col">
+                                <span className="font-bold text-text-primary">
+                                  {formatCurrency(itemTotal)}
+                                </span>
+                                {item.quantity > 1 && (
+                                  <span className="text-xs text-text-secondary">
+                                    {formatCurrency(item.variant.price)} each
+                                  </span>
+                                )}
+                              </div>
+
+                              {/* Quantity Controls */}
+                              <div className="flex items-center border border-brand-border rounded-lg bg-brand-surface">
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  className="h-8 w-8 p-0 hover:bg-gray-100 rounded-l-lg"
+                                  onClick={() => handleQuantityUpdate(item.id, item.quantity - 1)}
+                                  disabled={item.quantity <= 1}
+                                  aria-label="Decrease quantity"
+                                >
+                                  <Minus className="w-3 h-3" />
+                                </Button>
+
+                                <span className="w-8 text-center text-sm font-medium">
+                                  {item.quantity}
+                                </span>
+
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  className="h-8 w-8 p-0 hover:bg-gray-100 rounded-r-lg"
+                                  onClick={() => handleQuantityUpdate(item.id, item.quantity + 1)}
+                                  disabled={item.quantity >= maxQuantity || isOutOfStock}
+                                  aria-label="Increase quantity"
+                                >
+                                  <Plus className="w-3 h-3" />
+                                </Button>
+                              </div>
+                            </div>
+
+                            {/* Compare at Price */}
+                            {item.variant.compareAtPrice &&
+                              item.variant.compareAtPrice > (item.variant.price || 0) && (
+                                <div className="mt-2 flex items-center gap-2 flex-wrap">
+                                  <span className="text-xs text-text-secondary line-through">
+                                    Was{' '}
+                                    {formatCurrency(
+                                      (item.variant.compareAtPrice || 0) * item.quantity,
+                                    )}
+                                  </span>
+                                  <Badge
+                                    variant="secondary"
+                                    className="bg-brand-primary text-white text-xs"
+                                  >
+                                    SAVE{' '}
+                                    {formatCurrency(
+                                      ((item.variant.compareAtPrice || 0) -
+                                        (item.variant.price || 0)) *
+                                        item.quantity,
+                                    )}
+                                  </Badge>
+                                </div>
+                              )}
                           </div>
-                          <div className="text-right">
-                            <p className="font-semibold text-text-primary">
-                              {formatCurrency(itemTotal)}
-                            </p>
-                            <p className="text-xs text-text-secondary">
-                              {formatCurrency(item.variant.price)} each
-                            </p>
-                          </div>
-                        </div>
-                      )
-                    })}
+                        )
+                      })}
+                    </div>
                   </div>
+
+                  {/* Continue Shopping Link - show when items exist */}
+                  {cart.items.length > 0 && (
+                    <div className="mt-4 pt-4 border-t border-brand-border">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="w-full text-brand-secondary hover:bg-brand-secondary/5"
+                        asChild
+                      >
+                        <Link href="/products">
+                          <Package className="w-4 h-4 mr-2" />
+                          Continue Shopping
+                        </Link>
+                      </Button>
+                    </div>
+                  )}
                 </CardContent>
               </Card>
 
@@ -797,45 +1063,26 @@ export default function CheckoutPage() {
                           disabled={isProcessing || !isFormValid}
                           className="w-full font-bold border-2 border-white text-white hover:bg-brand-secondary/10 py-4 text-lg rounded-xl flex items-center justify-center"
                           onClick={async () => {
-                            if (isProcessing || !isFormValid) return
+                            if (isProcessing || !isFormValid || orderCreationInProgress) return
                             setIsProcessing(true)
-                            setApiError(null)
+
                             try {
-                              const orderResponse = await api.createOrder({
-                                customer: {
-                                  fullName: checkoutState.customerInfo.fullName!,
-                                  email: checkoutState.customerInfo.email!,
-                                  phone: checkoutState.customerInfo.phone!,
-                                  secondaryPhone: checkoutState.customerInfo.secondaryPhone,
-                                  address: {
-                                    street: checkoutState.customerInfo.address?.street ?? '',
-                                    city: checkoutState.customerInfo.address?.city ?? '',
-                                    postalCode:
-                                      checkoutState.customerInfo.address?.postalCode ?? '',
-                                    province: checkoutState.customerInfo.address?.province ?? '',
-                                  },
-                                },
-                                items: cart.items.map((item) => ({
-                                  id: item.id,
-                                  productId: item.product.id.toString(),
-                                  productName: item.product.title,
-                                  productSku: item.variant?.sku || item.product.sku,
-                                  variantId: item.variant?.id,
-                                  unitPrice: item.variant?.price,
-                                  quantity: item.quantity,
-                                  selectedSize: item.variant?.size,
-                                  selectedColor: item.variant?.color,
-                                  subtotal: item.variant?.price * item.quantity,
-                                })),
-                                pricing: checkoutState.pricing,
-                              })
-                              if (!orderResponse.success || !orderResponse.data) {
-                                throw new Error(orderResponse.error || 'Failed to create order')
+                              const result = await createOrder()
+                              if (!result.success) {
+                                setApiError(result.error || 'Failed to create order')
+                              } else {
+                                // Refresh orders in sidebar to show the new order
+                                try {
+                                  await refreshOrders(true) // Silent refresh - no toast
+                                  console.log(
+                                    '[Checkout] Orders refreshed after successful order creation',
+                                  )
+                                } catch (refreshError) {
+                                  console.warn('[Checkout] Failed to refresh orders:', refreshError)
+                                  // Don't fail the entire flow if refresh fails
+                                }
                               }
-                              setCheckoutState((prev) => ({
-                                ...prev,
-                                orderId: orderResponse.data?.orderNumber ?? '',
-                              }))
+                              // Order ID will be set by createOrder function
                             } catch (error) {
                               setApiError(
                                 error instanceof Error ? error.message : 'Failed to create order',
@@ -893,7 +1140,10 @@ export default function CheckoutPage() {
                           }}
                           onSuccess={(orderId) => {
                             setIsPaymentProcessing(false)
+                            clearPendingOrders() // Clear pending orders on successful payment
                             clearCart()
+                            // Refresh orders to update the count
+                            refreshOrders()
                             router.push(`/checkout/success?orderId=${orderId}`)
                           }}
                           onError={(error) => {
@@ -936,40 +1186,9 @@ export default function CheckoutPage() {
                         )}
                       </Button>
                     </div>
-
-                    {/* Security Badge */}
-                    <div className="flex items-center justify-center gap-2 text-sm text-text-secondary">
-                      <Shield className="w-4 h-4 text-green-600" />
-                      <span>Secure payment powered by PayHere</span>
-                    </div>
                   </div>
                 </CardContent>
               </Card>
-
-              {/* Enhanced Trust Badges */}
-              <div className="grid grid-cols-1 text-center text-sm">
-                {[
-                  {
-                    icon: Shield,
-                    title: 'Secure Process',
-                    subtitle: 'Safe & encrypted',
-                    color: 'from-green-500 to-emerald-500',
-                  },
-                ].map((badge) => (
-                  <div
-                    key={badge.title}
-                    className="flex flex-col items-center gap-3 p-6 bg-brand-surface rounded-xl border border-brand-border w-full"
-                  >
-                    <div className={`p-4 rounded-lg bg-gradient-to-br ${badge.color} text-white`}>
-                      <badge.icon className="w-8 h-8" />
-                    </div>
-                    <div>
-                      <div className="font-bold text-text-primary text-lg">{badge.title}</div>
-                      <div className="text-text-secondary text-sm">{badge.subtitle}</div>
-                    </div>
-                  </div>
-                ))}
-              </div>
             </motion.div>
           </div>
         </motion.div>

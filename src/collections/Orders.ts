@@ -48,6 +48,18 @@ export const Orders: CollectionConfig = {
       },
     },
 
+    // Customer ID for order tracking - stores PayloadCMS customer ID
+    {
+      name: 'customerId',
+      type: 'text',
+      required: true,
+      admin: {
+        description: 'PayloadCMS customer identifier for order tracking',
+        position: 'sidebar',
+      },
+      index: true,
+    },
+
     // Customer Information
     {
       name: 'customer',
@@ -578,7 +590,7 @@ export const Orders: CollectionConfig = {
                 const variantPrice = match.price ?? 0
                 const basePrice = product?.essentials?.price ?? 0
                 const finalPrice = variantPrice || basePrice
-                
+
                 item.subtotal = finalPrice * qty
                 item.unitPrice = finalPrice
               }
@@ -589,5 +601,43 @@ export const Orders: CollectionConfig = {
         return data
       },
     ],
+    // Temporarily disable email hooks until configuration is fixed
+    // afterChange: [
+    //   async ({ doc, previousDoc, req, operation }) => {
+    //     // Send email notifications asynchronously to avoid blocking the response
+    //     setImmediate(async () => {
+    //       try {
+    //         const { sendOrderConfirmationEmail, sendOrderStatusUpdateEmail, transformOrderForEmail } = await import('../lib/email-service')
+    //         const { SITE_CONFIG } = await import('../config/site-config')
+
+    //         // Send order confirmation email for new orders
+    //         if (operation === 'create' && doc.customer?.customerEmail) {
+    //           const emailData = transformOrderForEmail(doc)
+    //           await sendOrderConfirmationEmail(emailData)
+    //         }
+
+    //         // Send status update email when order status changes
+    //         if (operation === 'update' && previousDoc && doc.customer?.customerEmail) {
+    //           const oldStatus = previousDoc.status?.orderStatus
+    //           const newStatus = doc.status?.orderStatus
+
+    //           if (oldStatus !== newStatus && newStatus) {
+    //             const trackingUrl = `${SITE_CONFIG.siteUrl}/orders/track?id=${doc.orderNumber}`
+    //             const emailData = transformOrderForEmail(doc)
+
+    //             await sendOrderStatusUpdateEmail({
+    //               ...emailData,
+    //               oldStatus: oldStatus || 'pending',
+    //               newStatus,
+    //               trackingUrl,
+    //             })
+    //           }
+    //         }
+    //       } catch (error) {
+    //         console.error('Failed to send email notification:', error)
+    //       }
+    //     })
+    //   },
+    // ],
   },
 }

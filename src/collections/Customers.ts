@@ -14,7 +14,7 @@ export const Customers: CollectionConfig = {
     },
   },
   access: {
-    create: isAdminOrProductManager,
+    create: () => true, // Allow public customer creation during order process
     read: isAdminOrProductManager,
     update: isAdminOrProductManager,
     delete: isAdmin,
