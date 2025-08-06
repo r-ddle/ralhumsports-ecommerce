@@ -44,8 +44,8 @@ export function OrdersSidebar() {
 
   return (
     <Sheet open={isOpen} onOpenChange={closeOrders}>
-      <SheetContent className="w-full sm:max-w-lg p-0 flex flex-col bg-brand-surface border-l border-brand-border">
-        <SheetHeader className="p-4 sm:p-6 pb-3 sm:pb-4 bg-gradient-to-r from-purple-50 to-blue-50">
+      <SheetContent className="w-full sm:max-w-lg p-0 flex flex-col bg-brand-surface border-l border-brand-border h-full max-h-[100vh] overflow-hidden">
+        <SheetHeader className="flex-shrink-0 p-4 sm:p-6 pb-3 sm:pb-4 bg-gradient-to-r from-purple-50 to-blue-50">
           <SheetTitle className="flex items-center gap-2 text-lg sm:text-xl font-bold text-text-primary">
             <Clock className="w-4 h-4 sm:w-5 sm:h-5 text-brand-secondary" />
             Your Orders ({orderCount})
@@ -106,40 +106,43 @@ export function OrdersSidebar() {
         {/* Orders List */}
         {hasOrders && (
           <>
-            {/* Order Status Summary */}
-            <div className="px-4 sm:px-6 pb-4">
-              <div className="flex flex-wrap gap-2">
-                {Object.entries(statusSummary).map(([status, count]) => {
-                  const statusColors =
-                    {
-                      pending: 'bg-yellow-100 text-yellow-800 border-yellow-200',
-                      confirmed: 'bg-blue-100 text-blue-800 border-blue-200',
-                      processing: 'bg-purple-100 text-purple-800 border-purple-200',
-                      shipped: 'bg-indigo-100 text-indigo-800 border-indigo-200',
-                      delivered: 'bg-green-100 text-green-800 border-green-200',
-                      cancelled: 'bg-red-100 text-red-800 border-red-200',
-                    }[status] || 'bg-gray-100 text-gray-800 border-gray-200'
+            {/* Scrollable Content Area */}
+            <div className="flex-1 overflow-hidden min-h-0">
+              <ScrollArea className="h-full px-4 sm:px-6">
+                {/* Order Status Summary */}
+                <div className="pb-4 pt-4">
+                  <div className="flex flex-wrap gap-2">
+                    {Object.entries(statusSummary).map(([status, count]) => {
+                      const statusColors =
+                        {
+                          pending: 'bg-yellow-100 text-yellow-800 border-yellow-200',
+                          confirmed: 'bg-blue-100 text-blue-800 border-blue-200',
+                          processing: 'bg-purple-100 text-purple-800 border-purple-200',
+                          shipped: 'bg-indigo-100 text-indigo-800 border-indigo-200',
+                          delivered: 'bg-green-100 text-green-800 border-green-200',
+                          cancelled: 'bg-red-100 text-red-800 border-red-200',
+                        }[status] || 'bg-gray-100 text-gray-800 border-gray-200'
 
-                  return (
-                    <Badge key={status} className={`${statusColors} text-xs px-2 py-1`}>
-                      {status}: {count}
-                    </Badge>
-                  )
-                })}
-              </div>
+                      return (
+                        <Badge key={status} className={`${statusColors} text-xs px-2 py-1`}>
+                          {status}: {count}
+                        </Badge>
+                      )
+                    })}
+                  </div>
+                </div>
+
+                {/* Orders List */}
+                <div className="space-y-3 sm:space-y-4 pb-4">
+                  {orders.map((order) => (
+                    <OrderItem key={order.id} order={order} />
+                  ))}
+                </div>
+              </ScrollArea>
             </div>
 
-            {/* Orders List */}
-            <ScrollArea className="flex-1 px-4 sm:px-6">
-              <div className="space-y-3 sm:space-y-4 py-4">
-                {orders.map((order) => (
-                  <OrderItem key={order.id} order={order} />
-                ))}
-              </div>
-            </ScrollArea>
-
-            {/* Footer Actions */}
-            <div className="border-t border-brand-border p-4 sm:p-6 space-y-3 bg-brand-surface">
+            {/* Fixed Footer Actions */}
+            <div className="flex-shrink-0 border-t border-brand-border p-4 sm:p-6 space-y-3 bg-brand-surface max-h-[50vh] overflow-y-auto">
               {/* Order Statistics */}
               <div className="flex items-center justify-between text-sm">
                 <span className="text-text-secondary">Total Orders</span>

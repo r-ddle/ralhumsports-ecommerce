@@ -109,7 +109,7 @@ export function EnhancedProductFilters({
   const [expandedSections, setExpandedSections] = useState<Record<string, boolean>>({
     search: true,
     sort: false, // Collapsed on mobile by default
-    categories: true,
+    categories: false,
     brands: false,
     price: false,
     stock: false,
@@ -119,21 +119,21 @@ export function EnhancedProductFilters({
   const availableSports = useMemo(() => {
     if (pendingFilters.sportsCategory === ALL_CATEGORIES) return []
     return hierarchicalCategories.sports.filter(
-      (sport) => sport.parentCategory?.id.toString() === pendingFilters.sportsCategory,
+      (sport) => sport.parentCategory?.id.toString() === pendingFilters.sportsCategory.toString(),
     )
   }, [pendingFilters.sportsCategory, hierarchicalCategories.sports])
 
   const availableSportsItems = useMemo(() => {
     if (pendingFilters.sport === ALL_SPORTS) return []
     return hierarchicalCategories.sportsItems.filter(
-      (item) => item.parentCategory?.id.toString() === pendingFilters.sport,
+      (item) => item.parentCategory?.id.toString() === pendingFilters.sport.toString(),
     )
   }, [pendingFilters.sport, hierarchicalCategories.sportsItems])
 
   // Initialize pending filters from URL filters and preselected values
   useEffect(() => {
     const preselected = getPreselectedValues()
-    
+
     const newPendingFilters: PendingFilters = {
       search: filters.search || '',
       sportsCategory: filters.sportsCategory || ALL_CATEGORIES,
@@ -223,18 +223,20 @@ export function EnhancedProductFilters({
       } else if (preselected.type === 'sport') {
         finalFilters.sport = preselected.value
         // Find parent category for sport
-        const sport = hierarchicalCategories.sports.find(s => s.slug === preselected.value)
+        const sport = hierarchicalCategories.sports.find((s) => s.slug === preselected.value)
         if (sport?.parentCategory) {
           finalFilters.sportsCategory = sport.parentCategory.slug
         }
       } else if (preselected.type === 'sportsItem') {
         finalFilters.sportsItem = preselected.value
         // Find parent sport and category
-        const item = hierarchicalCategories.sportsItems.find(i => i.slug === preselected.value)
+        const item = hierarchicalCategories.sportsItems.find((i) => i.slug === preselected.value)
         if (item?.parentCategory) {
           finalFilters.sport = item.parentCategory.slug
           // Find sport's parent category
-          const sport = hierarchicalCategories.sports.find(s => s.slug === item.parentCategory?.slug)
+          const sport = hierarchicalCategories.sports.find(
+            (s) => s.slug === item.parentCategory?.slug,
+          )
           if (sport?.parentCategory) {
             finalFilters.sportsCategory = sport.parentCategory.slug
           }
@@ -253,7 +255,14 @@ export function EnhancedProductFilters({
 
     setMultipleFilters(finalFilters)
     onApplyFilters?.()
-  }, [pendingFilters, priceRange, setMultipleFilters, onApplyFilters, getPreselectedValues, hierarchicalCategories])
+  }, [
+    pendingFilters,
+    priceRange,
+    setMultipleFilters,
+    onApplyFilters,
+    getPreselectedValues,
+    hierarchicalCategories,
+  ])
 
   const handleReset = useCallback(() => {
     setPendingFilters({
@@ -350,16 +359,22 @@ export function EnhancedProductFilters({
           if (preselected.type && preselected.value) {
             const getPreselectedName = () => {
               if (preselected.type === 'sportsCategory') {
-                const category = hierarchicalCategories.sportsCategories.find(c => c.slug === preselected.value)
+                const category = hierarchicalCategories.sportsCategories.find(
+                  (c) => c.slug === preselected.value,
+                )
                 return category?.name || preselected.value
               } else if (preselected.type === 'sport') {
-                const sport = hierarchicalCategories.sports.find(s => s.slug === preselected.value)
+                const sport = hierarchicalCategories.sports.find(
+                  (s) => s.slug === preselected.value,
+                )
                 return sport?.name || preselected.value
               } else if (preselected.type === 'sportsItem') {
-                const item = hierarchicalCategories.sportsItems.find(i => i.slug === preselected.value)
+                const item = hierarchicalCategories.sportsItems.find(
+                  (i) => i.slug === preselected.value,
+                )
                 return item?.name || preselected.value
               } else if (preselected.type === 'brand') {
-                const brand = brands.find(b => b.slug === preselected.value)
+                const brand = brands.find((b) => b.slug === preselected.value)
                 return brand?.name || preselected.value
               }
               return preselected.value
@@ -371,13 +386,18 @@ export function EnhancedProductFilters({
                   <div>
                     <h4 className="font-semibold text-blue-900 mb-1">Selected from Navigation</h4>
                     <p className="text-blue-700 text-sm">
-                      {preselected.type === 'sportsCategory' ? 'Category' : 
-                       preselected.type === 'sport' ? 'Sport' :
-                       preselected.type === 'sportsItem' ? 'Equipment' : 'Brand'}: <strong>{getPreselectedName()}</strong>
+                      {preselected.type === 'sportsCategory'
+                        ? 'Category'
+                        : preselected.type === 'sport'
+                          ? 'Sport'
+                          : preselected.type === 'sportsItem'
+                            ? 'Equipment'
+                            : 'Brand'}
+                      : <strong>{getPreselectedName()}</strong>
                     </p>
                   </div>
-                  <Button 
-                    size="sm" 
+                  <Button
+                    size="sm"
                     onClick={handleApplyFilters}
                     className="bg-blue-600 hover:bg-blue-700 text-white"
                   >
@@ -391,47 +411,32 @@ export function EnhancedProductFilters({
         })()}
 
         {/* Search */}
-        <Collapsible
-          open={expandedSections.search}
-          onOpenChange={() => handleSectionToggle('search')}
-        >
-          <CollapsibleTrigger className="flex w-full items-center justify-between py-1.5 sm:py-2 font-medium text-sm hover:text-primary">
-            Search Products
-            <ChevronDown
-              className={`h-4 w-4 transition-transform ${
-                expandedSections.search ? 'rotate-180' : ''
-              }`}
-            />
-          </CollapsibleTrigger>
-          <CollapsibleContent className="pt-2">
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-              <Input
-                type="text"
-                placeholder="Search products..."
-                value={pendingFilters.search}
-                onChange={(e) => setPendingFilters((prev) => ({ ...prev, search: e.target.value }))}
-                className="pl-9 pr-9 h-9 sm:h-10"
-              />
-              {pendingFilters.search && (
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => setPendingFilters((prev) => ({ ...prev, search: '' }))}
-                  className="absolute right-1 top-1/2 h-7 w-7 -translate-y-1/2 p-0"
-                >
-                  <X className="h-4 w-4" />
-                </Button>
-              )}
-            </div>
-          </CollapsibleContent>
-        </Collapsible>
+        <div className="relative">
+          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+          <Input
+            type="text"
+            placeholder="Search products..."
+            value={pendingFilters.search}
+            onChange={(e) => setPendingFilters((prev) => ({ ...prev, search: e.target.value }))}
+            className="pl-9 pr-9 h-9 sm:h-10"
+          />
+          {pendingFilters.search && (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setPendingFilters((prev) => ({ ...prev, search: '' }))}
+              className="absolute right-1 top-1/2 h-7 w-7 -translate-y-1/2 p-0"
+            >
+              <X className="h-4 w-4" />
+            </Button>
+          )}
+        </div>
 
         <Separator />
 
         {/* Sort */}
-        <Collapsible open={expandedSections.sort} onOpenChange={() => handleSectionToggle('sort')}>
-          <CollapsibleTrigger className="flex w-full items-center justify-between py-1.5 sm:py-2 font-medium text-sm hover:text-primary">
+        <Collapsible open={true} onOpenChange={() => handleSectionToggle('sort')}>
+          <CollapsibleTrigger className="flex w-full items-center justify-between font-medium text-sm hover:text-primary">
             Sort By
             <ChevronDown
               className={`h-4 w-4 transition-transform ${
@@ -458,8 +463,6 @@ export function EnhancedProductFilters({
             </Select>
           </CollapsibleContent>
         </Collapsible>
-
-        <Separator />
 
         {/* Category Navigation */}
         <Collapsible
@@ -555,13 +558,8 @@ export function EnhancedProductFilters({
           </CollapsibleContent>
         </Collapsible>
 
-        <Separator />
-
         {/* Brands */}
-        <Collapsible
-          open={expandedSections.brands}
-          onOpenChange={() => handleSectionToggle('brands')}
-        >
+        <Collapsible open={true} onOpenChange={() => handleSectionToggle('brands')}>
           <CollapsibleTrigger className="flex w-full items-center justify-between py-1.5 sm:py-2 font-medium text-sm hover:text-primary">
             Brands
             {pendingFilters.brands.length > 0 && (
@@ -601,13 +599,8 @@ export function EnhancedProductFilters({
           </CollapsibleContent>
         </Collapsible>
 
-        <Separator />
-
         {/* Price Range */}
-        <Collapsible
-          open={expandedSections.price}
-          onOpenChange={() => handleSectionToggle('price')}
-        >
+        <Collapsible open={true} onOpenChange={() => handleSectionToggle('price')}>
           <CollapsibleTrigger className="flex w-full items-center justify-between py-1.5 sm:py-2 font-medium text-sm hover:text-primary">
             Price Range
             <ChevronDown
@@ -641,9 +634,7 @@ export function EnhancedProductFilters({
           </CollapsibleContent>
         </Collapsible>
 
-        <Separator />
-
-        {/* Stock Status */}
+        {/* Stock Status
         <Collapsible
           open={expandedSections.stock}
           onOpenChange={() => handleSectionToggle('stock')}
@@ -670,9 +661,7 @@ export function EnhancedProductFilters({
               />
             </div>
           </CollapsibleContent>
-        </Collapsible>
-
-        <Separator />
+        </Collapsible> */}
 
         {/* Apply Filters Button */}
         <Button

@@ -57,6 +57,7 @@ export function transformPayloadProduct(payloadProduct: PayloadProduct): Product
             categoryObj.visual?.image && typeof categoryObj.visual.image === 'object'
               ? (categoryObj.visual.image.url ?? undefined)
               : undefined,
+          type: 'sports-category' as const,
           parentCategory:
             typeof categoryObj.parentCategory === 'object'
               ? categoryObj.parentCategory
@@ -65,6 +66,10 @@ export function transformPayloadProduct(payloadProduct: PayloadProduct): Product
               : typeof categoryObj.parentCategory === 'number'
                 ? String(categoryObj.parentCategory)
                 : undefined,
+          status: 'active' as const,
+          displayOrder: 0,
+          isFeature: false,
+          showInNavigation: true,
           createdAt: categoryObj.createdAt,
           updatedAt: categoryObj.updatedAt,
         },
@@ -175,6 +180,14 @@ export async function getProducts(
       minPrice: filters.priceRange?.min,
       maxPrice: filters.priceRange?.max,
       inStock: filters.inStock,
+      // Add hierarchical category filters
+      sportsCategory: filters.categoryHierarchy?.sportsCategory,
+      sport: filters.categoryHierarchy?.sports,
+      sportsItem: filters.categoryHierarchy?.sportsItem,
+      // Add legacy filters for backward compatibility
+      category:
+        filters.categories && filters.categories.length > 0 ? filters.categories[0] : undefined,
+      brand: filters.brands && filters.brands.length > 0 ? filters.brands[0] : undefined,
     })
 
     if (!response.success) {
@@ -223,6 +236,11 @@ export async function getProducts(
               {
                 ...apiProduct.category,
                 id: String(apiProduct.category.id),
+                type: 'sports' as const,
+                status: 'active' as const,
+                displayOrder: 0,
+                isFeature: false,
+                showInNavigation: true,
                 createdAt: '',
                 updatedAt: '',
               },
@@ -341,6 +359,11 @@ export async function getProductBySlug(slug: string): Promise<Product | undefine
             {
               ...apiProduct.category,
               id: String(apiProduct.category.id),
+              type: 'sports' as const,
+              status: 'active' as const,
+              displayOrder: 0,
+              isFeature: false,
+              showInNavigation: true,
               createdAt: '',
               updatedAt: '',
             },
@@ -448,7 +471,12 @@ export async function getAllCategories(): Promise<Category[]> {
     slug: String(category.slug || ''),
     description: category.description ? String(category.description) : undefined,
     image: category.image ? String(category.image) : undefined,
+    type: 'sports' as const,
     parentCategory: undefined,
+    status: 'active' as const,
+    displayOrder: 0,
+    isFeature: false,
+    showInNavigation: true,
     createdAt: String(''),
     updatedAt: String(''),
   }))

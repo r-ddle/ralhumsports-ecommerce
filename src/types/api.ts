@@ -301,6 +301,10 @@ export interface ProductQueryParams {
   minPrice?: number
   maxPrice?: number
   inStock?: boolean
+  // Hierarchical category filters
+  sportsCategory?: string
+  sport?: string
+  sportsItem?: string
 }
 
 // Filter Types for Frontend
@@ -450,4 +454,36 @@ export interface OrderTrackingResponse {
     estimatedDelivery?: string
   }
   message?: string
+}
+
+// Category Groups Types (for carousel view)
+export interface CategoryGroup {
+  category: {
+    id: number
+    name: string
+    slug: string
+    description?: string
+    image?: {
+      url: string
+      alt: string
+    }
+  }
+  products: ProductListItem[]
+  productCount: number
+  hasMore: boolean
+}
+
+export interface CategoryGroupsResponse {
+  success: boolean
+  data: {
+    categoryGroups: CategoryGroup[]
+    meta: {
+      totalCategories: number
+      totalProducts: number
+      productsPerCategory: number
+      sort: string
+      order: string
+      includeEmpty: boolean
+    }
+  }
 }

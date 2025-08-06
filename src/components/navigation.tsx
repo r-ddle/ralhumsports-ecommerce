@@ -324,7 +324,7 @@ export default function EnhancedNavigation() {
 
     if (params.brand) searchParams.append('brand', params.brand)
     if (params.brands && params.brands.length > 0) {
-      params.brands.forEach(brand => searchParams.append('brand', brand))
+      params.brands.forEach((brand) => searchParams.append('brand', brand))
     }
 
     const queryString = searchParams.toString()
@@ -370,8 +370,10 @@ export default function EnhancedNavigation() {
   }
 
   const handleSportsItemClick = (categorySlug: string, sportSlug: string, itemSlug: string) => {
-    window.location.href = buildPreselectUrl({ sportsItem: itemSlug })
-    closeMegaMenuImmediately()
+    // Don't navigate immediately - just set the hover state for "Shop Category" button
+    setHoveredSportsItem(itemSlug)
+    setHoveredSportsCategory(categorySlug)
+    setHoveredSport(sportSlug)
   }
 
   const handleBrandClick = (brandSlug: string) => {
@@ -791,7 +793,7 @@ export default function EnhancedNavigation() {
               </div>
 
               {/* Action Buttons */}
-              <div className="pt-6 border-t border-gray-200 mt-2">
+              <div className="pt-2 border-t border-gray-200 mt-2">
                 <div className="flex gap-3 justify-between">
                   <Link
                     href="/brands"
@@ -922,9 +924,9 @@ export default function EnhancedNavigation() {
                                 transition={{ duration: 0.2 }}
                                 className="absolute top-full mt-4 bg-brand-surface border border-brand-border shadow-2xl rounded-2xl overflow-hidden z-50"
                                 style={{
-                                  width: '1200px',
-                                  maxWidth: '95vw',
-                                  left: '-400%',
+                                  width: '1300px',
+                                  maxWidth: '125vw',
+                                  left: '-450%',
                                   transform: 'translateX(-50%)',
                                 }}
                                 ref={megaMenuRef}

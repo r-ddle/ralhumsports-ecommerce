@@ -2,7 +2,9 @@
 
 import { useState, useEffect, useCallback, useMemo } from 'react'
 import { ProductCard } from '@/components/product-card'
-import { EnhancedProductFilters as FiltersComponent } from '@/components/product-filters'
+import { ProductFiltersDialog } from '@/components/product-filters-dialog'
+import { CategorySection } from '@/components/category-section'
+import { CatalogViewToggle } from '@/components/catalog-view-toggle'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
@@ -16,12 +18,12 @@ import {
   ChevronLeft,
   ChevronRight,
   Sparkles,
-  SlidersHorizontal,
 } from 'lucide-react'
 import { Separator } from '@/components/ui/separator'
 import { ProductListItem, Category as ApiCategory, Brand as ApiBrand } from '@/types/api'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useSearchParams } from 'next/navigation'
+import { useCatalogView } from '@/hooks/use-catalog-view'
 
 // Type adapters for ProductFilters component
 interface FilterCategory {
@@ -59,15 +61,15 @@ interface FilterHierarchicalCategories {
 }
 
 // Helper functions to convert API types to filter component types
-const convertApiCategoryToFilterCategory = (apiCategory: ApiCategory): FilterCategory => ({
+const convertApiCategoryToFilterCategory = (apiCategory: any): FilterCategory => ({
   id: apiCategory.id,
   name: apiCategory.name,
   slug: apiCategory.slug,
   productCount: apiCategory.productCount,
-  type: 'sports-category', // Default type, should be determined by API
-  level: 0, // Default level, should be determined by API
-  fullPath: `/${apiCategory.slug}`,
-  parentCategory: null,
+  type: apiCategory.type || 'sports-category',
+  level: apiCategory.level || 0,
+  fullPath: apiCategory.fullPath || `/${apiCategory.slug}`,
+  parentCategory: apiCategory.parentCategory,
 })
 
 const convertApiBrandToFilterBrand = (apiBrand: ApiBrand): FilterBrand => ({
@@ -85,9 +87,9 @@ const convertApiBrandToFilterBrand = (apiBrand: ApiBrand): FilterBrand => ({
 })
 
 const convertHierarchicalCategories = (hierarchical: any): FilterHierarchicalCategories => ({
-  sportsCategories: (hierarchical?.sportsCategories || []).map(convertApiCategoryToFilterCategory),
-  sports: (hierarchical?.sports || []).map(convertApiCategoryToFilterCategory),
-  sportsItems: (hierarchical?.sportsItems || []).map(convertApiCategoryToFilterCategory),
+  sportsCategories: (hierarchical?.sportsCategories || []).map((cat: any) => convertApiCategoryToFilterCategory(cat)),
+  sports: (hierarchical?.sports || []).map((cat: any) => convertApiCategoryToFilterCategory(cat)),
+  sportsItems: (hierarchical?.sportsItems || []).map((cat: any) => convertApiCategoryToFilterCategory(cat)),
 })
 
 interface ProductFilters {
@@ -118,7 +120,6 @@ interface ProductQueryParams {
 export default function StorePage() {
   const searchParams = useSearchParams()
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid')
-  const [showFilters, setShowFilters] = useState(false)
   const [products, setProducts] = useState<ProductListItem[]>([])
   const [filterOptions, setFilterOptions] = useState<ProductFilters>({
     categories: [],
@@ -151,6 +152,19 @@ export default function StorePage() {
 
   const [prefersReducedMotion, setPrefersReducedMotion] = useState(false)
 
+  // Catalog view management
+  const {
+    viewMode: catalogViewMode,
+    categoryGroups,
+    loading: catalogLoading,
+    error: catalogError,
+    hasActiveFilters,
+    switchToSectioned,
+    switchToFiltered,
+    setHasActiveFilters,
+    refreshCategoryGroups,
+  } = useCatalogView()
+
   useEffect(() => {
     const mediaQuery = window.matchMedia('(prefers-reduced-motion: reduce)')
     setPrefersReducedMotion(mediaQuery.matches)
@@ -173,12 +187,23 @@ export default function StorePage() {
     const search = searchParams.get('search')
     if (search) urlFilters.search = search
 
-    // Handle preselected parameters from navigation (don't apply filters yet)
+    // Handle preselected parameters from navigation and auto-apply them
     const preselected = searchParams.get('preselected')
     const preselectValue = searchParams.get('preselectValue')
     
-    // Only apply actual filters if no preselected parameters
-    if (!preselected && !preselectValue) {
+    // Auto-apply preselected parameters as filters
+    if (preselected && preselectValue) {
+      if (preselected === 'sportsCategory') {
+        urlFilters.sportsCategory = preselectValue
+      } else if (preselected === 'sport') {
+        urlFilters.sport = preselectValue
+      } else if (preselected === 'sportsItem') {
+        urlFilters.sportsItem = preselectValue
+      } else if (preselected === 'brand') {
+        urlFilters.brands = [preselectValue]
+      }
+    } else {
+      // Only apply URL filters if no preselected parameters
       // Handle hierarchical categories (keep them separate, don't merge into categories array)
       const sportsCategory = searchParams.get('sportsCategory')
       const sport = searchParams.get('sport')
@@ -351,6 +376,11 @@ export default function StorePage() {
     }).length
   }, [currentFilters])
 
+  // Update catalog view when filters change
+  useEffect(() => {
+    setHasActiveFilters(activeFiltersCount > 0)
+  }, [activeFiltersCount, setHasActiveFilters])
+
   if (error) {
     return (
       <main className="min-h-screen pt-16 bg-gradient-to-br from-gray-50 via-white to-blue-50">
@@ -380,107 +410,92 @@ export default function StorePage() {
               </p>
             </div>
 
-            {/* Mobile Filter Toggle */}
-            <div className="flex items-center gap-2 sm:hidden">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setShowFilters(!showFilters)}
-                className="flex items-center gap-2"
-              >
-                <SlidersHorizontal className="h-4 w-4" />
-                Filters
-                {activeFiltersCount > 0 && (
-                  <Badge variant="secondary" className="ml-1">
-                    {activeFiltersCount}
-                  </Badge>
-                )}
-              </Button>
-            </div>
           </div>
         </div>
 
-        <div className="flex flex-col lg:flex-row gap-6 lg:gap-8">
-          {/* Mobile Filters Overlay */}
-          {showFilters && (
-            <div className="fixed inset-0 z-50 lg:hidden">
-              <div className="absolute inset-0 bg-black/50" onClick={() => setShowFilters(false)} />
-              <div className="absolute right-0 top-0 h-full w-80 max-w-[85vw] bg-white p-4 overflow-y-auto">
-                <div className="flex items-center justify-between mb-4">
-                  <h2 className="text-lg font-semibold">Filters</h2>
-                  <Button variant="ghost" size="sm" onClick={() => setShowFilters(false)}>
-                    ×
-                  </Button>
-                </div>
-                <FiltersComponent
-                  categories={filterOptions.categories}
-                  hierarchicalCategories={filterOptions.hierarchicalCategories}
-                  brands={filterOptions.brands}
-                  priceRange={filterOptions.priceRange}
-                  loading={filtersLoading}
-                  onApplyFilters={() => setShowFilters(false)}
-                />
-              </div>
-            </div>
-          )}
-
-          {/* Desktop Filters Sidebar */}
-          <div className="hidden lg:block w-80 flex-shrink-0">
-            <FiltersComponent
-              categories={filterOptions.categories}
-              hierarchicalCategories={filterOptions.hierarchicalCategories}
-              brands={filterOptions.brands}
-              priceRange={filterOptions.priceRange}
-              loading={filtersLoading}
-            />
-          </div>
-
-          {/* Main Content */}
-          <div className="flex-1 min-w-0">
-            {/* Results Header */}
-            <Card className="mb-4 sm:mb-6">
+        <div className="max-w-full">
+          {/* Main Content - Full Width */}
+          <div className="w-full">
+            {/* Results Header with Filters */}
+            <Card className="mb-4 sm:mb-6 shadow-lg">
               <CardContent className="p-3 sm:p-4">
                 <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
                   <div className="flex items-center gap-3">
-                    <p className="text-sm text-text-secondary">
+                    <p className="text-sm font-medium text-text-secondary">
                       {loading ? (
                         'Loading products...'
                       ) : (
                         <>
-                          Showing {products.length} of {pagination.totalDocs} products
-                          {activeFiltersCount > 0 && ` (${activeFiltersCount} filters applied)`}
+                          Showing <span className="font-bold text-brand-primary">{products.length}</span> of{' '}
+                          <span className="font-bold text-brand-primary">{pagination.totalDocs}</span> products
+                          {activeFiltersCount > 0 && (
+                            <span className="text-brand-secondary ml-1">
+                              ({activeFiltersCount} filters applied)
+                            </span>
+                          )}
                         </>
                       )}
                     </p>
                   </div>
 
                   <div className="flex items-center gap-2">
-                    {/* View Mode Toggle - Hidden on mobile */}
-                    <div className="hidden sm:flex items-center gap-1 mr-2">
-                      <Button
-                        variant={viewMode === 'grid' ? 'default' : 'outline'}
-                        size="sm"
-                        onClick={() => setViewMode('grid')}
-                        className="h-8 w-8 p-0"
-                      >
-                        <Grid3X3 className="h-4 w-4" />
-                      </Button>
-                      <Button
-                        variant={viewMode === 'list' ? 'default' : 'outline'}
-                        size="sm"
-                        onClick={() => setViewMode('list')}
-                        className="h-8 w-8 p-0"
-                      >
-                        <List className="h-4 w-4" />
-                      </Button>
-                    </div>
+                    {/* Catalog View Toggle */}
+                    <CatalogViewToggle
+                      viewMode={catalogViewMode}
+                      hasActiveFilters={hasActiveFilters}
+                      activeFiltersCount={activeFiltersCount}
+                      onViewModeChange={(mode) => {
+                        if (mode === 'sectioned') {
+                          switchToSectioned()
+                        } else {
+                          switchToFiltered()
+                        }
+                      }}
+                      className="hidden sm:flex"
+                    />
+
+                    {/* Filter Dialog Button - Always visible */}
+                    <ProductFiltersDialog
+                      categories={filterOptions.categories}
+                      hierarchicalCategories={filterOptions.hierarchicalCategories}
+                      brands={filterOptions.brands}
+                      priceRange={filterOptions.priceRange}
+                      loading={filtersLoading}
+                      activeFiltersCount={activeFiltersCount}
+                      onApplyFilters={() => {
+                        // Optional: scroll to top after applying filters
+                        window.scrollTo({ top: 0, behavior: 'smooth' })
+                      }}
+                    />
+
+                    {/* View Mode Toggle - Hidden on mobile, only show in filtered mode */}
+                    {catalogViewMode === 'filtered' && (
+                      <div className="hidden sm:flex items-center gap-1 ml-2">
+                        <Button
+                          variant={viewMode === 'grid' ? 'default' : 'outline'}
+                          size="sm"
+                          onClick={() => setViewMode('grid')}
+                          className="h-8 w-8 p-0"
+                        >
+                          <Grid3X3 className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          variant={viewMode === 'list' ? 'default' : 'outline'}
+                          size="sm"
+                          onClick={() => setViewMode('list')}
+                          className="h-8 w-8 p-0"
+                        >
+                          <List className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    )}
 
                     {activeFiltersCount > 0 && (
                       <Button
                         variant="outline"
                         size="sm"
                         onClick={handleResetFilters}
-                        className="text-xs"
+                        className="text-xs border-red-200 text-red-600 hover:bg-red-50 hover:border-red-300"
                       >
                         Clear All
                       </Button>
@@ -490,78 +505,141 @@ export default function StorePage() {
               </CardContent>
             </Card>
 
-            {/* Products Grid with Enhanced Mobile Layout */}
+            {/* Content Area - Category Sections or Filtered Products */}
             <AnimatePresence mode="wait">
-              {loading ? (
+              {catalogViewMode === 'sectioned' ? (
+                // Category Sections View
                 <motion.div
-                  key="loading"
+                  key="category-sections"
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
                   exit={{ opacity: 0 }}
-                  className={`grid gap-3 sm:gap-4 lg:gap-6 ${
-                    viewMode === 'grid'
-                      ? 'grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-4' // Enhanced mobile: 2 columns on mobile, 3 on tablet, 4 on desktop
-                      : 'grid-cols-1'
-                  }`}
+                  className="space-y-8"
                 >
-                  {Array.from({ length: 12 }).map((_, i) => (
-                    <ProductCardSkeleton key={i} />
-                  ))}
-                </motion.div>
-              ) : products.length > 0 ? (
-                <motion.div
-                  key="products"
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  exit={{ opacity: 0 }}
-                  className={`grid gap-3 sm:gap-4 lg:gap-6 ${
-                    viewMode === 'grid'
-                      ? 'grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-4' // Enhanced mobile: 2 columns on mobile, 3 on tablet, 4 on desktop
-                      : 'grid-cols-1'
-                  }`}
-                >
-                  {products.map((product, index) => (
+                  {catalogLoading ? (
+                    // Loading skeletons for category sections
+                    <div className="space-y-8">
+                      {Array.from({ length: 3 }).map((_, i) => (
+                        <Card key={i} className="w-full">
+                          <CardContent className="p-6">
+                            <div className="flex items-center justify-between mb-4">
+                              <div className="h-6 bg-gray-200 rounded w-32"></div>
+                              <div className="h-8 bg-gray-200 rounded w-20"></div>
+                            </div>
+                            <div className="flex gap-4 overflow-hidden">
+                              {Array.from({ length: 4 }).map((_, j) => (
+                                <div key={j} className="flex-none w-64">
+                                  <ProductCardSkeleton />
+                                </div>
+                              ))}
+                            </div>
+                          </CardContent>
+                        </Card>
+                      ))}
+                    </div>
+                  ) : catalogError ? (
+                    <Alert>
+                      <AlertCircle className="h-4 w-4" />
+                      <AlertDescription>{catalogError}</AlertDescription>
+                    </Alert>
+                  ) : categoryGroups.length > 0 ? (
+                    categoryGroups.map((categoryGroup, index) => (
+                      <motion.div
+                        key={categoryGroup.category.id}
+                        initial={prefersReducedMotion ? {} : { opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ duration: 0.5, delay: index * 0.1 }}
+                      >
+                        <CategorySection 
+                          categoryGroup={categoryGroup}
+                          showViewAll={true}
+                        />
+                      </motion.div>
+                    ))
+                  ) : (
                     <motion.div
-                      key={product.id}
-                      initial={prefersReducedMotion ? {} : { opacity: 0, y: 20 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ duration: 0.5, delay: index * 0.05 }}
-                      className="h-full" // Ensure consistent height
+                      key="empty-categories"
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      exit={{ opacity: 0 }}
+                      className="text-center py-12"
                     >
-                      <ProductCard
-                        product={product}
-                        variant={viewMode}
-                        showBrand={true}
-                        showCategory={true}
-                        className="h-full"
-                      />
+                      <Package className="w-16 h-16 text-text-secondary mx-auto mb-4" />
+                      <h3 className="text-lg font-semibold text-text-primary mb-2">
+                        No categories with products found
+                      </h3>
+                      <p className="text-text-secondary mb-6">
+                        Check back later for new products
+                      </p>
                     </motion.div>
-                  ))}
+                  )}
                 </motion.div>
               ) : (
+                // Filtered Products Grid View
                 <motion.div
-                  key="empty"
+                  key="filtered-products"
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
                   exit={{ opacity: 0 }}
-                  className="text-center py-12"
                 >
-                  <Package className="w-16 h-16 text-text-secondary mx-auto mb-4" />
-                  <h3 className="text-lg font-semibold text-text-primary mb-2">
-                    No products found
-                  </h3>
-                  <p className="text-text-secondary mb-6">
-                    Try adjusting your filters or search terms
-                  </p>
-                  <Button onClick={handleResetFilters} variant="outline">
-                    Reset Filters
-                  </Button>
+                  {loading ? (
+                    <div
+                      className={`grid gap-3 sm:gap-4 lg:gap-6 ${
+                        viewMode === 'grid'
+                          ? 'grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6'
+                          : 'grid-cols-1'
+                      }`}
+                    >
+                      {Array.from({ length: 12 }).map((_, i) => (
+                        <ProductCardSkeleton key={i} />
+                      ))}
+                    </div>
+                  ) : products.length > 0 ? (
+                    <div
+                      className={`grid gap-3 sm:gap-4 lg:gap-6 ${
+                        viewMode === 'grid'
+                          ? 'grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6'
+                          : 'grid-cols-1'
+                      }`}
+                    >
+                      {products.map((product, index) => (
+                        <motion.div
+                          key={product.id}
+                          initial={prefersReducedMotion ? {} : { opacity: 0, y: 20 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          transition={{ duration: 0.5, delay: index * 0.05 }}
+                          className="h-full"
+                        >
+                          <ProductCard
+                            product={product}
+                            variant={viewMode}
+                            showBrand={true}
+                            showCategory={true}
+                            className="h-full"
+                          />
+                        </motion.div>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="text-center py-12">
+                      <Package className="w-16 h-16 text-text-secondary mx-auto mb-4" />
+                      <h3 className="text-lg font-semibold text-text-primary mb-2">
+                        No products found
+                      </h3>
+                      <p className="text-text-secondary mb-6">
+                        Try adjusting your filters or search terms
+                      </p>
+                      <Button onClick={handleResetFilters} variant="outline">
+                        Reset Filters
+                      </Button>
+                    </div>
+                  )}
                 </motion.div>
               )}
             </AnimatePresence>
 
-            {/* Pagination */}
-            {!loading && pagination.totalPages > 1 && (
+            {/* Pagination - Only show in filtered mode */}
+            {catalogViewMode === 'filtered' && !loading && pagination.totalPages > 1 && (
               <motion.div
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
