@@ -139,7 +139,7 @@ export async function GET(request: NextRequest) {
               textAlign: 'center',
             }}
           >
-            Sri Lanka's Premier Sports Equipment Store
+            Sri Lanka&apos;s Premier Sports Equipment Store
           </div>
 
           {/* Title */}
@@ -193,7 +193,7 @@ export async function GET(request: NextRequest) {
     })
   } catch (e: any) {
     console.log(`Failed to generate OpenGraph image: ${e.message}`)
-    
+
     // Return a simple fallback image
     return new ImageResponse(
       (
@@ -217,7 +217,7 @@ export async function GET(request: NextRequest) {
       {
         width: 1200,
         height: 630,
-      }
+      },
     )
   }
 }
