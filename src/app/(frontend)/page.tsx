@@ -6,6 +6,9 @@ import Heritage from '@/components/heritage'
 import ContactCTA from '@/components/contact-cta'
 import type { Metadata } from 'next'
 
+// Force static generation - this ensures metadata is server-rendered
+export const dynamic = 'force-static'
+
 export const metadata: Metadata = {
   title: "Ralhum Sports Sri Lanka - Premium Sports Equipment Store | ralhumsports.lk",
   description:

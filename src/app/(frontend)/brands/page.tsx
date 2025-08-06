@@ -4,6 +4,9 @@ import type { Metadata } from 'next'
 // Import the existing client component
 import BrandsClientPage from './client-page'
 
+// Force static generation - this ensures metadata is server-rendered
+export const dynamic = 'force-static'
+
 export const metadata: Metadata = {
   title: 'Official Sports Brands at Ralhum Sports Sri Lanka | Gray-Nicolls, Gilbert, Molten',
   description:
