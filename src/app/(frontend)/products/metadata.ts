@@ -21,24 +21,39 @@ export const productsMetadata: Metadata = {
     'premium sports gear'
   ].join(', '),
   openGraph: {
+    type: 'website',
+    locale: 'en_LK',
+    siteName: 'Ralhum Sports Sri Lanka',
     title: 'Sports Products - Ralhum Sports Sri Lanka | ralhumsports.lk',
     description:
       'Explore premium sports products at ralhumsports.lk. Official Ralhum Store with cricket, rugby, hockey equipment from top brands.',
-    url: '/products',
+    url: 'https://www.ralhumsports.lk/products',
     images: [
       {
-        url: '/ralhumbanner.png',
+        url: 'https://www.ralhumsports.lk/ralhumbanner.png',
+        width: 1200,
+        height: 630,
+        alt: 'Sports Products - Ralhum Sports Sri Lanka',
+        type: 'image/png',
+      }
+    ],
+  },
+  twitter: {
+    card: 'summary_large_image',
+    site: '@ralhumsports',
+    creator: '@ralhumsports',
+    title: 'Sports Products - Ralhum Sports Sri Lanka',
+    description: 'Browse premium sports products at ralhumsports.lk - your trusted Ralhum Store.',
+    images: [
+      {
+        url: 'https://www.ralhumsports.lk/ralhumbanner.png',
         width: 1200,
         height: 630,
         alt: 'Sports Products - Ralhum Sports Sri Lanka',
       }
     ],
   },
-  twitter: {
-    title: 'Sports Products - Ralhum Sports Sri Lanka',
-    description: 'Browse premium sports products at ralhumsports.lk - your trusted Ralhum Store.',
-  },
   alternates: {
-    canonical: '/products',
+    canonical: 'https://www.ralhumsports.lk/products',
   },
 }
