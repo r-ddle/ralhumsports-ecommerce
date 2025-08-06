@@ -117,20 +117,19 @@ export default buildConfig({
     'http://localhost:3000',
     'https://localhost:3000',
   ].filter(Boolean),
-  // Temporarily disable email until we fix the configuration
-  // email: nodemailerAdapter({
-  //   defaultFromAddress: process.env.SMTP_FROM || 'noreply@ralhumsports.lk',
-  //   defaultFromName: 'Ralhum Sports',
-  //   transport: {
-  //     host: process.env.SMTP_HOST || 'sandbox.smtp.mailtrap.io',
-  //     port: parseInt(process.env.SMTP_PORT || '2525'),
-  //     secure: false,
-  //     auth: {
-  //       user: process.env.SMTP_USER || '',
-  //       pass: process.env.SMTP_PASS || '',
-  //     },
-  //   },
-  // }),
+  email: nodemailerAdapter({
+    defaultFromAddress: process.env.SMTP_FROM || 'noreply@ralhumsports.lk',
+    defaultFromName: 'Ralhum Sports',
+    transport: {
+      host: process.env.SMTP_HOST || 'sandbox.smtp.mailtrap.io',
+      port: parseInt(process.env.SMTP_PORT || '2525'),
+      secure: process.env.SMTP_SECURE === 'true',
+      auth: {
+        user: process.env.SMTP_USER || '',
+        pass: process.env.SMTP_PASS || '',
+      },
+    },
+  }),
   plugins: [
     vercelBlobStorage({
       collections: {
