@@ -54,7 +54,7 @@ export function OrdersSidebar() {
               size="sm"
               onClick={handleRefresh}
               disabled={isRefreshing || isLoading}
-              className="ml-auto p-2 h-8 w-8 hover:bg-white/50"
+              className="ml-60 p-2 h-8 w-8 hover:bg-white/50"
             >
               <RefreshCw className={`w-4 h-4 ${isRefreshing ? 'animate-spin' : ''}`} />
             </Button>
