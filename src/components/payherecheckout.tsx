@@ -263,7 +263,7 @@ export function PayHereCheckout({
         size="lg"
         onClick={handlePayment}
         disabled={!isLoaded || isProcessing}
-        className="w-full bg-gradient-to-r from-[#FF6B00] to-[#FF8533] hover:from-[#FF8533] hover:to-[#FF6B00] text-white font-bold py-4 text-lg rounded-xl shadow-2xl hover:scale-[1.02] transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
+        className="w-full font-bold border-2 border-white text-white hover:bg-brand-secondary/10 py-4 text-lg rounded-xl flex items-center justify-center"
       >
         {isLoading || isProcessing ? (
           <>
@@ -273,7 +273,7 @@ export function PayHereCheckout({
         ) : (
           <>
             <CreditCard className="w-5 h-5 mr-2" />
-            Pay with Card/Mobile Banking
+            Pay with Card
           </>
         )}
       </Button>
