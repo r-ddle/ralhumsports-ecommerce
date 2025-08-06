@@ -23,7 +23,7 @@ const inter = Inter({
 })
 
 export const metadata: Metadata = {
-  metadataBase: new URL('https://www.ralhumsports.lk'),
+  metadataBase: new URL(process.env.VERCEL_ENV === 'production' ? 'https://www.ralhumsports.lk' : 'http://localhost:3000'),
   title: {
     template: '%s | Ralhum Sports Sri Lanka - Premium Sports Equipment Store',
     default: 'Ralhum Sports Sri Lanka - Premium Sports Equipment & Gear | ralhumsports.lk',

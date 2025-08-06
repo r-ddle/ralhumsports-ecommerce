@@ -5,7 +5,9 @@
       "Bash(pnpm lint:*)",
       "Bash(mv:*)",
       "Bash(npm run lint)",
-      "Bash(pnpm add:*)"
+      "Bash(pnpm add:*)",
+      "Bash(curl:*)",
+      "Bash(npx tsc:*)"
     ],
     "deny": []
   }

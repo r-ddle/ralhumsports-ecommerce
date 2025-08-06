@@ -2,12 +2,12 @@ import type { Metadata } from 'next'
 
 /**
  * Get the appropriate base URL for the current environment
- * Follows Vercel best practices for URL resolution
+ * Follows Vercel best practices for URL resolution and ensures www consistency
  */
 export function getBaseUrl(): string {
-  // Production environment - always use custom domain
+  // Production environment - always use www subdomain for consistency
   if (process.env.VERCEL_ENV === 'production') {
-    return 'https://ralhumsports.lk'
+    return 'https://www.ralhumsports.lk'
   }
 
   // Preview environment - use project production URL if available

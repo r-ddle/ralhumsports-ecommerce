@@ -5,6 +5,9 @@ import type { Metadata } from 'next'
 // Import the existing client component
 import ProductsClientPage from './client-page'
 
+// Force static generation - this ensures metadata is server-rendered
+export const dynamic = 'force-static'
+
 export const metadata: Metadata = productsMetadata
 
 export default function ProductsPage() {
