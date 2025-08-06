@@ -1,0 +1,33 @@
+# robots.txt for Ralhum Sports Sri Lanka (ralhumsports.lk)
+
+User-agent: *
+Allow: /
+
+# Allow search engines to crawl important pages
+Allow: /products/
+Allow: /brands/
+Allow: /about
+Allow: /contact
+
+# Disallow admin and API paths
+Disallow: /admin/
+Disallow: /api/
+Disallow: /_next/
+Disallow: /checkout/
+Disallow: /orders/
+
+# Sitemap
+Sitemap: https://www.ralhumsports.lk/sitemap.xml
+
+# Crawl delay to be respectful to server resources
+Crawl-delay: 1
+
+# Block specific user agents that are known to be problematic
+User-agent: SemrushBot
+Disallow: /
+
+User-agent: AhrefsBot
+Disallow: /
+
+User-agent: MJ12bot
+Disallow: /

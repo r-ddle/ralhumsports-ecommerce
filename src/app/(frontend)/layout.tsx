@@ -29,7 +29,7 @@ export const metadata: Metadata = {
     default: 'Ralhum Sports Sri Lanka - Premium Sports Equipment & Gear | ralhumsports.lk',
   },
   description:
-    'Shop premium sports equipment at Ralhum Sports Sri Lanka (ralhumsports.lk). Official distributor of Gray-Nicolls, Gilbert, Molten & Grays. Fast nationwide delivery across Sri Lanka.',
+    'Shop premium sports equipment at Ralhum Sports Sri Lanka (ralhumsports.lk). Official distributor of Gray-Nicolls, Gilbert, Molten & Grays. Fast nationwide delivery across Sri Lanka for cricket, rugby, basketball, hockey & tennis gear.',
   keywords: [
     'ralhumsports.lk',
     'ralhum sports sri lanka',
@@ -51,6 +51,15 @@ export const metadata: Metadata = {
     'sports gear western province',
     'athletic equipment sri lanka',
     'sportswear colombo',
+    'premium sports equipment',
+    'sports store near me',
+    'buy sports equipment online sri lanka',
+    'cricket equipment shop',
+    'rugby gear store',
+    'basketball equipment sri lanka',
+    'hockey equipment store',
+    'tennis equipment sri lanka',
+    'sports accessories sri lanka',
   ].join(', '),
   authors: [{ name: 'Ralhum Sports Team' }],
   creator: 'Ralhum Sports Sri Lanka',
@@ -69,17 +78,18 @@ export const metadata: Metadata = {
   openGraph: {
     type: 'website',
     locale: 'en_LK',
-    url: '/',
+    url: 'https://www.ralhumsports.lk',
     siteName: 'Ralhum Sports Sri Lanka',
     title: 'Ralhum Sports Sri Lanka - Premium Sports Equipment Store',
     description:
-      'Shop premium sports equipment at ralhumsports.lk. Official distributor of Gray-Nicolls, Gilbert, Grays & Molten. Fast delivery across Sri Lanka.',
+      'Shop premium sports equipment at ralhumsports.lk. Official distributor of Gray-Nicolls, Gilbert, Grays & Molten. Fast delivery across Sri Lanka for cricket, rugby, basketball, hockey & tennis gear.',
     images: [
       {
-        url: '/ralhumbanner.png',
+        url: 'https://www.ralhumsports.lk/ralhumbanner.png',
         width: 1200,
         height: 630,
         alt: 'Ralhum Sports Sri Lanka - Premium Sports Equipment Store',
+        type: 'image/png',
       },
     ],
   },
@@ -89,14 +99,21 @@ export const metadata: Metadata = {
     creator: '@ralhumsports',
     title: 'Ralhum Sports Sri Lanka - Premium Sports Equipment',
     description:
-      'Shop premium sports equipment at ralhumsports.lk. Official distributor with fast delivery across Sri Lanka.',
-    images: ['/ralhumbanner.png'],
+      'Shop premium sports equipment at ralhumsports.lk. Official distributor with fast delivery across Sri Lanka for cricket, rugby, basketball, hockey & tennis gear.',
+    images: [
+      {
+        url: 'https://www.ralhumsports.lk/ralhumbanner.png',
+        width: 1200,
+        height: 630,
+        alt: 'Ralhum Sports Sri Lanka - Premium Sports Equipment Store',
+      },
+    ],
   },
   verification: {
     google: 'pjZLxNs-yhkubiRfnamMtruzHA58nrlA6y4myDerRNI',
   },
   alternates: {
-    canonical: '/',
+    canonical: 'https://www.ralhumsports.lk',
   },
   category: 'Sports Equipment Store',
   other: {
