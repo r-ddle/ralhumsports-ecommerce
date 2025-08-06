@@ -5,6 +5,7 @@ import { useRouter, useSearchParams } from 'next/navigation'
 
 export interface ProductFilters {
   search?: string
+  // Legacy category filter (for backward compatibility)
   categories?: string[]
   brands?: string[]
   minPrice?: number
@@ -13,6 +14,12 @@ export interface ProductFilters {
   sort?: string
   order?: 'asc' | 'desc'
   // Hierarchical category filters
+  categoryHierarchy?: {
+    sportsCategory?: string    // Level 1: Sports Category (e.g., "Team Sports")
+    sports?: string           // Level 2: Sports (e.g., "Football") 
+    sportsItem?: string       // Level 3: Sports Item (e.g., "Football Boots")
+  }
+  // Individual fields for URL params and backward compatibility
   sportsCategory?: string
   sport?: string
   sportsItem?: string
@@ -44,13 +51,24 @@ export function useProductFilters() {
       
       // Handle individual category levels for hierarchical filtering
       const sportsCategory = searchParams.get('sportsCategory')
-      if (sportsCategory) urlFilters.sportsCategory = sportsCategory
-      
       const sport = searchParams.get('sport')
-      if (sport) urlFilters.sport = sport
-      
       const sportsItem = searchParams.get('sportsItem')
-      if (sportsItem) urlFilters.sportsItem = sportsItem
+      
+      if (sportsCategory || sport || sportsItem) {
+        urlFilters.categoryHierarchy = {}
+        if (sportsCategory) {
+          urlFilters.sportsCategory = sportsCategory
+          urlFilters.categoryHierarchy.sportsCategory = sportsCategory
+        }
+        if (sport) {
+          urlFilters.sport = sport
+          urlFilters.categoryHierarchy.sports = sport
+        }
+        if (sportsItem) {
+          urlFilters.sportsItem = sportsItem
+          urlFilters.categoryHierarchy.sportsItem = sportsItem
+        }
+      }
 
       const brands = searchParams.getAll('brand')
       if (brands.length > 0) urlFilters.brands = brands
@@ -90,7 +108,7 @@ export function useProductFilters() {
       if (newFilters.sort) params.set('sort', newFilters.sort)
       if (newFilters.order) params.set('order', newFilters.order)
       
-      // Hierarchical category filters
+      // Hierarchical category filters (use individual fields for URL params)
       if (newFilters.sportsCategory) params.set('sportsCategory', newFilters.sportsCategory)
       if (newFilters.sport) params.set('sport', newFilters.sport)
       if (newFilters.sportsItem) params.set('sportsItem', newFilters.sportsItem)
@@ -177,6 +195,126 @@ export function useProductFilters() {
     }
   }, [searchParams])
 
+  // Set hierarchical category filter
+  const setCategoryHierarchy = useCallback(
+    (level: 'sportsCategory' | 'sports' | 'sportsItem', value: string) => {
+      setFilters((prev) => {
+        const newFilters = { ...prev }
+        
+        // Map hierarchy level to actual filter property names
+        const fieldMapping = {
+          sportsCategory: 'sportsCategory',
+          sports: 'sport', // Note: 'sport' in filters, 'sports' in hierarchy
+          sportsItem: 'sportsItem'
+        } as const
+        
+        // Update individual field (for URL params)
+        const fieldName = fieldMapping[level]
+        if (fieldName === 'sportsCategory') {
+          newFilters.sportsCategory = value
+        } else if (fieldName === 'sport') {
+          newFilters.sport = value
+        } else if (fieldName === 'sportsItem') {
+          newFilters.sportsItem = value
+        }
+        
+        // Initialize categoryHierarchy if it doesn't exist
+        if (!newFilters.categoryHierarchy) {
+          newFilters.categoryHierarchy = {}
+        }
+        
+        // Update the hierarchy object
+        newFilters.categoryHierarchy[level] = value
+        
+        // When setting a parent level, clear child levels
+        if (level === 'sportsCategory') {
+          delete newFilters.sport
+          delete newFilters.sportsItem
+          if (newFilters.categoryHierarchy) {
+            delete newFilters.categoryHierarchy.sports
+            delete newFilters.categoryHierarchy.sportsItem
+          }
+        } else if (level === 'sports') {
+          delete newFilters.sportsItem
+          if (newFilters.categoryHierarchy) {
+            delete newFilters.categoryHierarchy.sportsItem
+          }
+        }
+
+        updateURL(newFilters)
+        return newFilters
+      })
+    },
+    [updateURL],
+  )
+
+  // Clear hierarchical category filter
+  const clearCategoryHierarchy = useCallback(
+    (level?: 'sportsCategory' | 'sports' | 'sportsItem') => {
+      setFilters((prev) => {
+        const newFilters = { ...prev }
+        
+        if (level) {
+          // Map hierarchy level to actual filter property names
+          const fieldMapping = {
+            sportsCategory: 'sportsCategory',
+            sports: 'sport', // Note: 'sport' in filters, 'sports' in hierarchy
+            sportsItem: 'sportsItem'
+          } as const
+          
+          // Clear specific level
+          const fieldName = fieldMapping[level]
+          if (fieldName === 'sportsCategory') {
+            delete newFilters.sportsCategory
+          } else if (fieldName === 'sport') {
+            delete newFilters.sport
+          } else if (fieldName === 'sportsItem') {
+            delete newFilters.sportsItem
+          }
+          
+          if (newFilters.categoryHierarchy) {
+            delete newFilters.categoryHierarchy[level]
+          }
+          
+          // Clear child levels
+          if (level === 'sportsCategory') {
+            delete newFilters.sport
+            delete newFilters.sportsItem
+            if (newFilters.categoryHierarchy) {
+              delete newFilters.categoryHierarchy.sports
+              delete newFilters.categoryHierarchy.sportsItem
+            }
+          } else if (level === 'sports') {
+            delete newFilters.sportsItem
+            if (newFilters.categoryHierarchy) {
+              delete newFilters.categoryHierarchy.sportsItem
+            }
+          }
+        } else {
+          // Clear all hierarchical categories
+          delete newFilters.sportsCategory
+          delete newFilters.sport
+          delete newFilters.sportsItem
+          delete newFilters.categoryHierarchy
+        }
+
+        updateURL(newFilters)
+        return newFilters
+      })
+    },
+    [updateURL],
+  )
+
+  // Get current category hierarchy path
+  const getCategoryHierarchyPath = useCallback(() => {
+    const { sportsCategory, sport, sportsItem } = filters
+    return {
+      sportsCategory,
+      sports: sport,
+      sportsItem
+    }
+  }, [filters])
+
   return {
     filters,
     loading,
@@ -187,5 +325,8 @@ export function useProductFilters() {
     setMultipleFilters,
     setLoading,
     getPreselectedValues,
+    setCategoryHierarchy,
+    clearCategoryHierarchy,
+    getCategoryHierarchyPath,
   }
 }

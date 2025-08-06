@@ -672,7 +672,7 @@ export function ProductFiltersDialog({
               )}
             </SheetTitle>
             <SheetDescription className="text-gray-600 text-sm">
-              Filter products to find what you're looking for
+              Filter products to find what you&apos;re looking for
             </SheetDescription>
           </SheetHeader>
 
@@ -1041,7 +1041,7 @@ export function ProductFiltersDialog({
             )}
           </DialogTitle>
           <DialogDescription className="text-gray-600 text-sm">
-            Filter products to find what you're looking for
+            Filter products to find what you&apos;re looking for
           </DialogDescription>
         </DialogHeader>
 

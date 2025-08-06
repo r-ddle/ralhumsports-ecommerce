@@ -19,10 +19,10 @@ export function CatalogViewToggle({
   hasActiveFilters,
   activeFiltersCount,
   onViewModeChange,
-  className
+  className,
 }: CatalogViewToggleProps) {
   return (
-    <div className={cn("flex items-center gap-2", className)}>
+    <div className={cn('flex items-center gap-2', className)}>
       <div className="flex items-center border rounded-lg p-1 bg-gray-50">
         <Button
           variant={viewMode === 'sectioned' ? 'default' : 'ghost'}
@@ -30,26 +30,22 @@ export function CatalogViewToggle({
           onClick={() => onViewModeChange('sectioned')}
           disabled={hasActiveFilters}
           className={cn(
-            "h-8 px-3 text-xs font-medium transition-all",
-            viewMode === 'sectioned' 
-              ? "bg-white shadow-sm" 
-              : "hover:bg-white/50",
-            hasActiveFilters && "opacity-50 cursor-not-allowed"
+            'h-8 px-3 text-xs font-medium transition-all',
+            viewMode === 'sectioned' ? 'bg-white shadow-sm' : 'hover:bg-white/50',
+            hasActiveFilters && 'opacity-50 cursor-not-allowed',
           )}
         >
           <LayoutGrid className="w-3 h-3 mr-1.5" />
           Categories
         </Button>
-        
+
         <Button
           variant={viewMode === 'filtered' ? 'default' : 'ghost'}
           size="sm"
           onClick={() => onViewModeChange('filtered')}
           className={cn(
-            "h-8 px-3 text-xs font-medium transition-all",
-            viewMode === 'filtered' 
-              ? "bg-white shadow-sm" 
-              : "hover:bg-white/50"
+            'h-8 px-3 text-xs font-medium transition-all',
+            viewMode === 'filtered' ? 'bg-white shadow-sm' : 'hover:bg-white/50',
           )}
         >
           <Grid3X3 className="w-3 h-3 mr-1.5" />
@@ -65,7 +61,7 @@ export function CatalogViewToggle({
       {hasActiveFilters && viewMode === 'sectioned' && (
         <div className="flex items-center gap-1.5 text-xs text-amber-600 bg-amber-50 px-2 py-1 rounded-md border border-amber-200">
           <Filter className="w-3 h-3" />
-          <span>Filters active - switch to "All Products" to see filtered results</span>
+          <span>Filters active - switch to &quot;All Products&quot; to see filtered results</span>
         </div>
       )}
     </div>

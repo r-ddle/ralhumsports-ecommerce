@@ -16,7 +16,13 @@ export interface Category {
   slug: string
   description?: string
   image?: string
-  parentCategory?: string
+  type: 'sports-category' | 'sports' | 'sports-item'
+  parentCategory?: string | Category
+  relatedBrands?: string[] | Brand[]
+  status: 'active' | 'inactive' | 'draft'
+  displayOrder: number
+  isFeature: boolean
+  showInNavigation: boolean
   createdAt: string
   updatedAt: string
 }
@@ -74,7 +80,14 @@ export interface Product {
 
 export interface ProductFilters {
   brands?: string[]
+  // Legacy category filter (for backward compatibility)
   categories?: string[]
+  // Hierarchical category filters
+  categoryHierarchy?: {
+    sportsCategory?: string    // Level 1: Sports Category (e.g., "Team Sports")
+    sports?: string           // Level 2: Sports (e.g., "Football") 
+    sportsItem?: string       // Level 3: Sports Item (e.g., "Football Boots")
+  }
   priceRange?: {
     min: number
     max: number
@@ -83,6 +96,10 @@ export interface ProductFilters {
   featured?: boolean
   tags?: string[]
   search?: string
+  // Additional filter options
+  sort?: 'title' | 'price' | 'createdAt' | 'updatedAt' | 'featured'
+  order?: 'asc' | 'desc'
+  status?: 'active' | 'draft' | 'archived'
 }
 
 export interface ProductSort {

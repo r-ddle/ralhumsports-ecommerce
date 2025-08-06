@@ -1,7 +1,7 @@
 /**
  * Category-Grouped Products API Route
  * Returns products organized by sports categories for carousel display
- * 
+ *
  * @param request - Next.js API request object
  * @returns JSON response with category-grouped product data
  */
@@ -13,7 +13,7 @@ import { getSecurityHeaders } from '@/lib/response-filter'
 export async function GET(request: NextRequest) {
   const origin = request.headers.get('origin')
   const { searchParams } = new URL(request.url)
-  
+
   // Parameters for controlling the response
   const limit = parseInt(searchParams.get('limit') || '8') // Products per category
   const includeEmpty = searchParams.get('includeEmpty') === 'true' // Include categories with no products
@@ -34,15 +34,17 @@ export async function GET(request: NextRequest) {
     // First, get all sports items (most specific level)
     const categoriesResult = await payload.find({
       collection: 'categories',
-      where: { 
-        type: { equals: 'sports-item' }
+      where: {
+        type: { equals: 'sports-item' },
       },
       sort: 'name',
       limit: 100,
       depth: 0,
     })
 
-    console.log(`\x1b[32m[Category Groups API] Found ${categoriesResult.docs.length} sports items\x1b[0m`)
+    console.log(
+      `\x1b[32m[Category Groups API] Found ${categoriesResult.docs.length} sports items\x1b[0m`,
+    )
 
     // Build category groups with products
     const categoryGroups = await Promise.all(
@@ -54,8 +56,8 @@ export async function GET(request: NextRequest) {
             where: {
               and: [
                 { status: { equals: 'active' } },
-                { 'categorySelection.sportsItem': { equals: category.id } }
-              ]
+                { 'categorySelection.sportsItem': { equals: category.id } },
+              ],
             },
             limit,
             sort: `${order === 'desc' ? '-' : ''}${sort === 'price' ? 'essentials.price' : sort}`,
@@ -129,46 +131,53 @@ export async function GET(request: NextRequest) {
               name: category.name,
               slug: category.slug,
               description: category.description,
-              image: typeof category.image === 'object' 
-                ? {
-                    url: category.image.url,
-                    alt: category.image.alt || category.name,
-                  }
-                : null,
+              image:
+                typeof category.visual?.image === 'object'
+                  ? {
+                      url: category.visual.image?.url,
+                      alt: category.visual.image?.attribution || category.name,
+                    }
+                  : null,
             },
             products: transformedProducts,
             productCount: productsResult.totalDocs,
             hasMore: productsResult.hasNextPage,
           }
         } catch (error) {
-          console.error(`\x1b[31m[Category Groups API ERROR]\x1b[0m Error fetching products for sports item ${category.name}:`, error)
+          console.error(
+            `\x1b[31m[Category Groups API ERROR]\x1b[0m Error fetching products for sports item ${category.name}:`,
+            error,
+          )
           return {
             category: {
               id: category.id,
               name: category.name,
               slug: category.slug,
               description: category.description,
-              image: typeof category.image === 'object' 
-                ? {
-                    url: category.image.url,
-                    alt: category.image.alt || category.name,
-                  }
-                : null,
+              image:
+                typeof category.visual?.image === 'object'
+                  ? {
+                      url: category.visual.image?.url,
+                      alt: category.visual.image?.attribution || category.name,
+                    }
+                  : null,
             },
             products: [],
             productCount: 0,
             hasMore: false,
           }
         }
-      })
+      }),
     )
 
     // Filter out empty categories if requested
-    const filteredGroups = includeEmpty 
-      ? categoryGroups 
-      : categoryGroups.filter(group => group.products.length > 0)
+    const filteredGroups = includeEmpty
+      ? categoryGroups
+      : categoryGroups.filter((group) => group.products.length > 0)
 
-    console.log(`\x1b[32m[Category Groups API] Returning ${filteredGroups.length} category groups\x1b[0m`)
+    console.log(
+      `\x1b[32m[Category Groups API] Returning ${filteredGroups.length} category groups\x1b[0m`,
+    )
 
     // Calculate totals
     const totalProducts = filteredGroups.reduce((sum, group) => sum + group.productCount, 0)
@@ -186,15 +195,14 @@ export async function GET(request: NextRequest) {
             sort,
             order,
             includeEmpty,
-          }
+          },
         },
       },
       { headers: getSecurityHeaders(origin || undefined) },
     )
-    
+
     response.headers.set('Cache-Control', 'public, s-maxage=300, stale-while-revalidate=600')
     return response
-
   } catch (error) {
     console.error(`\x1b[41m\x1b[37m[Category Groups API ERROR]\x1b[0m`, error)
     return NextResponse.json(
