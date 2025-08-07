@@ -16,6 +16,7 @@
     "test": "pnpm run test:int && pnpm run test:e2e",
     "test:e2e": "cross-env NODE_OPTIONS=\"--no-deprecation --no-experimental-strip-types\" pnpm exec playwright test",
     "test:int": "cross-env NODE_OPTIONS=--no-deprecation vitest run --config ./vitest.config.mts",
+    "test:email": "cross-env NODE_OPTIONS=--no-deprecation tsx scripts/test-email.ts",
     "ci": "payload migrate && pnpm build",
     "seed:products": "cross-env NODE_OPTIONS=--no-deprecation tsx scripts/seed-products.ts"
   },
@@ -96,6 +97,7 @@
     "@testing-library/react": "16.3.0",
     "@types/jsonwebtoken": "^9.0.10",
     "@types/node": "^22.5.4",
+    "@types/nodemailer": "^6.4.17",
     "@types/react": "19.1.0",
     "@types/react-dom": "19.1.2",
     "@vitejs/plugin-react": "4.5.2",
@@ -103,6 +105,7 @@
     "eslint": "^9.16.0",
     "eslint-config-next": "15.3.0",
     "jsdom": "26.1.0",
+    "nodemailer": "^7.0.5",
     "playwright": "1.50.0",
     "playwright-core": "1.50.0",
     "postcss": "^8.5",

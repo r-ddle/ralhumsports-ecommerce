@@ -914,6 +914,38 @@ export interface Order {
       expiryDate?: string | null;
     };
   };
+  adminEmail?: {
+    /**
+     * Check to send a custom email to the customer
+     */
+    sendCustomEmail?: boolean | null;
+    /**
+     * Email subject line
+     */
+    emailSubject?: string | null;
+    /**
+     * Custom message to send to the customer
+     */
+    emailMessage?: {
+      root: {
+        type: string;
+        children: {
+          type: string;
+          version: number;
+          [k: string]: unknown;
+        }[];
+        direction: ('ltr' | 'rtl') | null;
+        format: 'left' | 'start' | 'center' | 'right' | 'end' | 'justify' | '';
+        indent: number;
+        version: number;
+      };
+      [k: string]: unknown;
+    } | null;
+    /**
+     * Last custom email sent
+     */
+    lastEmailSent?: string | null;
+  };
   updatedAt: string;
   createdAt: string;
 }
@@ -1601,6 +1633,14 @@ export interface OrdersSelect<T extends boolean = true> {
               cardHolderName?: T;
               expiryDate?: T;
             };
+      };
+  adminEmail?:
+    | T
+    | {
+        sendCustomEmail?: T;
+        emailSubject?: T;
+        emailMessage?: T;
+        lastEmailSent?: T;
       };
   updatedAt?: T;
   createdAt?: T;
