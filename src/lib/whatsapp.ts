@@ -67,7 +67,6 @@ ${minimalProductList}
 
 *Payment Details*
 Subtotal: LKR ${formatCurrency(pricing.subtotal)}
-Tax (${SITE_CONFIG.taxRate * 100}%): LKR ${formatCurrency(pricing.tax)}
 *Total*: LKR ${formatCurrency(pricing.total)}
 
 Please confirm this order and provide payment instructions.
@@ -195,33 +194,101 @@ export function getWhatsAppButtonText(): string {
 
 /**
  * Validate phone number for Sri Lankan format
+ * Handles all common input formats:
+ * - Local: 0772350712, 0112345678
+ * - International: +94772350712, +94112345678
+ * - Without country code: 772350712, 112345678
+ * - With country code but no +: 94772350712, 94112345678
  */
 export function validateSriLankanPhone(phone: string): boolean {
-  // Sri Lankan phone number patterns
-  const patterns = [
-    /^(\+94|0094|94)?[0-9]{9}$/, // General format
-    /^(\+94|0094|94)?[1-9][0-9]{8}$/, // Landline
-    /^(\+94|0094|94)?7[0-9]{8}$/, // Mobile
-  ]
+  if (!phone) return false
 
-  const cleanPhone = phone.replace(/[\s-()]/g, '')
-  return patterns.some((pattern) => pattern.test(cleanPhone))
+  const cleanPhone = phone.replace(/[\s\-().]/g, '')
+
+  // Sri Lankan mobile prefixes (after removing leading 0): 70, 71, 72, 74, 75, 76, 77, 78
+  const mobilePrefix = /^(70|71|72|74|75|76|77|78)/
+
+  // Sri Lankan landline area codes (after removing leading 0)
+  const landlinePrefix =
+    /^(11|21|25|26|27|31|32|33|34|35|36|37|38|41|45|47|51|52|54|55|57|63|65|66|67|81|91)/
+
+  // Pattern 1: Local format with leading 0 (10 digits total)
+  // Mobile: 0772350712, Landline: 0112345678
+  if (/^0\d{9}$/.test(cleanPhone)) {
+    const withoutZero = cleanPhone.substring(1)
+    return mobilePrefix.test(withoutZero) || landlinePrefix.test(withoutZero)
+  }
+
+  // Pattern 2: International format with +94 (12 characters total)
+  // Mobile: +94772350712, Landline: +94112345678
+  if (/^\+94\d{9}$/.test(cleanPhone)) {
+    const withoutCountryCode = cleanPhone.substring(3)
+    return mobilePrefix.test(withoutCountryCode) || landlinePrefix.test(withoutCountryCode)
+  }
+
+  // Pattern 3: Country code without + (11 digits total)
+  // Mobile: 94772350712, Landline: 94112345678
+  if (/^94\d{9}$/.test(cleanPhone)) {
+    const withoutCountryCode = cleanPhone.substring(2)
+    return mobilePrefix.test(withoutCountryCode) || landlinePrefix.test(withoutCountryCode)
+  }
+
+  // Pattern 4: Without country code or leading 0 (9 digits total)
+  // Mobile: 772350712, Landline: 112345678
+  if (/^\d{9}$/.test(cleanPhone)) {
+    return mobilePrefix.test(cleanPhone) || landlinePrefix.test(cleanPhone)
+  }
+
+  // Pattern 5: Alternative international formats
+  if (/^0094\d{9}$/.test(cleanPhone)) {
+    const withoutCountryCode = cleanPhone.substring(4)
+    return mobilePrefix.test(withoutCountryCode) || landlinePrefix.test(withoutCountryCode)
+  }
+
+  return false
 }
 
 /**
- * Format phone number to Sri Lankan standard
+ * Format phone number to Sri Lankan international standard (+94xxxxxxxxx)
+ * Handles all input formats and converts to consistent international format
  */
 export function formatSriLankanPhone(phone: string): string {
-  const cleanPhone = phone.replace(/[\s-()]/g, '')
+  if (!phone) return phone
 
-  // Add +94 if not present
-  if (cleanPhone.startsWith('0')) {
-    return `+94${cleanPhone.substring(1)}`
-  } else if (cleanPhone.startsWith('94')) {
-    return `+${cleanPhone}`
-  } else if (!cleanPhone.startsWith('+94')) {
-    return `+94${cleanPhone}`
+  const cleanPhone = phone.replace(/[\s\-().]/g, '')
+
+  // Already in correct international format
+  if (/^\+94\d{9}$/.test(cleanPhone)) {
+    return cleanPhone
   }
 
+  // Local format with leading 0 (remove 0, add +94)
+  if (/^0\d{9}$/.test(cleanPhone)) {
+    return `+94${cleanPhone.substring(1)}`
+  }
+
+  // Country code without + (add +)
+  if (/^94\d{9}$/.test(cleanPhone)) {
+    return `+${cleanPhone}`
+  }
+
+  // Alternative international format 0094 (replace with +94)
+  if (/^0094\d{9}$/.test(cleanPhone)) {
+    return `+94${cleanPhone.substring(4)}`
+  }
+
+  // Without country code or leading 0 - assume user forgot leading parts
+  if (/^\d{9}$/.test(cleanPhone)) {
+    // Check if it looks like a valid Sri Lankan number
+    const mobilePrefix = /^(70|71|72|74|75|76|77|78)/
+    const landlinePrefix =
+      /^(11|21|25|26|27|31|32|33|34|35|36|37|38|41|45|47|51|52|54|55|57|63|65|66|67|81|91)/
+
+    if (mobilePrefix.test(cleanPhone) || landlinePrefix.test(cleanPhone)) {
+      return `+94${cleanPhone}`
+    }
+  }
+
+  // If all else fails, return as-is (validation will catch invalid numbers)
   return cleanPhone
 }

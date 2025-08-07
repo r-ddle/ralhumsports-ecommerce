@@ -283,3 +283,92 @@
   user-select: none;
   -webkit-user-drag: none;
 }
+
+/* Mobile popup and modal management */
+@media (max-width: 768px) {
+  /* Enhanced mobile popup positioning */
+  .mobile-popup-container {
+    position: fixed !important;
+    top: 0 !important;
+    left: 0 !important;
+    right: 0 !important;
+    bottom: 0 !important;
+    z-index: 9999 !important;
+    background: rgba(0, 0, 0, 0.7) !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    padding: 1rem !important;
+  }
+
+  /* Ensure mobile modals are properly centered and sized */
+  .mobile-modal-content {
+    width: 95vw !important;
+    max-width: 400px !important;
+    max-height: 90vh !important;
+    overflow-y: auto !important;
+    border-radius: 12px !important;
+    background: white !important;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3) !important;
+  }
+
+  /* Allow normal scrolling - no page locking for mobile popups */
+  body.popup-open,
+  body.payhere-popup-open {
+    /* Remove aggressive scroll prevention */
+    overflow: auto !important;
+    position: static !important;
+    width: auto !important;
+    height: auto !important;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  /* Ensure third-party iframes (like PayHere) are properly positioned */
+  iframe[src*="payhere"],
+  iframe[src*="payment"] {
+    position: fixed !important;
+    top: 50% !important;
+    left: 50% !important;
+    transform: translate(-50%, -50%) !important;
+    width: 95vw !important;
+    height: 90vh !important;
+    max-width: 400px !important;
+    max-height: 600px !important;
+    z-index: 99999 !important;
+    border-radius: 12px !important;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3) !important;
+  }
+}
+
+/* Loading spinner optimizations */
+.loading-spinner {
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* Enhanced mobile touch targets */
+@media (max-width: 768px) {
+  button,
+  .btn,
+  [role="button"] {
+    min-height: 44px !important; /* Apple's recommended touch target size */
+    min-width: 44px !important;
+  }
+}
+
+/* Mobile-specific toast positioning */
+@media (max-width: 768px) {
+  [data-sonner-toaster] {
+    top: 1rem !important;
+    left: 1rem !important;
+    right: 1rem !important;
+  }
+}

@@ -4,7 +4,6 @@ export interface OrderEmailData {
   orderNumber: string
   customerName: string
   customerEmail: string
-  customerId: string
   items: Array<{
     productName: string
     quantity: number
@@ -15,7 +14,6 @@ export interface OrderEmailData {
   }>
   orderTotal: number
   orderSubtotal: number
-  tax: number
   deliveryAddress: string
   specialInstructions?: string
   createdAt: string
@@ -117,10 +115,6 @@ export function generateOrderConfirmationEmail(data: OrderEmailData): string {
                     <td style="padding: 8px 0; font-size: 14px; font-weight: 500; color: #1a1a1a;">Order Date:</td>
                     <td style="padding: 8px 0; font-size: 14px; color: #4a4a4a;">${formattedDate}</td>
                   </tr>
-                  <tr>
-                    <td style="padding: 8px 0; font-size: 14px; font-weight: 500; color: #1a1a1a;">Customer ID:</td>
-                    <td style="padding: 8px 0; font-size: 14px; color: #4a4a4a; font-family: 'SF Mono', Monaco, monospace;">${data.customerId}</td>
-                  </tr>
                 </table>
               </div>
 
@@ -169,10 +163,6 @@ export function generateOrderConfirmationEmail(data: OrderEmailData): string {
                     <td style="padding: 12px 16px; border-bottom: 1px solid #e5e5e5; font-size: 14px; color: #4a4a4a;">Subtotal</td>
                     <td style="padding: 12px 16px; border-bottom: 1px solid #e5e5e5; font-size: 14px; color: #1a1a1a; text-align: right;">LKR ${data.orderSubtotal.toLocaleString()}</td>
                   </tr>
-                  <tr>
-                    <td style="padding: 12px 16px; border-bottom: 1px solid #e5e5e5; font-size: 14px; color: #4a4a4a;">Tax (15%)</td>
-                    <td style="padding: 12px 16px; border-bottom: 1px solid #e5e5e5; font-size: 14px; color: #1a1a1a; text-align: right;">LKR ${data.tax.toLocaleString()}</td>
-                  </tr>
                   <tr style="background-color: #f8f9fa;">
                     <td style="padding: 16px; font-size: 16px; font-weight: 600; color: #1a1a1a;">Total</td>
                     <td style="padding: 16px; font-size: 16px; font-weight: 600; color: #1a1a1a; text-align: right;">LKR ${data.orderTotal.toLocaleString()}</td>
@@ -194,8 +184,6 @@ export function generateOrderConfirmationEmail(data: OrderEmailData): string {
                 <h3 style="margin: 0 0 12px 0; font-size: 16px; font-weight: 600; color: #15803d;">What happens next?</h3>
                 <div style="font-size: 14px; color: #15803d; line-height: 1.6;">
                   <p style="margin: 0 0 8px 0;">• Order processing: 1-2 business days</p>
-                  <p style="margin: 0 0 8px 0;">• Shipping notification via email</p>
-                  <p style="margin: 0 0 8px 0;">• Delivery: 3-5 business days</p>
                   <p style="margin: 0;">• Track your order anytime using the link above</p>
                 </div>
               </div>
@@ -473,7 +461,6 @@ Dear ${data.customerName},
 Thank you for your order! Here are the details:
 
 Order Number: ${data.orderNumber}
-Customer ID: ${data.customerId}
 Order Date: ${new Date(data.createdAt).toLocaleDateString()}
 
 TRACK YOUR ORDER:
@@ -489,7 +476,6 @@ ${data.items
 
 TOTAL:
 Subtotal: LKR ${data.orderSubtotal.toLocaleString()}
-Tax: LKR ${data.tax.toLocaleString()}
 Total: LKR ${data.orderTotal.toLocaleString()}
 
 DELIVERY ADDRESS:

@@ -25,7 +25,6 @@ export interface CustomerInfo {
 
 export interface OrderPricing {
   subtotal: number
-  tax: number
   total: number
   currency: string
 }

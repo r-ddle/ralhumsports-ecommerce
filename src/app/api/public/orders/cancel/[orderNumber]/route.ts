@@ -101,9 +101,9 @@ export async function PATCH(
             orderStatus: 'cancelled',
             cancelledAt: order.updatedAt,
             alreadyCancelled: true,
-            // Indicate that frontend should clear cart and pending orders
+            // Don't clear cart and orders - just acknowledge cancellation
             clearCart: true,
-            clearPendingOrders: true,
+            clearPendingOrders: false,
           },
         },
         { headers: getSecurityHeaders() },
@@ -280,9 +280,9 @@ export async function PATCH(
           orderStatus: 'cancelled',
           cancelledAt: new Date().toISOString(),
           inventoryRestored: true,
-          // Indicate that frontend should clear cart and pending orders
-          clearCart: true,
-          clearPendingOrders: true,
+          // Don't clear all pending orders - just update this specific order
+          clearCart: false,
+          clearPendingOrders: false,
         },
       },
       { headers: getSecurityHeaders() },

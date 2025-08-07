@@ -74,10 +74,6 @@ export function CartSidebar() {
                   <span className="text-text-secondary">Subtotal</span>
                   <span className="font-medium">{formatCurrency(summary.subtotal)}</span>
                 </div>
-                <div className="flex justify-between text-xs sm:text-sm">
-                  <span className="text-text-secondary">Tax (15%)</span>
-                  <span className="font-medium">{formatCurrency(summary.tax)}</span>
-                </div>
                 <Separator className="bg-brand-border" />
                 <div className="flex justify-between text-sm sm:text-lg font-bold">
                   <span>Total</span>

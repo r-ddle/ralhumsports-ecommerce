@@ -1,6 +1,6 @@
 export const SITE_CONFIG = {
-  siteUrl: 'https://ralhumsports.vercel.app', // Change this to your production domain after deployment
-  taxRate: 0.15, // 15% tax
+  siteUrl: 'https://ralhumsports.lk', // Change this to your production domain after deployment
+  taxRate: 0, // 15% tax
   currency: 'LKR',
   about: {
     companyName: 'Ralhum Sports',
@@ -70,7 +70,7 @@ export const SITE_CONFIG = {
       wednesday: '9AM-6PM',
       thursday: '9AM-6PM',
       friday: '9AM-6PM',
-      saturday: '9AM-6PM',
+      saturday: 'Closed',
       sunday: 'Closed',
     },
   },

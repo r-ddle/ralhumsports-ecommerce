@@ -37,7 +37,6 @@ export interface Order {
   deliveryAddress: string
   orderItems: OrderItem[]
   orderSubtotal: number
-  tax: number
   orderTotal: number
   orderStatus: 'pending' | 'confirmed' | 'processing' | 'shipped' | 'delivered' | 'cancelled'
   paymentStatus: 'pending' | 'paid' | 'partially-paid' | 'refunded' | 'failed'
@@ -156,7 +155,6 @@ function transformStorageOrder(storageOrder: any): Order {
       variantDetails: item.variantDetails,
     })),
     orderSubtotal: storageOrder.pricing?.subtotal || storageOrder.orderSubtotal || 0,
-    tax: storageOrder.pricing?.tax || storageOrder.tax || 0,
     orderTotal: storageOrder.pricing?.total || storageOrder.orderTotal || 0,
     orderStatus: storageOrder.status || storageOrder.orderStatus || 'pending',
     paymentStatus: storageOrder.paymentStatus || 'pending',

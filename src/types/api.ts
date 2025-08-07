@@ -209,7 +209,6 @@ export interface OrderItem {
 
 export interface OrderPricing {
   subtotal: number
-  tax?: number
   discount?: number
   total: number
   exchangeRate?: number
