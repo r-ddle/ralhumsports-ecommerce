@@ -286,6 +286,59 @@ function isCartMatchingOrder(cartItems: any[], order: any): boolean {
 }
 
 /**
+ * Update a specific order's status in localStorage without affecting other orders
+ */
+export function updateOrderStatus(orderNumber: string, newStatus: string): void {
+  if (typeof window === 'undefined') return
+
+  const customerId = getCustomerIdForAPI()
+
+  try {
+    // Update in customer-specific storage
+    const customerOrders = JSON.parse(localStorage.getItem(CUSTOMER_ORDERS_STORAGE_KEY) || '[]')
+    const updatedCustomerOrders = customerOrders.map((order: any) => {
+      if (
+        (order.orderNumber === orderNumber || order.orderId === orderNumber) &&
+        order.customerId === customerId
+      ) {
+        return {
+          ...order,
+          orderStatus: newStatus,
+          status: newStatus,
+          updatedAt: new Date().toISOString(),
+          ...(newStatus === 'cancelled' && { cancelledAt: new Date().toISOString() }),
+        }
+      }
+      return order
+    })
+    localStorage.setItem(CUSTOMER_ORDERS_STORAGE_KEY, JSON.stringify(updatedCustomerOrders))
+
+    // Update in general storage
+    const allOrders = JSON.parse(localStorage.getItem('ralhum-orders') || '[]')
+    const updatedAllOrders = allOrders.map((order: any) => {
+      if (
+        (order.orderNumber === orderNumber || order.orderId === orderNumber) &&
+        order.customerId === customerId
+      ) {
+        return {
+          ...order,
+          orderStatus: newStatus,
+          status: newStatus,
+          updatedAt: new Date().toISOString(),
+          ...(newStatus === 'cancelled' && { cancelledAt: new Date().toISOString() }),
+        }
+      }
+      return order
+    })
+    localStorage.setItem('ralhum-orders', JSON.stringify(updatedAllOrders))
+
+    console.log(`[Order Update] Successfully updated order ${orderNumber} to status: ${newStatus}`)
+  } catch (error) {
+    console.warn('Failed to update order status:', error)
+  }
+}
+
+/**
  * Clear pending orders for current customer (use when payment completed or cart cleared)
  */
 export function clearPendingOrders(): void {

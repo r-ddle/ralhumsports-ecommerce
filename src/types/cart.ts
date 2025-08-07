@@ -11,7 +11,6 @@ export interface CartItem {
 export interface Cart {
   items: CartItem[]
   subtotal: number
-  tax: number
   total: number
   itemCount: number
   createdAt: string

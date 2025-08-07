@@ -21,7 +21,7 @@ export const PAYHERE_CONFIG = {
   merchantId: process.env.NEXT_PUBLIC_PAYHERE_MERCHANT_ID!,
   merchantSecret: process.env.NEXT_PUBLIC_PAYHERE_MERCHANT_SECRET!,
   sandbox: process.env.NODE_ENV !== 'production',
-  scriptUrl: 'https://www.payhere.lk/lib/payhere.js',
+  scriptUrl: 'https://www.payhere.lk/lib/payhere-2.0.js',
   get notifyUrl() {
     return getNotifyUrl()
   },
