@@ -7,7 +7,11 @@
       "Bash(npm run lint)",
       "Bash(pnpm add:*)",
       "Bash(curl:*)",
-      "Bash(npx tsc:*)"
+      "Bash(npx tsc:*)",
+      "Bash(pnpm build:*)",
+      "WebFetch(domain:ralhumsports.lk)",
+      "Bash(pnpm run test:int:*)",
+      "Bash(pnpm test:int:*)"
     ],
     "deny": []
   }

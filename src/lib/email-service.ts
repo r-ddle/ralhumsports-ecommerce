@@ -5,8 +5,12 @@ import {
   generateOrderConfirmationText,
   generateOrderStatusUpdateEmail,
   generateOrderStatusUpdateText,
+  generatePaymentSuccessEmail,
+  generateAdminCustomEmail,
   type OrderEmailData,
   type OrderStatusUpdateData,
+  type PaymentSuccessData,
+  type AdminCustomEmailData,
 } from './email-templates'
 
 /**
@@ -23,10 +27,24 @@ export async function sendOrderConfirmationEmail(orderData: OrderEmailData): Pro
       text: generateOrderConfirmationText(orderData),
     })
 
-    console.log(`Order confirmation email sent to ${orderData.customerEmail} for order ${orderData.orderNumber}`)
+    console.log(
+      `[EMAIL_SUCCESS] Order confirmation email sent to ${orderData.customerEmail} for order ${orderData.orderNumber}`,
+    )
     return true
   } catch (error) {
-    console.error('Failed to send order confirmation email:', error)
+    console.error('[EMAIL_ERROR] Failed to send order confirmation email:', {
+      error: error instanceof Error ? error.message : 'Unknown error',
+      orderNumber: orderData.orderNumber,
+      customerEmail: orderData.customerEmail,
+      timestamp: new Date().toISOString(),
+    })
+
+    // In development, show full error details
+    if (process.env.NODE_ENV === 'development') {
+      console.error('[EMAIL_ERROR] Full error details:', error)
+    }
+
+    // Don't throw - let the order continue even if email fails
     return false
   }
 }
@@ -34,7 +52,9 @@ export async function sendOrderConfirmationEmail(orderData: OrderEmailData): Pro
 /**
  * Send order status update email
  */
-export async function sendOrderStatusUpdateEmail(updateData: OrderStatusUpdateData): Promise<boolean> {
+export async function sendOrderStatusUpdateEmail(
+  updateData: OrderStatusUpdateData,
+): Promise<boolean> {
   try {
     const payload = await getPayload({ config })
 
@@ -45,10 +65,26 @@ export async function sendOrderStatusUpdateEmail(updateData: OrderStatusUpdateDa
       text: generateOrderStatusUpdateText(updateData),
     })
 
-    console.log(`Order status update email sent to ${updateData.customerEmail} for order ${updateData.orderNumber}`)
+    console.log(
+      `[EMAIL_SUCCESS] Order status update email sent to ${updateData.customerEmail} for order ${updateData.orderNumber}`,
+    )
     return true
   } catch (error) {
-    console.error('Failed to send order status update email:', error)
+    console.error('[EMAIL_ERROR] Failed to send order status update email:', {
+      error: error instanceof Error ? error.message : 'Unknown error',
+      orderNumber: updateData.orderNumber,
+      customerEmail: updateData.customerEmail,
+      oldStatus: updateData.oldStatus,
+      newStatus: updateData.newStatus,
+      timestamp: new Date().toISOString(),
+    })
+
+    // In development, show full error details
+    if (process.env.NODE_ENV === 'development') {
+      console.error('[EMAIL_ERROR] Full error details:', error)
+    }
+
+    // Don't throw - let the order continue even if email fails
     return false
   }
 }
@@ -59,7 +95,7 @@ export async function sendOrderStatusUpdateEmail(updateData: OrderStatusUpdateDa
 export async function sendOrderTrackingEmail(
   customerEmail: string,
   orderNumber: string,
-  customerId: string
+  customerId: string,
 ): Promise<boolean> {
   try {
     const payload = await getPayload({ config })
@@ -87,13 +123,13 @@ export async function sendOrderTrackingEmail(
       <div class="content">
         <p>Hello,</p>
         <p>You can track your order status using the information below:</p>
-        
+
         <div class="tracking-info">
           <p><strong>Order Number:</strong> ${orderNumber}</p>
           <p><strong>Customer ID:</strong> ${customerId}</p>
           <a href="${trackingUrl}" class="button">Track Order</a>
         </div>
-        
+
         <p>Click the button above or visit our website to check your order status anytime.</p>
       </div>
       <div class="footer">
@@ -105,17 +141,16 @@ export async function sendOrderTrackingEmail(
 
     const textContent = `
     TRACK YOUR ORDER - ${orderNumber}
-    
+
     Hello,
-    
+
     You can track your order using the following details:
-    
+
     Order Number: ${orderNumber}
-    Customer ID: ${customerId}
     Tracking URL: ${trackingUrl}
-    
+
     Visit our website to check your order status anytime.
-    
+
     Best regards,
     Ralhum Sports Team
     `
@@ -127,10 +162,25 @@ export async function sendOrderTrackingEmail(
       text: textContent,
     })
 
-    console.log(`Order tracking email sent to ${customerEmail} for order ${orderNumber}`)
+    console.log(
+      `[EMAIL_SUCCESS] Order tracking email sent to ${customerEmail} for order ${orderNumber}`,
+    )
     return true
   } catch (error) {
-    console.error('Failed to send order tracking email:', error)
+    console.error('[EMAIL_ERROR] Failed to send order tracking email:', {
+      error: error instanceof Error ? error.message : 'Unknown error',
+      orderNumber,
+      customerEmail,
+      customerId,
+      timestamp: new Date().toISOString(),
+    })
+
+    // In development, show full error details
+    if (process.env.NODE_ENV === 'development') {
+      console.error('[EMAIL_ERROR] Full error details:', error)
+    }
+
+    // Don't throw - let the order continue even if email fails
     return false
   }
 }
@@ -159,4 +209,84 @@ export function transformOrderForEmail(order: any): OrderEmailData {
     specialInstructions: order.orderDetails?.specialInstructions,
     createdAt: order.createdAt,
   }
+}
+
+/**
+ * Send PayHere payment success email
+ */
+export async function sendPaymentSuccessEmail(data: PaymentSuccessData): Promise<boolean> {
+  try {
+    const payload = await getPayload({ config })
+
+    await payload.sendEmail({
+      to: data.customerEmail,
+      subject: `Payment Successful - ${data.orderNumber} | Ralhum Sports`,
+      html: generatePaymentSuccessEmail(data),
+    })
+
+    console.log(
+      `[EMAIL_SUCCESS] Payment success email sent to ${data.customerEmail} for order ${data.orderNumber}`,
+    )
+    return true
+  } catch (error) {
+    console.error('[EMAIL_ERROR] Failed to send payment success email:', {
+      error: error instanceof Error ? error.message : 'Unknown error',
+      orderNumber: data.orderNumber,
+      customerEmail: data.customerEmail,
+      paymentId: data.paymentId,
+      timestamp: new Date().toISOString(),
+    })
+
+    if (process.env.NODE_ENV === 'development') {
+      console.error('[EMAIL_ERROR] Full error details:', error)
+    }
+
+    return false
+  }
+}
+
+/**
+ * Send admin custom email for order issues or updates
+ */
+export async function sendAdminCustomEmail(data: AdminCustomEmailData): Promise<boolean> {
+  try {
+    const payload = await getPayload({ config })
+
+    await payload.sendEmail({
+      to: data.customerEmail,
+      subject: data.subject,
+      html: generateAdminCustomEmail(data),
+    })
+
+    console.log(
+      `[EMAIL_SUCCESS] Admin custom email sent to ${data.customerEmail} for order ${data.orderNumber}`,
+    )
+    return true
+  } catch (error) {
+    console.error('[EMAIL_ERROR] Failed to send admin custom email:', {
+      error: error instanceof Error ? error.message : 'Unknown error',
+      orderNumber: data.orderNumber,
+      customerEmail: data.customerEmail,
+      subject: data.subject,
+      adminName: data.adminName,
+      timestamp: new Date().toISOString(),
+    })
+
+    if (process.env.NODE_ENV === 'development') {
+      console.error('[EMAIL_ERROR] Full error details:', error)
+    }
+
+    return false
+  }
+}
+
+/**
+ * Check if order status change should trigger an email
+ * Only send emails for: cancelled, delivered (success), and major issues
+ */
+export function shouldSendStatusEmail(oldStatus: string, newStatus: string): boolean {
+  // Email triggers: cancelled orders, successful delivery
+  const emailTriggerStatuses = ['cancelled', 'delivered']
+
+  return emailTriggerStatuses.includes(newStatus) && oldStatus !== newStatus
 }

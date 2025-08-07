@@ -165,6 +165,11 @@ const nextConfig = {
     }
     return webpackConfig
   },
+
+  // Exclude scripts folder from compilation
+  outputFileTracingExcludes: {
+    '*': ['./scripts/**/*'],
+  },
 }
 
 export default withPayload(nextConfig, { devBundleServerPackages: false })

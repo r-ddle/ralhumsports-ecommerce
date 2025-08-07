@@ -28,8 +28,23 @@ export interface OrderStatusUpdateData extends OrderEmailData {
   estimatedDelivery?: string
 }
 
+export interface PaymentSuccessData extends OrderEmailData {
+  paymentMethod: string
+  paymentId: string
+  paymentDate: string
+}
+
+export interface AdminCustomEmailData {
+  orderNumber: string
+  customerName: string
+  customerEmail: string
+  subject: string
+  customMessage: string
+  adminName: string
+}
+
 /**
- * Generate order confirmation email HTML
+ * Generate order confirmation email HTML with minimalistic design
  */
 export function generateOrderConfirmationEmail(data: OrderEmailData): string {
   const formattedDate = new Date(data.createdAt).toLocaleDateString('en-US', {
@@ -49,244 +64,196 @@ export function generateOrderConfirmationEmail(data: OrderEmailData): string {
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Order Confirmation - ${data.orderNumber}</title>
-  <style>
-    body {
-      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-      line-height: 1.6;
-      color: #333;
-      max-width: 600px;
-      margin: 0 auto;
-      background-color: #f8fafc;
-      padding: 20px;
-    }
-    .email-container {
-      background: white;
-      border-radius: 12px;
-      overflow: hidden;
-      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-    }
-    .header {
-      background: linear-gradient(135deg, #1e40af, #3b82f6);
-      color: white;
-      padding: 30px 20px;
-      text-align: center;
-    }
-    .header h1 {
-      margin: 0;
-      font-size: 28px;
-      font-weight: bold;
-    }
-    .header p {
-      margin: 10px 0 0 0;
-      opacity: 0.9;
-      font-size: 16px;
-    }
-    .content {
-      padding: 30px 20px;
-    }
-    .order-details {
-      background: #f1f5f9;
-      border-radius: 8px;
-      padding: 20px;
-      margin: 20px 0;
-    }
-    .order-number {
-      font-size: 24px;
-      font-weight: bold;
-      color: #1e40af;
-      text-align: center;
-      margin-bottom: 10px;
-    }
-    .tracking-info {
-      background: #dbeafe;
-      border: 1px solid #93c5fd;
-      border-radius: 8px;
-      padding: 15px;
-      margin: 20px 0;
-      text-align: center;
-    }
-    .tracking-button {
-      display: inline-block;
-      background: #1e40af;
-      color: white;
-      padding: 12px 24px;
-      text-decoration: none;
-      border-radius: 6px;
-      font-weight: bold;
-      margin: 10px 0;
-    }
-    .items-table {
-      width: 100%;
-      border-collapse: collapse;
-      margin: 20px 0;
-    }
-    .items-table th,
-    .items-table td {
-      padding: 12px;
-      text-align: left;
-      border-bottom: 1px solid #e2e8f0;
-    }
-    .items-table th {
-      background: #f8fafc;
-      font-weight: bold;
-      color: #475569;
-    }
-    .total-section {
-      background: #f8fafc;
-      border-radius: 8px;
-      padding: 20px;
-      margin: 20px 0;
-    }
-    .total-row {
-      display: flex;
-      justify-content: space-between;
-      margin: 8px 0;
-    }
-    .total-row.final {
-      font-size: 18px;
-      font-weight: bold;
-      color: #1e40af;
-      border-top: 2px solid #e2e8f0;
-      padding-top: 12px;
-      margin-top: 12px;
-    }
-    .address-section {
-      background: #fef7cd;
-      border: 1px solid #fcd34d;
-      border-radius: 8px;
-      padding: 15px;
-      margin: 20px 0;
-    }
-    .footer {
-      background: #f8fafc;
-      padding: 20px;
-      text-align: center;
-      color: #64748b;
-      font-size: 14px;
-    }
-    .contact-info {
-      margin: 15px 0;
-    }
-    .contact-info a {
-      color: #1e40af;
-      text-decoration: none;
-    }
-    @media (max-width: 600px) {
-      body {
-        padding: 10px;
-      }
-      .content {
-        padding: 20px 15px;
-      }
-      .header {
-        padding: 20px 15px;
-      }
-    }
-  </style>
 </head>
-<body>
-  <div class="email-container">
-    <div class="header">
-      <h1>🎉 Order Confirmed!</h1>
-      <p>Thank you for choosing Ralhum Sports</p>
-    </div>
-    
-    <div class="content">
-      <p>Dear ${data.customerName},</p>
-      
-      <p>Great news! We've received your order and it's being processed. Here are the details:</p>
-      
-      <div class="order-details">
-        <div class="order-number">${data.orderNumber}</div>
-        <p><strong>Order Date:</strong> ${formattedDate}</p>
-        <p><strong>Customer ID:</strong> ${data.customerId}</p>
-      </div>
+<body style="margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; line-height: 1.6; color: #1a1a1a; background-color: #ffffff;">
 
-      <div class="tracking-info">
-        <p><strong>📦 Track Your Order</strong></p>
-        <p>You can track your order status anytime using the link below:</p>
-        <a href="${trackingUrl}" class="tracking-button">Track Order</a>
-        <p style="font-size: 12px; margin-top: 10px;">Order ID: ${data.orderNumber}</p>
-      </div>
-      
-      <h3>📋 Order Items</h3>
-      <table class="items-table">
-        <thead>
+  <!-- Email Container -->
+  <table role="presentation" style="width: 100%; border-collapse: collapse; margin: 0; padding: 0;">
+    <tr>
+      <td style="padding: 40px 20px;">
+
+        <!-- Main Content Container -->
+        <table role="presentation" style="max-width: 600px; margin: 0 auto; border-collapse: collapse; background-color: #ffffff; border: 1px solid #e5e5e5;">
+
+          <!-- Header -->
           <tr>
-            <th>Item</th>
-            <th>Qty</th>
-            <th>Price</th>
-            <th>Total</th>
+            <td style="padding: 40px 40px 20px 40px; border-bottom: 1px solid #f0f0f0;">
+              <table role="presentation" style="width: 100%; border-collapse: collapse;">
+                <tr>
+                  <td>
+                    <img src="https://ralhumsports.lk/ralhumlogo.svg" alt="Ralhum Sports" style="height: 32px; width: auto; margin-bottom: 8px;" />
+                    <h1 style="margin: 0; font-size: 24px; font-weight: 600; color: #1a1a1a; letter-spacing: -0.5px;">Order Confirmation</h1>
+                    <p style="margin: 8px 0 0 0; font-size: 14px; color: #666666; font-weight: 400;">Sri Lanka's #1 Sports Equipment Distributor</p>
+                  </td>
+                  <td style="text-align: right; vertical-align: top;">
+                    <div style="display: inline-block; padding: 6px 12px; background-color: #dcfce7; border: 1px solid #16a34a; border-radius: 4px; font-size: 12px; font-weight: 500; color: #15803d; text-transform: uppercase; letter-spacing: 0.5px;">
+                      Confirmed
+                    </div>
+                  </td>
+                </tr>
+              </table>
+            </td>
           </tr>
-        </thead>
-        <tbody>
-          ${data.items.map(item => `
-            <tr>
-              <td>
-                <strong>${item.productName}</strong>
-                ${item.selectedSize ? `<br><small>Size: ${item.selectedSize}</small>` : ''}
-                ${item.selectedColor ? `<br><small>Color: ${item.selectedColor}</small>` : ''}
-              </td>
-              <td>${item.quantity}</td>
-              <td>LKR ${item.unitPrice.toLocaleString()}</td>
-              <td>LKR ${item.subtotal.toLocaleString()}</td>
-            </tr>
-          `).join('')}
-        </tbody>
-      </table>
-      
-      <div class="total-section">
-        <div class="total-row">
-          <span>Subtotal:</span>
-          <span>LKR ${data.orderSubtotal.toLocaleString()}</span>
-        </div>
-        <div class="total-row">
-          <span>Tax (15%):</span>
-          <span>LKR ${data.tax.toLocaleString()}</span>
-        </div>
-        <div class="total-row final">
-          <span>Total:</span>
-          <span>LKR ${data.orderTotal.toLocaleString()}</span>
-        </div>
-      </div>
-      
-      <h3>🚚 Delivery Address</h3>
-      <div class="address-section">
-        <p>${data.deliveryAddress}</p>
-        ${data.specialInstructions ? `<p><strong>Special Instructions:</strong> ${data.specialInstructions}</p>` : ''}
-      </div>
-      
-      <div style="background: #dcfce7; border: 1px solid #16a34a; border-radius: 8px; padding: 15px; margin: 20px 0;">
-        <p><strong>✅ What's Next?</strong></p>
-        <ul style="margin: 10px 0; padding-left: 20px;">
-          <li>We'll process your order within 1-2 business days</li>
-          <li>You'll receive an email when your order ships</li>
-          <li>Delivery typically takes 2-5 business days</li>
-          <li>Track your order using the link above</li>
-        </ul>
-      </div>
-    </div>
-    
-    <div class="footer">
-      <p><strong>Ralhum Sports</strong></p>
-      <div class="contact-info">
-        <p>📞 Phone: <a href="tel:${SITE_CONFIG.contact.phone}">${SITE_CONFIG.contact.phone}</a></p>
-        <p>📧 Email: <a href="mailto:${SITE_CONFIG.contact.email}">${SITE_CONFIG.contact.email}</a></p>
-        <p>🌐 Website: <a href="${SITE_CONFIG.siteUrl}">${SITE_CONFIG.siteUrl}</a></p>
-      </div>
-      <p style="margin-top: 20px; font-size: 12px; color: #94a3b8;">
-        This email was sent to ${data.customerEmail}. If you have any questions about your order,
-        please contact us using the information above.
-      </p>
-    </div>
-  </div>
+
+          <!-- Main Content -->
+          <tr>
+            <td style="padding: 40px;">
+
+              <!-- Greeting -->
+              <div style="margin-bottom: 32px;">
+                <h2 style="margin: 0 0 12px 0; font-size: 20px; font-weight: 600; color: #1a1a1a; letter-spacing: -0.3px;">Thank you, ${data.customerName}!</h2>
+                <p style="margin: 0; font-size: 16px; color: #4a4a4a; line-height: 1.5;">Your order has been confirmed and is being processed by our team.</p>
+              </div>
+
+              <!-- Order Details -->
+              <div style="margin-bottom: 32px; padding: 20px; background-color: #f8f9fa; border: 1px solid #e9ecef; border-radius: 4px;">
+                <h3 style="margin: 0 0 16px 0; font-size: 16px; font-weight: 600; color: #1a1a1a;">Order Details</h3>
+                <table role="presentation" style="width: 100%; border-collapse: collapse;">
+                  <tr>
+                    <td style="padding: 8px 0; font-size: 14px; font-weight: 500; color: #1a1a1a; width: 30%;">Order Number:</td>
+                    <td style="padding: 8px 0; font-size: 14px; color: #4a4a4a; font-family: 'SF Mono', Monaco, monospace; font-weight: 600;">${data.orderNumber}</td>
+                  </tr>
+                  <tr>
+                    <td style="padding: 8px 0; font-size: 14px; font-weight: 500; color: #1a1a1a;">Order Date:</td>
+                    <td style="padding: 8px 0; font-size: 14px; color: #4a4a4a;">${formattedDate}</td>
+                  </tr>
+                  <tr>
+                    <td style="padding: 8px 0; font-size: 14px; font-weight: 500; color: #1a1a1a;">Customer ID:</td>
+                    <td style="padding: 8px 0; font-size: 14px; color: #4a4a4a; font-family: 'SF Mono', Monaco, monospace;">${data.customerId}</td>
+                  </tr>
+                </table>
+              </div>
+
+              <!-- Track Order -->
+              <div style="margin-bottom: 32px; padding: 20px; background-color: #f8f9fa; border: 1px solid #e9ecef; border-radius: 4px; text-align: center;">
+                <h3 style="margin: 0 0 12px 0; font-size: 16px; font-weight: 600; color: #1a1a1a;">Track Your Order</h3>
+                <p style="margin: 0 0 16px 0; font-size: 14px; color: #6c757d;">Monitor your order status and delivery progress</p>
+                <a href="${trackingUrl}" style="display: inline-block; padding: 12px 24px; background-color: #FF6B35; color: #ffffff; text-decoration: none; border-radius: 4px; font-size: 14px; font-weight: 500; letter-spacing: 0.5px;">Track Order</a>
+              </div>
+
+              <!-- Order Items -->
+              <div style="margin-bottom: 32px;">
+                <h3 style="margin: 0 0 16px 0; font-size: 16px; font-weight: 600; color: #1a1a1a;">Items Ordered</h3>
+                <table role="presentation" style="width: 100%; border-collapse: collapse; border: 1px solid #e5e5e5;">
+                  <thead>
+                    <tr style="background-color: #f8f9fa;">
+                      <td style="padding: 12px 16px; border-bottom: 1px solid #e5e5e5; font-size: 14px; font-weight: 600; color: #1a1a1a;">Item</td>
+                      <td style="padding: 12px 16px; border-bottom: 1px solid #e5e5e5; font-size: 14px; font-weight: 600; color: #1a1a1a; text-align: center; width: 15%;">Qty</td>
+                      <td style="padding: 12px 16px; border-bottom: 1px solid #e5e5e5; font-size: 14px; font-weight: 600; color: #1a1a1a; text-align: right; width: 25%;">Total</td>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    ${data.items
+                      .map(
+                        (item, index) => `
+                      <tr ${index % 2 === 0 ? '' : 'style="background-color: #f8f9fa;"'}>
+                        <td style="padding: 12px 16px; border-bottom: 1px solid #e5e5e5; font-size: 14px; color: #1a1a1a;">
+                          <div style="font-weight: 500;">${item.productName}</div>
+                          ${item.selectedSize ? `<div style="font-size: 12px; color: #6c757d; margin-top: 2px;">Size: ${item.selectedSize}</div>` : ''}
+                          ${item.selectedColor ? `<div style="font-size: 12px; color: #6c757d; margin-top: 2px;">Color: ${item.selectedColor}</div>` : ''}
+                        </td>
+                        <td style="padding: 12px 16px; border-bottom: 1px solid #e5e5e5; font-size: 14px; color: #4a4a4a; text-align: center;">${item.quantity}</td>
+                        <td style="padding: 12px 16px; border-bottom: 1px solid #e5e5e5; font-size: 14px; color: #1a1a1a; text-align: right; font-weight: 500;">LKR ${item.subtotal.toLocaleString()}</td>
+                      </tr>
+                    `,
+                      )
+                      .join('')}
+                  </tbody>
+                </table>
+              </div>
+
+              <!-- Order Total -->
+              <div style="margin-bottom: 32px;">
+                <table role="presentation" style="width: 100%; border-collapse: collapse; border: 1px solid #e5e5e5;">
+                  <tr>
+                    <td style="padding: 12px 16px; border-bottom: 1px solid #e5e5e5; font-size: 14px; color: #4a4a4a;">Subtotal</td>
+                    <td style="padding: 12px 16px; border-bottom: 1px solid #e5e5e5; font-size: 14px; color: #1a1a1a; text-align: right;">LKR ${data.orderSubtotal.toLocaleString()}</td>
+                  </tr>
+                  <tr>
+                    <td style="padding: 12px 16px; border-bottom: 1px solid #e5e5e5; font-size: 14px; color: #4a4a4a;">Tax (15%)</td>
+                    <td style="padding: 12px 16px; border-bottom: 1px solid #e5e5e5; font-size: 14px; color: #1a1a1a; text-align: right;">LKR ${data.tax.toLocaleString()}</td>
+                  </tr>
+                  <tr style="background-color: #f8f9fa;">
+                    <td style="padding: 16px; font-size: 16px; font-weight: 600; color: #1a1a1a;">Total</td>
+                    <td style="padding: 16px; font-size: 16px; font-weight: 600; color: #1a1a1a; text-align: right;">LKR ${data.orderTotal.toLocaleString()}</td>
+                  </tr>
+                </table>
+              </div>
+
+              <!-- Delivery Information -->
+              <div style="margin-bottom: 32px;">
+                <h3 style="margin: 0 0 16px 0; font-size: 16px; font-weight: 600; color: #1a1a1a;">Delivery Information</h3>
+                <div style="padding: 16px; background-color: #f8f9fa; border: 1px solid #e9ecef; border-radius: 4px;">
+                  <p style="margin: 0 0 8px 0; font-size: 14px; color: #4a4a4a; line-height: 1.5;">${data.deliveryAddress}</p>
+                  ${data.specialInstructions ? `<p style="margin: 8px 0 0 0; font-size: 14px; color: #4a4a4a;"><strong>Special Instructions:</strong> ${data.specialInstructions}</p>` : ''}
+                </div>
+              </div>
+
+              <!-- Next Steps -->
+              <div style="padding: 20px; background-color: #dcfce7; border: 1px solid #16a34a; border-radius: 4px;">
+                <h3 style="margin: 0 0 12px 0; font-size: 16px; font-weight: 600; color: #15803d;">What happens next?</h3>
+                <div style="font-size: 14px; color: #15803d; line-height: 1.6;">
+                  <p style="margin: 0 0 8px 0;">• Order processing: 1-2 business days</p>
+                  <p style="margin: 0 0 8px 0;">• Shipping notification via email</p>
+                  <p style="margin: 0 0 8px 0;">• Delivery: 3-5 business days</p>
+                  <p style="margin: 0;">• Track your order anytime using the link above</p>
+                </div>
+              </div>
+
+            </td>
+          </tr>
+
+          <!-- Footer -->
+          <tr>
+            <td style="padding: 32px 40px; border-top: 1px solid #f0f0f0; background-color: #fafafa;">
+              <table role="presentation" style="width: 100%; border-collapse: collapse;">
+                <tr>
+                  <td style="vertical-align: top;">
+                    <p style="margin: 0 0 8px 0; font-size: 14px; font-weight: 500; color: #1a1a1a;">Ralhum Sports</p>
+                    <p style="margin: 0 0 4px 0; font-size: 12px; color: #6c757d;">30 Years of Athletic Excellence</p>
+                    <p style="margin: 0; font-size: 12px; color: #6c757d;">
+                      <a href="mailto:${SITE_CONFIG.contact.email}" style="color: #6c757d; text-decoration: none;">${SITE_CONFIG.contact.email}</a>
+                    </p>
+                  </td>
+                  <td style="text-align: right; vertical-align: top;">
+                    <p style="margin: 0; font-size: 11px; color: #adb5bd; text-transform: uppercase; letter-spacing: 0.5px;">
+                      Order Confirmation
+                    </p>
+                    <p style="margin: 4px 0 0 0; font-size: 11px; color: #adb5bd;">
+                      ${new Date().toLocaleDateString('en-US', {
+                        year: 'numeric',
+                        month: 'long',
+                        day: 'numeric',
+                      })}
+                    </p>
+                  </td>
+                </tr>
+              </table>
+
+              <!-- Legal Footer -->
+              <div style="margin-top: 24px; padding-top: 16px; border-top: 1px solid #e9ecef;">
+                <p style="margin: 0; font-size: 11px; color: #adb5bd; line-height: 1.4;">
+                  This is an automated message from Ralhum Sports e-commerce system.
+                  Please do not reply to this email. For support, contact
+                  <a href="mailto:${SITE_CONFIG.contact.email}" style="color: #6c757d; text-decoration: none;">${SITE_CONFIG.contact.email}</a>
+                </p>
+              </div>
+            </td>
+          </tr>
+
+        </table>
+
+      </td>
+    </tr>
+  </table>
+
 </body>
 </html>
   `.trim()
 }
 
 /**
- * Generate order status update email HTML
+ * Generate order status update email HTML - Updated to match order confirmation design
  */
 export function generateOrderStatusUpdateEmail(data: OrderStatusUpdateData): string {
   const formattedDate = new Date().toLocaleDateString('en-US', {
@@ -297,23 +264,17 @@ export function generateOrderStatusUpdateEmail(data: OrderStatusUpdateData): str
     minute: '2-digit',
   })
 
-  const statusEmoji = {
-    pending: '⏳',
-    confirmed: '✅',
-    processing: '📦',
-    shipped: '🚚',
-    delivered: '✅',
-    cancelled: '❌',
-  }[data.newStatus] || '📋'
+  const statusColors = {
+    pending: { bg: '#fff3cd', border: '#ffeaa7', text: '#856404' },
+    confirmed: { bg: '#dcfce7', border: '#16a34a', text: '#15803d' },
+    processing: { bg: '#dbeafe', border: '#3b82f6', text: '#1e40af' },
+    shipped: { bg: '#e0e7ff', border: '#8b5cf6', text: '#6d28d9' },
+    delivered: { bg: '#dcfce7', border: '#16a34a', text: '#15803d' },
+    cancelled: { bg: '#fee2e2', border: '#ef4444', text: '#dc2626' },
+  }
 
-  const statusColor = {
-    pending: '#f59e0b',
-    confirmed: '#10b981',
-    processing: '#3b82f6',
-    shipped: '#8b5cf6',
-    delivered: '#10b981',
-    cancelled: '#ef4444',
-  }[data.newStatus] || '#6b7280'
+  const statusColor =
+    statusColors[data.newStatus as keyof typeof statusColors] || statusColors.pending
 
   return `
 <!DOCTYPE html>
@@ -322,149 +283,177 @@ export function generateOrderStatusUpdateEmail(data: OrderStatusUpdateData): str
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Order Update - ${data.orderNumber}</title>
-  <style>
-    body {
-      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-      line-height: 1.6;
-      color: #333;
-      max-width: 600px;
-      margin: 0 auto;
-      background-color: #f8fafc;
-      padding: 20px;
-    }
-    .email-container {
-      background: white;
-      border-radius: 12px;
-      overflow: hidden;
-      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-    }
-    .header {
-      background: linear-gradient(135deg, ${statusColor}, ${statusColor}dd);
-      color: white;
-      padding: 30px 20px;
-      text-align: center;
-    }
-    .header h1 {
-      margin: 0;
-      font-size: 28px;
-      font-weight: bold;
-    }
-    .header p {
-      margin: 10px 0 0 0;
-      opacity: 0.9;
-      font-size: 16px;
-    }
-    .content {
-      padding: 30px 20px;
-    }
-    .status-update {
-      background: #f8fafc;
-      border-radius: 8px;
-      padding: 20px;
-      margin: 20px 0;
-      text-align: center;
-    }
-    .status-badge {
-      display: inline-block;
-      background: ${statusColor};
-      color: white;
-      padding: 10px 20px;
-      border-radius: 20px;
-      font-weight: bold;
-      font-size: 18px;
-      margin: 10px 0;
-    }
-    .order-number {
-      font-size: 20px;
-      font-weight: bold;
-      color: #1e40af;
-      margin-bottom: 10px;
-    }
-    .tracking-button {
-      display: inline-block;
-      background: #1e40af;
-      color: white;
-      padding: 12px 24px;
-      text-decoration: none;
-      border-radius: 6px;
-      font-weight: bold;
-      margin: 15px 0;
-    }
-    .progress-container {
-      background: #f1f5f9;
-      border-radius: 8px;
-      padding: 20px;
-      margin: 20px 0;
-    }
-    .footer {
-      background: #f8fafc;
-      padding: 20px;
-      text-align: center;
-      color: #64748b;
-      font-size: 14px;
-    }
-    .contact-info a {
-      color: #1e40af;
-      text-decoration: none;
-    }
-  </style>
 </head>
-<body>
-  <div class="email-container">
-    <div class="header">
-      <h1>${statusEmoji} Order Update</h1>
-      <p>Your order status has been updated</p>
-    </div>
-    
-    <div class="content">
-      <p>Dear ${data.customerName},</p>
-      
-      <p>We have an update on your order:</p>
-      
-      <div class="status-update">
-        <div class="order-number">${data.orderNumber}</div>
-        <div class="status-badge">${statusEmoji} ${data.newStatus.toUpperCase()}</div>
-        <p>Updated on ${formattedDate}</p>
-      </div>
+<body style="margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; line-height: 1.6; color: #1a1a1a; background-color: #ffffff;">
 
-      <div class="progress-container">
-        <h3>📦 Order Progress</h3>
-        <p><strong>Previous Status:</strong> ${data.oldStatus}</p>
-        <p><strong>Current Status:</strong> ${data.newStatus}</p>
-        ${data.estimatedDelivery ? `<p><strong>Estimated Delivery:</strong> ${data.estimatedDelivery}</p>` : ''}
-      </div>
-      
-      <div style="text-align: center; margin: 30px 0;">
-        <a href="${data.trackingUrl}" class="tracking-button">Track Your Order</a>
-      </div>
-      
-      ${data.newStatus === 'delivered' ? `
-      <div style="background: #dcfce7; border: 1px solid #16a34a; border-radius: 8px; padding: 15px; margin: 20px 0;">
-        <p><strong>🎉 Order Delivered!</strong></p>
-        <p>We hope you love your purchase! If you have any issues or questions, please don't hesitate to contact us.</p>
-      </div>
-      ` : ''}
-      
-      ${data.newStatus === 'shipped' ? `
-      <div style="background: #dbeafe; border: 1px solid #3b82f6; border-radius: 8px; padding: 15px; margin: 20px 0;">
-        <p><strong>🚚 Your Order is On the Way!</strong></p>
-        <p>Your order has been shipped and should arrive within 2-5 business days. You can track the delivery status using the link above.</p>
-      </div>
-      ` : ''}
-    </div>
-    
-    <div class="footer">
-      <p><strong>Ralhum Sports</strong></p>
-      <div class="contact-info">
-        <p>📞 Phone: <a href="tel:${SITE_CONFIG.contact.phone}">${SITE_CONFIG.contact.phone}</a></p>
-        <p>📧 Email: <a href="mailto:${SITE_CONFIG.contact.email}">${SITE_CONFIG.contact.email}</a></p>
-        <p>🌐 Website: <a href="${SITE_CONFIG.siteUrl}">${SITE_CONFIG.siteUrl}</a></p>
-      </div>
-      <p style="margin-top: 20px; font-size: 12px; color: #94a3b8;">
-        This email was sent to ${data.customerEmail}. Questions? Contact us anytime.
-      </p>
-    </div>
-  </div>
+  <table role="presentation" style="width: 100%; border-collapse: collapse; margin: 0; padding: 0;">
+    <tr>
+      <td style="padding: 40px 20px;">
+
+        <table role="presentation" style="max-width: 600px; margin: 0 auto; border-collapse: collapse; background-color: #ffffff; border: 1px solid #e5e5e5;">
+
+          <!-- Header -->
+          <tr>
+            <td style="padding: 40px 40px 20px 40px; border-bottom: 1px solid #f0f0f0;">
+              <table role="presentation" style="width: 100%; border-collapse: collapse;">
+                <tr>
+                  <td>
+                    <img src="https://ralhumsports.lk/ralhumlogo.svg" alt="Ralhum Sports" style="height: 32px; width: auto; margin-bottom: 8px;" />
+                    <h1 style="margin: 0; font-size: 24px; font-weight: 600; color: #1a1a1a; letter-spacing: -0.5px;">Order Update</h1>
+                    <p style="margin: 8px 0 0 0; font-size: 14px; color: #666666; font-weight: 400;">Your order status has been updated</p>
+                  </td>
+                  <td style="text-align: right; vertical-align: top;">
+                    <div style="display: inline-block; padding: 6px 12px; background-color: ${statusColor.bg}; border: 1px solid ${statusColor.border}; border-radius: 4px; font-size: 12px; font-weight: 500; color: ${statusColor.text}; text-transform: uppercase; letter-spacing: 0.5px;">
+                      ${data.newStatus}
+                    </div>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+
+          <!-- Main Content -->
+          <tr>
+            <td style="padding: 40px;">
+
+              <!-- Greeting -->
+              <div style="margin-bottom: 32px;">
+                <h2 style="margin: 0 0 12px 0; font-size: 20px; font-weight: 600; color: #1a1a1a; letter-spacing: -0.3px;">Hello ${data.customerName},</h2>
+                <p style="margin: 0; font-size: 16px; color: #4a4a4a; line-height: 1.5;">We have an update on your order status.</p>
+              </div>
+
+              <!-- Status Update -->
+              <div style="margin-bottom: 32px; padding: 20px; background-color: #f8f9fa; border: 1px solid #e9ecef; border-radius: 4px;">
+                <h3 style="margin: 0 0 16px 0; font-size: 16px; font-weight: 600; color: #1a1a1a;">Status Update</h3>
+                <table role="presentation" style="width: 100%; border-collapse: collapse;">
+                  <tr>
+                    <td style="padding: 8px 0; font-size: 14px; font-weight: 500; color: #1a1a1a; width: 30%;">Order Number:</td>
+                    <td style="padding: 8px 0; font-size: 14px; color: #4a4a4a; font-family: 'SF Mono', Monaco, monospace; font-weight: 600;">${data.orderNumber}</td>
+                  </tr>
+                  <tr>
+                    <td style="padding: 8px 0; font-size: 14px; font-weight: 500; color: #1a1a1a;">Previous Status:</td>
+                    <td style="padding: 8px 0; font-size: 14px; color: #4a4a4a; text-transform: capitalize;">${data.oldStatus}</td>
+                  </tr>
+                  <tr>
+                    <td style="padding: 8px 0; font-size: 14px; font-weight: 500; color: #1a1a1a;">Current Status:</td>
+                    <td style="padding: 8px 0; font-size: 14px; color: ${statusColor.text}; font-weight: 600; text-transform: capitalize;">${data.newStatus}</td>
+                  </tr>
+                  <tr>
+                    <td style="padding: 8px 0; font-size: 14px; font-weight: 500; color: #1a1a1a;">Updated:</td>
+                    <td style="padding: 8px 0; font-size: 14px; color: #4a4a4a;">${formattedDate}</td>
+                  </tr>
+                  ${
+                    data.estimatedDelivery
+                      ? `
+                  <tr>
+                    <td style="padding: 8px 0; font-size: 14px; font-weight: 500; color: #1a1a1a;">Estimated Delivery:</td>
+                    <td style="padding: 8px 0; font-size: 14px; color: #4a4a4a;">${data.estimatedDelivery}</td>
+                  </tr>
+                  `
+                      : ''
+                  }
+                </table>
+              </div>
+
+              <!-- Track Order -->
+              <div style="margin-bottom: 32px; padding: 20px; background-color: #f8f9fa; border: 1px solid #e9ecef; border-radius: 4px; text-align: center;">
+                <h3 style="margin: 0 0 12px 0; font-size: 16px; font-weight: 600; color: #1a1a1a;">Track Your Order</h3>
+                <p style="margin: 0 0 16px 0; font-size: 14px; color: #6c757d;">Monitor your order status and delivery progress</p>
+                <a href="${data.trackingUrl}" style="display: inline-block; padding: 12px 24px; background-color: #FF6B35; color: #ffffff; text-decoration: none; border-radius: 4px; font-size: 14px; font-weight: 500; letter-spacing: 0.5px;">Track Order</a>
+              </div>
+
+              <!-- Status-specific messages -->
+              ${
+                data.newStatus === 'delivered'
+                  ? `
+              <div style="padding: 20px; background-color: #dcfce7; border: 1px solid #16a34a; border-radius: 4px;">
+                <h3 style="margin: 0 0 12px 0; font-size: 16px; font-weight: 600; color: #15803d;">Order Delivered!</h3>
+                <div style="font-size: 14px; color: #15803d; line-height: 1.6;">
+                  <p style="margin: 0 0 8px 0;">• Your order has been successfully delivered</p>
+                  <p style="margin: 0 0 8px 0;">• We hope you love your purchase!</p>
+                  <p style="margin: 0;">• Contact us if you have any questions or concerns</p>
+                </div>
+              </div>
+              `
+                  : ''
+              }
+
+              ${
+                data.newStatus === 'shipped'
+                  ? `
+              <div style="padding: 20px; background-color: #dbeafe; border: 1px solid #3b82f6; border-radius: 4px;">
+                <h3 style="margin: 0 0 12px 0; font-size: 16px; font-weight: 600; color: #1e40af;">Your Order is On the Way!</h3>
+                <div style="font-size: 14px; color: #1e40af; line-height: 1.6;">
+                  <p style="margin: 0 0 8px 0;">• Your order has been shipped</p>
+                  <p style="margin: 0 0 8px 0;">• Expected delivery: 2-5 business days</p>
+                  <p style="margin: 0;">• Track your package using the link above</p>
+                </div>
+              </div>
+              `
+                  : ''
+              }
+
+              ${
+                data.newStatus === 'cancelled'
+                  ? `
+              <div style="padding: 20px; background-color: #fee2e2; border: 1px solid #ef4444; border-radius: 4px;">
+                <h3 style="margin: 0 0 12px 0; font-size: 16px; font-weight: 600; color: #dc2626;">Order Cancelled</h3>
+                <div style="font-size: 14px; color: #dc2626; line-height: 1.6;">
+                  <p style="margin: 0 0 8px 0;">• Your order has been cancelled</p>
+                  <p style="margin: 0 0 8px 0;">• Any payments will be refunded within 3-5 business days</p>
+                  <p style="margin: 0;">• Contact us if you have any questions</p>
+                </div>
+              </div>
+              `
+                  : ''
+              }
+
+            </td>
+          </tr>
+
+          <!-- Footer -->
+          <tr>
+            <td style="padding: 32px 40px; border-top: 1px solid #f0f0f0; background-color: #fafafa;">
+              <table role="presentation" style="width: 100%; border-collapse: collapse;">
+                <tr>
+                  <td style="vertical-align: top;">
+                    <p style="margin: 0 0 8px 0; font-size: 14px; font-weight: 500; color: #1a1a1a;">Ralhum Sports</p>
+                    <p style="margin: 0 0 4px 0; font-size: 12px; color: #6c757d;">30 Years of Athletic Excellence</p>
+                    <p style="margin: 0; font-size: 12px; color: #6c757d;">
+                      <a href="mailto:${SITE_CONFIG.contact.email}" style="color: #6c757d; text-decoration: none;">${SITE_CONFIG.contact.email}</a>
+                    </p>
+                  </td>
+                  <td style="text-align: right; vertical-align: top;">
+                    <p style="margin: 0; font-size: 11px; color: #adb5bd; text-transform: uppercase; letter-spacing: 0.5px;">
+                      Order Update
+                    </p>
+                    <p style="margin: 4px 0 0 0; font-size: 11px; color: #adb5bd;">
+                      ${new Date().toLocaleDateString('en-US', {
+                        year: 'numeric',
+                        month: 'long',
+                        day: 'numeric',
+                      })}
+                    </p>
+                  </td>
+                </tr>
+              </table>
+
+              <div style="margin-top: 24px; padding-top: 16px; border-top: 1px solid #e9ecef;">
+                <p style="margin: 0; font-size: 11px; color: #adb5bd; line-height: 1.4;">
+                  This is an automated message from Ralhum Sports e-commerce system.
+                  Please do not reply to this email. For support, contact
+                  <a href="mailto:${SITE_CONFIG.contact.email}" style="color: #6c757d; text-decoration: none;">${SITE_CONFIG.contact.email}</a>
+                </p>
+              </div>
+            </td>
+          </tr>
+
+        </table>
+
+      </td>
+    </tr>
+  </table>
+
 </body>
 </html>
   `.trim()
@@ -475,7 +464,7 @@ export function generateOrderStatusUpdateEmail(data: OrderStatusUpdateData): str
  */
 export function generateOrderConfirmationText(data: OrderEmailData): string {
   const trackingUrl = `${SITE_CONFIG.siteUrl}/orders/track?id=${data.orderNumber}`
-  
+
   return `
 ORDER CONFIRMATION - ${data.orderNumber}
 
@@ -491,9 +480,12 @@ TRACK YOUR ORDER:
 ${trackingUrl}
 
 ORDER ITEMS:
-${data.items.map(item => 
-  `- ${item.productName} (Qty: ${item.quantity}) - LKR ${item.subtotal.toLocaleString()}`
-).join('\n')}
+${data.items
+  .map(
+    (item) =>
+      `- ${item.productName} (Qty: ${item.quantity}) - LKR ${item.subtotal.toLocaleString()}`,
+  )
+  .join('\n')}
 
 TOTAL:
 Subtotal: LKR ${data.orderSubtotal.toLocaleString()}
@@ -546,5 +538,268 @@ Email: ${SITE_CONFIG.contact.email}
 
 Best regards,
 Ralhum Sports Team
+  `.trim()
+}
+
+/**
+ * Generate PayHere payment success email - Updated to match order confirmation design
+ */
+export function generatePaymentSuccessEmail(data: PaymentSuccessData): string {
+  const formattedDate = new Date(data.paymentDate).toLocaleDateString('en-US', {
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+  })
+
+  const trackingUrl = `${SITE_CONFIG.siteUrl}/orders/track?id=${data.orderNumber}`
+
+  return `
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Payment Successful - ${data.orderNumber}</title>
+</head>
+<body style="margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; line-height: 1.6; color: #1a1a1a; background-color: #ffffff;">
+
+  <table role="presentation" style="width: 100%; border-collapse: collapse; margin: 0; padding: 0;">
+    <tr>
+      <td style="padding: 40px 20px;">
+        <table role="presentation" style="max-width: 600px; margin: 0 auto; border-collapse: collapse; background-color: #ffffff; border: 1px solid #e5e5e5;">
+
+          <!-- Header -->
+          <tr>
+            <td style="padding: 40px 40px 20px 40px; border-bottom: 1px solid #f0f0f0;">
+              <table role="presentation" style="width: 100%; border-collapse: collapse;">
+                <tr>
+                  <td>
+                    <img src="https://ralhumsports.lk/ralhumlogo.svg" alt="Ralhum Sports" style="height: 32px; width: auto; margin-bottom: 8px;" />
+                    <h1 style="margin: 0; font-size: 24px; font-weight: 600; color: #1a1a1a; letter-spacing: -0.5px;">Payment Successful</h1>
+                    <p style="margin: 8px 0 0 0; font-size: 14px; color: #666666; font-weight: 400;">Your order is confirmed and paid</p>
+                  </td>
+                  <td style="text-align: right; vertical-align: top;">
+                    <div style="display: inline-block; padding: 6px 12px; background-color: #dcfce7; border: 1px solid #16a34a; border-radius: 4px; font-size: 12px; font-weight: 500; color: #15803d; text-transform: uppercase; letter-spacing: 0.5px;">
+                      Paid
+                    </div>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+
+          <!-- Main Content -->
+          <tr>
+            <td style="padding: 40px;">
+
+              <!-- Success Message -->
+              <div style="margin-bottom: 32px; padding: 20px; background-color: #dcfce7; border: 1px solid #16a34a; border-radius: 4px;">
+                <h2 style="margin: 0 0 12px 0; font-size: 20px; font-weight: 600; color: #15803d; letter-spacing: -0.3px;">Payment Received Successfully!</h2>
+                <p style="margin: 0; font-size: 16px; color: #15803d; line-height: 1.5;">Thank you ${data.customerName}, your payment has been processed and your order is confirmed.</p>
+              </div>
+
+              <!-- Payment Details -->
+              <div style="margin-bottom: 32px; padding: 20px; background-color: #f8f9fa; border: 1px solid #e9ecef; border-radius: 4px;">
+                <h3 style="margin: 0 0 16px 0; font-size: 16px; font-weight: 600; color: #1a1a1a;">Payment Details</h3>
+                <table role="presentation" style="width: 100%; border-collapse: collapse;">
+                  <tr>
+                    <td style="padding: 8px 0; font-size: 14px; font-weight: 500; color: #1a1a1a; width: 30%;">Order Number:</td>
+                    <td style="padding: 8px 0; font-size: 14px; color: #4a4a4a; font-family: 'SF Mono', Monaco, monospace; font-weight: 600;">${data.orderNumber}</td>
+                  </tr>
+                  <tr>
+                    <td style="padding: 8px 0; font-size: 14px; font-weight: 500; color: #1a1a1a;">Payment ID:</td>
+                    <td style="padding: 8px 0; font-size: 14px; color: #4a4a4a; font-family: 'SF Mono', Monaco, monospace;">${data.paymentId}</td>
+                  </tr>
+                  <tr>
+                    <td style="padding: 8px 0; font-size: 14px; font-weight: 500; color: #1a1a1a;">Payment Method:</td>
+                    <td style="padding: 8px 0; font-size: 14px; color: #4a4a4a;">${data.paymentMethod}</td>
+                  </tr>
+                  <tr>
+                    <td style="padding: 8px 0; font-size: 14px; font-weight: 500; color: #1a1a1a;">Payment Date:</td>
+                    <td style="padding: 8px 0; font-size: 14px; color: #4a4a4a;">${formattedDate}</td>
+                  </tr>
+                  <tr>
+                    <td style="padding: 8px 0; font-size: 14px; font-weight: 500; color: #1a1a1a;">Amount Paid:</td>
+                    <td style="padding: 8px 0; font-size: 16px; color: #1a1a1a; font-weight: 600;">LKR ${data.orderTotal.toLocaleString()}</td>
+                  </tr>
+                </table>
+              </div>
+
+              <!-- Track Order -->
+              <div style="margin-bottom: 32px; padding: 20px; background-color: #f8f9fa; border: 1px solid #e9ecef; border-radius: 4px; text-align: center;">
+                <h3 style="margin: 0 0 12px 0; font-size: 16px; font-weight: 600; color: #1a1a1a;">Track Your Order</h3>
+                <p style="margin: 0 0 16px 0; font-size: 14px; color: #6c757d;">Your order is being processed and will be shipped soon</p>
+                <a href="${trackingUrl}" style="display: inline-block; padding: 12px 24px; background-color: #FF6B35; color: #ffffff; text-decoration: none; border-radius: 4px; font-size: 14px; font-weight: 500; letter-spacing: 0.5px;">Track Order</a>
+              </div>
+
+              <!-- Next Steps -->
+              <div style="padding: 20px; background-color: #dbeafe; border: 1px solid #3b82f6; border-radius: 4px;">
+                <h3 style="margin: 0 0 12px 0; font-size: 16px; font-weight: 600; color: #1e40af;">What happens next?</h3>
+                <div style="font-size: 14px; color: #1e40af; line-height: 1.6;">
+                  <p style="margin: 0 0 8px 0;">• Order processing: 1-2 business days</p>
+                  <p style="margin: 0 0 8px 0;">• Shipping notification via email</p>
+                  <p style="margin: 0 0 8px 0;">• Delivery: 3-5 business days</p>
+                  <p style="margin: 0;">• Track your order anytime using the link above</p>
+                </div>
+              </div>
+
+            </td>
+          </tr>
+
+          <!-- Footer -->
+          <tr>
+            <td style="padding: 32px 40px; border-top: 1px solid #f0f0f0; background-color: #fafafa;">
+              <table role="presentation" style="width: 100%; border-collapse: collapse;">
+                <tr>
+                  <td style="vertical-align: top;">
+                    <p style="margin: 0 0 8px 0; font-size: 14px; font-weight: 500; color: #1a1a1a;">Ralhum Sports</p>
+                    <p style="margin: 0 0 4px 0; font-size: 12px; color: #6c757d;">30 Years of Athletic Excellence</p>
+                  </td>
+                  <td style="text-align: right; vertical-align: top;">
+                    <p style="margin: 0; font-size: 11px; color: #adb5bd; text-transform: uppercase; letter-spacing: 0.5px;">
+                      Payment Confirmation
+                    </p>
+                  </td>
+                </tr>
+              </table>
+
+              <div style="margin-top: 24px; padding-top: 16px; border-top: 1px solid #e9ecef;">
+                <p style="margin: 0; font-size: 11px; color: #adb5bd; line-height: 1.4;">
+                  This is an automated message from Ralhum Sports e-commerce system.
+                  Please do not reply to this email. For support, contact
+                  <a href="mailto:${SITE_CONFIG.contact.email}" style="color: #6c757d; text-decoration: none;">${SITE_CONFIG.contact.email}</a>
+                </p>
+              </div>
+            </td>
+          </tr>
+
+        </table>
+      </td>
+    </tr>
+  </table>
+
+</body>
+</html>
+  `.trim()
+}
+
+/**
+ * Generate admin custom email - Updated to match order confirmation design
+ */
+export function generateAdminCustomEmail(data: AdminCustomEmailData): string {
+  const trackingUrl = `${SITE_CONFIG.siteUrl}/orders/track?id=${data.orderNumber}`
+
+  return `
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>${data.subject}</title>
+</head>
+<body style="margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; line-height: 1.6; color: #1a1a1a; background-color: #ffffff;">
+
+  <table role="presentation" style="width: 100%; border-collapse: collapse; margin: 0; padding: 0;">
+    <tr>
+      <td style="padding: 40px 20px;">
+        <table role="presentation" style="max-width: 600px; margin: 0 auto; border-collapse: collapse; background-color: #ffffff; border: 1px solid #e5e5e5;">
+
+          <!-- Header -->
+          <tr>
+            <td style="padding: 40px 40px 20px 40px; border-bottom: 1px solid #f0f0f0;">
+              <table role="presentation" style="width: 100%; border-collapse: collapse;">
+                <tr>
+                  <td>
+                    <img src="https://ralhumsports.lk/ralhumlogo.svg" alt="Ralhum Sports" style="height: 32px; width: auto; margin-bottom: 8px;" />
+                    <h1 style="margin: 0; font-size: 24px; font-weight: 600; color: #1a1a1a; letter-spacing: -0.5px;">${data.subject}</h1>
+                    <p style="margin: 8px 0 0 0; font-size: 14px; color: #666666; font-weight: 400;">Message from our team</p>
+                  </td>
+                  <td style="text-align: right; vertical-align: top;">
+                    <div style="display: inline-block; padding: 6px 12px; background-color: #fff3cd; border: 1px solid #ffeaa7; border-radius: 4px; font-size: 12px; font-weight: 500; color: #856404; text-transform: uppercase; letter-spacing: 0.5px;">
+                      Update
+                    </div>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+
+          <!-- Main Content -->
+          <tr>
+            <td style="padding: 40px;">
+
+              <!-- Greeting -->
+              <div style="margin-bottom: 32px;">
+                <h2 style="margin: 0 0 12px 0; font-size: 20px; font-weight: 600; color: #1a1a1a; letter-spacing: -0.3px;">Hello ${data.customerName},</h2>
+                <p style="margin: 0; font-size: 16px; color: #4a4a4a; line-height: 1.5;">We wanted to reach out regarding your order <strong>${data.orderNumber}</strong>.</p>
+              </div>
+
+              <!-- Custom Message -->
+              <div style="margin-bottom: 32px; padding: 20px; background-color: #f8f9fa; border: 1px solid #e9ecef; border-left: 4px solid #FF6B35; border-radius: 0 4px 4px 0;">
+                <h3 style="margin: 0 0 16px 0; font-size: 16px; font-weight: 600; color: #1a1a1a;">Message from ${data.adminName}</h3>
+                <div style="font-size: 15px; color: #1a1a1a; line-height: 1.6;">
+                  ${data.customMessage
+                    .split('\n')
+                    .map((line) => `<p style="margin: 0 0 12px 0;">${line}</p>`)
+                    .join('')}
+                </div>
+              </div>
+
+              <!-- Track Order -->
+              <div style="margin-bottom: 32px; padding: 20px; background-color: #f8f9fa; border: 1px solid #e9ecef; border-radius: 4px; text-align: center;">
+                <h3 style="margin: 0 0 12px 0; font-size: 16px; font-weight: 600; color: #1a1a1a;">Track Your Order</h3>
+                <p style="margin: 0 0 16px 0; font-size: 14px; color: #6c757d;">View your order status and details</p>
+                <a href="${trackingUrl}" style="display: inline-block; padding: 12px 24px; background-color: #FF6B35; color: #ffffff; text-decoration: none; border-radius: 4px; font-size: 14px; font-weight: 500; letter-spacing: 0.5px;">View Order Status</a>
+              </div>
+
+              <!-- Contact Information -->
+              <div style="padding: 20px; background-color: #dbeafe; border: 1px solid #3b82f6; border-radius: 4px;">
+                <h3 style="margin: 0 0 12px 0; font-size: 16px; font-weight: 600; color: #1e40af;">Need Help?</h3>
+                <div style="font-size: 14px; color: #1e40af; line-height: 1.6;">
+                  <p style="margin: 0 0 8px 0;">If you have any questions or concerns, please don't hesitate to contact us:</p>
+                  <p style="margin: 0 0 4px 0;">📧 Email: <a href="mailto:${SITE_CONFIG.contact.email}" style="color: #1e40af; text-decoration: none; font-weight: 500;">${SITE_CONFIG.contact.email}</a></p>
+                  <p style="margin: 0;">📞 Phone: <a href="tel:${SITE_CONFIG.contact.phone}" style="color: #1e40af; text-decoration: none; font-weight: 500;">${SITE_CONFIG.contact.phone}</a></p>
+                </div>
+              </div>
+
+            </td>
+          </tr>
+
+          <!-- Footer -->
+          <tr>
+            <td style="padding: 32px 40px; border-top: 1px solid #f0f0f0; background-color: #fafafa;">
+              <table role="presentation" style="width: 100%; border-collapse: collapse;">
+                <tr>
+                  <td style="vertical-align: top;">
+                    <p style="margin: 0 0 8px 0; font-size: 14px; font-weight: 500; color: #1a1a1a;">Ralhum Sports</p>
+                    <p style="margin: 0 0 4px 0; font-size: 12px; color: #6c757d;">Team: ${data.adminName}</p>
+                  </td>
+                  <td style="text-align: right; vertical-align: top;">
+                    <p style="margin: 0; font-size: 11px; color: #adb5bd; text-transform: uppercase; letter-spacing: 0.5px;">
+                      Customer Update
+                    </p>
+                  </td>
+                </tr>
+              </table>
+
+              <div style="margin-top: 24px; padding-top: 16px; border-top: 1px solid #e9ecef;">
+                <p style="margin: 0; font-size: 11px; color: #adb5bd; line-height: 1.4;">
+                  This is an automated message from Ralhum Sports e-commerce system.
+                  Please do not reply to this email. For support, contact
+                  <a href="mailto:${SITE_CONFIG.contact.email}" style="color: #6c757d; text-decoration: none;">${SITE_CONFIG.contact.email}</a>
+                </p>
+              </div>
+            </td>
+          </tr>
+
+        </table>
+      </td>
+    </tr>
+  </table>
+
+</body>
+</html>
   `.trim()
 }

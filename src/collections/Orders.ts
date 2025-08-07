@@ -551,9 +551,97 @@ export const Orders: CollectionConfig = {
         },
       ],
     },
+
+    // Admin Email Communication
+    {
+      name: 'adminEmail',
+      type: 'group',
+      label: '📧 Admin Email Communication',
+      admin: {
+        condition: (_, siblingData) => siblingData?.showAdvanced,
+      },
+      fields: [
+        {
+          name: 'sendCustomEmail',
+          type: 'checkbox',
+          admin: {
+            description: 'Check to send a custom email to the customer',
+            width: '50%',
+          },
+        },
+        {
+          name: 'emailSubject',
+          type: 'text',
+          admin: {
+            description: 'Email subject line',
+            condition: (_, siblingData) => siblingData?.sendCustomEmail,
+            placeholder: 'Update about your order',
+          },
+        },
+        {
+          name: 'emailMessage',
+          type: 'richText',
+          admin: {
+            description: 'Custom message to send to the customer',
+            condition: (_, siblingData) => siblingData?.sendCustomEmail,
+          },
+        },
+        {
+          name: 'lastEmailSent',
+          type: 'date',
+          admin: {
+            description: 'Last custom email sent',
+            readOnly: true,
+            date: {
+              pickerAppearance: 'dayAndTime',
+            },
+          },
+        },
+      ],
+    },
   ],
   hooks: {
     beforeChange: [
+      // Handle custom admin email sending
+      async ({ data, req, operation }) => {
+        // Send custom admin email if requested
+        if (operation === 'update' && data.adminEmail?.sendCustomEmail && data.customer?.customerEmail) {
+          const { sendAdminCustomEmail } = await import('../lib/email-service')
+          
+          try {
+            // Get the admin user's name
+            const adminUser = req.user
+            const adminName = adminUser?.email || 'Ralhum Sports Team'
+            
+            // Convert rich text to plain text for email
+            const customMessage = data.adminEmail.emailMessage?.root?.children
+              ?.map((node: any) => node.children?.map((child: any) => child.text).join(' ') || '')
+              .join('\n') || 'No message provided'
+            
+            const success = await sendAdminCustomEmail({
+              orderNumber: data.orderNumber,
+              customerName: data.customer?.customerName || 'Customer',
+              customerEmail: data.customer.customerEmail,
+              subject: data.adminEmail.emailSubject || 'Update about your order',
+              customMessage,
+              adminName,
+            })
+            
+            if (success) {
+              // Mark email as sent and reset the checkbox
+              data.adminEmail.sendCustomEmail = false
+              data.adminEmail.lastEmailSent = new Date().toISOString()
+              console.log(`[EMAIL_SUCCESS] Admin custom email sent for order ${data.orderNumber}`)
+            } else {
+              console.error(`[EMAIL_ERROR] Failed to send admin custom email for order ${data.orderNumber}`)
+            }
+          } catch (error) {
+            console.error('[EMAIL_ERROR] Error sending admin custom email:', error)
+          }
+        }
+        
+        return data
+      },
       async ({ data, req }) => {
         if (!data.orderItems) return data
 
@@ -601,43 +689,70 @@ export const Orders: CollectionConfig = {
         return data
       },
     ],
-    // Temporarily disable email hooks until configuration is fixed
-    // afterChange: [
-    //   async ({ doc, previousDoc, req, operation }) => {
-    //     // Send email notifications asynchronously to avoid blocking the response
-    //     setImmediate(async () => {
-    //       try {
-    //         const { sendOrderConfirmationEmail, sendOrderStatusUpdateEmail, transformOrderForEmail } = await import('../lib/email-service')
-    //         const { SITE_CONFIG } = await import('../config/site-config')
+    // Email notification hooks - restored with proper error handling
+    afterChange: [
+      async ({ doc, previousDoc, req, operation }) => {
+        // Send email notifications asynchronously to avoid blocking the response
+        setImmediate(async () => {
+          try {
+            const { 
+              sendOrderConfirmationEmail, 
+              sendOrderStatusUpdateEmail, 
+              transformOrderForEmail,
+              shouldSendStatusEmail 
+            } = await import('../lib/email-service')
+            const { SITE_CONFIG } = await import('../config/site-config')
 
-    //         // Send order confirmation email for new orders
-    //         if (operation === 'create' && doc.customer?.customerEmail) {
-    //           const emailData = transformOrderForEmail(doc)
-    //           await sendOrderConfirmationEmail(emailData)
-    //         }
+            // Send order confirmation email for new orders
+            if (operation === 'create' && doc.customer?.customerEmail) {
+              console.log(`[EMAIL_TRIGGER] Sending order confirmation for ${doc.orderNumber}`)
+              const emailData = transformOrderForEmail(doc)
+              const success = await sendOrderConfirmationEmail(emailData)
+              
+              if (!success) {
+                console.error(`[EMAIL_ERROR] Failed to send confirmation email for order ${doc.orderNumber}`)
+              }
+            }
 
-    //         // Send status update email when order status changes
-    //         if (operation === 'update' && previousDoc && doc.customer?.customerEmail) {
-    //           const oldStatus = previousDoc.status?.orderStatus
-    //           const newStatus = doc.status?.orderStatus
+            // Send status update email only for critical status changes
+            if (operation === 'update' && previousDoc && doc.customer?.customerEmail) {
+              const oldStatus = previousDoc.status?.orderStatus
+              const newStatus = doc.status?.orderStatus
 
-    //           if (oldStatus !== newStatus && newStatus) {
-    //             const trackingUrl = `${SITE_CONFIG.siteUrl}/orders/track?id=${doc.orderNumber}`
-    //             const emailData = transformOrderForEmail(doc)
+              if (shouldSendStatusEmail(oldStatus || 'pending', newStatus)) {
+                console.log(`[EMAIL_TRIGGER] Sending critical status update for ${doc.orderNumber}: ${oldStatus} → ${newStatus}`)
+                const trackingUrl = `${SITE_CONFIG.siteUrl}/orders/track?id=${doc.orderNumber}`
+                const emailData = transformOrderForEmail(doc)
 
-    //             await sendOrderStatusUpdateEmail({
-    //               ...emailData,
-    //               oldStatus: oldStatus || 'pending',
-    //               newStatus,
-    //               trackingUrl,
-    //             })
-    //           }
-    //         }
-    //       } catch (error) {
-    //         console.error('Failed to send email notification:', error)
-    //       }
-    //     })
-    //   },
-    // ],
+                const success = await sendOrderStatusUpdateEmail({
+                  ...emailData,
+                  oldStatus: oldStatus || 'pending',
+                  newStatus,
+                  trackingUrl,
+                })
+                
+                if (!success) {
+                  console.error(`[EMAIL_ERROR] Failed to send status update email for order ${doc.orderNumber}`)
+                }
+              } else {
+                console.log(`[EMAIL_SKIP] Status change ${oldStatus} → ${newStatus} for ${doc.orderNumber} does not trigger email (saving email quota)`)
+              }
+            }
+          } catch (error) {
+            console.error('[EMAIL_ERROR] Critical error in email notification system:', {
+              error: error instanceof Error ? error.message : 'Unknown error',
+              orderNumber: doc.orderNumber,
+              operation,
+              timestamp: new Date().toISOString(),
+            })
+            
+            // In development, show full error details
+            if (process.env.NODE_ENV === 'development') {
+              console.error('[EMAIL_ERROR] Full error details:', error)
+            }
+          }
+        })
+      },
+    ],
   },
 }
