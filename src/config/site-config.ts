@@ -4,6 +4,7 @@ export const SITE_CONFIG = {
   currency: 'LKR',
   about: {
     companyName: 'Ralhum Sports',
+    legalName: 'Ralhum Trading',
     tagline: "Sri Lanka's #1 Sports Equipment Distributor & Online Store",
     description:
       "Sri Lanka's #1 sports equipment distributor for 25+ years. Exclusive distributor of world-renowned sports brands.",
