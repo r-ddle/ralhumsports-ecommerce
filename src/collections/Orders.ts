@@ -355,16 +355,6 @@ export const Orders: CollectionConfig = {
               },
             },
             {
-              name: 'tax',
-              type: 'number',
-              admin: {
-                description: 'Tax',
-                readOnly: true,
-                step: 0.01,
-                width: '25%',
-              },
-            },
-            {
               name: 'shippingCost',
               type: 'number',
               defaultValue: 0,
@@ -605,19 +595,24 @@ export const Orders: CollectionConfig = {
       // Handle custom admin email sending
       async ({ data, req, operation }) => {
         // Send custom admin email if requested
-        if (operation === 'update' && data.adminEmail?.sendCustomEmail && data.customer?.customerEmail) {
+        if (
+          operation === 'update' &&
+          data.adminEmail?.sendCustomEmail &&
+          data.customer?.customerEmail
+        ) {
           const { sendAdminCustomEmail } = await import('../lib/email-service')
-          
+
           try {
             // Get the admin user's name
             const adminUser = req.user
             const adminName = adminUser?.email || 'Ralhum Sports Team'
-            
+
             // Convert rich text to plain text for email
-            const customMessage = data.adminEmail.emailMessage?.root?.children
-              ?.map((node: any) => node.children?.map((child: any) => child.text).join(' ') || '')
-              .join('\n') || 'No message provided'
-            
+            const customMessage =
+              data.adminEmail.emailMessage?.root?.children
+                ?.map((node: any) => node.children?.map((child: any) => child.text).join(' ') || '')
+                .join('\n') || 'No message provided'
+
             const success = await sendAdminCustomEmail({
               orderNumber: data.orderNumber,
               customerName: data.customer?.customerName || 'Customer',
@@ -626,20 +621,22 @@ export const Orders: CollectionConfig = {
               customMessage,
               adminName,
             })
-            
+
             if (success) {
               // Mark email as sent and reset the checkbox
               data.adminEmail.sendCustomEmail = false
               data.adminEmail.lastEmailSent = new Date().toISOString()
               console.log(`[EMAIL_SUCCESS] Admin custom email sent for order ${data.orderNumber}`)
             } else {
-              console.error(`[EMAIL_ERROR] Failed to send admin custom email for order ${data.orderNumber}`)
+              console.error(
+                `[EMAIL_ERROR] Failed to send admin custom email for order ${data.orderNumber}`,
+              )
             }
           } catch (error) {
             console.error('[EMAIL_ERROR] Error sending admin custom email:', error)
           }
         }
-        
+
         return data
       },
       async ({ data, req }) => {
@@ -695,11 +692,11 @@ export const Orders: CollectionConfig = {
         // Send email notifications asynchronously to avoid blocking the response
         setImmediate(async () => {
           try {
-            const { 
-              sendOrderConfirmationEmail, 
-              sendOrderStatusUpdateEmail, 
+            const {
+              sendOrderConfirmationEmail,
+              sendOrderStatusUpdateEmail,
               transformOrderForEmail,
-              shouldSendStatusEmail 
+              shouldSendStatusEmail,
             } = await import('../lib/email-service')
             const { SITE_CONFIG } = await import('../config/site-config')
 
@@ -708,9 +705,11 @@ export const Orders: CollectionConfig = {
               console.log(`[EMAIL_TRIGGER] Sending order confirmation for ${doc.orderNumber}`)
               const emailData = transformOrderForEmail(doc)
               const success = await sendOrderConfirmationEmail(emailData)
-              
+
               if (!success) {
-                console.error(`[EMAIL_ERROR] Failed to send confirmation email for order ${doc.orderNumber}`)
+                console.error(
+                  `[EMAIL_ERROR] Failed to send confirmation email for order ${doc.orderNumber}`,
+                )
               }
             }
 
@@ -720,7 +719,9 @@ export const Orders: CollectionConfig = {
               const newStatus = doc.status?.orderStatus
 
               if (shouldSendStatusEmail(oldStatus || 'pending', newStatus)) {
-                console.log(`[EMAIL_TRIGGER] Sending critical status update for ${doc.orderNumber}: ${oldStatus} → ${newStatus}`)
+                console.log(
+                  `[EMAIL_TRIGGER] Sending critical status update for ${doc.orderNumber}: ${oldStatus} → ${newStatus}`,
+                )
                 const trackingUrl = `${SITE_CONFIG.siteUrl}/orders/track?id=${doc.orderNumber}`
                 const emailData = transformOrderForEmail(doc)
 
@@ -730,12 +731,16 @@ export const Orders: CollectionConfig = {
                   newStatus,
                   trackingUrl,
                 })
-                
+
                 if (!success) {
-                  console.error(`[EMAIL_ERROR] Failed to send status update email for order ${doc.orderNumber}`)
+                  console.error(
+                    `[EMAIL_ERROR] Failed to send status update email for order ${doc.orderNumber}`,
+                  )
                 }
               } else {
-                console.log(`[EMAIL_SKIP] Status change ${oldStatus} → ${newStatus} for ${doc.orderNumber} does not trigger email (saving email quota)`)
+                console.log(
+                  `[EMAIL_SKIP] Status change ${oldStatus} → ${newStatus} for ${doc.orderNumber} does not trigger email (saving email quota)`,
+                )
               }
             }
           } catch (error) {
@@ -745,7 +750,7 @@ export const Orders: CollectionConfig = {
               operation,
               timestamp: new Date().toISOString(),
             })
-            
+
             // In development, show full error details
             if (process.env.NODE_ENV === 'development') {
               console.error('[EMAIL_ERROR] Full error details:', error)

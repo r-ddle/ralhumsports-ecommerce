@@ -466,7 +466,7 @@ export default function EnhancedNavigation() {
   // Render Shop Mega Menu with Clean, Brand-Style Design
   // Render Shop Mega Menu with Clean 4-Layer Design
   const renderShopMegaMenu = () => (
-    <div className="flex h-[500px]">
+    <div className="flex h-[800px]">
       {/* Layer 1: Sports Categories */}
       <div className="w-72 bg-gradient-to-b from-blue-50 to-blue-100 border-r border-brand-border p-6">
         <div className="flex items-center gap-2 mb-6">

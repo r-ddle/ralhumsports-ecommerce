@@ -73,7 +73,7 @@ export const SITE_CONFIG = {
       wednesday: '9AM-6PM',
       thursday: '9AM-6PM',
       friday: '9AM-6PM',
-      saturday: '9AM-6PM',
+      saturday: 'Closed',
       sunday: 'Closed',
     },
   },

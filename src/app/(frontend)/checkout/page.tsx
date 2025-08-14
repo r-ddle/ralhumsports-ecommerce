@@ -73,7 +73,6 @@ export default function CheckoutPage() {
     customerInfo: {},
     pricing: {
       subtotal: 0,
-      tax: 0,
       total: 0,
       currency: 'LKR',
     },
@@ -125,15 +124,12 @@ export default function CheckoutPage() {
     if (cart.items.length === 0) return
 
     const subtotal = cart.items.reduce((sum, item) => sum + item.variant.price * item.quantity, 0)
-    const tax = calculateTax(subtotal)
-    const total = subtotal + tax
 
     setCheckoutState((prev) => ({
       ...prev,
       pricing: {
         subtotal,
-        tax,
-        total,
+        total: subtotal, // Set total to subtotal or calculate as needed
         currency: 'LKR',
       },
     }))
@@ -204,7 +200,16 @@ export default function CheckoutPage() {
     if (!customerInfo.phone?.trim()) {
       errors.phone = 'Phone number is required'
     } else if (!validateSriLankanPhone(customerInfo.phone)) {
-      errors.phone = 'Please enter a valid Sri Lankan phone number'
+      errors.phone =
+        'Please enter a valid Sri Lankan phone number (e.g., 0772350712 or +94772350712)'
+    }
+
+    // Validate secondary phone if provided
+    if (
+      customerInfo.secondaryPhone?.trim() &&
+      !validateSriLankanPhone(customerInfo.secondaryPhone)
+    ) {
+      errors.secondaryPhone = 'Please enter a valid Sri Lankan phone number'
     }
 
     if (!customerInfo.address?.street?.trim()) {
@@ -604,8 +609,13 @@ export default function CheckoutPage() {
                               ? 'border-red-500'
                               : 'border-brand-border focus:border-brand-secondary'
                           }`}
-                          placeholder="+94 77 123 4567"
+                          placeholder="0772350712 or +94772350712"
                         />
+                        {!checkoutState.errors.phone && (
+                          <p className="text-sm text-text-secondary mt-1">
+                            Accepts: 0772350712, +94772350712, or 772350712
+                          </p>
+                        )}
                         {checkoutState.errors.phone && (
                           <p className="text-sm text-red-600 mt-2">{checkoutState.errors.phone}</p>
                         )}
@@ -623,9 +633,24 @@ export default function CheckoutPage() {
                         id="secondaryPhone"
                         value={checkoutState.customerInfo.secondaryPhone || ''}
                         onChange={(e) => handleInputChange('secondaryPhone', e.target.value)}
-                        className="mt-2 h-12 border-2 border-brand-border focus:border-brand-secondary rounded-xl bg-brand-background"
-                        placeholder="+94 71 123 4567"
+                        className={`mt-2 h-12 border-2 rounded-xl bg-brand-background ${
+                          checkoutState.errors.secondaryPhone
+                            ? 'border-red-500'
+                            : 'border-brand-border focus:border-brand-secondary'
+                        }`}
+                        placeholder="0712345678 or +94712345678"
                       />
+                      {!checkoutState.errors.secondaryPhone &&
+                        checkoutState.customerInfo.secondaryPhone?.trim() && (
+                          <p className="text-sm text-text-secondary mt-1">
+                            Alternative contact number
+                          </p>
+                        )}
+                      {checkoutState.errors.secondaryPhone && (
+                        <p className="text-sm text-red-600 mt-2">
+                          {checkoutState.errors.secondaryPhone}
+                        </p>
+                      )}
                     </div>
                   </div>
                 </CardContent>
@@ -1023,12 +1048,6 @@ export default function CheckoutPage() {
                         {formatCurrency(checkoutState.pricing.subtotal)}
                       </span>
                     </div>
-                    <div className="flex justify-between">
-                      <span className="text-text-secondary">Tax (15%)</span>
-                      <span className="font-semibold text-text-primary">
-                        {formatCurrency(checkoutState.pricing.tax)}
-                      </span>
-                    </div>
                     <Separator />
                     <div className="flex justify-between text-xl font-black">
                       <span className="text-text-primary">Total</span>
@@ -1321,8 +1340,4 @@ function formatCurrency(amount: number): string {
     minimumFractionDigits: 2,
     maximumFractionDigits: 2,
   })} LKR`
-}
-
-function calculateTax(amount: number) {
-  return Math.round(amount * SITE_CONFIG.taxRate)
 }
