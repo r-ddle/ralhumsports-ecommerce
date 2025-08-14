@@ -1,6 +1,6 @@
 export const SITE_CONFIG = {
   siteUrl: 'https://ralhumsports.lk',
-  taxRate: 0, // 15% tax
+  taxRate: 0, // 0% tax
   currency: 'LKR',
   about: {
     companyName: 'Ralhum Sports',
