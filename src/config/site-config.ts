@@ -445,7 +445,7 @@ export const SITE_CONFIG = {
     { number: '#1', label: 'Sports Distributor in Sri Lanka', color: '#00B894' },
   ],
   whatsapp: {
-    number: '+94774477633',
+    number: '94774477633',
     message: "Hello Ralhum Sports! I'm interested in your sports equipment. Please contact me.",
     reportMessage: 'Hello! I need to report a product verification issue. SKU: ',
   },
