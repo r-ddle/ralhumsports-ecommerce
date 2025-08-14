@@ -18,7 +18,7 @@ const AlertDialogOverlay = React.forwardRef<
 >(({ className, ...props }, ref) => (
   <AlertDialogPrimitive.Overlay
     className={cn(
-      'fixed inset-0 z-50 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0',
+      'fixed inset-0 z-[60] data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0',
       className,
     )}
     style={{ backgroundColor: 'rgba(45, 52, 54, 0.8)' }}
@@ -87,10 +87,10 @@ const AlertDialogAction = React.forwardRef<
   React.ElementRef<typeof AlertDialogPrimitive.Action>,
   React.ComponentPropsWithoutRef<typeof AlertDialogPrimitive.Action>
 >(({ className, ...props }, ref) => (
-  <AlertDialogPrimitive.Action 
-    ref={ref} 
-    className={cn(buttonVariants({ size: 'sm' }), 'w-full sm:w-auto', className)} 
-    {...props} 
+  <AlertDialogPrimitive.Action
+    ref={ref}
+    className={cn(buttonVariants({ size: 'sm' }), 'w-full sm:w-auto', className)}
+    {...props}
   />
 ))
 AlertDialogAction.displayName = AlertDialogPrimitive.Action.displayName
@@ -101,7 +101,11 @@ const AlertDialogCancel = React.forwardRef<
 >(({ className, ...props }, ref) => (
   <AlertDialogPrimitive.Cancel
     ref={ref}
-    className={cn(buttonVariants({ variant: 'outline', size: 'sm' }), 'w-full sm:w-auto mt-2 sm:mt-0', className)}
+    className={cn(
+      buttonVariants({ variant: 'outline', size: 'sm' }),
+      'w-full sm:w-auto mt-2 sm:mt-0',
+      className,
+    )}
     {...props}
   />
 ))

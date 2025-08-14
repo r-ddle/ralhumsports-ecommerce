@@ -13,6 +13,7 @@
       "Bash(pnpm run test:int:*)",
       "Bash(pnpm test:int:*)"
     ],
-    "deny": []
+    "deny": [],
+    "defaultMode": "acceptEdits"
   }
 }
