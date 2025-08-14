@@ -597,7 +597,7 @@ export default function ProductVerificationPage() {
                     className="w-full bg-gradient-to-r from-green-600 to-emerald-600 hover:from-emerald-600 hover:to-green-600 text-white py-4 text-lg font-bold rounded-xl shadow-lg hover:scale-105 transition-all duration-300"
                     onClick={() => {
                       const message = `Hello! I need to report a product verification issue. SKU: ${sku}`
-                      const whatsappUrl = `https://wa.me/94772350712?text=${encodeURIComponent(message)}`
+                      const whatsappUrl = `https://wa.me/94774477633?text=${encodeURIComponent(message)}`
                       window.open(whatsappUrl, '_blank')
                     }}
                   >

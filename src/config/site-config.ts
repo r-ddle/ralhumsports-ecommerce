@@ -1,13 +1,13 @@
 export const SITE_CONFIG = {
-  siteUrl: 'https://ralhumsports.vercel.app', // Change this to your production domain after deployment
-  taxRate: 0.15, // 15% tax
+  siteUrl: 'https://ralhumsports.lk',
+  taxRate: 0, // 0% tax
   currency: 'LKR',
   about: {
     companyName: 'Ralhum Sports',
     legalName: 'Ralhum Trading Pvt Ltd',
     tagline: "Sri Lanka's #1 Sports Equipment Distributor & Online Store",
     description:
-      "Sri Lanka's #1 sports equipment distributor for 25+ years. Exclusive distributor of world-renowned sports brands.",
+      "Sri Lanka's #1 sports equipment distributor for 30 years. Exclusive distributor of world-renowned sports brands.",
     address: {
       street: '34A, Shruberry Garden',
       city: 'Colombo 04',
@@ -55,11 +55,13 @@ export const SITE_CONFIG = {
     yearsOfExcellence: '30',
   },
   contact: {
-    phone: '+94114388826/5',
-    email: 'sales@ralhum.com',
-    whatsapp: '+94772350712',
-    whatsappUrl: 'https://wa.me/94772350712',
-    supportHours: 'Mon-Sat: 9AM-6PM',
+    telephone: '+94114388826',
+    secondaryTelephone: '+94114388825',
+    phone: '+94774477633',
+    email: 'vamos@ralhum.com',
+    whatsapp: '+94774477633',
+    whatsappUrl: 'https://wa.me/94774477633',
+    supportHours: 'Mon-Fri: 10AM-6PM',
     address: {
       street: '34A, Shruberry Garden',
       city: 'Colombo 04',
@@ -76,8 +78,8 @@ export const SITE_CONFIG = {
     },
   },
   social: {
-    facebook: 'https://facebook.com/ralhumsports',
-    instagram: 'https://instagram.com/ralhumsports',
+    facebook: 'https://facebook.com/ralhum',
+    instagram: 'https://instagram.com/ralhum_sports.sl',
   },
   branding: {
     logoText: 'RALHUM SPORTS',
@@ -443,7 +445,7 @@ export const SITE_CONFIG = {
     { number: '#1', label: 'Sports Distributor in Sri Lanka', color: '#00B894' },
   ],
   whatsapp: {
-    number: '94772350712',
+    number: '94774477633',
     message: "Hello Ralhum Sports! I'm interested in your sports equipment. Please contact me.",
     reportMessage: 'Hello! I need to report a product verification issue. SKU: ',
   },
