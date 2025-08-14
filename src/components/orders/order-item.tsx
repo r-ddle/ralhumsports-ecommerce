@@ -295,7 +295,7 @@ export function OrderItem({ order }: OrderItemProps) {
                 )}
               </Button>
             </AlertDialogTrigger>
-            <AlertDialogContent className="bg-white">
+            <AlertDialogContent className="bg-white max-w-[95vw] w-full sm:max-w-lg mx-4 sm:mx-auto">
               <AlertDialogHeader>
                 <AlertDialogTitle>Cancel Order #{order.orderNumber}?</AlertDialogTitle>
                 <AlertDialogDescription>
