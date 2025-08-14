@@ -21,7 +21,7 @@ export default function WhatsAppButton({
   children,
 }: WhatsAppButtonProps) {
   const handleWhatsAppClick = () => {
-    const whatsappUrl = `https://wa.me/94772350712?text=${encodeURIComponent(message)}`
+    const whatsappUrl = `https://wa.me/94774477633?text=${encodeURIComponent(message)}`
     window.open(whatsappUrl, '_blank')
   }
 

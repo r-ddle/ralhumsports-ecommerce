@@ -35,7 +35,7 @@ export default function MobileMenu({ isOpen, onToggle }: MobileMenuProps) {
     { name: 'Brands', href: '/brands', description: 'Our exclusive partnerships', icon: '🏆' },
     { name: 'Sports', href: '/sports', description: 'Equipment for every sport', icon: '⚽' },
     { name: 'Products', href: '/products', description: 'Complete product range', icon: '🛍️' },
-    { name: 'About', href: '/about', description: 'Our 25+ year heritage', icon: '📖' },
+    { name: 'About', href: '/about', description: 'Our 30 year heritage', icon: '📖' },
     { name: 'News', href: '/news', description: 'Latest updates & announcements', icon: '📰' },
     { name: 'Contact', href: '/contact', description: 'Get in touch with us', icon: '📞' },
   ]
@@ -233,7 +233,7 @@ export default function MobileMenu({ isOpen, onToggle }: MobileMenuProps) {
                   Sri Lanka&apos;s #1 Sports Distributor
                 </Badge>
                 <p className="text-xs text-gray-500 leading-relaxed">
-                  25+ Years of Excellence • Exclusive Brand Partnerships • Trusted by Athletes
+                  30 Years of Excellence • Exclusive Brand Partnerships • Trusted by Athletes
                 </p>
               </motion.div>
             </div>
