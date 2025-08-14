@@ -18,11 +18,11 @@ class Logger {
     const timestamp = new Date().toISOString().split('T')[1].split('.')[0]
     const levelUpper = level.toUpperCase().padEnd(5)
     const prefixStr = prefix ? `[${prefix}]` : ''
-    
+
     if (color && this.isDev) {
       return `${color}[${timestamp}] ${levelUpper} ${prefixStr} ${message}\x1b[0m`
     }
-    
+
     return `[${timestamp}] ${levelUpper} ${prefixStr} ${message}`
   }
 
@@ -51,14 +51,14 @@ class Logger {
   // API-specific loggers
   api = {
     request: (endpoint: string, method: string = 'GET', params?: Record<string, unknown>) => {
-      this.debug(`${method} ${endpoint}`, { 
-        prefix: 'API', 
-        color: '\x1b[36m' 
+      this.debug(`${method} ${endpoint}`, {
+        prefix: 'API',
+        color: '\x1b[36m',
       })
       if (params && Object.keys(params).length > 0) {
-        this.debug(`Params: ${JSON.stringify(params)}`, { 
-          prefix: 'API', 
-          color: '\x1b[36m' 
+        this.debug(`Params: ${JSON.stringify(params)}`, {
+          prefix: 'API',
+          color: '\x1b[36m',
         })
       }
     },
@@ -67,17 +67,17 @@ class Logger {
       let message = `✓ ${endpoint}`
       if (data?.total !== undefined) message += ` (${data.total} total)`
       if (data?.count !== undefined) message += ` (${data.count} items)`
-      
-      this.info(message, { 
-        prefix: 'API', 
-        color: '\x1b[32m' 
+
+      this.info(message, {
+        prefix: 'API',
+        color: '\x1b[32m',
       })
     },
 
     error: (endpoint: string, error: Error | unknown) => {
-      this.error(`✗ ${endpoint}`, error, { 
-        prefix: 'API', 
-        color: '\x1b[31m' 
+      this.error(`✗ ${endpoint}`, error, {
+        prefix: 'API',
+        color: '\x1b[31m',
       })
     },
   }
@@ -87,21 +87,21 @@ class Logger {
     start: (orderId: string, amount: number) => {
       this.info(`Starting payment for order ${orderId} (LKR ${amount})`, {
         prefix: 'Payment',
-        color: '\x1b[35m'
+        color: '\x1b[35m',
       })
     },
 
     success: (orderId: string) => {
       this.info(`✓ Payment completed for order ${orderId}`, {
         prefix: 'Payment',
-        color: '\x1b[32m'
+        color: '\x1b[32m',
       })
     },
 
     error: (orderId: string, error: string) => {
       this.error(`✗ Payment failed for order ${orderId}: ${error}`, undefined, {
         prefix: 'Payment',
-        color: '\x1b[31m'
+        color: '\x1b[31m',
       })
     },
 
@@ -109,12 +109,12 @@ class Logger {
       if (success) {
         this.debug(`✓ Hash generated for order ${orderId}`, {
           prefix: 'PayHere',
-          color: '\x1b[32m'
+          color: '\x1b[32m',
         })
       } else {
         this.error(`✗ Hash generation failed for order ${orderId}`, undefined, {
           prefix: 'PayHere',
-          color: '\x1b[31m'
+          color: '\x1b[31m',
         })
       }
     },
@@ -125,21 +125,21 @@ class Logger {
     add: (productName: string, quantity: number) => {
       this.debug(`Added ${quantity}x ${productName} to cart`, {
         prefix: 'Cart',
-        color: '\x1b[34m'
+        color: '\x1b[34m',
       })
     },
 
     remove: (productName: string) => {
       this.debug(`Removed ${productName} from cart`, {
         prefix: 'Cart',
-        color: '\x1b[34m'
+        color: '\x1b[34m',
       })
     },
 
-    totals: (data: { subtotal: number; tax: number; total: number; itemCount: number }) => {
-      this.debug(`Cart totals: ${data.itemCount} items, LKR ${data.total} (${data.subtotal} + ${data.tax} tax)`, {
+    totals: (data: { subtotal: number; total: number; itemCount: number }) => {
+      this.debug(`Cart totals: ${data.itemCount} items, LKR ${data.total} (${data.subtotal}`, {
         prefix: 'Cart',
-        color: '\x1b[34m'
+        color: '\x1b[34m',
       })
     },
   }

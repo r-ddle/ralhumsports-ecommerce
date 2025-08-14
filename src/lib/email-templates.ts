@@ -169,10 +169,6 @@ export function generateOrderConfirmationEmail(data: OrderEmailData): string {
                     <td style="padding: 12px 16px; border-bottom: 1px solid #e5e5e5; font-size: 14px; color: #4a4a4a;">Subtotal</td>
                     <td style="padding: 12px 16px; border-bottom: 1px solid #e5e5e5; font-size: 14px; color: #1a1a1a; text-align: right;">LKR ${data.orderSubtotal.toLocaleString()}</td>
                   </tr>
-                  <tr>
-                    <td style="padding: 12px 16px; border-bottom: 1px solid #e5e5e5; font-size: 14px; color: #4a4a4a;">Tax (15%)</td>
-                    <td style="padding: 12px 16px; border-bottom: 1px solid #e5e5e5; font-size: 14px; color: #1a1a1a; text-align: right;">LKR ${data.tax.toLocaleString()}</td>
-                  </tr>
                   <tr style="background-color: #f8f9fa;">
                     <td style="padding: 16px; font-size: 16px; font-weight: 600; color: #1a1a1a;">Total</td>
                     <td style="padding: 16px; font-size: 16px; font-weight: 600; color: #1a1a1a; text-align: right;">LKR ${data.orderTotal.toLocaleString()}</td>
@@ -488,8 +484,6 @@ ${data.items
   .join('\n')}
 
 TOTAL:
-Subtotal: LKR ${data.orderSubtotal.toLocaleString()}
-Tax: LKR ${data.tax.toLocaleString()}
 Total: LKR ${data.orderTotal.toLocaleString()}
 
 DELIVERY ADDRESS:
