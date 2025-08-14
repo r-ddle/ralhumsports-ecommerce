@@ -603,7 +603,7 @@ export default function ReturnPolicyPage() {
                         errors)
                       </li>
                       <li>
-                        • <strong>Taxes:</strong> Refunded in accordance with Sri Lankan tax
+                        • <strong>Processing:</strong> Refunded in accordance with Sri Lankan
                         regulations
                       </li>
                     </ul>

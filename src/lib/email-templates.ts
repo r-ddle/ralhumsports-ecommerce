@@ -15,7 +15,6 @@ export interface OrderEmailData {
   }>
   orderTotal: number
   orderSubtotal: number
-  tax: number
   deliveryAddress: string
   specialInstructions?: string
   createdAt: string

@@ -397,7 +397,6 @@ export const GET = withRateLimit(rateLimitConfigs.moderate, async (request: Next
           variantDetails: item.variantDetails,
         })),
         orderSubtotal: order.pricing?.orderSubtotal || order.orderSummary?.orderTotal || 0,
-        tax: order.pricing?.tax || 0,
         orderTotal: order.orderSummary?.orderTotal || 0,
         orderStatus: order.status?.orderStatus || 'pending',
         paymentStatus: order.status?.paymentStatus || 'pending',

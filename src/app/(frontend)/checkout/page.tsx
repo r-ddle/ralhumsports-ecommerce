@@ -85,7 +85,6 @@ export default function CheckoutPage() {
     customerInfo: {},
     pricing: {
       subtotal: 0,
-      tax: 0,
       total: 0,
       currency: 'LKR',
     },
@@ -165,14 +164,12 @@ export default function CheckoutPage() {
     if (cart.items.length === 0) return
 
     const subtotal = cart.items.reduce((sum, item) => sum + item.variant.price * item.quantity, 0)
-    const tax = calculateTax(subtotal)
-    const total = subtotal + tax
+    const total = subtotal
 
     setCheckoutState((prev) => ({
       ...prev,
       pricing: {
         subtotal,
-        tax,
         total,
         currency: 'LKR',
       },
@@ -1448,6 +1445,3 @@ function formatCurrency(amount: number): string {
   })} LKR`
 }
 
-function calculateTax(amount: number) {
-  return Math.round(amount * SITE_CONFIG.taxRate)
-}

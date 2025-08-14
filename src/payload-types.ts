@@ -831,14 +831,6 @@ export interface Order {
      */
     orderSubtotal?: number | null;
     /**
-     * Tax
-     */
-    tax?: number | null;
-    /**
-     * Shipping
-     */
-    shippingCost?: number | null;
-    /**
      * Discount
      */
     discount?: number | null;
@@ -1600,8 +1592,6 @@ export interface OrdersSelect<T extends boolean = true> {
     | T
     | {
         orderSubtotal?: T;
-        tax?: T;
-        shippingCost?: T;
         discount?: T;
       };
   paymentGateway?:

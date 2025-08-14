@@ -62,11 +62,10 @@ describe('Email Service', () => {
         },
       ],
       orderSummary: {
-        orderTotal: 28750,
+        orderTotal: 25000,
       },
       pricing: {
         orderSubtotal: 25000,
-        tax: 3750,
       },
       orderDetails: {
         specialInstructions: 'Please call before delivery',
@@ -100,7 +99,7 @@ describe('Email Service', () => {
             selectedColor: undefined,
           },
         ],
-        orderTotal: 28750,
+        orderTotal: 25000,
         orderSubtotal: 25000,
         tax: 3750,
         deliveryAddress: '123 Main Street, Colombo 03',
@@ -144,7 +143,6 @@ describe('Email Service', () => {
 
       expect(result.orderTotal).toBe(0)
       expect(result.orderSubtotal).toBe(0)
-      expect(result.tax).toBe(0)
     })
 
     it('should handle missing optional fields', () => {

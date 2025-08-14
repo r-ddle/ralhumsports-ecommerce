@@ -235,7 +235,7 @@ export default function PrivacyPolicyPage() {
                     Legal Obligations
                   </h3>
                   <ul className="space-y-2 text-text-primary leading-relaxed">
-                    <li>• Comply with tax reporting and accounting requirements</li>
+                    <li>• Comply with financial reporting and accounting requirements</li>
                     <li>• Maintain records for consumer protection compliance</li>
                     <li>• Respond to legal requests and court orders</li>
                     <li>• Anti-money laundering and fraud prevention</li>
@@ -330,7 +330,7 @@ export default function PrivacyPolicyPage() {
                   <div className="bg-info/10 p-4 rounded-lg border border-info/20">
                     <ul className="space-y-2 text-text-primary leading-relaxed">
                       <li>• Account data: Retained while account is active plus 2 years</li>
-                      <li>• Transaction records: 7 years for tax and legal compliance</li>
+                      <li>• Transaction records: 7 years for legal compliance</li>
                       <li>• Marketing data: Until consent is withdrawn</li>
                       <li>• Website analytics: Anonymized after 26 months</li>
                       <li>• Support communications: 3 years for quality assurance</li>
@@ -615,7 +615,7 @@ export default function PrivacyPolicyPage() {
                       <ul className="text-sm text-text-primary">
                         <li>• Court orders and legal proceedings</li>
                         <li>• Government investigations and regulatory requests</li>
-                        <li>• Tax authorities and financial crime prevention</li>
+                        <li>• Financial authorities and financial crime prevention</li>
                         <li>• Consumer protection enforcement</li>
                       </ul>
                     </div>
