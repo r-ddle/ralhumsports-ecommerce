@@ -369,11 +369,11 @@ export default function TermsConditionsPage() {
 
                 <div>
                   <h3 className="text-lg font-semibold text-text-primary mb-3">
-                    Pricing and Taxes
+                    Pricing
                   </h3>
                   <ul className="space-y-2 text-text-primary leading-relaxed">
                     <li>
-                      • All prices include applicable taxes and duties unless stated otherwise
+                      • All prices are final and include all applicable duties unless stated otherwise
                     </li>
                     <li>• Prices are subject to change without notice</li>
                     <li>• Promotional prices are valid only for specified periods</li>
@@ -441,7 +441,7 @@ export default function TermsConditionsPage() {
                   </h3>
                   <ul className="space-y-2 text-text-primary leading-relaxed">
                     <li>• International shipping available on request</li>
-                    <li>• Customer responsible for customs duties and import taxes</li>
+                    <li>• Customer responsible for customs duties and import fees</li>
                     <li>• International delivery times vary by destination</li>
                     <li>• Some products may be restricted for international shipping</li>
                   </ul>

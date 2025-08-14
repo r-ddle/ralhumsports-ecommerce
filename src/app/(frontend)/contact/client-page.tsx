@@ -38,10 +38,12 @@ import {
   Send,
   Building,
   Sparkles,
+  AlertCircle,
 } from 'lucide-react'
 import { motion } from 'framer-motion'
 import { SITE_CONFIG } from '@/config/site-config'
 import { useToast } from '@/hooks/use-toast'
+import { validateContactForm, getButtonDisabledReason, type ValidationError } from '@/lib/form-validation'
 
 export default function ContactPage() {
   const { toast } = useToast()
@@ -53,15 +55,30 @@ export default function ContactPage() {
     sport: '',
     message: '',
   })
+  const [formErrors, setFormErrors] = useState<Record<string, string>>({})
+  const [validationErrors, setValidationErrors] = useState<ValidationError[]>([])
   const [prefersReducedMotion, setPrefersReducedMotion] = useState(false)
 
-  // Simple validation: all required fields must be filled
-  const isFormValid =
-    formData.name.trim() !== '' &&
-    formData.email.trim() !== '' &&
-    formData.sport.trim() !== '' &&
-    formData.message.trim() !== '' &&
-    /^\S+@\S+\.\S+$/.test(formData.email)
+  // Enhanced validation with proper error messages
+  const validateForm = () => {
+    const validation = validateContactForm({
+      name: formData.name,
+      email: formData.email,
+      phone: formData.phone,
+      sport: formData.sport,
+      message: formData.message,
+    })
+
+    setFormErrors(validation.fieldErrors)
+    setValidationErrors(validation.errors)
+    return validation.isValid
+  }
+
+  const isFormValid = validationErrors.length === 0 && 
+    formData.name.trim() && 
+    formData.email.trim() && 
+    formData.sport.trim() && 
+    formData.message.trim()
 
   // Performance optimization: Check for reduced motion preference
   useEffect(() => {
@@ -73,14 +90,21 @@ export default function ContactPage() {
     return () => mediaQuery.removeEventListener('change', handleChange)
   }, [])
 
+  // Initial validation
+  useEffect(() => {
+    validateForm()
+  }, [])
+
   const handleSubmit = (e?: React.FormEvent) => {
     if (e) e.preventDefault()
-    if (!isFormValid) {
-      toast({
-        title: 'Please fill all required fields',
-        description: 'Name, Email, Sport, and Message are required. Email must be valid.',
-        variant: 'destructive',
-      })
+    
+    if (!validateForm()) {
+      // Focus on first error field
+      const firstErrorField = validationErrors[0]?.field
+      if (firstErrorField) {
+        const element = document.getElementById(firstErrorField)
+        element?.focus()
+      }
       return
     }
     const message = `Hello Ralhum Sports!
@@ -101,15 +125,40 @@ Thank you!`
   }
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    const { name, value } = e.target
     setFormData({
       ...formData,
-      [e.target.name]: e.target.value,
+      [name]: value,
     })
+    
+    // Clear error for this field when user starts typing
+    if (formErrors[name]) {
+      setFormErrors(prev => {
+        const newErrors = { ...prev }
+        delete newErrors[name]
+        return newErrors
+      })
+    }
+    
+    // Re-validate form when user types
+    setTimeout(() => validateForm(), 100)
   }
 
   // Handler for shadcn dropdown
   const handleSportChange = (value: string) => {
     setFormData((prev) => ({ ...prev, sport: value }))
+    
+    // Clear error for sport field
+    if (formErrors.sport) {
+      setFormErrors(prev => {
+        const newErrors = { ...prev }
+        delete newErrors.sport
+        return newErrors
+      })
+    }
+    
+    // Re-validate form
+    setTimeout(() => validateForm(), 100)
   }
 
   const containerVariants = {
@@ -324,28 +373,50 @@ Thank you!`
                           Full Name *
                         </label>
                         <Input
+                          id="name"
                           type="text"
                           name="name"
                           value={formData.name}
                           onChange={handleChange}
                           required
-                          className="h-12 border-2 border-brand-border focus:border-brand-secondary rounded-xl bg-brand-background text-base"
+                          className={`h-12 border-2 rounded-xl bg-brand-background text-base ${
+                            formErrors.name
+                              ? 'border-red-500 focus:border-red-500'
+                              : 'border-brand-border focus:border-brand-secondary'
+                          }`}
                           placeholder="Your full name"
                         />
+                        {formErrors.name && (
+                          <p className="text-sm text-red-600 mt-2 flex items-center gap-1">
+                            <AlertCircle className="w-4 h-4" />
+                            {formErrors.name}
+                          </p>
+                        )}
                       </div>
                       <div>
                         <label className="block text-sm font-bold text-text-primary mb-3">
                           Email Address *
                         </label>
                         <Input
+                          id="email"
                           type="email"
                           name="email"
                           value={formData.email}
                           onChange={handleChange}
                           required
-                          className="h-12 border-2 border-brand-border focus:border-brand-secondary rounded-xl bg-brand-background"
+                          className={`h-12 border-2 rounded-xl bg-brand-background ${
+                            formErrors.email
+                              ? 'border-red-500 focus:border-red-500'
+                              : 'border-brand-border focus:border-brand-secondary'
+                          }`}
                           placeholder="your@email.com"
                         />
+                        {formErrors.email && (
+                          <p className="text-sm text-red-600 mt-2 flex items-center gap-1">
+                            <AlertCircle className="w-4 h-4" />
+                            {formErrors.email}
+                          </p>
+                        )}
                       </div>
                     </div>
 
@@ -355,13 +426,24 @@ Thank you!`
                           Phone Number
                         </label>
                         <Input
+                          id="phone"
                           type="tel"
                           name="phone"
                           value={formData.phone}
                           onChange={handleChange}
-                          className="h-12 border-2 border-brand-border focus:border-brand-secondary rounded-xl bg-brand-background"
-                          placeholder="+94 XX XXX XXXX"
+                          className={`h-12 border-2 rounded-xl bg-brand-background ${
+                            formErrors.phone
+                              ? 'border-red-500 focus:border-red-500'
+                              : 'border-brand-border focus:border-brand-secondary'
+                          }`}
+                          placeholder="+94 77 123 4567"
                         />
+                        {formErrors.phone && (
+                          <p className="text-sm text-red-600 mt-2 flex items-center gap-1">
+                            <AlertCircle className="w-4 h-4" />
+                            {formErrors.phone}
+                          </p>
+                        )}
                       </div>
                       <div>
                         <label className="block text-sm font-bold text-text-primary mb-3">
@@ -383,7 +465,11 @@ Thank you!`
                         Sport Category
                       </label>
                       <Select value={formData.sport} onValueChange={handleSportChange}>
-                        <SelectTrigger className="w-full h-12 border-2 border-brand-border focus:border-brand-secondary rounded-xl bg-white text-text-primary px-4">
+                        <SelectTrigger className={`w-full h-12 border-2 rounded-xl bg-white text-text-primary px-4 ${
+                          formErrors.sport
+                            ? 'border-red-500 focus:border-red-500'
+                            : 'border-brand-border focus:border-brand-secondary'
+                        }`}>
                           <SelectValue placeholder="Select a sport" />
                         </SelectTrigger>
                         <SelectContent className="bg-white border-2 border-brand-border rounded-xl">
@@ -398,6 +484,12 @@ Thank you!`
                           ))}
                         </SelectContent>
                       </Select>
+                      {formErrors.sport && (
+                        <p className="text-sm text-red-600 mt-2 flex items-center gap-1">
+                          <AlertCircle className="w-4 h-4" />
+                          {formErrors.sport}
+                        </p>
+                      )}
                     </div>
 
                     <div>
@@ -405,34 +497,50 @@ Thank you!`
                         Message *
                       </label>
                       <Textarea
+                        id="message"
                         name="message"
                         value={formData.message}
                         onChange={handleChange}
                         required
                         rows={5}
-                        className="border-2 border-brand-border focus:border-brand-secondary rounded-xl bg-brand-background resize-none"
+                        className={`border-2 rounded-xl bg-brand-background resize-none ${
+                          formErrors.message
+                            ? 'border-red-500 focus:border-red-500'
+                            : 'border-brand-border focus:border-brand-secondary'
+                        }`}
                         placeholder="Tell us about your requirements, quantities needed, or any specific questions..."
                       />
+                      {formErrors.message && (
+                        <p className="text-sm text-red-600 mt-2 flex items-center gap-1">
+                          <AlertCircle className="w-4 h-4" />
+                          {formErrors.message}
+                        </p>
+                      )}
                     </div>
 
                     <div className="flex flex-col sm:flex-row gap-4">
-                      <Button
-                        type="button"
-                        size="lg"
-                        onClick={handleSubmit}
-                        className="flex-1 bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600 text-white px-8 py-4 text-lg font-bold rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-[1.02]"
-                        disabled={!isFormValid}
-                        aria-disabled={!isFormValid}
-                        tabIndex={!isFormValid ? -1 : 0}
-                      >
-                        <MessageCircle className="w-5 h-5 mr-2" />
-                        WHATSAPP US
-                      </Button>
-                      {!isFormValid && (
-                        <p className="text-sm text-red-600 mt-2">
-                          Please fill all fields to send a message
-                        </p>
-                      )}
+                      <div className="flex-1">
+                        <Button
+                          type="button"
+                          size="lg"
+                          onClick={handleSubmit}
+                          className={`w-full px-8 py-4 text-lg font-bold rounded-xl shadow-lg transition-all duration-300 ${
+                            !isFormValid
+                              ? 'bg-gray-400 cursor-not-allowed opacity-60'
+                              : 'bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600 hover:shadow-xl hover:scale-[1.02]'
+                          } text-white`}
+                          disabled={!isFormValid}
+                        >
+                          <MessageCircle className="w-5 h-5 mr-2" />
+                          WHATSAPP US
+                        </Button>
+                        {!isFormValid && (
+                          <p className="text-sm text-red-600 mt-2 flex items-center gap-1">
+                            <AlertCircle className="w-4 h-4" />
+                            {getButtonDisabledReason(validationErrors) || 'Please fill all required fields correctly'}
+                          </p>
+                        )}
+                      </div>
                     </div>
                   </form>
                 </CardContent>

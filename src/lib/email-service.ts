@@ -204,7 +204,6 @@ export function transformOrderForEmail(order: any): OrderEmailData {
     })),
     orderTotal: order.orderSummary?.orderTotal || 0,
     orderSubtotal: order.pricing?.orderSubtotal || 0,
-    tax: order.pricing?.tax || 0,
     deliveryAddress: order.customer?.deliveryAddress || '',
     specialInstructions: order.orderDetails?.specialInstructions,
     createdAt: order.createdAt,

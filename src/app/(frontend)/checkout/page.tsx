@@ -61,6 +61,18 @@ import {
   getCustomerInfo,
   clearPendingOrders,
 } from '@/lib/customer-id'
+import {
+  validateCheckoutForm,
+  getButtonDisabledReason,
+  type ValidationError,
+  formatPhoneNumber,
+} from '@/lib/form-validation'
+import {
+  getCitySuggestions,
+  getProvinceForCity,
+  isValidSriLankanCity,
+  getAllProvinces,
+} from '@/lib/sri-lanka-locations'
 
 export default function CheckoutPage() {
   const router = useRouter()
@@ -73,7 +85,6 @@ export default function CheckoutPage() {
     customerInfo: {},
     pricing: {
       subtotal: 0,
-      tax: 0,
       total: 0,
       currency: 'LKR',
     },
@@ -88,26 +99,54 @@ export default function CheckoutPage() {
   const [isPaymentProcessing, setIsPaymentProcessing] = useState(false)
   const [orderCreationInProgress, setOrderCreationInProgress] = useState(false)
 
-  // Memoized form validation state
+  // Enhanced form validation state
+  const [formErrors, setFormErrors] = useState<Record<string, string>>({})
+  const [validationErrors, setValidationErrors] = useState<ValidationError[]>([])
+  const [citySuggestions, setCitySuggestions] = useState<string[]>([])
   const [isFormValid, setIsFormValid] = useState(false)
 
-  // Check form validity on state changes
+  // Enhanced form validation
+  const validateForm = () => {
+    const validation = validateCheckoutForm({
+      fullName: checkoutState.customerInfo.fullName || '',
+      email: checkoutState.customerInfo.email || '',
+      phone: checkoutState.customerInfo.phone || '',
+      secondaryPhone: checkoutState.customerInfo.secondaryPhone,
+      address: {
+        street: checkoutState.customerInfo.address?.street || '',
+        city: checkoutState.customerInfo.address?.city || '',
+        postalCode: checkoutState.customerInfo.address?.postalCode || '',
+        province: checkoutState.customerInfo.address?.province || '',
+      },
+    })
+
+    setFormErrors(validation.fieldErrors)
+    setValidationErrors(validation.errors)
+    setIsFormValid(validation.isValid)
+
+    // Auto-update province if city is valid and province is wrong
+    if (
+      validation.suggestedProvince &&
+      validation.suggestedProvince !== checkoutState.customerInfo.address?.province
+    ) {
+      setCheckoutState((prev) => ({
+        ...prev,
+        customerInfo: {
+          ...prev.customerInfo,
+          address: {
+            ...prev.customerInfo.address,
+            province: validation.suggestedProvince!,
+          },
+        },
+      }))
+    }
+
+    return validation.isValid
+  }
+
+  // Validate on form changes
   useEffect(() => {
-    const { customerInfo } = checkoutState
-
-    const isValid = !!(
-      customerInfo.fullName?.trim() &&
-      customerInfo.email?.trim() &&
-      /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(customerInfo.email || '') &&
-      customerInfo.phone?.trim() &&
-      validateSriLankanPhone(customerInfo.phone || '') &&
-      customerInfo.address?.street?.trim() &&
-      customerInfo.address?.city?.trim() &&
-      customerInfo.address?.postalCode?.trim() &&
-      customerInfo.address?.province?.trim()
-    )
-
-    setIsFormValid(isValid)
+    validateForm()
   }, [checkoutState.customerInfo])
 
   // Performance optimization: Check for reduced motion preference
@@ -125,14 +164,12 @@ export default function CheckoutPage() {
     if (cart.items.length === 0) return
 
     const subtotal = cart.items.reduce((sum, item) => sum + item.variant.price * item.quantity, 0)
-    const tax = calculateTax(subtotal)
-    const total = subtotal + tax
+    const total = subtotal
 
     setCheckoutState((prev) => ({
       ...prev,
       pricing: {
         subtotal,
-        tax,
         total,
         currency: 'LKR',
       },
@@ -187,44 +224,9 @@ export default function CheckoutPage() {
     }
   }, [cart.items])
 
-  const validateForm = (): boolean => {
-    const errors: FormErrors = {}
-    const { customerInfo } = checkoutState
-
-    if (!customerInfo.fullName?.trim()) {
-      errors.fullName = 'Full name is required'
-    }
-
-    if (!customerInfo.email?.trim()) {
-      errors.email = 'Email is required'
-    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(customerInfo.email)) {
-      errors.email = 'Please enter a valid email address'
-    }
-
-    if (!customerInfo.phone?.trim()) {
-      errors.phone = 'Phone number is required'
-    } else if (!validateSriLankanPhone(customerInfo.phone)) {
-      errors.phone = 'Please enter a valid Sri Lankan phone number'
-    }
-
-    if (!customerInfo.address?.street?.trim()) {
-      errors.street = 'Street address is required'
-    }
-
-    if (!customerInfo.address?.city?.trim()) {
-      errors.city = 'City is required'
-    }
-
-    if (!customerInfo.address?.postalCode?.trim()) {
-      errors.postalCode = 'Postal code is required'
-    }
-
-    if (!customerInfo.address?.province?.trim()) {
-      errors.province = 'Province is required'
-    }
-
-    setCheckoutState((prev) => ({ ...prev, errors }))
-    return Object.keys(errors).length === 0
+  const validateFormLegacy = (): boolean => {
+    // This function is kept for compatibility but will use the new validation
+    return validateForm()
   }
 
   const handleWhatsAppOrder = async () => {
@@ -298,7 +300,7 @@ export default function CheckoutPage() {
       return { success: false, error: 'Order creation already in progress' }
     }
 
-    if (!validateForm()) {
+    if (!validateFormLegacy()) {
       return { success: false, error: 'Please fill in all required fields correctly' }
     }
 
@@ -405,6 +407,43 @@ export default function CheckoutPage() {
 
   const handleInputChange = (field: string, value: string) => {
     setApiError(null)
+
+    // Handle city input with suggestions and province auto-update
+    if (field === 'address.city') {
+      // Generate city suggestions
+      const suggestions = getCitySuggestions(value, 5)
+      setCitySuggestions(suggestions)
+
+      // Auto-update province if valid city is entered
+      if (value.trim() && isValidSriLankanCity(value)) {
+        const suggestedProvince = getProvinceForCity(value)
+        if (suggestedProvince) {
+          setCheckoutState((prev) => ({
+            ...prev,
+            customerInfo: {
+              ...prev.customerInfo,
+              address: {
+                ...prev.customerInfo.address,
+                city: value,
+                province: suggestedProvince,
+              },
+            },
+          }))
+
+          // Clear any province error
+          if (formErrors.province) {
+            setFormErrors((prev) => {
+              const newErrors = { ...prev }
+              delete newErrors.province
+              return newErrors
+            })
+          }
+
+          return
+        }
+      }
+    }
+
     setCheckoutState((prev) => ({
       ...prev,
       customerInfo: {
@@ -418,11 +457,20 @@ export default function CheckoutPage() {
             }
           : { [field]: value }),
       },
-      errors: {
-        ...prev.errors,
-        [field.includes('.') ? field.split('.')[1] : field]: undefined,
-      },
     }))
+
+    // Clear error for this field when user starts typing
+    const fieldName = field.includes('.') ? field.split('.')[1] : field
+    if (formErrors[fieldName]) {
+      setFormErrors((prev) => {
+        const newErrors = { ...prev }
+        delete newErrors[fieldName]
+        return newErrors
+      })
+    }
+
+    // Re-validate form after a short delay
+    setTimeout(() => validateForm(), 200)
   }
 
   // Enhanced cart management handlers for checkout
@@ -550,14 +598,17 @@ export default function CheckoutPage() {
                         onChange={(e) => handleInputChange('fullName', e.target.value)}
                         required
                         className={`mt-2 h-12 border-2 rounded-xl bg-brand-background text-base ${
-                          checkoutState.errors.fullName
-                            ? 'border-red-500'
+                          formErrors.fullName
+                            ? 'border-red-500 focus:border-red-500'
                             : 'border-brand-border focus:border-brand-secondary'
                         }`}
                         placeholder="Enter your full name"
                       />
-                      {checkoutState.errors.fullName && (
-                        <p className="text-sm text-red-600 mt-2">{checkoutState.errors.fullName}</p>
+                      {formErrors.fullName && (
+                        <p className="text-sm text-red-600 mt-2 flex items-center gap-1">
+                          <AlertCircle className="w-4 h-4" />
+                          {formErrors.fullName}
+                        </p>
                       )}
                     </div>
 
@@ -576,14 +627,17 @@ export default function CheckoutPage() {
                           onChange={(e) => handleInputChange('email', e.target.value)}
                           required
                           className={`mt-2 h-12 border-2 rounded-xl bg-brand-background ${
-                            checkoutState.errors.email
-                              ? 'border-red-500'
+                            formErrors.email
+                              ? 'border-red-500 focus:border-red-500'
                               : 'border-brand-border focus:border-brand-secondary'
                           }`}
                           placeholder="your@email.com"
                         />
-                        {checkoutState.errors.email && (
-                          <p className="text-sm text-red-600 mt-2">{checkoutState.errors.email}</p>
+                        {formErrors.email && (
+                          <p className="text-sm text-red-600 mt-2 flex items-center gap-1">
+                            <AlertCircle className="w-4 h-4" />
+                            {formErrors.email}
+                          </p>
                         )}
                       </div>
 
@@ -600,14 +654,17 @@ export default function CheckoutPage() {
                           onChange={(e) => handleInputChange('phone', e.target.value)}
                           required
                           className={`mt-2 h-12 border-2 rounded-xl bg-brand-background ${
-                            checkoutState.errors.phone
-                              ? 'border-red-500'
+                            formErrors.phone
+                              ? 'border-red-500 focus:border-red-500'
                               : 'border-brand-border focus:border-brand-secondary'
                           }`}
                           placeholder="+94 77 123 4567"
                         />
-                        {checkoutState.errors.phone && (
-                          <p className="text-sm text-red-600 mt-2">{checkoutState.errors.phone}</p>
+                        {formErrors.phone && (
+                          <p className="text-sm text-red-600 mt-2 flex items-center gap-1">
+                            <AlertCircle className="w-4 h-4" />
+                            {formErrors.phone}
+                          </p>
                         )}
                       </div>
                     </div>
@@ -623,9 +680,19 @@ export default function CheckoutPage() {
                         id="secondaryPhone"
                         value={checkoutState.customerInfo.secondaryPhone || ''}
                         onChange={(e) => handleInputChange('secondaryPhone', e.target.value)}
-                        className="mt-2 h-12 border-2 border-brand-border focus:border-brand-secondary rounded-xl bg-brand-background"
+                        className={`mt-2 h-12 border-2 rounded-xl bg-brand-background ${
+                          formErrors.secondaryPhone
+                            ? 'border-red-500 focus:border-red-500'
+                            : 'border-brand-border focus:border-brand-secondary'
+                        }`}
                         placeholder="+94 71 123 4567"
                       />
+                      {formErrors.secondaryPhone && (
+                        <p className="text-sm text-red-600 mt-2 flex items-center gap-1">
+                          <AlertCircle className="w-4 h-4" />
+                          {formErrors.secondaryPhone}
+                        </p>
+                      )}
                     </div>
                   </div>
                 </CardContent>
@@ -651,14 +718,17 @@ export default function CheckoutPage() {
                       onChange={(e) => handleInputChange('address.street', e.target.value)}
                       required
                       className={`mt-2 h-12 border-2 rounded-xl bg-brand-background ${
-                        checkoutState.errors.street
-                          ? 'border-red-500'
+                        formErrors.street
+                          ? 'border-red-500 focus:border-red-500'
                           : 'border-brand-border focus:border-brand-secondary'
                       }`}
                       placeholder="Enter your street address"
                     />
-                    {checkoutState.errors.street && (
-                      <p className="text-sm text-red-600 mt-2">{checkoutState.errors.street}</p>
+                    {formErrors.street && (
+                      <p className="text-sm text-red-600 mt-2 flex items-center gap-1">
+                        <AlertCircle className="w-4 h-4" />
+                        {formErrors.street}
+                      </p>
                     )}
                   </div>
 
@@ -668,20 +738,46 @@ export default function CheckoutPage() {
                       <Label htmlFor="city" className="text-base font-semibold text-text-primary">
                         City *
                       </Label>
-                      <Input
-                        id="city"
-                        value={checkoutState.customerInfo.address?.city || ''}
-                        onChange={(e) => handleInputChange('address.city', e.target.value)}
-                        required
-                        className={`mt-2 h-12 border-2 rounded-xl bg-brand-background ${
-                          checkoutState.errors.city
-                            ? 'border-red-500'
-                            : 'border-brand-border focus:border-brand-secondary'
-                        }`}
-                        placeholder="Enter your city"
-                      />
-                      {checkoutState.errors.city && (
-                        <p className="text-sm text-red-600 mt-2">{checkoutState.errors.city}</p>
+                      <div className="relative">
+                        <Input
+                          id="city"
+                          value={checkoutState.customerInfo.address?.city || ''}
+                          onChange={(e) => handleInputChange('address.city', e.target.value)}
+                          required
+                          className={`mt-2 h-12 border-2 rounded-xl bg-brand-background ${
+                            formErrors.city
+                              ? 'border-red-500 focus:border-red-500'
+                              : 'border-brand-border focus:border-brand-secondary'
+                          }`}
+                          placeholder="Enter your city (e.g., Colombo, Kandy)"
+                          autoComplete="address-level2"
+                        />
+
+                        {/* City Suggestions Dropdown */}
+                        {citySuggestions.length > 0 && checkoutState.customerInfo.address?.city && (
+                          <div className="absolute top-full left-0 right-0 z-20 bg-white border border-gray-200 rounded-lg shadow-lg mt-1 max-h-48 overflow-y-auto">
+                            {citySuggestions.map((suggestion, index) => (
+                              <button
+                                key={index}
+                                type="button"
+                                className="w-full px-4 py-2 text-left hover:bg-gray-50 focus:bg-gray-50 focus:outline-none text-sm"
+                                onClick={() => {
+                                  handleInputChange('address.city', suggestion)
+                                  setCitySuggestions([])
+                                }}
+                              >
+                                {suggestion}
+                              </button>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+
+                      {formErrors.city && (
+                        <p className="text-sm text-red-600 mt-2 flex items-center gap-1">
+                          <AlertCircle className="w-4 h-4" />
+                          {formErrors.city}
+                        </p>
                       )}
                     </div>
                     <div>
@@ -697,15 +793,19 @@ export default function CheckoutPage() {
                         onChange={(e) => handleInputChange('address.postalCode', e.target.value)}
                         required
                         className={`mt-2 h-12 border-2 rounded-xl bg-brand-background ${
-                          checkoutState.errors.postalCode
-                            ? 'border-red-500'
+                          formErrors.postalCode
+                            ? 'border-red-500 focus:border-red-500'
                             : 'border-brand-border focus:border-brand-secondary'
                         }`}
-                        placeholder="Enter postal code"
+                        placeholder="10400"
+                        maxLength={5}
+                        pattern="[0-9]{5}"
+                        autoComplete="postal-code"
                       />
-                      {checkoutState.errors.postalCode && (
-                        <p className="text-sm text-red-600 mt-2">
-                          {checkoutState.errors.postalCode}
+                      {formErrors.postalCode && (
+                        <p className="text-sm text-red-600 mt-2 flex items-center gap-1">
+                          <AlertCircle className="w-4 h-4" />
+                          {formErrors.postalCode}
                         </p>
                       )}
                     </div>
@@ -720,27 +820,26 @@ export default function CheckoutPage() {
                     >
                       <SelectTrigger
                         className={`mt-2 h-12 border-2 rounded-xl bg-brand-background ${
-                          checkoutState.errors.province
-                            ? 'border-red-500'
+                          formErrors.province
+                            ? 'border-red-500 focus:border-red-500'
                             : 'border-brand-border focus:border-brand-secondary'
                         }`}
                       >
-                        <SelectValue placeholder="Select your province" />
+                        <SelectValue placeholder="Select your province (will auto-update from city)" />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="Western">Western Province</SelectItem>
-                        <SelectItem value="Central">Central Province</SelectItem>
-                        <SelectItem value="Southern">Southern Province</SelectItem>
-                        <SelectItem value="Northern">Northern Province</SelectItem>
-                        <SelectItem value="Eastern">Eastern Province</SelectItem>
-                        <SelectItem value="North Western">North Western Province</SelectItem>
-                        <SelectItem value="North Central">North Central Province</SelectItem>
-                        <SelectItem value="Uva">Uva Province</SelectItem>
-                        <SelectItem value="Sabaragamuwa">Sabaragamuwa Province</SelectItem>
+                        {getAllProvinces().map((province) => (
+                          <SelectItem key={province.id} value={province.name}>
+                            {province.name}
+                          </SelectItem>
+                        ))}
                       </SelectContent>
                     </Select>
-                    {checkoutState.errors.province && (
-                      <p className="text-sm text-red-600 mt-2">{checkoutState.errors.province}</p>
+                    {formErrors.province && (
+                      <p className="text-sm text-red-600 mt-2 flex items-center gap-1">
+                        <AlertCircle className="w-4 h-4" />
+                        {formErrors.province}
+                      </p>
                     )}
                   </div>
 
@@ -1023,12 +1122,6 @@ export default function CheckoutPage() {
                         {formatCurrency(checkoutState.pricing.subtotal)}
                       </span>
                     </div>
-                    <div className="flex justify-between">
-                      <span className="text-text-secondary">Tax (15%)</span>
-                      <span className="font-semibold text-text-primary">
-                        {formatCurrency(checkoutState.pricing.tax)}
-                      </span>
-                    </div>
                     <Separator />
                     <div className="flex justify-between text-xl font-black">
                       <span className="text-text-primary">Total</span>
@@ -1057,53 +1150,69 @@ export default function CheckoutPage() {
                     {/* Payment UX: Only show 'Create Order' button, then show PayHereCheckout after order is created */}
                     <div className="space-y-3">
                       {!checkoutState.orderId ? (
-                        <Button
-                          variant="default"
-                          size="lg"
-                          disabled={isProcessing || !isFormValid}
-                          className="w-full font-bold border-2 border-white text-white hover:bg-brand-secondary/10 py-4 text-lg rounded-xl flex items-center justify-center"
-                          onClick={async () => {
-                            if (isProcessing || !isFormValid || orderCreationInProgress) return
-                            setIsProcessing(true)
+                        <div>
+                          <Button
+                            variant="default"
+                            size="lg"
+                            disabled={isProcessing || !isFormValid}
+                            className={`w-full font-bold py-4 text-lg rounded-xl flex items-center justify-center ${
+                              !isFormValid
+                                ? 'bg-gray-400 cursor-not-allowed opacity-60 text-white'
+                                : 'border-2 border-white text-white hover:bg-brand-secondary/10'
+                            }`}
+                            onClick={async () => {
+                              if (isProcessing || !isFormValid || orderCreationInProgress) return
+                              setIsProcessing(true)
 
-                            try {
-                              const result = await createOrder()
-                              if (!result.success) {
-                                setApiError(result.error || 'Failed to create order')
-                              } else {
-                                // Refresh orders in sidebar to show the new order
-                                try {
-                                  await refreshOrders(true) // Silent refresh - no toast
-                                  console.log(
-                                    '[Checkout] Orders refreshed after successful order creation',
-                                  )
-                                } catch (refreshError) {
-                                  console.warn('[Checkout] Failed to refresh orders:', refreshError)
-                                  // Don't fail the entire flow if refresh fails
+                              try {
+                                const result = await createOrder()
+                                if (!result.success) {
+                                  setApiError(result.error || 'Failed to create order')
+                                } else {
+                                  // Refresh orders in sidebar to show the new order
+                                  try {
+                                    await refreshOrders(true) // Silent refresh - no toast
+                                    console.log(
+                                      '[Checkout] Orders refreshed after successful order creation',
+                                    )
+                                  } catch (refreshError) {
+                                    console.warn(
+                                      '[Checkout] Failed to refresh orders:',
+                                      refreshError,
+                                    )
+                                    // Don't fail the entire flow if refresh fails
+                                  }
                                 }
+                                // Order ID will be set by createOrder function
+                              } catch (error) {
+                                setApiError(
+                                  error instanceof Error ? error.message : 'Failed to create order',
+                                )
+                              } finally {
+                                setIsProcessing(false)
                               }
-                              // Order ID will be set by createOrder function
-                            } catch (error) {
-                              setApiError(
-                                error instanceof Error ? error.message : 'Failed to create order',
-                              )
-                            } finally {
-                              setIsProcessing(false)
-                            }
-                          }}
-                        >
-                          {isProcessing ? (
-                            <>
-                              <Loader2 className="w-5 h-5 mr-2 animate-spin" />
-                              Creating Order...
-                            </>
-                          ) : (
-                            <>
-                              <CreditCard className="w-5 h-5 mr-2" />
-                              Create Order
-                            </>
+                            }}
+                          >
+                            {isProcessing ? (
+                              <>
+                                <Loader2 className="w-5 h-5 mr-2 animate-spin" />
+                                Creating Order...
+                              </>
+                            ) : (
+                              <>
+                                <CreditCard className="w-5 h-5 mr-2" />
+                                Create Order
+                              </>
+                            )}
+                          </Button>
+                          {!isFormValid && (
+                            <p className="text-sm text-red-600 mt-2 flex items-center gap-1">
+                              <AlertCircle className="w-4 h-4" />
+                              {getButtonDisabledReason(validationErrors) ||
+                                'Please fill all required fields correctly'}
+                            </p>
                           )}
-                        </Button>
+                        </div>
                       ) : (
                         <PayHereCheckout
                           orderData={{
@@ -1166,25 +1275,38 @@ export default function CheckoutPage() {
                       </div>
 
                       {/* WhatsApp Order Option */}
-                      <Button
-                        variant="outline"
-                        size="lg"
-                        onClick={handleWhatsAppOrder}
-                        disabled={isProcessing || !isFormValid}
-                        className="w-full font-bold border-2 border-green-600 text-green-600 hover:bg-green-50 py-4 text-lg rounded-xl"
-                      >
-                        {isProcessing ? (
-                          <>
-                            <Loader2 className="w-5 h-5 mr-2 animate-spin" />
-                            Processing...
-                          </>
-                        ) : (
-                          <>
-                            <MessageCircle className="w-5 h-5 mr-2" />
-                            Order via WhatsApp
-                          </>
+                      <div>
+                        <Button
+                          variant="outline"
+                          size="lg"
+                          onClick={handleWhatsAppOrder}
+                          disabled={isProcessing || !isFormValid}
+                          className={`w-full font-bold py-4 text-lg rounded-xl ${
+                            !isFormValid
+                              ? 'bg-gray-100 border-2 border-gray-300 text-gray-400 cursor-not-allowed opacity-60'
+                              : 'border-2 border-green-600 text-green-600 hover:bg-green-50'
+                          }`}
+                        >
+                          {isProcessing ? (
+                            <>
+                              <Loader2 className="w-5 h-5 mr-2 animate-spin" />
+                              Processing...
+                            </>
+                          ) : (
+                            <>
+                              <MessageCircle className="w-5 h-5 mr-2" />
+                              Order via WhatsApp
+                            </>
+                          )}
+                        </Button>
+                        {!isFormValid && (
+                          <p className="text-sm text-red-600 mt-2 flex items-center gap-1">
+                            <AlertCircle className="w-4 h-4" />
+                            {getButtonDisabledReason(validationErrors) ||
+                              'Please fill all required fields correctly'}
+                          </p>
                         )}
-                      </Button>
+                      </div>
                     </div>
                   </div>
                 </CardContent>
@@ -1323,6 +1445,3 @@ function formatCurrency(amount: number): string {
   })} LKR`
 }
 
-function calculateTax(amount: number) {
-  return Math.round(amount * SITE_CONFIG.taxRate)
-}

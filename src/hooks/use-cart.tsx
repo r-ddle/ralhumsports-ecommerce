@@ -21,38 +21,33 @@ type CartAction =
   | { type: 'LOAD_CART'; payload: Cart }
   | { type: 'SET_LOADING'; payload: boolean }
 
-function calculateTax(amount: number) {
-  return Math.round(amount * SITE_CONFIG.taxRate)
-}
-
 // Memoized calculation to avoid unnecessary re-computations
 const calculateCartTotals = (() => {
   let lastItems = ''
   let lastResult: {
     subtotal: number
-    tax: number
     total: number
     itemCount: number
   } | null = null
 
   return (items: CartItem[]) => {
     // Create a simple hash of items for comparison
-    const itemsHash = items.map(item => `${item.product.id}-${item.variant.id}-${item.quantity}`).join('|')
-    
+    const itemsHash = items
+      .map((item) => `${item.product.id}-${item.variant.id}-${item.quantity}`)
+      .join('|')
+
     // Return cached result if items haven't changed
     if (itemsHash === lastItems && lastResult) {
       return lastResult
     }
 
     const subtotalLKR = items.reduce((sum, item) => sum + item.variant.price * item.quantity, 0)
-    const tax = calculateTax(subtotalLKR) // Tax only on subtotal, not shipping
-    const total = subtotalLKR + tax
+    const total = subtotalLKR
     const itemCount = items.reduce((sum, item) => sum + item.quantity, 0)
 
     // Log cart totals for debugging
     cartLogger.totals({
       subtotal: subtotalLKR,
-      tax,
       total,
       itemCount,
     })
@@ -60,7 +55,6 @@ const calculateCartTotals = (() => {
     lastItems = itemsHash
     lastResult = {
       subtotal: subtotalLKR,
-      tax,
       total,
       itemCount,
     }
@@ -73,7 +67,6 @@ function createEmptyCart(): Cart {
   return {
     items: [],
     subtotal: 0,
-    tax: 0,
     total: 0,
     itemCount: 0,
     createdAt: new Date().toISOString(),
@@ -310,7 +303,6 @@ export function useCartSummary() {
   const { cart } = useCart()
   return {
     subtotal: cart.subtotal,
-    tax: cart.tax,
     total: cart.total,
     itemCount: cart.itemCount,
   }

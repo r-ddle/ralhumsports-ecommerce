@@ -57,9 +57,8 @@ describe('Email Integration Tests', () => {
           selectedColor: 'Red',
         },
       ],
-      orderTotal: 17250,
+      orderTotal: 15000,
       orderSubtotal: 15000,
-      tax: 2250,
       deliveryAddress: '123 Main Street, Colombo 03',
       createdAt: '2024-01-07T10:30:00Z',
     }
@@ -106,9 +105,8 @@ describe('Email Integration Tests', () => {
       customerEmail: 'john.doe@example.com',
       customerId: 'CUST-123',
       items: [],
-      orderTotal: 17250,
+      orderTotal: 15000,
       orderSubtotal: 15000,
-      tax: 2250,
       deliveryAddress: '123 Main Street, Colombo 03',
       createdAt: '2024-01-07T10:30:00Z',
       paymentMethod: 'VISA',
@@ -186,8 +184,7 @@ describe('Email Integration Tests', () => {
         items: [],
         orderTotal: 17250,
         orderSubtotal: 15000,
-        tax: 2250,
-        deliveryAddress: '123 Main Street',
+          deliveryAddress: '123 Main Street',
         createdAt: '2024-01-07T10:30:00Z',
       }
 
@@ -210,8 +207,7 @@ describe('Email Integration Tests', () => {
         items: [],
         orderTotal: 17250,
         orderSubtotal: 15000,
-        tax: 2250,
-        deliveryAddress: '123 Main Street',
+          deliveryAddress: '123 Main Street',
         createdAt: '2024-01-07T10:30:00Z',
       }
 
@@ -239,8 +235,7 @@ describe('Email Integration Tests', () => {
         items: [],
         orderTotal: 17250,
         orderSubtotal: 15000,
-        tax: 2250,
-        deliveryAddress: '123 Main Street',
+          deliveryAddress: '123 Main Street',
         createdAt: '2024-01-07T10:30:00Z',
       }
 

@@ -66,8 +66,6 @@ Address: ${fullAddress}
 ${minimalProductList}
 
 *Payment Details*
-Subtotal: LKR ${formatCurrency(pricing.subtotal)}
-Tax (${SITE_CONFIG.taxRate * 100}%): LKR ${formatCurrency(pricing.tax)}
 *Total*: LKR ${formatCurrency(pricing.total)}
 
 Please confirm this order and provide payment instructions.
