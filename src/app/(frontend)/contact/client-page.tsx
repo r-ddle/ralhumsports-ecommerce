@@ -488,7 +488,8 @@ Thank you!`
                       {
                         icon: Building,
                         title: 'Facilities',
-                        content: 'Product Display, Expert Consultation, Bulk Orders',
+                        content:
+                          'Product Display, Expert Consultation, Retail and Wholesale Orders, Head Office',
                         color: 'text-brand-secondary',
                       },
                     ].map((info) => (

@@ -287,7 +287,8 @@ export default function Footer() {
         >
           <div className="flex flex-col space-y-4 md:flex-row md:justify-between md:items-center md:space-y-0">
             <p className="text-slate-300 text-sm text-center md:text-left">
-              © {new Date().getFullYear()} Ralhum Trading Company Pvt Ltd. All rights reserved.
+              © {new Date().getFullYear()} {SITE_CONFIG.about.legalName}. All rights
+              reserved.
             </p>
             <p className="text-slate-300 text-sm text-center md:text-right">
               Part of {SITE_CONFIG.about.legacy.parentCompany} -{' '}

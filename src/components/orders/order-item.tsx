@@ -103,6 +103,7 @@ function getStatusStyling(status: string) {
 export function OrderItem({ order }: OrderItemProps) {
   const [isLocalCancelling, setIsLocalCancelling] = useState(false)
   const [localOrderStatus, setLocalOrderStatus] = useState(order.orderStatus)
+  const [showConfirmCancel, setShowConfirmCancel] = useState(false)
   const { clearCart } = useCart()
 
   const statusStyle = getStatusStyling(localOrderStatus)
@@ -112,7 +113,23 @@ export function OrderItem({ order }: OrderItemProps) {
   const canCancelOrder = order.paymentStatus === 'pending' && localOrderStatus !== 'cancelled'
 
   const handleCancelOrder = async () => {
+    // First tap - show confirmation for mobile
+    if (!showConfirmCancel) {
+      setShowConfirmCancel(true)
+      // Reset confirmation after 5 seconds
+      setTimeout(() => {
+        setShowConfirmCancel(false)
+      }, 5000)
+      return
+    }
+
+    // Second tap - actually cancel the order
+    await performCancelOrder()
+  }
+
+  const performCancelOrder = async () => {
     setIsLocalCancelling(true)
+    setShowConfirmCancel(false)
 
     try {
       // First try to get PayloadCMS customer ID from localStorage
@@ -274,51 +291,86 @@ export function OrderItem({ order }: OrderItemProps) {
 
         {/* Cancel Order Button - Only show if payment is pending */}
         {canCancelOrder && (
-          <AlertDialog>
-            <AlertDialogTrigger asChild>
-              <Button
-                variant="outline"
-                size="sm"
-                className="w-full border-red-200 text-red-600 hover:bg-red-50 hover:text-red-700 hover:border-red-300 font-semibold rounded-lg transition-all duration-200"
-                disabled={isLocalCancelling}
-              >
-                {isLocalCancelling ? (
-                  <>
-                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                    Cancelling...
-                  </>
-                ) : (
-                  <>
-                    <X className="w-4 h-4 mr-2" />
-                    Cancel Order
-                  </>
-                )}
-              </Button>
-            </AlertDialogTrigger>
-            <AlertDialogContent className="bg-white">
-              <AlertDialogHeader>
-                <AlertDialogTitle>Cancel Order #{order.orderNumber}?</AlertDialogTitle>
-                <AlertDialogDescription>
-                  Are you sure you want to cancel this order? This action cannot be undone.
-                  <br />
-                  <br />
-                  <strong>Order Total:</strong> {formatCurrency(order.orderTotal)}
-                  <br />
-                  <strong>Items:</strong> {order.orderItems.length} item
-                  {order.orderItems.length !== 1 ? 's' : ''}
-                </AlertDialogDescription>
-              </AlertDialogHeader>
-              <AlertDialogFooter>
-                <AlertDialogCancel>Keep Order</AlertDialogCancel>
-                <AlertDialogAction
-                  onClick={handleCancelOrder}
-                  className="bg-red-500 hover:bg-red-700 text-white hover:border-red-700 font-semibold rounded-lg transition-all duration-200"
-                >
-                  Yes, Cancel Order
-                </AlertDialogAction>
-              </AlertDialogFooter>
-            </AlertDialogContent>
-          </AlertDialog>
+          <>
+            {/* Mobile: Double-tap cancel button */}
+            <Button
+              variant="outline"
+              size="sm"
+              className={`w-full font-semibold rounded-lg transition-all duration-200 md:hidden ${
+                showConfirmCancel
+                  ? 'border-red-400 bg-red-50 text-red-700 hover:bg-red-100 hover:border-red-500'
+                  : 'border-red-200 text-red-600 hover:bg-red-50 hover:text-red-700 hover:border-red-300'
+              }`}
+              disabled={isLocalCancelling}
+              onClick={handleCancelOrder}
+            >
+              {isLocalCancelling ? (
+                <>
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  Cancelling...
+                </>
+              ) : showConfirmCancel ? (
+                <>
+                  <AlertCircle className="w-4 h-4 mr-2" />
+                  Are you sure?
+                </>
+              ) : (
+                <>
+                  <X className="w-4 h-4 mr-2" />
+                  Cancel Order
+                </>
+              )}
+            </Button>
+
+            {/* Desktop: AlertDialog */}
+            <div className="hidden md:block">
+              <AlertDialog>
+                <AlertDialogTrigger asChild>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="w-full border-red-200 text-red-600 hover:bg-red-50 hover:text-red-700 hover:border-red-300 font-semibold rounded-lg transition-all duration-200"
+                    disabled={isLocalCancelling}
+                  >
+                    {isLocalCancelling ? (
+                      <>
+                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                        Cancelling...
+                      </>
+                    ) : (
+                      <>
+                        <X className="w-4 h-4 mr-2" />
+                        Cancel Order
+                      </>
+                    )}
+                  </Button>
+                </AlertDialogTrigger>
+                <AlertDialogContent className="bg-white max-w-[95vw] w-full sm:max-w-lg mx-4 sm:mx-auto z-[60]">
+                  <AlertDialogHeader>
+                    <AlertDialogTitle>Cancel Order #{order.orderNumber}?</AlertDialogTitle>
+                    <AlertDialogDescription>
+                      Are you sure you want to cancel this order? This action cannot be undone.
+                      <br />
+                      <br />
+                      <strong>Order Total:</strong> {formatCurrency(order.orderTotal)}
+                      <br />
+                      <strong>Items:</strong> {order.orderItems.length} item
+                      {order.orderItems.length !== 1 ? 's' : ''}
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel>Keep Order</AlertDialogCancel>
+                    <AlertDialogAction
+                      onClick={performCancelOrder}
+                      className="bg-red-500 hover:bg-red-700 text-white hover:border-red-700 font-semibold rounded-lg transition-all duration-200"
+                    >
+                      Yes, Cancel Order
+                    </AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
+            </div>
+          </>
         )}
       </div>
     </div>
